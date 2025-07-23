@@ -1,0 +1,74 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise da Solução Batuara.net</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Análise da Solução Batuara.net</h1>
+
+    <h2>Visão Geral</h2>
+    <p>A solução Batuara.net é uma aplicação web moderna construída com .NET 8 e ASP.NET Core. Ela segue uma arquitetura limpa (Clean Architecture), separando as responsabilidades em diferentes projetos para promover a manutenibilidade e a testabilidade.</p>
+
+    <h2>Arquitetura</h2>
+    <p>A solução é dividida nos seguintes projetos:</p>
+    <ul>
+        <li><strong>Batuara.Domain:</strong> Contém as entidades de negócio, a lógica de domínio e as regras de negócio principais.</li>
+        <li><strong>Batuara.Application:</strong> Orquestra a lógica de negócio, utilizando padrões como MediatR para o desacoplamento de componentes e AutoMapper para o mapeamento de objetos.</li>
+        <li><strong>Batuara.Infrastructure:</strong> Lida com as preocupações de infraestrutura, como o acesso a dados com o Entity Framework Core e o logging com o Serilog.</li>
+        <li><strong>Batuara.API:</strong> Expõe a funcionalidade da aplicação como uma API web RESTful, utilizando o Swashbuckle para a documentação da API (Swagger).</li>
+    </ul>
+
+    <h2>Tecnologias</h2>
+    <ul>
+        <li><strong>Framework:</strong> .NET 8</li>
+        <li><strong>API:</strong> ASP.NET Core</li>
+        <li><strong>Banco de Dados:</strong> PostgreSQL</li>
+        <li><strong>ORM:</strong> Entity Framework Core</li>
+        <li><strong>Logging:</strong> Serilog</li>
+        <li><strong>Documentação da API:</strong> Swashbuckle (Swagger)</li>
+        <li><strong>Padrões:</strong> MediatR, AutoMapper, FluentValidation</li>
+    </ul>
+
+    <h2>Funcionalidades</h2>
+    <p>A análise das entidades de domínio revela as seguintes funcionalidades principais:</p>
+    <ul>
+        <li><strong>Gerenciamento de Calendário:</strong>
+            <ul>
+                <li>Agendamento de atendimentos (Kardecista, Umbanda, Palestras, Cursos).</li>
+                <li>Controle de capacidade e necessidade de inscrição.</li>
+            </ul>
+        </li>
+        <li><strong>Gerenciamento de Eventos:</strong>
+            <ul>
+                <li>Criação e gerenciamento de eventos (festas, celebrações, bazares).</li>
+                <li>Associação de datas, locais e imagens aos eventos.</li>
+            </ul>
+        </li>
+        <li><strong>Conteúdo Espiritual:</strong>
+            <ul>
+                <li>Gerenciamento de informações sobre Orixás.</li>
+                <li>Gerenciamento de informações sobre as linhas de Umbanda.</li>
+                <li>Publicação de conteúdo espiritual (orações, ensinamentos, hinos, etc.).</li>
+            </ul>
+        </li>
+    </ul>
+</body>
+</html>

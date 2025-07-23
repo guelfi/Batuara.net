@@ -1,0 +1,26 @@
+{
+  "name": "batuara-frontend",
+  "version": "1.0.0",
+  "description": "Frontend projects for Casa de Caridade Batuara",
+  "scripts": {
+    "install:all": "cd public-website && npm install && cd ../AdminDashboard && npm install",
+    "start:public": "cd public-website && npm start",
+    "start:admin": "cd AdminDashboard && PORT=3001 npm start",
+    "start:all": "concurrently \"npm run start:public\" \"npm run start:admin\"",
+    "build:all": "cd public-website && npm run build && cd ../AdminDashboard && npm run build",
+    "test:all": "cd public-website && npm test && cd ../AdminDashboard && npm test"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "react",
+    "typescript",
+    "material-ui",
+    "casa-batuara",
+    "umbanda",
+    "espiritismo"
+  ],
+  "author": "Casa de Caridade Batuara",
+  "license": "MIT"
+}

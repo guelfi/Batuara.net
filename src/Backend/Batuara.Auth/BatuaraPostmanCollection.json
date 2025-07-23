@@ -1,0 +1,1028 @@
+{
+	"info": {
+		"_postman_id": "f8a9e5b3-7c1d-4b5e-8d5a-6f7e8d9a0b1c",
+		"name": "Batuara API",
+		"description": "Collection para testar a API de autenticação da Casa de Caridade Batuara",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Autenticação",
+			"description": "Endpoints relacionados à autenticação de usuários",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success flag\", function () {",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"});",
+									"",
+									"pm.test(\"Response has token\", function () {",
+									"    pm.expect(jsonData.data.token).to.not.be.empty;",
+									"});",
+									"",
+									"pm.test(\"Response has refresh token\", function () {",
+									"    pm.expect(jsonData.data.refreshToken).to.not.be.empty;",
+									"});",
+									"",
+									"pm.test(\"Response has user data\", function () {",
+									"    pm.expect(jsonData.data.user).to.not.be.null;",
+									"    pm.expect(jsonData.data.user.email).to.eql(\"admin@casabatuara.org.br\");",
+									"});",
+									"",
+									"// Salvar token para uso em outras requisições",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.environment.set(\"authToken\", jsonData.data.token);",
+									"}",
+									"",
+									"// Salvar refresh token para uso em outras requisições",
+									"if (jsonData.data && jsonData.data.refreshToken) {",
+									"    pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@casabatuara.org.br\",\n    \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Autentica um usuário e retorna um token JWT"
+					},
+					"response": []
+				},
+				{
+					"name": "Login (Credenciais Inválidas)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Response has error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@casabatuara.org.br\",\n    \"password\": \"senha_errada\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Tenta autenticar um usuário com credenciais inválidas"
+					},
+					"response": []
+				},
+				{
+					"name": "Verificar Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success flag\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/verify",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"verify"
+							]
+						},
+						"description": "Verifica se o token JWT é válido"
+					},
+					"response": []
+				},
+				{
+					"name": "Verificar Token (Inválido)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer token_invalido"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/verify",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"verify"
+							]
+						},
+						"description": "Tenta verificar um token JWT inválido"
+					},
+					"response": []
+				},
+				{
+					"name": "Obter Usuário Atual",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has user data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.not.be.null;",
+									"    pm.expect(jsonData.data.email).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"me"
+							]
+						},
+						"description": "Obtém informações do usuário autenticado"
+					},
+					"response": []
+				},
+				{
+					"name": "Renovar Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success flag\", function () {",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"});",
+									"",
+									"pm.test(\"Response has new token\", function () {",
+									"    pm.expect(jsonData.data.token).to.not.be.empty;",
+									"});",
+									"",
+									"pm.test(\"Response has new refresh token\", function () {",
+									"    pm.expect(jsonData.data.refreshToken).to.not.be.empty;",
+									"});",
+									"",
+									"// Atualizar token para uso em outras requisições",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.environment.set(\"authToken\", jsonData.data.token);",
+									"}",
+									"",
+									"// Atualizar refresh token para uso em outras requisições",
+									"if (jsonData.data && jsonData.data.refreshToken) {",
+									"    pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"refresh"
+							]
+						},
+						"description": "Renova o token JWT usando um refresh token"
+					},
+					"response": []
+				},
+				{
+					"name": "Renovar Token (Inválido)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Response has error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refreshToken\": \"token_invalido\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"refresh"
+							]
+						},
+						"description": "Tenta renovar o token JWT usando um refresh token inválido"
+					},
+					"response": []
+				},
+				{
+					"name": "Revogar Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success flag\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/revoke",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"revoke"
+							]
+						},
+						"description": "Revoga um refresh token"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Usuários",
+			"description": "Endpoints relacionados ao gerenciamento de usuários",
+			"item": [
+				{
+					"name": "Listar Usuários",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has users array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						},
+						"description": "Lista todos os usuários (requer role Admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Usuários (Sem Autorização)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						},
+						"description": "Tenta listar usuários sem token de autorização"
+					},
+					"response": []
+				},
+				{
+					"name": "Obter Usuário por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has user data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.not.be.null;",
+									"    pm.expect(jsonData.data.id).to.eql(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						},
+						"description": "Obtém um usuário pelo ID (requer role Admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Obter Usuário por ID (Não Encontrado)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test(\"Response has error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/9999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"9999"
+							]
+						},
+						"description": "Tenta obter um usuário com ID inexistente"
+					},
+					"response": []
+				},
+				{
+					"name": "Criar Usuário",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has created user data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.not.be.null;",
+									"    pm.expect(jsonData.data.email).to.eql(\"novo@casabatuara.org.br\");",
+									"});",
+									"",
+									"// Salvar o ID do usuário criado para uso em outras requisições",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.environment.set(\"createdUserId\", jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"novo@casabatuara.org.br\",\n    \"password\": \"Senha@123\",\n    \"name\": \"Novo Usuário\",\n    \"role\": 2,\n    \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						},
+						"description": "Cria um novo usuário (requer role Admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Criar Usuário (Email Duplicado)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response has error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@casabatuara.org.br\",\n    \"password\": \"Senha@123\",\n    \"name\": \"Usuário Duplicado\",\n    \"role\": 2,\n    \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						},
+						"description": "Tenta criar um usuário com email já existente"
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Usuário",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has updated user data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.not.be.null;",
+									"    pm.expect(jsonData.data.name).to.eql(\"Nome Atualizado\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Nome Atualizado\",\n    \"role\": 1,\n    \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{createdUserId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"{{createdUserId}}"
+							]
+						},
+						"description": "Atualiza um usuário existente (requer role Admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Usuário (Não Encontrado)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test(\"Response has error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Nome Atualizado\",\n    \"role\": 1,\n    \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/9999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"9999"
+							]
+						},
+						"description": "Tenta atualizar um usuário inexistente"
+					},
+					"response": []
+				},
+				{
+					"name": "Alterar Senha",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success flag\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"currentPassword\": \"Senha@123\",\n    \"newPassword\": \"NovaSenha@456\",\n    \"confirmNewPassword\": \"NovaSenha@456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{createdUserId}}/change-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"{{createdUserId}}",
+								"change-password"
+							]
+						},
+						"description": "Altera a senha de um usuário (requer role Admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Alterar Senha (Senha Atual Incorreta)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Response has error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"currentPassword\": \"SenhaErrada\",\n    \"newPassword\": \"NovaSenha@456\",\n    \"confirmNewPassword\": \"NovaSenha@456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{createdUserId}}/change-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"{{createdUserId}}",
+								"change-password"
+							]
+						},
+						"description": "Tenta alterar a senha com senha atual incorreta"
+					},
+					"response": []
+				},
+				{
+					"name": "Excluir Usuário",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success flag\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{createdUserId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"{{createdUserId}}"
+							]
+						},
+						"description": "Exclui um usuário (requer role Admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Excluir Usuário (Não Encontrado)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test(\"Response has error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/9999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"9999"
+							]
+						},
+						"description": "Tenta excluir um usuário inexistente"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3003",
+			"type": "string"
+		}
+	]
+}

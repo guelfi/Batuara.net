@@ -1,0 +1,33 @@
+{
+	"id": "e7a9e5b3-7c1d-4b5e-8d5a-6f7e8d9a0b1c",
+	"name": "Batuara Local",
+	"values": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3003",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "refreshToken",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "createdUserId",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2023-07-22T12:00:00.000Z",
+	"_postman_exported_using": "Postman/10.15.0"
+}
