@@ -7,7 +7,7 @@ namespace Batuara.Application.Auth.Services
     {
         string GenerateJwtToken(User user);
         string GenerateRefreshToken();
-        ClaimsPrincipal GetPrincipalFromToken(string token);
+        ClaimsPrincipal? GetPrincipalFromToken(string token);
         DateTime GetTokenExpirationTime(string token);
         bool ValidateToken(string token);
     }

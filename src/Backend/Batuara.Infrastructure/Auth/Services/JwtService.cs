@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Batuara.Application.Auth.Services;
 using Batuara.Domain.Entities;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -12,14 +13,19 @@ namespace Batuara.Infrastructure.Auth.Services
     public class JwtService : IJwtService
     {
         private readonly JwtSettings _jwtSettings;
+        private readonly ILogger<JwtService> _logger;
 
-        public JwtService(IOptions<JwtSettings> jwtSettings)
+        public JwtService(IOptions<JwtSettings> jwtSettings, ILogger<JwtService> logger)
         {
             _jwtSettings = jwtSettings.Value;
+            _logger = logger;
         }
 
         public string GenerateJwtToken(User user)
         {
+            _logger.LogDebug("Generating JWT token for user ID: {UserId}, Email: {Email}, Role: {Role}", 
+                user.Id, user.Email, user.Role);
+
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_jwtSettings.Secret);
 
@@ -31,6 +37,9 @@ namespace Batuara.Infrastructure.Auth.Services
                 new Claim(ClaimTypes.Role, user.Role.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
+
+            _logger.LogDebug("JWT Claims: Sub={UserId}, Email={Email}, Name={Name}, Role={Role}", 
+                user.Id, user.Email, user.Name, user.Role);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -45,7 +54,12 @@ namespace Batuara.Infrastructure.Auth.Services
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
+            var tokenString = tokenHandler.WriteToken(token);
+            
+            _logger.LogDebug("JWT token generated successfully for user: {Email}, token length: {Length}", 
+                user.Email, tokenString.Length);
+            
+            return tokenString;
         }
 
         public string GenerateRefreshToken()
@@ -56,7 +70,7 @@ namespace Batuara.Infrastructure.Auth.Services
             return Convert.ToBase64String(randomNumber);
         }
 
-        public ClaimsPrincipal GetPrincipalFromToken(string token)
+        public ClaimsPrincipal? GetPrincipalFromToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_jwtSettings.Secret);

@@ -134,6 +134,29 @@ namespace Batuara.API.Controllers
             }
         }
 
+        [HttpPost("register-first-admin")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public async Task<ActionResult<UserDto>> RegisterFirstAdmin([FromBody] RegisterUserRequest request)
+        {
+            try
+            {
+                var user = await _authService.RegisterFirstAdminAsync(request);
+                return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Registration failed: {Message}", ex.Message);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during user registration");
+                return StatusCode(500, new { message = "An error occurred during registration" });
+            }
+        }
+
         [HttpGet("me")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]

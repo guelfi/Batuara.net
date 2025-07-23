@@ -3,6 +3,7 @@ using AutoMapper;
 using Batuara.Application.Auth.Models;
 using Batuara.Application.Auth.Services;
 using Batuara.Domain.Entities;
+using Batuara.Domain.Enums;
 using Batuara.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -32,41 +33,52 @@ namespace Batuara.Infrastructure.Auth.Services
 
         public async Task<LoginResponse> LoginAsync(LoginRequest request, string ipAddress)
         {
+            _logger.LogInformation("Login attempt for user: {Email} from IP: {IpAddress}", request.Email, ipAddress);
+            
             var user = await _userRepository.GetByEmailAsync(request.Email);
             
             if (user == null)
             {
-                _logger.LogWarning("Login attempt failed for non-existent user: {Email}", request.Email);
+                _logger.LogWarning("Login attempt failed for non-existent user: {Email} from IP: {IpAddress}", request.Email, ipAddress);
                 throw new UnauthorizedAccessException("Invalid credentials");
             }
 
+            _logger.LogDebug("User found: {Email}, IsActive: {IsActive}, Role: {Role}", user.Email, user.IsActive, user.Role);
+
             if (!user.IsActive)
             {
-                _logger.LogWarning("Login attempt for inactive user: {Email}", request.Email);
+                _logger.LogWarning("Login attempt for inactive user: {Email} from IP: {IpAddress}", request.Email, ipAddress);
                 throw new UnauthorizedAccessException("User account is inactive");
             }
 
-            if (!_passwordService.VerifyPassword(request.Password, user.PasswordHash))
+            _logger.LogDebug("Verifying password for user: {Email}", request.Email);
+            var passwordValid = _passwordService.VerifyPassword(request.Password, user.PasswordHash);
+            _logger.LogDebug("Password verification result for user {Email}: {IsValid}", request.Email, passwordValid);
+
+            if (!passwordValid)
             {
-                _logger.LogWarning("Login attempt with invalid password for user: {Email}", request.Email);
+                _logger.LogWarning("Login attempt with invalid password for user: {Email} from IP: {IpAddress}", request.Email, ipAddress);
                 throw new UnauthorizedAccessException("Invalid credentials");
             }
 
             // Generate JWT token
+            _logger.LogDebug("Generating JWT token for user: {Email}", user.Email);
             var jwtToken = _jwtService.GenerateJwtToken(user);
             var refreshToken = _jwtService.GenerateRefreshToken();
             var tokenExpiration = _jwtService.GetTokenExpirationTime(jwtToken);
+
+            _logger.LogDebug("JWT token generated for user: {Email}, expires at: {Expiration}", user.Email, tokenExpiration);
 
             // Save refresh token
             user.AddRefreshToken(refreshToken, DateTime.UtcNow.AddDays(7), ipAddress);
             user.RecordLogin();
             await _userRepository.UpdateAsync(user);
 
-            _logger.LogInformation("User {Email} logged in successfully", user.Email);
+            _logger.LogInformation("User {Email} logged in successfully from IP: {IpAddress}", user.Email, ipAddress);
 
             return new LoginResponse
             {
-                Token = jwtToken,
+                AccessToken = jwtToken,
                 RefreshToken = refreshToken,
                 TokenExpiration = tokenExpiration,
                 User = _mapper.Map<UserDto>(user)
@@ -94,7 +106,7 @@ namespace Batuara.Infrastructure.Auth.Services
 
             return new LoginResponse
             {
-                Token = newJwtToken,
+                AccessToken = newJwtToken,
                 RefreshToken = newRefreshToken,
                 TokenExpiration = tokenExpiration,
                 User = _mapper.Map<UserDto>(user)
@@ -140,6 +152,24 @@ namespace Batuara.Infrastructure.Auth.Services
             _logger.LogInformation("New user registered: {Email} with role {Role}", user.Email, user.Role);
 
             return _mapper.Map<UserDto>(user);
+        }
+
+        public async Task<UserDto> RegisterFirstAdminAsync(RegisterUserRequest request)
+        {
+            // Check if any admin users already exist
+            var allUsers = await _userRepository.GetAllAsync();
+            var adminExists = allUsers.Any(u => u.Role == Batuara.Domain.Enums.UserRole.Admin);
+            
+            if (adminExists)
+            {
+                _logger.LogWarning("Attempt to register first admin when admin already exists");
+                throw new InvalidOperationException("Admin user already exists. Use regular registration.");
+            }
+
+            // Force role to Admin for first admin registration
+            request.Role = Batuara.Domain.Enums.UserRole.Admin;
+            
+            return await RegisterUserAsync(request);
         }
 
         public async Task<User> GetUserByEmailAsync(string email)

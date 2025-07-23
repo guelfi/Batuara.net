@@ -1,0 +1,519 @@
+{
+	"info": {
+		"_postman_id": "batuara-api-collection",
+		"name": "Casa de Caridade Batuara - API Collection",
+		"description": "Collection completa para testar todos os endpoints da API Batuara.net\n\n## Configuração Inicial\n1. Importe esta collection no Postman\n2. Importe o environment file (Batuara-API-Environment.json)\n3. Certifique-se de que a API está rodando em http://localhost:3003\n4. Execute os testes na ordem sugerida\n\n## Fluxo de Testes\n1. **Health Check** - Verificar se a API está funcionando\n2. **Register User** - Criar um usuário administrador\n3. **Login** - Fazer login e obter tokens\n4. **Get Current User** - Verificar informações do usuário logado\n5. **Verify Token** - Validar token JWT\n6. **Refresh Token** - Renovar token de acesso\n7. **Get User by ID** - Buscar usuário específico (Admin only)\n8. **Logout** - Encerrar sessão\n\n## Variáveis de Ambiente\n- `base_url`: http://localhost:3003\n- `access_token`: Token JWT (preenchido automaticamente)\n- `refresh_token`: Token de refresh (preenchido automaticamente)\n- `user_id`: ID do usuário (preenchido automaticamente)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"API is running\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response contains Swagger documentation\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"swagger\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/swagger",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"swagger"
+					]
+				},
+				"description": "Verifica se a API está rodando e acessível através do endpoint do Swagger"
+			},
+			"response": []
+		},
+		{
+			"name": "Register Admin User",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"User registered successfully\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Response contains user data\", function () {",
+							"    const responseJson = pm.response.json();",
+							"    pm.expect(responseJson).to.have.property('id');",
+							"    pm.expect(responseJson).to.have.property('email');",
+							"    pm.expect(responseJson).to.have.property('name');",
+							"    pm.expect(responseJson).to.have.property('role');",
+							"    ",
+							"    // Store user ID for later use",
+							"    pm.environment.set('user_id', responseJson.id);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"admin@batuara.org\",\n    \"password\": \"Admin@123\",\n    \"confirmPassword\": \"Admin@123\",\n    \"name\": \"Administrador Batuara\",\n    \"role\": 1\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/auth/register",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"register"
+					]
+				},
+				"description": "Registra um novo usuário administrador no sistema.\n\n**Nota:** Este endpoint requer autenticação de Admin. Para o primeiro usuário, você pode precisar desabilitar temporariamente a autorização ou criar um usuário diretamente no banco de dados.\n\n**Roles:**\n- 1 = Admin\n- 2 = Editor\n- 3 = Viewer"
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Login successful\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response contains tokens\", function () {",
+							"    const responseJson = pm.response.json();",
+							"    pm.expect(responseJson).to.have.property('accessToken');",
+							"    pm.expect(responseJson).to.have.property('refreshToken');",
+							"    pm.expect(responseJson).to.have.property('user');",
+							"    ",
+							"    // Store tokens for subsequent requests",
+							"    pm.environment.set('access_token', responseJson.accessToken);",
+							"    pm.environment.set('refresh_token', responseJson.refreshToken);",
+							"    pm.environment.set('user_id', responseJson.user.id);",
+							"});",
+							"",
+							"pm.test(\"User data is correct\", function () {",
+							"    const responseJson = pm.response.json();",
+							"    pm.expect(responseJson.user).to.have.property('email');",
+							"    pm.expect(responseJson.user).to.have.property('name');",
+							"    pm.expect(responseJson.user).to.have.property('role');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"admin@batuara.org\",\n    \"password\": \"Admin@123\",\n    \"rememberMe\": true\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/auth/login",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				},
+				"description": "Autentica um usuário no sistema e retorna tokens de acesso e refresh.\n\n**Credenciais de teste:**\n- Email: admin@batuara.org\n- Password: Admin@123\n\n**Response:**\n- accessToken: JWT token para autenticação\n- refreshToken: Token para renovar o access token\n- user: Dados do usuário logado"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Current User",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"User data retrieved successfully\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response contains user information\", function () {",
+							"    const responseJson = pm.response.json();",
+							"    pm.expect(responseJson).to.have.property('id');",
+							"    pm.expect(responseJson).to.have.property('email');",
+							"    pm.expect(responseJson).to.have.property('name');",
+							"    pm.expect(responseJson).to.have.property('role');",
+							"    pm.expect(responseJson).to.have.property('isActive');",
+							"    pm.expect(responseJson).to.have.property('createdAt');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/auth/me",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"me"
+					]
+				},
+				"description": "Retorna as informações do usuário atualmente autenticado.\n\n**Requer:** Token JWT válido no header Authorization\n\n**Response:** Dados completos do usuário logado"
+			},
+			"response": []
+		},
+		{
+			"name": "Verify Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Token is valid\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response confirms token validity\", function () {",
+							"    const responseJson = pm.response.json();",
+							"    pm.expect(responseJson).to.have.property('message');",
+							"    pm.expect(responseJson.message).to.include('valid');",
+							"    pm.expect(responseJson).to.have.property('user');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/auth/verify",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"verify"
+					]
+				},
+				"description": "Verifica se o token JWT atual é válido.\n\n**Requer:** Token JWT válido no header Authorization\n\n**Response:** Confirmação da validade do token e ID do usuário"
+			},
+			"response": []
+		},
+		{
+			"name": "Refresh Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Token refreshed successfully\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response contains new tokens\", function () {",
+							"    const responseJson = pm.response.json();",
+							"    pm.expect(responseJson).to.have.property('accessToken');",
+							"    pm.expect(responseJson).to.have.property('refreshToken');",
+							"    ",
+							"    // Update tokens in environment",
+							"    pm.environment.set('access_token', responseJson.accessToken);",
+							"    pm.environment.set('refresh_token', responseJson.refreshToken);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Refresh-Token",
+						"value": "{{refresh_token}}"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/auth/refresh",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"refresh"
+					]
+				},
+				"description": "Renova o token de acesso usando o refresh token.\n\n**Requer:** Refresh token válido no header X-Refresh-Token ou cookie\n\n**Response:** Novos tokens de acesso e refresh"
+			},
+			"response": []
+		},
+		{
+			"name": "Get User by ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"User retrieved successfully\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response contains user data\", function () {",
+							"    const responseJson = pm.response.json();",
+							"    pm.expect(responseJson).to.have.property('id');",
+							"    pm.expect(responseJson).to.have.property('email');",
+							"    pm.expect(responseJson).to.have.property('name');",
+							"    pm.expect(responseJson).to.have.property('role');",
+							"    pm.expect(responseJson.id).to.equal(parseInt(pm.environment.get('user_id')));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/auth/users/{{user_id}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"users",
+						"{{user_id}}"
+					]
+				},
+				"description": "Busca um usuário específico pelo ID.\n\n**Requer:** \n- Token JWT válido no header Authorization\n- Role de Admin\n\n**Parâmetros:**\n- id: ID do usuário a ser buscado\n\n**Response:** Dados completos do usuário"
+			},
+			"response": []
+		},
+		{
+			"name": "Logout",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Logout successful\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response confirms logout\", function () {",
+							"    const responseJson = pm.response.json();",
+							"    pm.expect(responseJson).to.have.property('message');",
+							"    pm.expect(responseJson.message).to.include('successfully');",
+							"});",
+							"",
+							"// Clear tokens from environment after logout",
+							"pm.environment.unset('access_token');",
+							"pm.environment.unset('refresh_token');"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/auth/logout",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"logout"
+					]
+				},
+				"description": "Encerra a sessão do usuário e revoga o refresh token.\n\n**Requer:** Token JWT válido no header Authorization\n\n**Response:** Confirmação do logout"
+			},
+			"response": []
+		},
+		{
+			"name": "Test Invalid Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Invalid token rejected\", function () {",
+							"    pm.response.to.have.status(401);",
+							"});",
+							"",
+							"pm.test(\"Error message is appropriate\", function () {",
+							"    const responseJson = pm.response.json();",
+							"    pm.expect(responseJson).to.have.property('message');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer invalid_token_here"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/auth/me",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"me"
+					]
+				},
+				"description": "Testa o comportamento da API com um token inválido.\n\n**Esperado:** Status 401 Unauthorized"
+			},
+			"response": []
+		},
+		{
+			"name": "Test Missing Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Missing token rejected\", function () {",
+							"    pm.response.to.have.status(401);",
+							"});",
+							"",
+							"pm.test(\"Error message is appropriate\", function () {",
+							"    const responseJson = pm.response.json();",
+							"    pm.expect(responseJson).to.have.property('message');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/auth/me",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"me"
+					]
+				},
+				"description": "Testa o comportamento da API sem token de autenticação.\n\n**Esperado:** Status 401 Unauthorized"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global pre-request script",
+					"console.log('Executing request to: ' + pm.request.url);"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global test script",
+					"pm.test('Response time is acceptable', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});",
+					"",
+					"pm.test('Response has correct content type', function () {",
+					"    if (pm.response.code !== 404) {",
+					"        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+					"    }",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3003",
+			"type": "string"
+		}
+	]
+}

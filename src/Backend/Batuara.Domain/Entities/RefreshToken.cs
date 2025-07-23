@@ -9,11 +9,11 @@ namespace Batuara.Domain.Entities
         public DateTime ExpiresAt { get; private set; }
         public string CreatedByIp { get; private set; }
         public DateTime? RevokedAt { get; private set; }
-        public string RevokedByIp { get; private set; }
-        public string ReplacedByToken { get; private set; }
+        public string? RevokedByIp { get; private set; }
+        public string? ReplacedByToken { get; private set; }
         public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
         public bool IsRevoked => RevokedAt != null;
-        public bool IsActive => !IsRevoked && !IsExpired;
+        public new bool IsActive => !IsRevoked && !IsExpired;
         
         // Propriedade de navegação para EF Core
         public int UserId { get; private set; }
@@ -30,7 +30,7 @@ namespace Batuara.Domain.Entities
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void Revoke(string revokedByIp, string replacedByToken = null)
+        public void Revoke(string revokedByIp, string? replacedByToken = null)
         {
             RevokedAt = DateTime.UtcNow;
             RevokedByIp = revokedByIp;

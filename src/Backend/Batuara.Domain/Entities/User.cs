@@ -11,7 +11,7 @@ namespace Batuara.Domain.Entities
         public string PasswordHash { get; private set; }
         public string Name { get; private set; }
         public UserRole Role { get; private set; }
-        public bool IsActive { get; private set; }
+        public new bool IsActive { get; private set; }
         public DateTime? LastLoginAt { get; private set; }
         public List<RefreshToken> RefreshTokens { get; private set; } = new List<RefreshToken>();
 
@@ -80,7 +80,7 @@ namespace Batuara.Domain.Entities
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void RevokeRefreshToken(string token, string revokedByIp, string replacedByToken = null)
+        public void RevokeRefreshToken(string token, string revokedByIp, string? replacedByToken = null)
         {
             var refreshToken = RefreshTokens.Find(r => r.Token == token && !r.IsRevoked);
             
@@ -91,7 +91,7 @@ namespace Batuara.Domain.Entities
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public RefreshToken GetActiveRefreshToken()
+        public RefreshToken? GetActiveRefreshToken()
         {
             return RefreshTokens.Find(r => !r.IsRevoked && r.ExpiresAt > DateTime.UtcNow);
         }

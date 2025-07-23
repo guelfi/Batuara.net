@@ -116,7 +116,9 @@ builder.Services.AddDbContext<BatuaraDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Configure AutoMapper
-builder.Services.AddAutoMapper(typeof(Batuara.Application.Common.Mappings.MappingProfile));
+builder.Services.AddAutoMapper(cfg => {
+    cfg.AddProfile<Batuara.Application.Common.Mappings.MappingProfile>();
+});
 
 // Configure Options
 builder.Services.Configure<JwtSettings>(jwtSettings);
