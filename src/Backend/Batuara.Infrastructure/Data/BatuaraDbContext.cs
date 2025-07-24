@@ -33,8 +33,8 @@ namespace Batuara.Infrastructure.Data
             modelBuilder.ApplyConfiguration(new UserConfiguration());
             modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
 
-            // Configure schema
-            modelBuilder.HasDefaultSchema("batuara");
+            // Configure schema - using public schema where data exists
+            // modelBuilder.HasDefaultSchema("batuara"); // Commented out to use public schema
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

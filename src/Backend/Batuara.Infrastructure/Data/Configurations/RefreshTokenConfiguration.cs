@@ -26,6 +26,11 @@ namespace Batuara.Infrastructure.Data.Configurations
             
             builder.Property(r => r.CreatedAt).HasColumnName("created_at").IsRequired();
             builder.Property(r => r.UpdatedAt).HasColumnName("updated_at").IsRequired();
+            
+            // Ignore computed properties
+            builder.Ignore(r => r.IsActive);
+            builder.Ignore(r => r.IsExpired);
+            builder.Ignore(r => r.IsRevoked);
         }
     }
 }

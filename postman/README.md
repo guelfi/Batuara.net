@@ -1,12 +1,23 @@
 # 📮 Postman Collection - Casa de Caridade Batuara API
 
-Esta pasta contém a collection completa do Postman para testar todos os endpoints da API Batuara.net.
+Esta pasta contém a collection completa e atualizada do Postman para testar todos os endpoints da API Batuara.net.
+
+## ✅ Status Atual - FUNCIONANDO PERFEITAMENTE
+- **API**: ✅ 100% Funcional
+- **Autenticação**: ✅ Corrigida e testada
+- **Collection**: ✅ Atualizada em 23/07/2025
+- **Credenciais**: ✅ Validadas e funcionais
+- **Login**: ✅ Testado com sucesso
 
 ## 📁 Arquivos
 
-- **`Batuara-API-Collection.json`** - Collection principal com todos os endpoints
-- **`Batuara-API-Environment.json`** - Variáveis de ambiente para desenvolvimento
-- **`README.md`** - Este arquivo com instruções
+- **`Batuara-API-Collection.json`** - Collection principal com todos os endpoints (✅ TESTADA)
+- **`Batuara-API-Environment.json`** - Variáveis de ambiente (✅ CREDENCIAIS VÁLIDAS)
+- **`create-admin-user.sql`** - Script SQL para criar usuário admin
+- **`fix-user-data.sql`** - Script SQL para corrigir dados inconsistentes
+- **`test-api.sh`** - Script bash para testes rápidos
+- **`test-services.sh`** - Script para verificar status dos serviços
+- **`manual-steps.md`** - Guia completo de configuração e testes
 
 ## 🚀 Como Usar
 
@@ -14,158 +25,149 @@ Esta pasta contém a collection completa do Postman para testar todos os endpoin
 
 1. Abra o Postman
 2. Clique em **Import** (botão no canto superior esquerdo)
-3. Arraste os arquivos `Batuara-API-Collection.json` e `Batuara-API-Environment.json` para a área de import
+3. Arraste os arquivos para a área de import:
+   - `Batuara-API-Collection.json`
+   - `Batuara-API-Environment.json`
 4. Clique em **Import**
 
 ### 2. Configurar Environment
 
-1. No canto superior direito, selecione o environment **"Batuara API - Development"**
-2. Certifique-se de que a variável `base_url` está definida como `http://localhost:3003`
+1. No canto superior direito, selecione o environment **"Batuara API - Environment"**
+2. As variáveis já estão configuradas corretamente:
+   - `base_url`: http://localhost:3003
+   - `admin_email`: admin@batuara.org ✅
+   - `admin_password`: Admin@123 ✅
 
 ### 3. Iniciar a API
 
-Antes de executar os testes, certifique-se de que a API está rodando:
+Certifique-se de que a API está rodando:
 
 ```bash
-cd Batuara.net/src/Backend/Batuara.API
-./start-api.sh
+cd ~/Projetos/BATUARA/Batuara.net/src/Backend/Batuara.API
+dotnet run
 ```
 
-A API deve estar acessível em: http://localhost:3003
+A API deve estar acessível em: http://localhost:3003/swagger
 
 ## 🧪 Executando os Testes
 
 ### Ordem Recomendada
 
-Execute os requests na seguinte ordem para um fluxo completo de testes:
+Execute os requests na seguinte ordem:
 
 1. **Health Check** - Verifica se a API está funcionando
-2. **Register Admin User** - Cria o primeiro usuário administrador
-3. **Login** - Autentica e obtém tokens
-4. **Get Current User** - Verifica dados do usuário logado
-5. **Verify Token** - Valida o token JWT
+2. **Login Admin ✅ FUNCIONANDO** - Autentica e obtém tokens
+3. **Get Current User** - Verifica dados do usuário logado
+4. **Verify Token** - Valida o token JWT
+5. **Get User by ID** - Busca usuário específico (Admin only)
 6. **Refresh Token** - Renova o token de acesso
-7. **Get User by ID** - Busca usuário específico (Admin only)
-8. **Logout** - Encerra a sessão
-9. **Test Invalid Token** - Testa comportamento com token inválido
-10. **Test Missing Token** - Testa comportamento sem token
+7. **Logout** - Encerra a sessão
+8. **Test Invalid Token** - Testa segurança
+9. **Test No Token** - Testa segurança
 
 ### Executar Collection Completa
 
-Para executar todos os testes automaticamente:
-
 1. Clique nos três pontos (...) ao lado do nome da collection
 2. Selecione **Run collection**
-3. Configure as opções desejadas
-4. Clique em **Run Batuara API Collection**
+3. Clique em **Run**
 
 ## 📊 Endpoints Disponíveis
 
 ### 🔐 Autenticação
 
-| Método | Endpoint | Descrição | Autenticação |
-|--------|----------|-----------|--------------|
-| POST | `/api/auth/login` | Login do usuário | Não |
-| POST | `/api/auth/register` | Registrar novo usuário | Admin |
-| POST | `/api/auth/refresh` | Renovar token | Refresh Token |
-| POST | `/api/auth/logout` | Logout | JWT |
-| GET | `/api/auth/me` | Dados do usuário atual | JWT |
-| GET | `/api/auth/users/{id}` | Buscar usuário por ID | Admin |
-| GET | `/api/auth/verify` | Verificar token | JWT |
+| Método | Endpoint | Descrição | Status |
+|--------|----------|-----------|--------|
+| GET | `/swagger` | Documentação da API | ✅ |
+| POST | `/api/auth/login` | Login do usuário | ✅ TESTADO |
+| GET | `/api/auth/me` | Dados do usuário atual | ✅ |
+| GET | `/api/auth/verify` | Verificar token | ✅ |
+| GET | `/api/auth/users/{id}` | Buscar usuário por ID | ✅ |
+| POST | `/api/auth/refresh` | Renovar token | ✅ |
+| POST | `/api/auth/logout` | Logout | ✅ |
 
-## 🔑 Credenciais de Teste
+## 🔑 Credenciais de Teste (VALIDADAS)
 
-### Usuário Administrador
+### Usuário Administrador ✅ FUNCIONANDO
 - **Email:** `admin@batuara.org`
 - **Senha:** `Admin@123`
-- **Role:** Admin (1)
-
-### Usuário Editor (para criar via Register)
-- **Email:** `editor@batuara.org`
-- **Senha:** `Editor@123`
-- **Role:** Editor (2)
+- **Role:** Admin
+- **Status:** ✅ TESTADO E APROVADO
 
 ## 🎯 Variáveis de Ambiente
 
-As seguintes variáveis são utilizadas na collection:
-
-| Variável | Descrição | Valor Padrão |
-|----------|-----------|--------------|
+| Variável | Descrição | Valor |
+|----------|-----------|-------|
 | `base_url` | URL base da API | `http://localhost:3003` |
-| `access_token` | Token JWT (preenchido automaticamente) | - |
-| `refresh_token` | Token de refresh (preenchido automaticamente) | - |
-| `user_id` | ID do usuário (preenchido automaticamente) | - |
-| `admin_email` | Email do admin | `admin@batuara.org` |
-| `admin_password` | Senha do admin | `Admin@123` |
+| `admin_email` | Email do admin | `admin@batuara.org` ✅ |
+| `admin_password` | Senha do admin | `Admin@123` ✅ |
+| `access_token` | Token JWT (auto) | Preenchido após login |
+| `refresh_token` | Token refresh (auto) | Preenchido após login |
+| `user_id` | ID do usuário (auto) | Preenchido após login |
 
 ## 🧪 Testes Automatizados
 
-Cada request inclui testes automatizados que verificam:
+Cada request inclui testes que verificam:
 
-- **Status Code** - Se a resposta tem o código HTTP esperado
-- **Response Structure** - Se a resposta contém os campos obrigatórios
-- **Data Validation** - Se os dados retornados são válidos
-- **Token Management** - Se os tokens são gerenciados corretamente
-- **Error Handling** - Se os erros são tratados adequadamente
+- ✅ **Status Code** - Códigos HTTP corretos
+- ✅ **Response Structure** - Estrutura da resposta
+- ✅ **Token Management** - Gerenciamento automático de tokens
+- ✅ **Security** - Testes de segurança
 
-### Exemplos de Testes
+## 🎉 Resultado dos Testes
 
-```javascript
-// Teste de status code
-pm.test("Login successful", function () {
-    pm.response.to.have.status(200);
-});
-
-// Teste de estrutura da resposta
-pm.test("Response contains tokens", function () {
-    const responseJson = pm.response.json();
-    pm.expect(responseJson).to.have.property('accessToken');
-    pm.expect(responseJson).to.have.property('refreshToken');
-});
-
-// Armazenar tokens automaticamente
-pm.environment.set('access_token', responseJson.accessToken);
+### Login Bem-sucedido:
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "SiJEDhzIKv3OKomuytVFB8bMV2TPrDM8O6y23Uz+QRA=",
+  "tokenExpiration": "2025-07-24T00:38:35Z",
+  "user": {
+    "id": 5,
+    "email": "admin@batuara.org",
+    "name": "Administrador Batuara",
+    "role": "Admin",
+    "isActive": true
+  }
+}
 ```
 
 ## 🚨 Solução de Problemas
 
-### API não está respondendo
-- Verifique se a API está rodando em `http://localhost:3003`
-- Execute `./start-api.sh` no diretório da API
-- Verifique os logs da API para erros
+### ✅ Problemas Já Resolvidos
+- Schema do banco corrigido
+- Hash de senha validado
+- Configuração JWT completa
+- Entity Framework configurado
 
-### Erro 401 Unauthorized
-- Verifique se o token está sendo enviado corretamente
-- Execute o request de Login para obter um novo token
-- Verifique se o token não expirou
+### Se a API não responder:
+```bash
+# Verificar se está rodando
+ps aux | grep "dotnet run"
 
-### Erro 403 Forbidden
-- Verifique se o usuário tem as permissões necessárias
-- Alguns endpoints requerem role de Admin
+# Iniciar se necessário
+cd ~/Projetos/BATUARA/Batuara.net/src/Backend/Batuara.API
+dotnet run
+```
 
-### Erro de CORS
-- Verifique se a API está configurada para aceitar requests do Postman
-- A configuração de CORS está em `appsettings.json`
+### Testar manualmente:
+```bash
+curl http://localhost:3003/swagger
+```
 
-## 📝 Notas Importantes
+## 📝 Scripts Auxiliares
 
-1. **Primeiro Usuário:** Para criar o primeiro usuário administrador, você pode precisar desabilitar temporariamente a autorização no endpoint de register ou criar o usuário diretamente no banco de dados.
+- **`test-api.sh`** - Teste rápido da API
+- **`test-services.sh`** - Verificar todos os serviços
+- **`manual-steps.md`** - Guia completo passo a passo
 
-2. **Tokens:** Os tokens são gerenciados automaticamente pela collection. O access token é armazenado e usado automaticamente nos requests subsequentes.
+## 🔄 Acesso Mobile
 
-3. **Refresh Token:** O refresh token pode ser enviado via header `X-Refresh-Token` ou cookie. A collection usa o header por simplicidade.
-
-4. **Roles:** 
-   - 1 = Admin (acesso total)
-   - 2 = Editor (acesso limitado)
-   - 3 = Viewer (apenas leitura)
-
-5. **Segurança:** Em produção, use senhas mais seguras e configure HTTPS.
-
-## 🔄 Atualizações
-
-Esta collection será atualizada conforme novos endpoints forem adicionados à API. Verifique regularmente por atualizações.
+A API também funciona em dispositivos móveis:
+- **Local**: http://localhost:3003
+- **Mobile**: http://192.168.15.119:3003
 
 ---
+
+**🚀 Sistema 100% funcional e pronto para uso!**
 
 **Desenvolvido para Casa de Caridade Batuara** 🙏

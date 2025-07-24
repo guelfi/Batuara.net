@@ -1,57 +1,45 @@
 {
-	"id": "batuara-api-environment",
-	"name": "Batuara API - Development",
+	"id": "batuara-api-environment-v3",
+	"name": "Batuara API - Environment",
 	"values": [
 		{
 			"key": "base_url",
 			"value": "http://localhost:3003",
-			"type": "default",
-			"enabled": true
-		},
-		{
-			"key": "access_token",
-			"value": "",
-			"type": "secret",
-			"enabled": true
-		},
-		{
-			"key": "refresh_token",
-			"value": "",
-			"type": "secret",
-			"enabled": true
-		},
-		{
-			"key": "user_id",
-			"value": "",
-			"type": "default",
+			"description": "Base URL da API Batuara",
 			"enabled": true
 		},
 		{
 			"key": "admin_email",
 			"value": "admin@batuara.org",
-			"type": "default",
+			"description": "Email do usuário administrador (TESTADO E FUNCIONANDO)",
 			"enabled": true
 		},
 		{
 			"key": "admin_password",
 			"value": "Admin@123",
-			"type": "secret",
+			"description": "Senha do usuário administrador (TESTADO E FUNCIONANDO)",
 			"enabled": true
 		},
 		{
-			"key": "test_user_email",
-			"value": "editor@batuara.org",
-			"type": "default",
+			"key": "access_token",
+			"value": "",
+			"description": "Token JWT de acesso (preenchido automaticamente após login)",
 			"enabled": true
 		},
 		{
-			"key": "test_user_password",
-			"value": "Editor@123",
-			"type": "secret",
+			"key": "refresh_token",
+			"value": "",
+			"description": "Token de refresh (preenchido automaticamente após login)",
+			"enabled": true
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"description": "ID do usuário logado (preenchido automaticamente após login)",
 			"enabled": true
 		}
 	],
 	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2025-07-22T07:00:00.000Z",
+	"_postman_exported_at": "2025-07-23T23:45:00.000Z",
 	"_postman_exported_using": "Postman/10.0.0"
 }
