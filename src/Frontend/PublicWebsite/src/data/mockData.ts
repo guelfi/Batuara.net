@@ -229,9 +229,10 @@ export const mockCalendarAttendances: CalendarAttendance[] = [
 
 // Informações de Contato
 export const mockContactInfo: ContactInfo = {
-  address: 'Rua das Flores, 123 - Centro - São Paulo/SP - CEP: 01234-567',
-  phone: '(11) 1234-5678',
+  address: 'Av.Brigadeiro Faria Lima, 2750 - Jardim Cocaia, Guarulhos - SP, 07130-000',
+  phone: '(11) 1234-5678', // Mantido para compatibilidade, mas não será exibido
   email: 'contato@casabatuara.org.br',
-  instagram: '@casabatuara',
+  instagram: '@casadecaridade.batuara',
+  instagramUrl: 'https://www.instagram.com/casadecaridade.batuara?igsh=ejU1dWozbTZlYXM4',
   pixKey: 'contato@casabatuara.org.br',
 };

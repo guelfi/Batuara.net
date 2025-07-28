@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Container,
@@ -12,28 +12,48 @@ import {
   Snackbar,
   IconButton,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   useTheme,
+  Chip,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import HandshakeIcon from '@mui/icons-material/Handshake';
+import ContactMailIcon from '@mui/icons-material/ContactMail';
+import QRCode from 'qrcode';
 
 const DonationsSection: React.FC = () => {
   const theme = useTheme();
-  const [showQRCode, setShowQRCode] = useState(false);
+  const [showPixDialog, setShowPixDialog] = useState(false);
+  const [showOtherDonationsDialog, setShowOtherDonationsDialog] = useState(false);
   const [copiedText, setCopiedText] = useState('');
   const [showCopyAlert, setShowCopyAlert] = useState(false);
+  const [qrCodeLoading, setQrCodeLoading] = useState(false);
+  const qrCodeRef = useRef<HTMLCanvasElement>(null);
 
   // Informações PIX da Casa Batuara (dados fictícios para demonstração)
   const pixInfo = {
     chave: 'casabatuara@exemplo.com',
     nome: 'Casa de Caridade Batuara',
-    banco: 'Banco do Brasil',
-    agencia: '1234-5',
-    conta: '12345-6',
   };
+
+  // Lista de itens que podem ser doados
+  const donationItems = [
+    'Alimentos não perecíveis',
+    'Roupas em bom estado',
+    'Materiais de higiene',
+    'Produtos de limpeza',
+    'Livros espirituais',
+    'Velas e incensos',
+    'Materiais para rituais',
+    'Cobertores e agasalhos',
+  ];
 
   const handleCopyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -41,6 +61,55 @@ const DonationsSection: React.FC = () => {
       setShowCopyAlert(true);
     });
   };
+
+  const handleScrollToContact = () => {
+    setShowOtherDonationsDialog(false);
+    const element = document.querySelector('#contact');
+    if (element) {
+      const headerHeight = 32;
+      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+      const offsetPosition = elementPosition - headerHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Gerar QR Code quando o dialog PIX abrir
+  useEffect(() => {
+    if (showPixDialog && qrCodeRef.current) {
+      setQrCodeLoading(true);
+      
+      // Aguardar um pouco para o canvas estar pronto
+      setTimeout(() => {
+        if (qrCodeRef.current) {
+          // Limpar canvas antes de gerar novo QR Code
+          const canvas = qrCodeRef.current;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }
+
+          // Gerar QR Code
+          QRCode.toCanvas(canvas, pixInfo.chave, {
+            width: 200,
+            margin: 2,
+            color: {
+              dark: theme.palette.primary.main,
+              light: '#ffffff',
+            },
+          }).then(() => {
+            setQrCodeLoading(false);
+          }).catch((err: any) => {
+            console.error('Erro ao gerar QR Code:', err);
+            setQrCodeLoading(false);
+          });
+        }
+      }, 100);
+    }
+  }, [showPixDialog, theme.palette.primary.main, pixInfo.chave]);
 
   const handleCloseAlert = () => {
     setShowCopyAlert(false);
@@ -53,7 +122,7 @@ const DonationsSection: React.FC = () => {
           <Typography
             variant="h2"
             sx={{
-              fontSize: { xs: '2rem', md: '2.5rem' },
+              fontSize: { xs: '1.7rem', md: '2.5rem' },
               fontWeight: 600,
               mb: 2,
               color: 'primary.main',
@@ -75,7 +144,41 @@ const DonationsSection: React.FC = () => {
           </Typography>
         </Box>
 
-        <Grid container spacing={4} sx={{ mb: 6 }}>
+        {/* Botões de Doação */}
+        <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', mb: 4, flexWrap: 'wrap' }}>
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<QrCodeIcon />}
+            onClick={() => setShowPixDialog(true)}
+            sx={{
+              px: 4,
+              py: 1.5,
+              fontSize: '1.1rem',
+              fontWeight: 600,
+              minWidth: 200,
+            }}
+          >
+            Doação via PIX
+          </Button>
+          <Button
+            variant="outlined"
+            size="large"
+            startIcon={<HandshakeIcon />}
+            onClick={() => setShowOtherDonationsDialog(true)}
+            sx={{
+              px: 4,
+              py: 1.5,
+              fontSize: '1.1rem',
+              fontWeight: 600,
+              minWidth: 200,
+            }}
+          >
+            Outras Formas de Doação
+          </Button>
+        </Box>
+
+        <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} md={4}>
             <Card
               sx={{
@@ -87,18 +190,18 @@ const DonationsSection: React.FC = () => {
                 },
               }}
             >
-              <CardContent sx={{ p: 4 }}>
+              <CardContent sx={{ p: 2.5 }}>
                 <FavoriteIcon
                   sx={{
-                    fontSize: 48,
+                    fontSize: 36,
                     color: 'secondary.main',
-                    mb: 2,
+                    mb: 1.5,
                   }}
                 />
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, fontSize: '1.1rem' }}>
                   Assistência Espiritual
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4, fontSize: '0.9rem' }}>
                   Mantemos nossos trabalhos espirituais gratuitos para todos que nos procuram,
                   oferecendo consultas, passes e orientação sem custo algum.
                 </Typography>
@@ -117,18 +220,18 @@ const DonationsSection: React.FC = () => {
                 },
               }}
             >
-              <CardContent sx={{ p: 4 }}>
+              <CardContent sx={{ p: 2.5 }}>
                 <VolunteerActivismIcon
                   sx={{
-                    fontSize: 48,
+                    fontSize: 36,
                     color: 'primary.main',
-                    mb: 2,
+                    mb: 1.5,
                   }}
                 />
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, fontSize: '1.1rem' }}>
                   Ações Sociais
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4, fontSize: '0.9rem' }}>
                   Desenvolvemos projetos sociais para ajudar famílias em situação de
                   vulnerabilidade, distribuindo alimentos, roupas e materiais de higiene.
                 </Typography>
@@ -147,193 +250,22 @@ const DonationsSection: React.FC = () => {
                 },
               }}
             >
-              <CardContent sx={{ p: 4 }}>
+              <CardContent sx={{ p: 2.5 }}>
                 <HandshakeIcon
                   sx={{
-                    fontSize: 48,
+                    fontSize: 36,
                     color: 'success.main',
-                    mb: 2,
+                    mb: 1.5,
                   }}
                 />
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, fontSize: '1.1rem' }}>
                   Manutenção da Casa
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4, fontSize: '0.9rem' }}>
                   Suas contribuições nos ajudam a manter nossa casa funcionando,
                   cobrindo custos de energia, água, materiais e reformas necessárias.
                 </Typography>
               </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
-            <Card sx={{ p: 4, height: '100%' }}>
-              <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, textAlign: 'center' }}>
-                Doação via PIX
-              </Typography>
-              
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Chave PIX (E-mail):
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <TextField
-                    value={pixInfo.chave}
-                    fullWidth
-                    InputProps={{
-                      readOnly: true,
-                    }}
-                    size="small"
-                  />
-                  <IconButton
-                    onClick={() => handleCopyToClipboard(pixInfo.chave, 'Chave PIX')}
-                    color="primary"
-                  >
-                    <ContentCopyIcon />
-                  </IconButton>
-                </Box>
-              </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Nome do Beneficiário:
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <TextField
-                    value={pixInfo.nome}
-                    fullWidth
-                    InputProps={{
-                      readOnly: true,
-                    }}
-                    size="small"
-                  />
-                  <IconButton
-                    onClick={() => handleCopyToClipboard(pixInfo.nome, 'Nome do beneficiário')}
-                    color="primary"
-                  >
-                    <ContentCopyIcon />
-                  </IconButton>
-                </Box>
-              </Box>
-
-              <Divider sx={{ my: 3 }} />
-
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Dados Bancários:
-              </Typography>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                <strong>Banco:</strong> {pixInfo.banco}
-              </Typography>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                <strong>Agência:</strong> {pixInfo.agencia}
-              </Typography>
-              <Typography variant="body2" sx={{ mb: 3 }}>
-                <strong>Conta:</strong> {pixInfo.conta}
-              </Typography>
-
-              <Button
-                variant="contained"
-                fullWidth
-                startIcon={<QrCodeIcon />}
-                onClick={() => setShowQRCode(!showQRCode)}
-                sx={{ mb: 2 }}
-              >
-                {showQRCode ? 'Ocultar QR Code' : 'Mostrar QR Code'}
-              </Button>
-
-              {showQRCode && (
-                <Box
-                  sx={{
-                    textAlign: 'center',
-                    p: 3,
-                    backgroundColor: 'background.default',
-                    borderRadius: 1,
-                  }}
-                >
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    QR Code para doação via PIX
-                  </Typography>
-                  <Box
-                    sx={{
-                      width: 200,
-                      height: 200,
-                      backgroundColor: 'white',
-                      border: '2px solid',
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                      mx: 'auto',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <QrCodeIcon sx={{ fontSize: 100, color: 'text.secondary' }} />
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    Escaneie com o app do seu banco
-                  </Typography>
-                </Box>
-              )}
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Card sx={{ p: 4, height: '100%' }}>
-              <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, textAlign: 'center' }}>
-                Outras Formas de Contribuir
-              </Typography>
-
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                  Doações em Espécie
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.6 }}>
-                  Aceitamos doações de:
-                </Typography>
-                <Box component="ul" sx={{ pl: 2, mb: 0 }}>
-                  <Typography component="li" variant="body2" color="text.secondary">
-                    Alimentos não perecíveis
-                  </Typography>
-                  <Typography component="li" variant="body2" color="text.secondary">
-                    Roupas em bom estado
-                  </Typography>
-                  <Typography component="li" variant="body2" color="text.secondary">
-                    Produtos de higiene e limpeza
-                  </Typography>
-                  <Typography component="li" variant="body2" color="text.secondary">
-                    Materiais de construção
-                  </Typography>
-                  <Typography component="li" variant="body2" color="text.secondary">
-                    Livros espíritas e educativos
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                  Trabalho Voluntário
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                  Se você tem tempo disponível e deseja contribuir com nossos trabalhos,
-                  oferecemos oportunidades de voluntariado em diversas áreas:
-                  atendimento, organização de eventos, manutenção e projetos sociais.
-                </Typography>
-              </Box>
-
-              <Button
-                variant="outlined"
-                fullWidth
-                onClick={() => {
-                  const element = document.querySelector('#contact');
-                  if (element) {
-                    element.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-              >
-                Entre em Contato para Mais Informações
-              </Button>
             </Card>
           </Grid>
         </Grid>
@@ -345,10 +277,222 @@ const DonationsSection: React.FC = () => {
             </Typography>
             <Typography variant="body1" sx={{ fontStyle: 'italic' }}>
               Sua contribuição, por menor que seja, faz a diferença na vida de muitas pessoas.
-              Que Deus abençoe sua generosidade e multiplique suas bênçãos.
+              Que os Orixás abençoem sua generosidade e a multipliquem.
             </Typography>
           </Card>
         </Box>
+
+        {/* Dialog PIX */}
+        <Dialog
+          open={showPixDialog}
+          onClose={() => setShowPixDialog(false)}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <QrCodeIcon color="primary" />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Doação via PIX
+              </Typography>
+            </Box>
+            <IconButton onClick={() => setShowPixDialog(false)}>
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent sx={{ textAlign: 'center' }}>
+            {/* QR Code Mock */}
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+              <Box sx={{ p: 2, backgroundColor: 'white', borderRadius: 2, boxShadow: 2 }}>
+                <Box sx={{
+                  width: 200,
+                  height: 200,
+                  backgroundColor: 'grey.100',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid',
+                  borderColor: 'primary.main',
+                  borderRadius: 1,
+                  position: 'relative'
+                }}>
+                  {/* Mock QR Code Pattern */}
+                  <Box sx={{
+                    width: '80%',
+                    height: '80%',
+                    background: `
+                      repeating-linear-gradient(
+                        0deg,
+                        ${theme.palette.primary.main} 0px,
+                        ${theme.palette.primary.main} 8px,
+                        white 8px,
+                        white 16px
+                      ),
+                      repeating-linear-gradient(
+                        90deg,
+                        ${theme.palette.primary.main} 0px,
+                        ${theme.palette.primary.main} 8px,
+                        white 8px,
+                        white 16px
+                      )
+                    `,
+                    borderRadius: 1
+                  }} />
+                  
+                  {/* QR Code corners */}
+                  <Box sx={{
+                    position: 'absolute',
+                    top: 8,
+                    left: 8,
+                    width: 24,
+                    height: 24,
+                    border: '3px solid',
+                    borderColor: 'primary.main',
+                    borderRadius: 0.5
+                  }} />
+                  <Box sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    width: 24,
+                    height: 24,
+                    border: '3px solid',
+                    borderColor: 'primary.main',
+                    borderRadius: 0.5
+                  }} />
+                  <Box sx={{
+                    position: 'absolute',
+                    bottom: 8,
+                    left: 8,
+                    width: 24,
+                    height: 24,
+                    border: '3px solid',
+                    borderColor: 'primary.main',
+                    borderRadius: 0.5
+                  }} />
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Chave PIX */}
+            <Card sx={{ mb: 2, backgroundColor: 'primary.light' }}>
+              <CardContent sx={{ py: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box sx={{ textAlign: 'left' }}>
+                    <Typography variant="subtitle2" sx={{ color: 'primary.contrastText', opacity: 0.8 }}>
+                      Chave PIX:
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.contrastText', wordBreak: 'break-all' }}>
+                      {pixInfo.chave}
+                    </Typography>
+                  </Box>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleCopyToClipboard(pixInfo.chave, 'Chave PIX')}
+                    sx={{ color: 'primary.contrastText' }}
+                  >
+                    <ContentCopyIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </CardContent>
+            </Card>
+
+            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+              Escaneie o QR Code ou copie a chave PIX
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 3, pt: 0 }}>
+            <Button onClick={() => setShowPixDialog(false)} variant="outlined" fullWidth>
+              Fechar
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Dialog Outras Doações */}
+        <Dialog
+          open={showOtherDonationsDialog}
+          onClose={() => setShowOtherDonationsDialog(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <HandshakeIcon color="primary" />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Outras Formas de Doação
+              </Typography>
+            </Box>
+            <IconButton onClick={() => setShowOtherDonationsDialog(false)}>
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent sx={{ py: 2 }}>
+            {/* Doações Presenciais */}
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, color: 'primary.main' }}>
+                Doações Presenciais
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                Para doações presenciais, entre em contato conosco para agendamento:
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<ContactMailIcon />}
+                onClick={handleScrollToContact}
+                fullWidth
+                sx={{ mb: 1 }}
+              >
+                Entrar em Contato para Agendamento
+              </Button>
+            </Box>
+
+            <Divider sx={{ my: 2 }} />
+
+            {/* Itens que podem ser doados */}
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'primary.main', textAlign: 'center' }}>
+                Itens que Aceitamos
+              </Typography>
+              <Grid container spacing={0.5}>
+                {donationItems.map((item, index) => (
+                  <Grid item xs={6} sm={6} key={index}>
+                    <Chip
+                      label={item}
+                      variant="outlined"
+                      color="primary"
+                      sx={{
+                        width: '100%',
+                        justifyContent: 'flex-start',
+                        height: 'auto',
+                        py: 0.3,
+                        px: 1,
+                        '& .MuiChip-label': {
+                          whiteSpace: 'normal',
+                          textAlign: 'left',
+                          fontSize: { xs: '0.75rem', sm: '0.85rem' },
+                        },
+                      }}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+              
+              <Card sx={{ mt: 2, backgroundColor: 'success.light' }}>
+                <CardContent sx={{ textAlign: 'center', py: 1.5 }}>
+                  <Typography variant="body2" sx={{ color: 'success.contrastText', fontWeight: 600 }}>
+                    💝 Toda doação é bem-vinda e faz a diferença!
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ p: 2, pt: 1 }}>
+            <Button onClick={() => setShowOtherDonationsDialog(false)} variant="outlined" fullWidth>
+              Fechar
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         <Snackbar
           open={showCopyAlert}

@@ -98,8 +98,8 @@ const CalendarSection: React.FC = () => {
 
   const tabData = [
     { label: 'Todos', data: allAttendances },
-    { label: 'Kardecismo', data: kardecismoAttendances },
     { label: 'Umbanda', data: umbandaAttendances },
+    { label: 'Kardecismo', data: kardecismoAttendances },
     { label: 'Cursos', data: coursesAttendances },
   ];
 
@@ -112,7 +112,7 @@ const CalendarSection: React.FC = () => {
           <Typography
             variant="h2"
             sx={{
-              fontSize: { xs: '2rem', md: '2.5rem' },
+              fontSize: { xs: '1.7rem', md: '2.5rem' },
               fontWeight: 600,
               mb: 2,
               color: 'primary.main',
@@ -274,53 +274,7 @@ const CalendarSection: React.FC = () => {
           </Grid>
         )}
 
-        {/* Horários Regulares */}
-        <Box sx={{ mt: 8 }}>
-          <Typography variant="h4" sx={{ textAlign: 'center', mb: 4, color: 'primary.main' }}>
-            Horários Regulares
-          </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
-              <Card sx={{ textAlign: 'center', p: 3 }}>
-                <Typography variant="h6" sx={{ color: 'primary.main', mb: 2 }}>
-                  Kardecismo
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  Terças e Quintas-feiras
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                  19h às 21h
-                </Typography>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Card sx={{ textAlign: 'center', p: 3 }}>
-                <Typography variant="h6" sx={{ color: 'secondary.main', mb: 2 }}>
-                  Umbanda
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  Sábados
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                  20h às 22h
-                </Typography>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Card sx={{ textAlign: 'center', p: 3 }}>
-                <Typography variant="h6" sx={{ color: 'info.main', mb: 2 }}>
-                  Palestras
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  Domingos
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                  19h30 às 21h
-                </Typography>
-              </Card>
-            </Grid>
-          </Grid>
-        </Box>
+
       </Container>
     </Box>
   );

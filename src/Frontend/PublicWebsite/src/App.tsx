@@ -8,10 +8,14 @@ import AboutSection from './components/sections/AboutSection';
 import EventsSection from './components/sections/EventsSection';
 import CalendarSection from './components/sections/CalendarSection';
 import OrixasSection from './components/sections/OrixasSection';
+import GuiasEntidadesSection from './components/sections/GuiasEntidadesSection';
 import UmbandaSection from './components/sections/UmbandaSection';
 import PrayersSection from './components/sections/PrayersSection';
 import DonationsSection from './components/sections/DonationsSection';
 import ContactSection from './components/sections/ContactSection';
+import LocationSection from './components/sections/LocationSection';
+import NavigationButtons from './components/common/ScrollToTopButton';
+import Footer from './components/layout/Footer';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import LoadingProvider from './components/common/LoadingProvider';
 
@@ -39,10 +43,14 @@ function App() {
               <EventsSection />
               <CalendarSection />
               <OrixasSection />
+              <GuiasEntidadesSection />
               <UmbandaSection />
               <PrayersSection />
               <DonationsSection />
               <ContactSection />
+              <LocationSection />
+              <Footer />
+              <NavigationButtons />
             </Layout>
           </LoadingProvider>
         </ThemeProvider>

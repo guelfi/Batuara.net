@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -13,21 +13,29 @@ import {
   TextField,
   InputAdornment,
   useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import EventIcon from '@mui/icons-material/Event';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { mockEvents } from '../../data/mockData';
 import { Event, EventType } from '../../types';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import NavigationDots from '../common/NavigationDots';
 
 const EventsSection: React.FC = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<EventType | null>(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [maxScroll, setMaxScroll] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const getEventTypeLabel = (type: EventType): string => {
     switch (type) {
@@ -35,8 +43,6 @@ const EventsSection: React.FC = () => {
         return 'Festa';
       case EventType.Evento:
         return 'Evento';
-      case EventType.Celebracao:
-        return 'Celebração';
       case EventType.Bazar:
         return 'Bazar';
       case EventType.Palestra:
@@ -50,7 +56,7 @@ const EventsSection: React.FC = () => {
     switch (type) {
       case EventType.Festa:
         return theme.palette.secondary.main;
-      case EventType.Celebracao:
+      case EventType.Evento:
         return theme.palette.primary.main;
       case EventType.Palestra:
         return theme.palette.info.main;
@@ -83,6 +89,52 @@ const EventsSection: React.FC = () => {
     return `das ${startTime} às ${endTime}`;
   };
 
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      setScrollPosition(container.scrollLeft);
+      setMaxScroll(container.scrollWidth - container.clientWidth);
+    }
+  };
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 320;
+      const currentScroll = scrollContainerRef.current.scrollLeft;
+      const targetScroll = direction === 'left' 
+        ? currentScroll - scrollAmount 
+        : currentScroll + scrollAmount;
+      
+      scrollContainerRef.current.scrollTo({
+        left: targetScroll,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleDotClick = (dotIndex: number) => {
+    if (scrollContainerRef.current) {
+      const itemWidth = 320;
+      const gap = 24;
+      const itemWithGap = itemWidth + gap;
+      const targetScroll = dotIndex * itemWithGap;
+      
+      scrollContainerRef.current.scrollTo({
+        left: targetScroll,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const canScrollLeft = scrollPosition > 0;
+  const canScrollRight = scrollPosition < maxScroll;
+
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      handleScroll();
+    }
+  }, [filteredEvents]);
+
   return (
     <Box id="events" sx={{ py: 8, backgroundColor: 'background.paper' }}>
       <Container maxWidth="lg">
@@ -90,7 +142,7 @@ const EventsSection: React.FC = () => {
           <Typography
             variant="h2"
             sx={{
-              fontSize: { xs: '2rem', md: '2.5rem' },
+              fontSize: { xs: '1.7rem', md: '2.5rem' },
               fontWeight: 600,
               mb: 2,
               color: 'primary.main',
@@ -157,7 +209,190 @@ const EventsSection: React.FC = () => {
               Tente ajustar os filtros ou aguarde novos eventos serem publicados.
             </Typography>
           </Box>
+        ) : isMobile ? (
+          /* Carrossel para mobile */
+          <Box sx={{ position: 'relative', mb: 4 }}>
+            {canScrollLeft && (
+              <IconButton
+                onClick={() => scroll('left')}
+                sx={{
+                  position: 'absolute',
+                  left: -20,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 2,
+                  backgroundColor: 'background.paper',
+                  boxShadow: theme.shadows[4],
+                  '&:hover': {
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                  },
+                }}
+              >
+                <ArrowBackIosIcon />
+              </IconButton>
+            )}
+
+            {canScrollRight && (
+              <IconButton
+                onClick={() => scroll('right')}
+                sx={{
+                  position: 'absolute',
+                  right: -20,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 2,
+                  backgroundColor: 'background.paper',
+                  boxShadow: theme.shadows[4],
+                  '&:hover': {
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                  },
+                }}
+              >
+                <ArrowForwardIosIcon />
+              </IconButton>
+            )}
+
+            <Box
+              ref={scrollContainerRef}
+              onScroll={handleScroll}
+              sx={{
+                display: 'flex',
+                gap: 3,
+                overflowX: 'auto',
+                scrollBehavior: 'smooth',
+                pb: 2,
+                '&::-webkit-scrollbar': {
+                  display: 'none',
+                },
+                scrollbarWidth: 'none',
+              }}
+            >
+              {filteredEvents.map((event) => (
+                <Card
+                  key={event.id}
+                  sx={{
+                    minWidth: 320,
+                    maxWidth: 320,
+                    height: 'auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: theme.shadows[8],
+                    },
+                  }}
+                >
+                  <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.3, fontSize: '1.1rem' }}>
+                        {event.title}
+                      </Typography>
+                      <Chip
+                        label={getEventTypeLabel(event.type)}
+                        size="small"
+                        sx={{
+                          backgroundColor: getEventTypeColor(event.type),
+                          color: 'white',
+                          fontWeight: 500,
+                          fontSize: '0.75rem',
+                        }}
+                      />
+                    </Box>
+
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 3, lineHeight: 1.6, fontSize: '0.9rem' }}
+                    >
+                      {event.description}
+                    </Typography>
+
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <EventIcon fontSize="small" color="primary" />
+                        <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.85rem' }}>
+                          {formatEventDate(event.date)}
+                        </Typography>
+                      </Box>
+
+                      {(event.startTime || event.endTime) && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <AccessTimeIcon fontSize="small" color="primary" />
+                          <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                            {formatEventTime(event.startTime, event.endTime)}
+                          </Typography>
+                        </Box>
+                      )}
+
+                      {event.location && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <LocationOnIcon fontSize="small" color="primary" />
+                          <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                            {event.location}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </CardContent>
+
+                  <CardActions sx={{ p: 3, pt: 0 }}>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      size="small"
+                      sx={{
+                        backgroundColor: getEventTypeColor(event.type),
+                        '&:hover': {
+                          backgroundColor: getEventTypeColor(event.type),
+                          filter: 'brightness(0.9)',
+                        },
+                      }}
+                    >
+                      Mais Informações
+                    </Button>
+                  </CardActions>
+                </Card>
+              ))}
+            </Box>
+
+            {/* Dicas de navegação e bullets */}
+            <Box sx={{ textAlign: 'center', mt: 2 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.85rem',
+                  fontStyle: 'italic',
+                  mb: 1,
+                }}
+              >
+                👈 Deslize para ver mais eventos
+              </Typography>
+              
+              <NavigationDots
+                totalItems={filteredEvents.length}
+                currentIndex={(() => {
+                  const itemWidth = 320;
+                  const gap = 24;
+                  const itemsPerView = 1;
+                  const itemWithGap = itemWidth + gap;
+                  
+                  if (scrollPosition >= maxScroll * 0.9) {
+                    return filteredEvents.length - 1;
+                  }
+                  
+                  return Math.floor(scrollPosition / itemWithGap / itemsPerView);
+                })()}
+                itemsPerView={1}
+                onDotClick={handleDotClick}
+              />
+            </Box>
+          </Box>
         ) : (
+          /* Grid para desktop */
           <Grid container spacing={3}>
             {filteredEvents.map((event) => (
               <Grid item xs={12} md={6} lg={4} key={event.id}>

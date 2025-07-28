@@ -23,10 +23,12 @@ const navigationItems: NavigationItem[] = [
   { label: 'Eventos', href: '#events' },
   { label: 'Calendário', href: '#calendar' },
   { label: 'Orixás', href: '#orixas' },
-  { label: 'Umbanda', href: '#umbanda' },
+  { label: 'Guias e Entidades', href: '#guias-entidades' },
+  { label: 'Linhas da Umbanda', href: '#umbanda' },
   { label: 'Orações', href: '#prayers' },
   { label: 'Doações', href: '#donations' },
   { label: 'Contato', href: '#contact' },
+  { label: 'Localização', href: '#location' },
 ];
 
 const Header: React.FC = () => {
@@ -41,7 +43,30 @@ const Header: React.FC = () => {
   const handleNavClick = (href: string) => {
     const element = document.querySelector(href);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      const isMobile = window.innerWidth < 768;
+      const headerHeight = isMobile ? 56 : 64;
+      
+      // Offset ajustado para aproximar as seções do header
+      let offsetHeight;
+      
+      if (href === '#home') {
+        // Hero: no mobile fica 40px abaixo da posição atual, no desktop vai para o topo absoluto
+        offsetHeight = isMobile ? 40 : 0;
+      } else if (href === '#location') {
+        // Location: mantém o offset atual (está correto)
+        offsetHeight = headerHeight + 16;
+      } else {
+        // Outras seções: diminuir 60px do offset anterior para aproximar do header
+        offsetHeight = headerHeight - 44; // headerHeight + 16 - 60 = headerHeight - 44
+      }
+      
+      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+      const offsetPosition = elementPosition - offsetHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
     }
     setMobileOpen(false);
   };
@@ -78,32 +103,55 @@ const Header: React.FC = () => {
   return (
     <>
       <AppBar position="fixed" elevation={2}>
-        <Toolbar>
-          <Typography
-            variant="h6"
-            component="div"
+        <Toolbar sx={{ display: 'flex', alignItems: 'center' }}>
+          {/* Logo/Título à esquerda */}
+          <Box
             sx={{
-              flexGrow: 1,
-              fontWeight: 600,
-              fontSize: { xs: '1.1rem', md: '1.25rem' },
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              mr: isMobile ? 0 : 4,
+              flexGrow: isMobile ? 1 : 0,
             }}
             onClick={() => handleNavClick('#home')}
           >
-            Casa de Caridade Batuara
-          </Typography>
+            {isMobile ? (
+              <Typography
+                variant="h6"
+                component="div"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '1.1rem',
+                }}
+              >
+                Casa de Caridade Caboclo Batuara
+              </Typography>
+            ) : (
+              <Box
+                component="img"
+                src="/batuara_logo.png"
+                alt="Casa de Caridade Caboclo Batuara"
+                sx={{
+                  height: 40,
+                  width: 'auto',
+                  maxWidth: 200,
+                }}
+              />
+            )}
+          </Box>
 
-          {isMobile ? (
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={handleDrawerToggle}
+          {/* Menu centralizado (apenas desktop) */}
+          {!isMobile && (
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: 0.5,
+                flexGrow: 1,
+                flexWrap: 'nowrap',
+              }}
             >
-              <MenuIcon />
-            </IconButton>
-          ) : (
-            <Box sx={{ display: 'flex', gap: 1 }}>
               {navigationItems.map((item) => (
                 <Button
                   key={item.label}
@@ -112,6 +160,11 @@ const Header: React.FC = () => {
                   sx={{
                     textTransform: 'none',
                     fontWeight: 500,
+                    px: 0.8,
+                    py: 1,
+                    minWidth: 'auto',
+                    fontSize: '0.85rem',
+                    whiteSpace: 'nowrap',
                     '&:hover': {
                       backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     },
@@ -121,6 +174,18 @@ const Header: React.FC = () => {
                 </Button>
               ))}
             </Box>
+          )}
+
+          {/* Menu hamburger (mobile) */}
+          {isMobile && (
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+            >
+              <MenuIcon />
+            </IconButton>
           )}
         </Toolbar>
       </AppBar>

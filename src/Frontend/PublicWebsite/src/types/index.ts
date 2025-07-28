@@ -16,7 +16,6 @@ export interface Event {
 export enum EventType {
   Festa = 1,
   Evento = 2,
-  Celebracao = 3,
   Bazar = 4,
   Palestra = 5,
 }
@@ -99,6 +98,7 @@ export interface ContactInfo {
   phone: string;
   email: string;
   instagram: string;
+  instagramUrl?: string;
   pixKey?: string;
 }
 

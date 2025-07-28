@@ -195,7 +195,7 @@ const PrayersSection: React.FC = () => {
           <Typography
             variant="h2"
             sx={{
-              fontSize: { xs: '2rem', md: '2.5rem' },
+              fontSize: { xs: '1.7rem', md: '2.5rem' },
               fontWeight: 600,
               mb: 2,
               color: 'primary.main',
