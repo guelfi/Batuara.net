@@ -40,9 +40,10 @@ batuara.net/
 ### Frontend
 - **React 18+** com **TypeScript**
 - **Material-UI (MUI) v5** - Design System
-- **React Query** - Gerenciamento de estado
+- **ScrollToTopButton** - Sistema de navegação avançado
+- **React Query** - Gerenciamento de estado (planejado)
 - **React Router v6** - Roteamento
-- **Jest** - Testes unitários
+- **Jest + React Testing Library** - Testes unitários
 
 ## 🎨 Design System
 
@@ -57,25 +58,31 @@ O projeto utiliza **Material Design** com a paleta de cores baseada em **Yemanj�
 
 ### Site Público
 - ✅ Interface responsiva com Material Design
+- ✅ **Sistema de navegação avançado com ScrollToTopButton**
+- ✅ **Navegação suave entre seções com offsets otimizados**
+- ✅ **Performance otimizada com throttling de eventos**
 - ✅ Seções educativas sobre Orixás e Umbanda
 - ✅ Calendário dinâmico de atendimentos
 - ✅ Eventos e festas atualizados automaticamente
 - ✅ Sistema de doações PIX
 - ✅ Informações de contato e localização
+- ✅ **Responsividade completa mobile/desktop**
 
 ### Dashboard Administrativo
-- ✅ Gerenciamento de eventos e festas
-- ✅ Administração do calendário de atendimentos
-- ✅ Gestão de conteúdo espiritual
-- ✅ Sistema de autenticação seguro
-- ✅ Logs de auditoria
+- 🔄 Gerenciamento de eventos e festas (em desenvolvimento)
+- 🔄 Administração do calendário de atendimentos (planejado)
+- 🔄 Gestão de conteúdo espiritual (planejado)
+- 🔄 Sistema de autenticação seguro (planejado)
+- 🔄 Logs de auditoria (planejado)
 
 ## 🧪 Qualidade e Testes
 
-- **Cobertura de Testes**: Mínimo 90%
-- **Testes Unitários**: xUnit + Jest
-- **Testes de Integração**: TestServer + MSW
-- **Análise de Código**: SonarQube
+- **Cobertura de Testes**: Meta 80%+ (em implementação)
+- **Testes Unitários**: xUnit + Jest + React Testing Library
+- **Testes de Acessibilidade**: axe-core (planejado)
+- **Testes Cross-Browser**: Playwright (planejado)
+- **Testes E2E**: Cypress (planejado)
+- **Análise de Código**: SonarQube (planejado)
 - **Logging**: Estruturado com Serilog
 
 ## 📝 Logging
@@ -131,10 +138,12 @@ npm test
 
 ## 📚 Documentação
 
-- [Especificação Completa](.kiro/specs/batuara-modernization/)
-- [Arquitetura e Design](docs/architecture.md)
-- [Guia de Desenvolvimento](docs/development-guide.md)
-- [API Documentation](docs/api.md)
+- [Especificação ScrollToTopButton](.kiro/specs/scroll-to-top-button/)
+- [Próxima Fase do Projeto](.kiro/specs/project-next-phase/)
+- [Roadmap de Desenvolvimento](ROADMAP_DESENVOLVIMENTO.md)
+- [Contexto da Sessão](SESSION_CONTEXT.md)
+- [Arquitetura e Design](docs/architecture.md) (planejado)
+- [API Documentation](docs/api.md) (planejado)
 
 ## 🤝 Contribuição
 
@@ -149,6 +158,31 @@ Este projeto segue rigorosamente as práticas de:
 
 Este projeto é desenvolvido para a Casa de Caridade Batuara.
 
+## 🎯 Status Atual do Projeto
+
+### ✅ Implementado (26/07/2025)
+- **ScrollToTopButton** com navegação expandida
+- **Navegação suave** entre todas as seções
+- **Offsets otimizados** para mobile e desktop
+- **Performance otimizada** com throttling
+- **Responsividade completa**
+- **Estados visuais dinâmicos**
+
+### 🔄 Em Desenvolvimento
+- Testes unitários e de acessibilidade
+- Backend .NET Core 8 LTS
+- APIs de contato e eventos
+- Sistema de autenticação
+
+### 📋 Próximas Fases
+1. **Testes e Qualidade** (2-3 semanas)
+2. **Backend e APIs** (3-4 semanas)
+3. **Sistema Administrativo** (4-5 semanas)
+4. **Performance e SEO** (2-3 semanas)
+
+**Estimativa Total**: 4-6 meses para conclusão completa
+
 ---
 
-**Casa de Caridade Batuara** - Fundada em 07 de março de 1973
+**Casa de Caridade Batuara** - Fundada em 07 de março de 1973  
+*Última atualização: 26/07/2025*
