@@ -22,12 +22,12 @@ const Footer: React.FC = () => {
       sx={{
         backgroundColor: 'primary.main',
         color: 'white',
-        py: 6,
-        mt: 8,
+        py: 4,
+        mt: 2,
       }}
     >
       <Container maxWidth="lg">
-        <Grid container spacing={4}>
+        <Grid container spacing={2}>
           {/* Informações da Casa */}
           <Grid item xs={12} md={4}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
@@ -46,7 +46,7 @@ const Footer: React.FC = () => {
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               Contato
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <LocationOnIcon fontSize="small" />
                 <Typography variant="body2">

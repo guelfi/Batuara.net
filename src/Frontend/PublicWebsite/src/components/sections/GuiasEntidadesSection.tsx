@@ -101,9 +101,9 @@ const GuiasEntidadesSection: React.FC = () => {
   };
 
   return (
-    <Box id="guias-entidades" sx={{ py: 8, backgroundColor: 'background.default' }}>
+    <Box id="guias-entidades" sx={{ py: 4, backgroundColor: 'background.default' }}>
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Typography
             variant="h2"
             sx={{
@@ -231,8 +231,8 @@ const GuiasEntidadesSection: React.FC = () => {
                   },
                 }}
               >
-                <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                  <Box sx={{ textAlign: 'center', mb: 2.5 }}>
+                <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                  <Box sx={{ textAlign: 'center', mb: 2 }}>
                     <Box
                       sx={{
                         width: 80,
@@ -286,8 +286,8 @@ const GuiasEntidadesSection: React.FC = () => {
                     {guia.description}
                   </Typography>
 
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, fontSize: '0.9rem' }}>
+                  <Box sx={{ mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600, fontSize: '0.9rem' }}>
                       Saudação:
                     </Typography>
                     <Chip
@@ -303,9 +303,9 @@ const GuiasEntidadesSection: React.FC = () => {
                   </Box>
 
                   {/* Layout otimizado em pares */}
-                  <Grid container spacing={1.5} sx={{ mb: 1 }}>
+                  <Grid container spacing={1} sx={{ mb: 0.5 }}>
                     <Grid item xs={6}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem', mb: 0.5 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem', mb: 0.25 }}>
                         Habitat:
                       </Typography>
                       <Typography variant="body2" sx={{ fontSize: '0.8rem', color: 'text.secondary', lineHeight: 1.3 }}>
@@ -313,7 +313,7 @@ const GuiasEntidadesSection: React.FC = () => {
                       </Typography>
                     </Grid>
                     <Grid item xs={6}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem', mb: 0.5 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem', mb: 0.25 }}>
                         Cor:
                       </Typography>
                       <Chip
@@ -324,7 +324,7 @@ const GuiasEntidadesSection: React.FC = () => {
                       />
                     </Grid>
                     <Grid item xs={6}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem', mb: 0.5 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem', mb: 0.25 }}>
                         Dia:
                       </Typography>
                       <Chip
@@ -335,7 +335,7 @@ const GuiasEntidadesSection: React.FC = () => {
                       />
                     </Grid>
                     <Grid item xs={6}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem', mb: 0.5 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem', mb: 0.25 }}>
                         Fruta:
                       </Typography>
                       <Typography variant="body2" sx={{ fontSize: '0.8rem', color: 'text.secondary', lineHeight: 1.3 }}>

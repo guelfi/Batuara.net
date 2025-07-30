@@ -116,9 +116,9 @@ const DonationsSection: React.FC = () => {
   };
 
   return (
-    <Box id="donations" sx={{ py: 8, backgroundColor: 'background.paper' }}>
+    <Box id="donations" sx={{ py: 6, backgroundColor: 'background.paper' }}>
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Typography
             variant="h2"
             sx={{
@@ -270,9 +270,9 @@ const DonationsSection: React.FC = () => {
           </Grid>
         </Grid>
 
-        <Box sx={{ textAlign: 'center', mt: 6 }}>
+        <Box sx={{ textAlign: 'center', mt: 4 }}>
           <Card sx={{ p: 4, backgroundColor: 'primary.light', color: 'primary.contrastText' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
               "Fora da caridade não há salvação"
             </Typography>
             <Typography variant="body1" sx={{ fontStyle: 'italic' }}>

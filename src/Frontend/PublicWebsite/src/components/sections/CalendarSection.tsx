@@ -106,9 +106,9 @@ const CalendarSection: React.FC = () => {
   const currentData = tabData[selectedTab].data;
 
   return (
-    <Box id="calendar" sx={{ py: 8, backgroundColor: 'background.default' }}>
+    <Box id="calendar" sx={{ py: 4, backgroundColor: 'background.default' }}>
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Typography
             variant="h2"
             sx={{
@@ -127,7 +127,7 @@ const CalendarSection: React.FC = () => {
               maxWidth: '800px',
               mx: 'auto',
               lineHeight: 1.6,
-              mb: 4,
+              mb: 2,
             }}
           >
             Confira nossos horários de atendimento espiritual

@@ -117,9 +117,9 @@ const OrixasSection: React.FC = () => {
   };
 
   return (
-    <Box id="orixas" sx={{ py: 8, backgroundColor: 'background.paper' }}>
+    <Box id="orixas" sx={{ py: 4, backgroundColor: 'background.paper' }}>
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Typography
             variant="h2"
             sx={{
@@ -248,8 +248,8 @@ const OrixasSection: React.FC = () => {
                   },
                 }}
               >
-                <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                  <Box sx={{ textAlign: 'center', mb: 3 }}>
+                <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                  <Box sx={{ textAlign: 'center', mb: 2 }}>
                     <Box
                       sx={{
                         width: 80,
@@ -260,7 +260,7 @@ const OrixasSection: React.FC = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         mx: 'auto',
-                        mb: 2,
+                        mb: 1,
                         boxShadow: theme.shadows[4],
                       }}
                     >
@@ -271,7 +271,7 @@ const OrixasSection: React.FC = () => {
                       sx={{
                         fontWeight: 600,
                         color: getOrixaNameColor(orixa.name),
-                        mb: 1,
+                        mb: 0.5,
                       }}
                     >
                       {orixa.name}
@@ -287,8 +287,8 @@ const OrixasSection: React.FC = () => {
                     </Typography>
                   </Box>
 
-                  <Box sx={{ mb: 1.5 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600, fontSize: '0.75rem' }}>
+                  <Box sx={{ mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
                       Saudação:
                     </Typography>
                     <Chip
@@ -307,8 +307,8 @@ const OrixasSection: React.FC = () => {
                     />
                   </Box>
 
-                  <Box sx={{ mb: 1.5 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600, fontSize: '0.75rem' }}>
+                  <Box sx={{ mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
                       Habitat:
                     </Typography>
                     <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
@@ -316,8 +316,8 @@ const OrixasSection: React.FC = () => {
                     </Typography>
                   </Box>
 
-                  <Box sx={{ mb: 1.5 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600, fontSize: '0.75rem' }}>
+                  <Box sx={{ mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
                       Dia da Semana:
                     </Typography>
                     <Chip
@@ -328,8 +328,8 @@ const OrixasSection: React.FC = () => {
                     />
                   </Box>
 
-                  <Box sx={{ mb: 1.5 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600, fontSize: '0.75rem' }}>
+                  <Box sx={{ mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
                       Fruta:
                     </Typography>
                     <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>

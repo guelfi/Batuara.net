@@ -189,7 +189,7 @@ const PrayersSection: React.FC = () => {
   };
 
   return (
-    <Box id="prayers" sx={{ py: 8, backgroundColor: 'background.default' }}>
+    <Box id="prayers" sx={{ py: 6, backgroundColor: 'background.default' }}>
       <Container maxWidth="lg">
         <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Typography
@@ -349,9 +349,9 @@ const PrayersSection: React.FC = () => {
           </Grid>
         )}
 
-        <Box sx={{ textAlign: 'center', mt: 6 }}>
+        <Box sx={{ textAlign: 'center', mt: 4 }}>
           <Card sx={{ p: 4, backgroundColor: 'primary.light', color: 'primary.contrastText' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
               "A oração é o mais poderoso meio de cura que existe"
             </Typography>
             <Typography variant="body1" sx={{ fontStyle: 'italic' }}>

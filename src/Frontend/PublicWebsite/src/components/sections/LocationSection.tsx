@@ -19,7 +19,7 @@ const LocationSection: React.FC = () => {
     <Box id="location" sx={{ backgroundColor: 'background.default' }}>
       {/* Desktop Layout */}
       <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-        <Container maxWidth="lg" sx={{ py: 0.5 }}>
+        <Container maxWidth="lg" sx={{ py: 0.25 }}>
           {/* Header da seção */}
           <Box sx={{ textAlign: 'center', mb: 1 }}>
             <Typography
@@ -70,7 +70,7 @@ const LocationSection: React.FC = () => {
 
       {/* Mobile Layout */}
       <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-        <Container maxWidth="sm" sx={{ py: 0.5 }}>
+        <Container maxWidth="sm" sx={{ py: 0.25 }}>
           {/* Header da seção */}
           <Box sx={{ textAlign: 'center', mb: 1 }}>
             <Typography
