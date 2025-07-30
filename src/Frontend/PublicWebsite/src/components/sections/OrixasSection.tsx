@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogActions,
   IconButton,
+  Grid,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -47,6 +48,20 @@ const OrixasSection: React.FC = () => {
         ? currentScroll - scrollAmount 
         : currentScroll + scrollAmount;
       
+      scrollContainerRef.current.scrollTo({
+        left: targetScroll,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleDotClick = (dotIndex: number) => {
+    if (scrollContainerRef.current) {
+      const itemWidth = isMobile ? 280 : 320;
+      const gap = 24;
+      const itemWithGap = itemWidth + gap;
+      const targetScroll = dotIndex * itemWithGap;
+
       scrollContainerRef.current.scrollTo({
         left: targetScroll,
         behavior: 'smooth'
@@ -117,9 +132,9 @@ const OrixasSection: React.FC = () => {
   };
 
   return (
-    <Box id="orixas" sx={{ py: 4, backgroundColor: 'background.paper' }}>
+    <Box id="orixas" sx={{ py: 8, backgroundColor: 'background.paper' }}>
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 3 }}>
+        <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Typography
             variant="h2"
             sx={{
@@ -226,7 +241,7 @@ const OrixasSection: React.FC = () => {
                 sx={{
                   minWidth: isMobile ? 260 : 300,
                   maxWidth: isMobile ? 260 : 300,
-                  height: 420,
+                  height: 310,
                   display: 'flex',
                   flexDirection: 'column',
                   position: 'relative',
@@ -246,10 +261,19 @@ const OrixasSection: React.FC = () => {
                     height: 4,
                     backgroundColor: getOrixaColor(orixa.name),
                   },
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 4,
+                    backgroundColor: getOrixaColor(orixa.name),
+                  },
                 }}
               >
-                <CardContent sx={{ flexGrow: 1, p: 2 }}>
-                  <Box sx={{ textAlign: 'center', mb: 2 }}>
+                <CardContent sx={{ flexGrow: 1, pt: 1.2, px: 1.2, pb: 0.4, '&:last-child': { pb: 0.4 } }}>
+                  <Box sx={{ textAlign: 'center', mb: 1.5 }}>
                     <Box
                       sx={{
                         width: 80,
@@ -287,8 +311,8 @@ const OrixasSection: React.FC = () => {
                     </Typography>
                   </Box>
 
-                  <Box sx={{ mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
+                  <Box sx={{ mb: 0.8, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
                       Saudação:
                     </Typography>
                     <Chip
@@ -307,55 +331,56 @@ const OrixasSection: React.FC = () => {
                     />
                   </Box>
 
-                  <Box sx={{ mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
-                      Habitat:
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                      {orixa.habitat}
-                    </Typography>
-                  </Box>
+                  {/* Layout em duas colunas: Habitat | Dia da Semana */}
+                  <Grid container spacing={1} sx={{ mb: 0.5 }}>
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
+                        Habitat:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                        {orixa.habitat}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
+                        Dia da Semana:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                        {orixa.diaSemana}
+                      </Typography>
+                    </Grid>
+                  </Grid>
 
-                  <Box sx={{ mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
-                      Dia da Semana:
-                    </Typography>
-                    <Chip
-                      label={orixa.diaSemana}
-                      size="small"
-                      variant="outlined"
-                      sx={{ fontSize: '0.7rem', height: '20px' }}
-                    />
-                  </Box>
-
-                  <Box sx={{ mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
-                      Fruta:
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                      {orixa.fruta}
-                    </Typography>
-                  </Box>
-
-                  <Box>
-                    <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600, fontSize: '0.75rem' }}>
-                      Cor:
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box
-                        sx={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: '50%',
-                          backgroundColor: getOrixaColor(orixa.name),
+                  {/* Layout em duas colunas: Cor | Fruta */}
+                  <Grid container spacing={1} sx={{ mb: 0 }}>
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
+                        Cor:
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: '50%',
+                            backgroundColor: getOrixaColor(orixa.name),
                           border: orixa.name === 'Oxalá' ? '1px solid #ccc' : 'none',
                         }}
                       />
-                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                        {orixa.cor}
+                        <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                          {orixa.cor}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
+                        Fruta:
                       </Typography>
-                    </Box>
-                  </Box>
+                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                        {orixa.fruta}
+                      </Typography>
+                    </Grid>
+                  </Grid>
                 </CardContent>
               </Card>
             ))}
@@ -391,9 +416,9 @@ const OrixasSection: React.FC = () => {
             <NavigationDots
               totalItems={orixasData.length}
               currentIndex={(() => {
-                const itemWidth = isMobile ? 260 : 300;
+                const itemWidth = isMobile ? 280 : 320;
                 const gap = 24;
-                const itemsPerView = isMobile ? 1 : 3;
+                const itemsPerView = 1;
                 const itemWithGap = itemWidth + gap;
                 const totalDots = Math.ceil(orixasData.length / itemsPerView);
                 
@@ -404,7 +429,8 @@ const OrixasSection: React.FC = () => {
                 
                 return Math.floor(scrollPosition / itemWithGap / itemsPerView);
               })()}
-              itemsPerView={isMobile ? 1 : 3}
+              itemsPerView={1}
+              onDotClick={handleDotClick}
             />
           </Box>
         </Box>

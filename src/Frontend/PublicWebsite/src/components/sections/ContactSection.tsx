@@ -59,7 +59,7 @@ const ContactSection: React.FC = () => {
   };
 
   return (
-    <Box id="contact" sx={{ py: 5.875, backgroundColor: 'background.default' }}>
+    <Box id="contact" sx={{ py: 6, backgroundColor: 'background.default', minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
       <Container maxWidth="md">
         <Box sx={{ textAlign: 'center', mb: 2.5 }}>
           <Box
@@ -143,7 +143,7 @@ const ContactSection: React.FC = () => {
           }}
         >
           <Box component="form" onSubmit={handleSubmit}>
-            <Grid container spacing={1.5}>
+            <Grid container spacing={2.5}>
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth

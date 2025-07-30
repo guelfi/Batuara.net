@@ -80,7 +80,7 @@ const UmbandaSection: React.FC = () => {
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      const cardWidth = isMobile ? 280 : 320;
+      const cardWidth = isMobile ? 320 : 320;
       const gap = 24; // 3 * 8px (gap: 3)
       const scrollAmount = cardWidth + gap;
       scrollContainerRef.current.scrollBy({
@@ -92,11 +92,25 @@ const UmbandaSection: React.FC = () => {
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
-      const cardWidth = isMobile ? 280 : 320;
+      const cardWidth = isMobile ? 320 : 320;
       const gap = 24; // 3 * 8px (gap: 3)
       const scrollAmount = cardWidth + gap;
       scrollContainerRef.current.scrollBy({
         left: scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleDotClick = (dotIndex: number) => {
+    if (scrollContainerRef.current) {
+      const itemWidth = isMobile ? 320 : 320;
+      const gap = 24;
+      const itemWithGap = itemWidth + gap;
+      const targetScroll = dotIndex * itemWithGap;
+
+      scrollContainerRef.current.scrollTo({
+        left: targetScroll,
         behavior: 'smooth'
       });
     }
@@ -222,7 +236,7 @@ const UmbandaSection: React.FC = () => {
               key={linha.id}
               onClick={() => handleCardClick(linha)}
               sx={{
-                minWidth: isMobile ? 280 : 320,
+                minWidth: isMobile ? 320 : 320,
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
                 '&:hover': {
@@ -351,9 +365,9 @@ const UmbandaSection: React.FC = () => {
           <NavigationDots
             totalItems={linhasUmbandaData.length}
             currentIndex={(() => {
-              const itemWidth = isMobile ? 280 : 320;
+              const itemWidth = isMobile ? 320 : 320;
               const gap = 24;
-              const itemsPerView = isMobile ? 1 : 3;
+              const itemsPerView = 1;
               const itemWithGap = itemWidth + gap;
               const totalDots = Math.ceil(linhasUmbandaData.length / itemsPerView);
               
@@ -364,7 +378,8 @@ const UmbandaSection: React.FC = () => {
               
               return Math.floor(scrollPosition / itemWithGap / itemsPerView);
             })()}
-            itemsPerView={isMobile ? 1 : 3}
+            itemsPerView={1}
+            onDotClick={handleDotClick}
           />
         </Box>
       </Box>

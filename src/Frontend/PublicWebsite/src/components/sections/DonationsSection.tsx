@@ -116,7 +116,7 @@ const DonationsSection: React.FC = () => {
   };
 
   return (
-    <Box id="donations" sx={{ py: 6, backgroundColor: 'background.paper' }}>
+    <Box id="donations" sx={{ py: 8, backgroundColor: 'background.paper' }}>
       <Container maxWidth="lg">
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Typography

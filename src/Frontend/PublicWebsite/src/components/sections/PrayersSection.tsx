@@ -178,8 +178,8 @@ const PrayersSection: React.FC = () => {
 
   const filteredPrayers = prayers.filter((prayer) => {
     const matchesSearch = prayer.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         prayer.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         prayer.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+      prayer.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      prayer.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory = selectedCategory === null || prayer.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -189,9 +189,9 @@ const PrayersSection: React.FC = () => {
   };
 
   return (
-    <Box id="prayers" sx={{ py: 6, backgroundColor: 'background.default' }}>
+    <Box id="prayers" sx={{ py: 8, backgroundColor: 'background.default' }}>
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Typography
             variant="h2"
             sx={{
@@ -210,14 +210,14 @@ const PrayersSection: React.FC = () => {
               maxWidth: '800px',
               mx: 'auto',
               lineHeight: 1.6,
-              mb: 4,
+              mb: 2,
             }}
           >
             Palavras de fé, esperança e amor para elevar a alma
           </Typography>
 
           {/* Filtros */}
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap', mb: 4 }}>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap', mb: 2 }}>
             <TextField
               placeholder="Buscar orações..."
               value={searchTerm}
@@ -229,7 +229,13 @@ const PrayersSection: React.FC = () => {
                   </InputAdornment>
                 ),
               }}
-              sx={{ minWidth: 250 }}
+              sx={{
+                minWidth: 250,
+                maxWidth: 300,
+                '& .MuiInputBase-root': {
+                  height: 40,
+                }
+              }}
             />
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
               <Chip
@@ -271,7 +277,7 @@ const PrayersSection: React.FC = () => {
             </Typography>
           </Box>
         ) : (
-          <Grid container spacing={3}>
+          <Grid container spacing={0.8}>
             {filteredPrayers.map((prayer) => (
               <Grid item xs={12} key={prayer.id}>
                 <Accordion
@@ -350,7 +356,7 @@ const PrayersSection: React.FC = () => {
         )}
 
         <Box sx={{ textAlign: 'center', mt: 4 }}>
-          <Card sx={{ p: 4, backgroundColor: 'primary.light', color: 'primary.contrastText' }}>
+          <Card sx={{ p: 3, backgroundColor: 'primary.light', color: 'primary.contrastText' }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
               "A oração é o mais poderoso meio de cura que existe"
             </Typography>

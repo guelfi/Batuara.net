@@ -42,12 +42,12 @@ const GuiasEntidadesSection: React.FC = () => {
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
-      const scrollAmount = isMobile ? 350 : 400;
+      const scrollAmount = isMobile ? 370 : 400;
       const currentScroll = scrollContainerRef.current.scrollLeft;
-      const targetScroll = direction === 'left' 
-        ? currentScroll - scrollAmount 
+      const targetScroll = direction === 'left'
+        ? currentScroll - scrollAmount
         : currentScroll + scrollAmount;
-      
+
       scrollContainerRef.current.scrollTo({
         left: targetScroll,
         behavior: 'smooth'
@@ -68,11 +68,11 @@ const GuiasEntidadesSection: React.FC = () => {
 
   const handleDotClick = (dotIndex: number) => {
     if (scrollContainerRef.current) {
-      const itemWidth = isMobile ? 350 : 400;
+      const itemWidth = isMobile ? 370 : 400;
       const gap = 24;
       const itemWithGap = itemWidth + gap;
       const targetScroll = dotIndex * itemWithGap;
-      
+
       scrollContainerRef.current.scrollTo({
         left: targetScroll,
         behavior: 'smooth'
@@ -101,9 +101,9 @@ const GuiasEntidadesSection: React.FC = () => {
   };
 
   return (
-    <Box id="guias-entidades" sx={{ py: 4, backgroundColor: 'background.default' }}>
+    <Box id="guias-entidades" sx={{ py: 8, backgroundColor: 'background.default' }}>
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 3 }}>
+        <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Typography
             variant="h2"
             sx={{
@@ -137,7 +137,7 @@ const GuiasEntidadesSection: React.FC = () => {
               fontStyle: 'italic',
             }}
           >
-            Cada Guia e Entidade traz seus ensinamentos únicos, trabalhando conosco 
+            Cada Guia e Entidade traz seus ensinamentos únicos, trabalhando conosco
             para nossa evolução e proteção espiritual na Casa de Caridade Caboclo Batuara.
           </Typography>
         </Box>
@@ -207,10 +207,9 @@ const GuiasEntidadesSection: React.FC = () => {
                 key={guia.id}
                 onClick={() => handleOpenDialog(guia)}
                 sx={{
-                  minWidth: isMobile ? 350 : 400,
-                  maxWidth: isMobile ? 350 : 400,
-                  height: 'auto',
-                  minHeight: isMobile ? 480 : 520,
+                  minWidth: isMobile ? 370 : 400,
+                  maxWidth: isMobile ? 370 : 400,
+                  height: 370,
                   display: 'flex',
                   flexDirection: 'column',
                   position: 'relative',
@@ -229,10 +228,19 @@ const GuiasEntidadesSection: React.FC = () => {
                     height: 4,
                     backgroundColor: getGuiaColor(guia.name),
                   },
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 4,
+                    backgroundColor: getGuiaColor(guia.name),
+                  },
                 }}
               >
-                <CardContent sx={{ flexGrow: 1, p: 2 }}>
-                  <Box sx={{ textAlign: 'center', mb: 2 }}>
+                <CardContent sx={{ flexGrow: 1, pt: 1.2, px: 1.2, pb: 0.4, '&:last-child': { pb: 0.4 } }}>
+                  <Box sx={{ textAlign: 'center', mb: 1.5 }}>
                     <Box
                       sx={{
                         width: 80,
@@ -286,59 +294,71 @@ const GuiasEntidadesSection: React.FC = () => {
                     {guia.description}
                   </Typography>
 
-                  <Box sx={{ mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600, fontSize: '0.9rem' }}>
+                  <Box sx={{ mb: 0.8, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
                       Saudação:
                     </Typography>
                     <Chip
                       label={guia.saudacao}
-                      size="medium"
+                      size="small"
                       sx={{
                         backgroundColor: getGuiaColor(guia.name),
                         color: 'white',
-                        fontSize: '0.8rem',
+                        fontSize: '0.7rem',
                         fontWeight: 500,
+                        height: '20px',
+                        '& .MuiChip-label': {
+                          color: 'white',
+                        },
                       }}
                     />
                   </Box>
 
-                  {/* Layout otimizado em pares */}
+                  {/* Layout em duas colunas: Habitat | Dia da Semana */}
                   <Grid container spacing={1} sx={{ mb: 0.5 }}>
                     <Grid item xs={6}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem', mb: 0.25 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
                         Habitat:
                       </Typography>
-                      <Typography variant="body2" sx={{ fontSize: '0.8rem', color: 'text.secondary', lineHeight: 1.3 }}>
+                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
                         {guia.habitat}
                       </Typography>
                     </Grid>
                     <Grid item xs={6}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem', mb: 0.25 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
+                        Dia da Semana:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                        {guia.diaSemana}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+
+                  {/* Layout em duas colunas: Cor | Fruta */}
+                  <Grid container spacing={1} sx={{ mb: 0 }}>
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
                         Cor:
                       </Typography>
-                      <Chip
-                        label={guia.cor}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: '0.75rem', height: 24 }}
-                      />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: '50%',
+                            backgroundColor: getGuiaColor(guia.name),
+                          }}
+                        />
+                        <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                          {guia.cor}
+                        </Typography>
+                      </Box>
                     </Grid>
                     <Grid item xs={6}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem', mb: 0.25 }}>
-                        Dia:
-                      </Typography>
-                      <Chip
-                        label={guia.diaSemana}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: '0.75rem', height: 24 }}
-                      />
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem', mb: 0.25 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
                         Fruta:
                       </Typography>
-                      <Typography variant="body2" sx={{ fontSize: '0.8rem', color: 'text.secondary', lineHeight: 1.3 }}>
+                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
                         {guia.fruta}
                       </Typography>
                     </Grid>
@@ -373,22 +393,22 @@ const GuiasEntidadesSection: React.FC = () => {
                 👈 Deslize para ver mais guias
               </Typography>
             )}
-            
+
             {/* Indicadores de navegação */}
             <NavigationDots
               totalItems={guiasEntidadesData.length}
               currentIndex={(() => {
-                const itemWidth = isMobile ? 350 : 400;
+                const itemWidth = isMobile ? 370 : 400;
                 const gap = 24;
                 const itemsPerView = 1;
                 const itemWithGap = itemWidth + gap;
                 const totalDots = Math.ceil(guiasEntidadesData.length / itemsPerView);
-                
+
                 // Se chegamos próximo do final (90% do scroll máximo), mostrar último dot
                 if (scrollPosition >= maxScroll * 0.9) {
                   return totalDots - 1;
                 }
-                
+
                 return Math.floor(scrollPosition / itemWithGap / itemsPerView);
               })()}
               itemsPerView={1}
@@ -461,7 +481,7 @@ const GuiasEntidadesSection: React.FC = () => {
                       Trabalho na Casa Batuara
                     </Typography>
                     <Typography variant="body1" sx={{ lineHeight: 1.7 }}>
-                      {selectedGuia.name} é uma das entidades que trabalham conosco na Casa de Caridade Caboclo Batuara, 
+                      {selectedGuia.name} é uma das entidades que trabalham conosco na Casa de Caridade Caboclo Batuara,
                       trazendo seus ensinamentos e proteção espiritual para todos que buscam orientação e auxílio.
                     </Typography>
                   </Box>
@@ -471,7 +491,7 @@ const GuiasEntidadesSection: React.FC = () => {
                       <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
                         Informações Rituais
                       </Typography>
-                      
+
                       <Box sx={{ mb: 2 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                           Data de Comemoração:
