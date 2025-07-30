@@ -81,6 +81,9 @@ bower_components
 # Compiled binary addons
 build/Release
 
+# React build output
+build/
+
 # Dependency directories
 jspm_packages/
 
