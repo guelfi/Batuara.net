@@ -35,7 +35,7 @@ const HeroSection: React.FC = () => {
       const isMobile = window.innerWidth < 768;
       const headerHeight = isMobile ? 56 : 64; // Mobile usa altura menor
       const offsetHeight = isMobile ? 48 : 32; // Offset maior para mobile para coincidir com o carregamento inicial
-      
+
       const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
       const offsetPosition = elementPosition - offsetHeight;
 
@@ -102,13 +102,14 @@ const HeroSection: React.FC = () => {
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         color: 'white',
-        py: { xs: 6, md: 8 },
-        pt: { xs: 4, md: 6 },
         position: 'relative',
         overflow: 'hidden',
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'center',
+        pt: { xs: '80px', md: '100px' }, // Espaço para o header + margem
+        pb: { xs: 4, md: 6 },
       }}
     >
       {/* Dark overlay for better text contrast on all devices */}
@@ -124,7 +125,14 @@ const HeroSection: React.FC = () => {
         }}
       />
 
-      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2, px: { xs: 1, md: 2 } }}>
+      <Container
+        maxWidth="lg"
+        sx={{
+          position: 'relative',
+          zIndex: 2,
+          px: { xs: 2, md: 3 },
+        }}
+      >
         <Grid container spacing={4} alignItems="flex-start">
           <Grid item xs={12} md={8}>
             {/* Conteúdo centralizado no espaço disponível */}
