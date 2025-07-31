@@ -137,8 +137,8 @@ const AboutSection: React.FC = () => {
           {/* Texto que envolve o card */}
           <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.8, fontSize: '1.1rem', textAlign: 'justify' }}>
             A Casa de Caridade Batuara nasceu do desejo de servir a Espiritualidade através da caridade 
-            e do amor ao próximo. Fundada com base na Sabedoria Ancestral dos Orixás e no 
-            Conhecimento dos Guias, Entidades e Mentores, nossa casa é um lar espiritual para todos que 
+            e do amor ao próximo. Fundada em 23/04/1973 por Armando Augusto Nunes Filho (Dinho) e Ciro na Cidade de Guarulhos com base
+             na Sabedoria Ancestral dos Orixás e no Conhecimento dos Guias, Entidades e Mentores, nossa casa é um lar espiritual para todos que 
             buscam a luz, a paz e a elevação da alma.
           </Typography>
           
@@ -163,8 +163,8 @@ const AboutSection: React.FC = () => {
           {/* Texto primeiro no mobile */}
           <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.8, fontSize: '1.1rem', textAlign: 'justify' }}>
             A Casa de Caridade Batuara nasceu do desejo de servir a Espiritualidade através da caridade 
-            e do amor ao próximo. Fundada com base na Sabedoria Ancestral dos Orixás e no 
-            Conhecimento dos Guias, Entidades e Mentores, nossa casa é um lar espiritual para todos que 
+            e do amor ao próximo. Fundada em 23/04/1973 por Armando Augusto Nunes Filho (Dinho) e Ciro na Cidade de Guarulhos com base
+             na Sabedoria Ancestral dos Orixás e no Conhecimento dos Guias, Entidades e Mentores, nossa casa é um lar espiritual para todos que 
             buscam a luz, a paz e a elevação da alma.
           </Typography>
           
@@ -278,7 +278,7 @@ const AboutSection: React.FC = () => {
               {[
                 { icon: MenuBookIcon, title: 'Tradição', description: 'Preservando os ensinamentos ancestrais', color: 'primary.main' },
                 { icon: FavoriteIcon, title: 'Caridade', description: 'Assistência espiritual gratuita, orientação e consolação para todos que nos procuram, sem distinção.', color: 'secondary.main' },
-                { icon: PeopleIcon, title: 'Fraternidade', description: 'Uma família unida no amor', color: 'success.main' },
+                { icon: PeopleIcon, title: 'Fraternidade', description: 'Uma família espiritual unida pelo amor, onde todos são tratados como irmãos.', color: 'success.main' },
                 { icon: AutoAwesomeIcon, title: 'Espiritualidade', description: 'Desenvolvimento espiritual através do estudo, da oração e da prática da mediunidade com responsabilidade.', color: 'info.main' }
               ].map((item, index) => (
                 <Card

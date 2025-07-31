@@ -137,12 +137,13 @@ const UmbandaSection: React.FC = () => {
     >
       <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
         <Typography
-          variant="h3"
+          variant="h2"
           component="h2"
           sx={{
             textAlign: 'center',
             mb: 2,
-            fontWeight: 700,
+            fontSize: { xs: '1.7rem', md: '2.5rem' },
+            fontWeight: 600,
             color: 'primary.main',
           }}
         >

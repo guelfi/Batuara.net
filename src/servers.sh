@@ -99,7 +99,7 @@ start_service() {
         # Verificar se a porta está respondendo
         if curl -s --connect-timeout 3 "http://localhost:$port" > /dev/null 2>&1; then
             echo -e "${SUCCESS} ${GREEN}${name} iniciado e respondendo! (PID: $pid)${NC}"
-            echo "${name}|${url}|${desc}" >> /tmp/batuara_services.tmp
+            echo "${name}|${url}|${desc}|ACTIVE|$pid" >> /tmp/batuara_services.tmp
             return 0
         fi
         
@@ -108,6 +108,7 @@ start_service() {
     done
     
     echo -e "${ERROR} ${RED}Falha ao iniciar ${name}. Log: ${log}${NC}"
+    echo "${name}|${url}|${desc}|FAILED|$pid" >> /tmp/batuara_services.tmp
     return 1
 }
 
@@ -127,29 +128,19 @@ start_all() {
     for i in {1..5}; do printf "${CYAN}▓"; sleep 1; done
     echo
     
+    # Sempre mostrar o status final elegante, independente do sucesso
+    echo -e "\n${INFO} ${YELLOW}Exibindo status final dos serviços...${NC}"
+    show_detailed_status
+    
     if [ $started -eq 3 ]; then
-        echo -e "\n${SUCCESS} ${GREEN}Ambiente iniciado com sucesso!${NC}\n"
-        echo -e "${WHITE}═══════════════════════════════════════════════════════════════════════════════${NC}"
-        echo -e "${WHITE}                            SERVIÇOS ATIVOS                                   ${NC}"
-        echo -e "${WHITE}═══════════════════════════════════════════════════════════════════════════════${NC}\n"
-        
-        local ip=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
-        echo -e "${INFO} ${CYAN}IP Local: ${WHITE}$ip${NC}\n"
-        
-        while IFS='|' read -r name url desc; do
-            echo -e "${SUCCESS} ${GREEN}$name${NC}"
-            echo -e "   ${CYAN}URL: ${WHITE}$url${NC}"
-            echo -e "   ${YELLOW}Descrição: $desc${NC}"
-            echo -e "   ${PURPLE}Rede: ${WHITE}${url/localhost/$ip}${NC}\n"
-        done < /tmp/batuara_services.tmp
-        
-        echo -e "${WHITE}═══════════════════════════════════════════════════════════════════════════════${NC}\n"
+        echo -e "\n${SUCCESS} ${GREEN}Ambiente iniciado com sucesso!${NC}"
         echo -e "${INFO} ${YELLOW}Pressione Ctrl+C para parar todos os serviços...${NC}"
         
         trap 'echo; echo -e "${STOP} ${YELLOW}Parando serviços...${NC}"; stop_all; exit 0' INT
         while true; do sleep 1; done
     else
-        echo -e "${ERROR} ${RED}Alguns serviços falharam. Verifique os logs.${NC}"
+        echo -e "\n${ERROR} ${RED}Alguns serviços falharam ao iniciar.${NC}"
+        echo -e "${INFO} ${CYAN}Verifique os logs em /tmp/batuara_*.log para mais detalhes.${NC}"
         exit 1
     fi
 }
@@ -168,20 +159,85 @@ stop_all() {
 
 check_status() {
     show_banner
-    echo -e "${INFO} ${WHITE}STATUS DOS SERVIÇOS${NC}\n"
+    show_detailed_status
+}
+
+show_detailed_status() {
+    clear
+    echo -e "${WHITE}===============================================================================${NC}"
+    echo -e "${WHITE}                            STATUS DOS SERVIÇOS                               ${NC}"
+    echo -e "${WHITE}===============================================================================${NC}"
     
-    local services=("Batuara.API:$API_PORT" "AdminDashboard:$ADMIN_DASHBOARD_PORT" "PublicWebsite:$PUBLIC_WEBSITE_PORT")
+    local ip=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
+    echo -e "${INFO} ${CYAN}IP Local: ${WHITE}$ip${NC}"
+    echo
+    
+    local services=(
+        "Batuara.API:$API_PORT:Backend API:API Backend do sistema"
+        "AdminDashboard:$ADMIN_DASHBOARD_PORT:Painel Admin:Interface administrativa"
+        "PublicWebsite:$PUBLIC_WEBSITE_PORT:Website Público:Site público da Casa Batuara"
+    )
+    
+    local active_count=0
+    local total_count=${#services[@]}
     
     for service in "${services[@]}"; do
-        IFS=':' read -r name port <<< "$service"
+        IFS=':' read -r name port title desc <<< "$service"
         local pid=$(lsof -t -i :$port 2>/dev/null)
+        local status_icon status_text status_color url_local url_network
         
         if [ -n "$pid" ]; then
-            echo -e "${SUCCESS} ${GREEN}$name${NC} - ${GREEN}ATIVO${NC} (PID: $pid, Porta: $port)"
+            # Verificar se está realmente respondendo
+            if curl -s --connect-timeout 2 "http://localhost:$port" > /dev/null 2>&1; then
+                status_icon="${SUCCESS}"
+                status_text="ATIVO"
+                status_color="${GREEN}"
+                ((active_count++))
+                url_local="http://localhost:$port"
+                url_network="http://$ip:$port"
+            else
+                status_icon="${WARNING}"
+                status_text="INICIANDO"
+                status_color="${YELLOW}"
+                url_local="http://localhost:$port (não responde)"
+                url_network="http://$ip:$port (não responde)"
+            fi
         else
-            echo -e "${ERROR} ${RED}$name${NC} - ${RED}INATIVO${NC} (Porta: $port)"
+            status_icon="${ERROR}"
+            status_text="INATIVO"
+            status_color="${RED}"
+            url_local="Serviço parado"
+            url_network="Serviço parado"
         fi
+        
+        echo -e "${status_icon} ${status_color}${title} - ${status_text}${NC}"
+        echo -e "   ${CYAN}Porta:${NC} ${WHITE}$port${NC} | ${CYAN}PID:${NC} ${WHITE}${pid:-"N/A"}${NC}"
+        echo -e "   ${PURPLE}Local:${NC} ${WHITE}$url_local${NC}"
+        echo -e "   ${PURPLE}Rede:${NC}  ${WHITE}$url_network${NC}"
+        echo -e "   ${YELLOW}Info:${NC}  ${desc}"
+        echo
     done
+    
+    # Resumo final
+    local health_icon health_text health_color
+    if [ $active_count -eq $total_count ]; then
+        health_icon="${SUCCESS}"
+        health_text="SISTEMA SAUDÁVEL"
+        health_color="${GREEN}"
+    elif [ $active_count -gt 0 ]; then
+        health_icon="${WARNING}"
+        health_text="SISTEMA PARCIAL"
+        health_color="${YELLOW}"
+    else
+        health_icon="${ERROR}"
+        health_text="SISTEMA INATIVO"
+        health_color="${RED}"
+    fi
+    
+    echo -e "${WHITE}===============================================================================${NC}"
+    echo -e "${health_icon} ${health_color}${health_text}${NC} - ${WHITE}$active_count${NC}/${WHITE}$total_count${NC} serviços ativos"
+    echo -e "${INFO} ${CYAN}Atualizado em:${NC} ${WHITE}$(date '+%d/%m/%Y %H:%M:%S')${NC}"
+    echo -e "${WHITE}===============================================================================${NC}"
     echo
 }
 

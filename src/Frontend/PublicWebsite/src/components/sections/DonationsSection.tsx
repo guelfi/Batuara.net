@@ -271,7 +271,7 @@ const DonationsSection: React.FC = () => {
         </Grid>
 
         <Box sx={{ textAlign: 'center', mt: 4 }}>
-          <Card sx={{ p: 4, backgroundColor: 'primary.light', color: 'primary.contrastText' }}>
+          <Card sx={{ p: 4, backgroundColor: 'primary.light', color: 'primary.contrastText', height: '110px'  }}>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
               "Fora da caridade não há salvação"
             </Typography>

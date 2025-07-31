@@ -86,7 +86,7 @@ const ContactSection: React.FC = () => {
             <Typography
               variant="h2"
               sx={{
-                fontSize: { xs: '1.7rem', md: '1.9rem' },
+                fontSize: { xs: '1.7rem', md: '2.5rem' },
                 fontWeight: 600,
                 color: 'primary.main',
               }}

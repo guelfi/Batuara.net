@@ -25,7 +25,7 @@ const LocationSection: React.FC = () => {
             <Typography
               variant="h2"
               sx={{
-                fontSize: '2rem',
+                fontSize: { xs: '1.7rem', md: '2.5rem' },
                 fontWeight: 600,
                 mb: 0.5,
                 color: 'primary.main',
@@ -76,7 +76,7 @@ const LocationSection: React.FC = () => {
             <Typography
               variant="h2"
               sx={{
-                fontSize: '1.8rem',
+                fontSize: { xs: '1.7rem', md: '2.5rem' },
                 fontWeight: 600,
                 mb: 0.5,
                 color: 'primary.main',
