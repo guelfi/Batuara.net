@@ -90,6 +90,15 @@ const HeroSection: React.FC = () => {
     if (scrollContainerRef.current) {
       handleScroll();
     }
+
+    // Garantir que a página inicie no topo correto
+    const timer = setTimeout(() => {
+      if (window.location.hash === '' || window.location.hash === '#home') {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -108,7 +117,7 @@ const HeroSection: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        pt: { xs: '80px', md: '100px' }, // Espaço para o header + margem
+        pt: { xs: '32px', md: '84px' }, // Espaço para o header + margem (aproximado mais 2 em ambos)
         pb: { xs: 4, md: 6 },
       }}
     >
