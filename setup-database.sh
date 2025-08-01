@@ -109,14 +109,22 @@ check_pending_migrations() {
 apply_entity_framework_migrations() {
     log_info "Aplicando migrations do Entity Framework..."
     
-    # Parar API se estiver rodando
+    # Usar o migration handler especializado
+    if [ -f "scripts/migration-handler.sh" ]; then
+        chmod +x scripts/migration-handler.sh
+        if ./scripts/migration-handler.sh; then
+            log_success "Migrations aplicadas via handler especializado"
+            return 0
+        else
+            log_warning "Handler de migrations falhou, tentando método manual..."
+        fi
+    fi
+    
+    # Fallback para método manual
     docker-compose stop api
     
-    # Aplicar migrations usando dotnet ef
-    log_info "Executando dotnet ef database update..."
-    
     if docker-compose run --rm api dotnet ef database update --project src/Backend/Batuara.API; then
-        log_success "Migrations aplicadas com sucesso"
+        log_success "Migrations aplicadas manualmente"
         return 0
     else
         log_error "Falha ao aplicar migrations"
@@ -128,41 +136,31 @@ apply_entity_framework_migrations() {
 seed_initial_data() {
     log_info "Populando dados iniciais..."
     
-    # Verificar se dados já existem
-    local count=$(docker exec $DB_CONTAINER psql -U batuara_user -d batuara_db -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" 2>/dev/null | tr -d ' ')
-    
-    if [ "$count" -gt 0 ]; then
-        log_info "Verificando se dados já foram inseridos..."
-        local orixa_count=$(docker exec $DB_CONTAINER psql -U batuara_user -d batuara_db -t -c "SELECT COUNT(*) FROM \"Orixas\";" 2>/dev/null | tr -d ' ')
-        
-        if [ "$orixa_count" -gt 0 ]; then
-            log_success "Dados já existem no banco"
+    # Usar o data seeder especializado
+    if [ -f "scripts/data-seeder.sh" ]; then
+        chmod +x scripts/data-seeder.sh
+        if ./scripts/data-seeder.sh seed; then
+            log_success "Dados populados via seeder especializado"
             return 0
+        else
+            log_warning "Data seeder falhou, tentando método manual..."
         fi
     fi
     
-    # Executar scripts de seed
-    log_info "Executando scripts de seed..."
+    # Fallback para método manual
+    log_info "Executando scripts de seed manuais..."
     
-    if [ -f "scripts/seed_all_data.sql" ]; then
-        docker exec -i $DB_CONTAINER psql -U batuara_user -d batuara_db < scripts/seed_all_data.sql
-        log_success "Dados básicos inseridos"
-    fi
+    local scripts=("seed_all_data.sql" "seed_orixas_data.sql" "seed_umbanda_lines_data.sql" "seed_spiritual_content_data.sql")
     
-    if [ -f "scripts/seed_orixas_data.sql" ]; then
-        docker exec -i $DB_CONTAINER psql -U batuara_user -d batuara_db < scripts/seed_orixas_data.sql
-        log_success "Dados de Orixás inseridos"
-    fi
-    
-    if [ -f "scripts/seed_umbanda_lines_data.sql" ]; then
-        docker exec -i $DB_CONTAINER psql -U batuara_user -d batuara_db < scripts/seed_umbanda_lines_data.sql
-        log_success "Dados de Linhas de Umbanda inseridos"
-    fi
-    
-    if [ -f "scripts/seed_spiritual_content_data.sql" ]; then
-        docker exec -i $DB_CONTAINER psql -U batuara_user -d batuara_db < scripts/seed_spiritual_content_data.sql
-        log_success "Conteúdo espiritual inserido"
-    fi
+    for script in "${scripts[@]}"; do
+        if [ -f "scripts/$script" ]; then
+            if docker exec -i $DB_CONTAINER psql -U batuara_user -d batuara_db < "scripts/$script" >/dev/null 2>&1; then
+                log_success "Script $script executado"
+            else
+                log_warning "Falha no script $script"
+            fi
+        fi
+    done
 }
 
 # Função para validar schema do banco
@@ -245,13 +243,24 @@ start_all_services() {
     docker-compose up -d
     
     log_info "Aguardando serviços ficarem prontos..."
-    sleep 15
+    sleep 20
     
-    # Verificar se API está respondendo
-    if docker exec batuara-public-website curl -s http://batuara-api:8080 >/dev/null 2>&1; then
-        log_success "API está respondendo internamente"
+    # Usar o validador de saúde da API
+    if [ -f "scripts/api-health-validator.sh" ]; then
+        chmod +x scripts/api-health-validator.sh
+        log_info "Executando validação de saúde da API..."
+        if ./scripts/api-health-validator.sh validate; then
+            log_success "Validação de saúde passou!"
+        else
+            log_warning "Alguns problemas detectados na validação"
+        fi
     else
-        log_warning "API pode não estar respondendo ainda"
+        # Fallback para verificação simples
+        if docker exec batuara-public-website curl -s http://batuara-api:8080 >/dev/null 2>&1; then
+            log_success "API está respondendo internamente"
+        else
+            log_warning "API pode não estar respondendo ainda"
+        fi
     fi
     
     log_success "Todos os serviços iniciados!"
