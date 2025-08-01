@@ -1,0 +1,101 @@
+version: '3.3'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: batuara-db
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      - POSTGRES_DB=batuara_db
+      - POSTGRES_USER=batuara_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - batuara-db-data:/var/lib/postgresql/data
+    networks: 
+      - batuara-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U batuara_user -d batuara_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: batuara-api
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=batuara_db;Username=batuara_user;Password=${DB_PASSWORD}
+      - ASPNETCORE_URLS=http://+:8080
+    networks: 
+      - batuara-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  public-website:
+    build:
+      context: ./src/Frontend/PublicWebsite
+      dockerfile: ../../../Dockerfile.frontend
+      args:
+        REACT_APP_API_URL: ${VITE_API_BASE_URL_TEST}:8003/api
+    container_name: batuara-public-website
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - batuara-net
+      - proxy-net
+    expose: 
+      - 80
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  admin-dashboard:
+    build:
+      context: ./src/Frontend/AdminDashboard
+      dockerfile: ../../../Dockerfile.frontend
+      args:
+        REACT_APP_API_URL: ${VITE_API_BASE_URL_TEST}:8004/api
+    container_name: batuara-admin-dashboard
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - batuara-net
+      - proxy-net
+    expose: 
+      - 80
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+networks:
+  batuara-net:
+    driver: bridge
+  proxy-net:
+    external: true
+
+volumes:
+  batuara-db-data:
+    driver: local

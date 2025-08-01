@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia de Implantação | Batuara.net</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <style>
+        body { background-color: #f8f9fa; }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 280px;
+            padding: 20px;
+            background-color: #343a40;
+            color: white;
+            overflow-y: auto;
+        }
+        .sidebar .nav-link { color: #adb5bd; }
+        .sidebar .nav-link.active { color: #ffffff; font-weight: bold; }
+        .sidebar .nav-link:hover { color: #ffffff; }
+        .main-content { margin-left: 300px; padding: 20px; }
+        .code-block { position: relative; margin-bottom: 1rem; }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+        .code-block:hover .copy-btn { opacity: 1; }
+        .copy-btn:hover { background-color: #5a6268; }
+        h2, h3, h4 { padding-top: 20px; border-bottom: 1px solid #dee2e6; padding-bottom: 10px; margin-top: 20px;}
+        .callout {
+            padding: 1.25rem;
+            margin-top: 1.25rem;
+            margin-bottom: 1.25rem;
+            border: 1px solid #e9ecef;
+            border-left-width: .25rem;
+            border-radius: .25rem;
+        }
+        .callout-info { border-left-color: #0dcaf0; }
+        .callout-warning { border-left-color: #ffc107; }
+        .callout-danger { border-left-color: #dc3545; }
+        .callout-success { border-left-color: #198754; }
+        .nav-pills .nav-link { margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h4 class="mb-4">Guia Batuara.net</h4>
+        <nav class="nav flex-column nav-pills">
+            <a class="nav-link" href="#introducao">1. Introdução</a>
+            <a class="nav-link" href="#preparacao-projeto">2. Preparação do Projeto</a>
+            <a class="nav-link" href="#seguranca-env">3. Segurança: Arquivos .env</a>
+            <a class="nav-link" href="#docker-compose">4. Docker Compose</a>
+            <a class="nav-link" href="#fase1">5. Fase 1: Teste com IP</a>
+            <a class="nav-link" href="#fase2">6. Fase 2: Produção com Domínio</a>
+            <a class="nav-link" href="#manutencao">7. Manutenção</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="text-center">
+            <h1 class="display-5">Guia de Implantação</h1>
+            <h1 class="display-5">Batuara.net</h1>
+        </div>
+        <p class="lead mt-3">Este guia detalha a implantação do projeto Batuara.net na infraestrutura compartilhada.</p>
+
+        <section id="introducao">
+            <h2>1. Introdução</h2>
+            <p>Este documento é um guia específico para a implantação do projeto <strong>Batuara.net</strong>. Ele assume que a <a href="deploy-infra-compartilhada.html">infraestrutura compartilhada</a> (servidor Ubuntu, Docker, Nginx Proxy, Certbot, scripts de backup) já foi configurada.</p>
+            <p>O Batuara.net é composto por:</p>
+            <ul>
+                <li>Uma API em .NET 8.</li>
+                <li>Um Site Público em React (Create React App).</li>
+                <li>Um Dashboard Administrativo em React (Create React App).</li>
+            </ul>
+            <p>O processo de implantação é dividido em duas fases:</p>
+            <ul>
+                <li><strong>Fase 1:</strong> Implantação para testes, acessível via IP público e portas específicas.</li>
+                <li><strong>Fase 2:</strong> Transição para produção, utilizando domínios reais e HTTPS.</li>
+            </ul>
+        </section>
+
+        <section id="preparacao-projeto">
+            <h2>2. Preparação do Projeto</h2>
+            <p>Crie o diretório do projeto no servidor, atribua as permissões corretas e clone o repositório.</p>
+            <div class="callout callout-info">
+                <strong>Onde executar:</strong> No terminal do servidor, como usuário <code>ubuntu</code>.
+                <br><strong>Propósito:</strong> Criar a pasta para o projeto Batuara.net e baixar o código-fonte do GitHub.
+            </div>
+            <div class="code-block">
+                <button class="copy-btn">Copiar</button>
+                <pre><code class="language-bash"># O diretório /var/www/batuara_net já foi criado no guia de infraestrutura.
+# Apenas navegamos até ele e clonamos o projeto.
+cd /var/www/batuara_net
+# Garante que o diretório esteja vazio antes de clonar
+rm -rf * # Remove arquivos e diretórios não ocultos
+rm -rf .git # Remove o diretório .git oculto, se existir
+rm -f .env # Remove o arquivo .env oculto, se existir
+# Usamos o link HTTPS para evitar a necessidade de configurar chaves SSH no servidor.
+git clone https://github.com/guelfi/Batuara.net.git . # O ponto é crucial para clonar no diretório atual
+</code></pre>
+            </div>
+            <div class="callout callout-success">
+                <strong>Verificação:</strong> Após executar os comandos, verifique se o código-fonte foi clonado: <code>ls -l /var/www/batuara_net</code>. Você deverá ver os arquivos do seu projeto.
+            </div>
+        </section>
+
+        <section id="seguranca-env">
+            <h2>3. Segurança: Arquivos .env</h2>
+            <div class="callout callout-danger">
+                <h4>Nunca exponha senhas!</h4>
+                <p>Crie o arquivo <code>.env</code> na raiz do diretório do projeto (<code>/var/www/batuara_net/.env</code>). Este arquivo <strong>NUNCA</strong> deve ser enviado para o Git.</p>
+            </div>
+            <div class="callout callout-info">
+                <strong>Onde criar:</strong> No terminal do servidor, como usuário <code>ubuntu</code>.
+                <br><strong>Caminho do arquivo:</strong> <code>/var/www/batuara_net/.env</code>
+                <br><strong>Propósito:</strong> Armazenar senhas e URLs de API de forma segura, separadas do código-fonte.
+            </div>
+            <div class="code-block">
+                <button class="copy-btn">Copiar</button>
+                <pre><code class="language-bash">cat << 'EOF' > /var/www/batuara_net/.env
+# Senhas e configurações do Batuara.net
+DB_PASSWORD=GERE_UMA_SENHA_FORTE_AQUI_2
+
+# Variáveis para a fase de teste (IP Público) - SERÁ SUBSTITUÍDO AUTOMATICAMENTE
+VITE_API_BASE_URL_TEST=http://$(curl -s ifconfig.me)
+
+# Variáveis para a fase de produção (Domínios)
+VITE_API_BASE_URL_PROD=https://api.batuara.org.br # Exemplo: se a API tiver um subdomínio próprio
+PUBLIC_WEBSITE_DOMAIN=batuara.org.br
+ADMIN_DASHBOARD_DOMAIN=admin.batuara.org.br
+EOF
+</code></pre>
+            </div>
+            <div class="callout callout-success">
+                <strong>Verificação:</strong> Verifique se o arquivo foi criado corretamente: <code>cat /var/www/batuara_net/.env</code>. O conteúdo deve ser o mesmo do bloco acima.
+            </div>
+            <div class="callout callout-warning">
+                <strong>Atenção:</strong> Lembre-se de substituir <code>GERE_UMA_SENHA_FORTE_AQUI_2</code> por uma senha forte e única para o seu banco de dados. E ajuste os domínios para os seus domínios reais.
+            </div>
+        </section>
+
+        <section id="docker-compose">
+            <h2>4. Docker Compose</h2>
+            <p>Crie o arquivo <code>docker-compose.yml</code> na raiz do projeto (<code>/var/www/batuara_net/docker-compose.yml</code>).</p>
+            <div class="callout callout-info">
+                <strong>Onde criar:</strong> No terminal do servidor, como usuário <code>ubuntu</code>.
+                <br><strong>Caminho do arquivo:</strong> <code>/var/www/batuara_net/docker-compose.yml</code>
+                <br><strong>Propósito:</strong> Define e orquestra os serviços (banco de dados, API, frontends) do Batuara.net.
+            </div>
+            <div class="code-block">
+                <button class="copy-btn">Copiar</button>
+                <pre><code class="language-bash">cat << 'EOF' > /var/www/batuara_net/docker-compose.yml
+version: '3.3'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: batuara-db
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      - POSTGRES_DB=batuara_db
+      - POSTGRES_USER=batuara_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - batuara-db-data:/var/lib/postgresql/data
+    networks: [batuara-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U batuara_user -d batuara_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: batuara-api
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=batuara_db;Username=batuara_user;Password=${DB_PASSWORD}
+      - ASPNETCORE_URLS=http://+:8080
+    networks: [batuara-net]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  public-website:
+    build:
+      context: ./src/Frontend/PublicWebsite
+      dockerfile: /var/www/dockerfiles/Dockerfile.cra # Dockerfile comum
+      args:
+        REACT_APP_API_URL: ${VITE_API_BASE_URL_TEST}:8003/api # Para fase de teste
+    container_name: batuara-public-website
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - batuara-net
+      - proxy-net
+    expose: [80]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  admin-dashboard:
+    build:
+      context: ./src/Frontend/AdminDashboard
+      dockerfile: /var/www/dockerfiles/Dockerfile.cra # Dockerfile comum
+      args:
+        REACT_APP_API_URL: ${VITE_API_BASE_URL_TEST}:8004/api # Para fase de teste
+    container_name: batuara-admin-dashboard
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - batuara-net
+      - proxy-net
+    expose: [80]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+networks:
+  batuara-net:
+    driver: bridge
+  proxy-net:
+    external: true
+
+volumes:
+  batuara-db-data:
+    driver: local
+EOF
+</code></pre>
+            </div>
+            <div class="callout callout-success">
+                <strong>Verificação:</strong> Verifique a sintaxe do arquivo com: <code>docker compose -f /var/www/batuara_net/docker-compose.yml config</code>. Se não houver erros, a sintaxe está correta.
+            </div>
+
+            <h4>4.1. Dockerfile da API (.NET)</h4>
+            <div class="callout callout-info">
+                <strong>Onde criar:</strong> No terminal do servidor, como usuário <code>ubuntu</code>.
+                <br><strong>Caminho do arquivo:</strong> <code>/var/www/batuara_net/Dockerfile.api</code>
+                <br><strong>Propósito:</strong> Define como construir a imagem Docker da API do Batuara.net.
+            </div>
+            <div class="code-block">
+                <button class="copy-btn">Copiar</button>
+                <pre><code class="language-bash">cat << 'EOF' > /var/www/batuara_net/Dockerfile.api
+# Estágio de Build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY Batuara.sln .
+COPY src/Backend/Batuara.API/Batuara.API.csproj src/Backend/Batuara.API/
+COPY src/Backend/Batuara.Application/Batuara.Application.csproj src/Backend/Batuara.Application/
+COPY src/Backend/Batuara.Domain/Batuara.Domain.csproj src/Backend/Batuara.Domain/
+COPY src/Backend/Batuara.Infrastructure/Batuara.Infrastructure.csproj src/Backend/Batuara.Infrastructure/
+COPY src/Backend/Batuara.Auth/Batuara.Auth.csproj src/Backend/Batuara.Auth/
+RUN dotnet restore src/Backend/Batuara.API/Batuara.API.csproj
+
+COPY . .
+WORKDIR "/src/src/Backend/Batuara.API"
+RUN dotnet publish -c Release -o /app/publish
+
+# Estágio Final
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "Batuara.API.dll"]
+EOF
+</code></pre>
+            </div>
+            <div class="callout callout-success">
+                <strong>Verificação:</strong> Verifique se o arquivo foi criado corretamente: <code>cat /var/www/batuara_net/Dockerfile.api</code>.
+            </div>
+        </section>
+
+        <section id="fase1">
+            <h2>5. Fase 1: Implantação para Teste (Acesso por IP)</h2>
+            <p>Nesta fase, vamos subir as aplicações do Batuara.net e expô-las em portas diferentes para teste, usando apenas o IP público.</p>
+
+            <h4>5.1. Iniciar Aplicações em Modo de Teste</h4>
+            <div class="callout callout-info">
+                <strong>Onde executar:</strong> No terminal do servidor, como usuário <code>ubuntu</code>.
+                <br><strong>Propósito:</strong> Construir as imagens Docker e iniciar os contêineres do Batuara.net.
+            </div>
+            <div class="callout callout-success">
+                <strong>Hora de Lançar!</strong> Execute os comandos na ordem para construir e iniciar os contêineres do Batuara.net.
+            </div>
+            <div class="code-block">
+                <button class="copy-btn">Copiar</button>
+                <pre><code class="language-bash">cd /var/www/batuara_net
+
+# 1. Constrói as imagens sem usar o cache
+docker-compose build --no-cache
+
+# 2. Inicia os contêineres com as imagens recém-construídas
+docker-compose up -d
+
+echo "Batuara.net em modo de TESTE concluído!"
+echo "Acesse as aplicações em:"
+echo "Batuara Site: http://129.153.86.168:8003"
+echo "Batuara Admin: http://129.153.86.168:8004"
+</code></pre>
+            </div>
+            <div class="callout callout-success">
+                <strong>Verificação:</strong> Execute <code>docker ps</code>. Você deverá ver os contêineres <code>batuara-db</code>, <code>batuara-api</code>, <code>batuara-public-website</code> e <code>batuara-admin-dashboard</code> rodando. Verifique os logs com <code>docker-compose logs</code> para garantir que não há erros.
+            </div>
+        </section>
+
+        <section id="fase2">
+            <h2>6. Fase 2: Go-Live para Produção (Acesso por Domínio)</h2>
+            <p>Após testar tudo e garantir que o Batuara.net está funcionando corretamente via IP, siga estes passos para mudar para o ambiente de produção com seus domínios reais.</p>
+            <div class="callout callout-info">
+                <strong>Pré-requisito:</strong> Certifique-se de que os registros DNS para <code>batuara.org.br</code>, <code>www.batuara.org.br</code> e <code>admin.batuara.org.br</code> já foram configurados no Registro.br e propagados. Consulte a seção <a href="deploy-infra-compartilhada.html#configuracao-dns-registrobr">Configuração DNS (Registro.br)</a> no guia de infraestrutura compartilhada.
+            </div>
+
+            <h4>6.1. Atualizar Arquivo <code>.env</code></h4>
+            <div class="callout callout-info">
+                <strong>Onde editar:</strong> No terminal do servidor, usando um editor como <code>nano</code> ou <code>vim</code>.
+                <br><strong>Caminho do arquivo:</strong> <code>/var/www/batuara_net/.env</code>
+                <br><strong>Propósito:</strong> Mudar as URLs da API para apontar para os domínios de produção.
+            </div>
+            <div class="code-block">
+                <button class="copy-btn">Copiar</button>
+                <pre><code class="language-bash">nano /var/www/batuara_net/.env</code></pre>
+            </div>
+            <p>Altere as linhas <code>VITE_API_BASE_URL_TEST</code> e <code>VITE_API_BASE_URL_PROD</code> para refletir os domínios de produção. Exemplo:</p>
+            <div class="code-block">
+                <button class="copy-btn">Copiar</button>
+                <pre><code class="language-bash"># Senhas e configurações do Batuara.net
+DB_PASSWORD=SUA_SENHA_FORTE_AQUI
+
+# Variáveis para a fase de teste (IP Público) - MANTENHA PARA REFERÊNCIA, MAS NÃO SERÃO USADAS NESTA FASE
+VITE_API_BASE_URL_TEST=http://129.153.86.168
+
+# Variáveis para a fase de produção (Domínios)
+VITE_API_BASE_URL_PROD=https://api.batuara.org.br # OU https://batuara.org.br/api, dependendo da sua estrutura
+PUBLIC_WEBSITE_DOMAIN=batuara.org.br
+ADMIN_DASHBOARD_DOMAIN=admin.batuara.org.br
+</code></pre>
+            </div>
+            <div class="callout callout-success">
+                <strong>Verificação:</strong> Salve o arquivo (Ctrl+O, Enter, Ctrl+X no nano) e verifique o conteúdo com <code>cat /var/www/batuara_net/.env</code>.
+            </div>
+
+            <h4>6.2. Atualizar Docker Compose para Produção</h4>
+            <div class="callout callout-info">
+                <strong>Onde editar:</strong> No terminal do servidor, usando um editor como <code>nano</code> ou <code>vim</code>.
+                <br><strong>Caminho do arquivo:</strong> <code>/var/www/batuara_net/docker-compose.yml</code>
+                <br><strong>Propósito:</strong> Mudar as variáveis de ambiente dos frontends para usar as URLs de produção.
+            </div>
+            <div class="code-block">
+                <button class="copy-btn">Copiar</button>
+                <pre><code class="language-bash">nano /var/www/batuara_net/docker-compose.yml</code></pre>
+            </div>
+            <p>Edite as seções <code>public-website</code> e <code>admin-dashboard</code> para usar <code>VITE_API_BASE_URL_PROD</code>:</p>
+            <div class="code-block">
+                <button class="copy-btn">Copiar</button>
+                <pre><code class="language-yaml"># Edite o docker-compose.yml do Batuara.net para ficar assim:
+version: '3.8'
+
+services:
+  db:
+    # ... (manter igual)
+
+  api:
+    # ... (manter igual)
+
+  public-website:
+    build:
+      context: ./src/Frontend/PublicWebsite
+      dockerfile: /var/www/dockerfiles/Dockerfile.cra
+      args:
+        REACT_APP_API_URL: ${VITE_API_BASE_URL_PROD}/api # AGORA USA A URL DE PRODUÇÃO
+    container_name: batuara-public-website
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - batuara-net
+      - proxy-net
+    expose: [80]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  admin-dashboard:
+    build:
+      context: ./src/Frontend/AdminDashboard
+      dockerfile: /var/www/dockerfiles/Dockerfile.cra
+      args:
+        REACT_APP_API_URL: ${VITE_API_BASE_URL_PROD}/api # AGORA USA A URL DE PRODUÇÃO
+    container_name: batuara-admin-dashboard
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - batuara-net
+      - proxy-net
+    expose: [80]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+networks:
+  batuara-net:
+    driver: bridge
+  proxy-net:
+    external: true
+
+volumes:
+  batuara-db-data:
+    driver: local
+</code></pre>
+            </div>
+            <div class="callout callout-success">
+                <strong>Verificação:</strong> Salve o arquivo e verifique o conteúdo com <code>cat /var/www/batuara_net/docker-compose.yml</code>.
+            </div>
+
+            <h4>6.3. Lançar em Produção</h4>
+            <div class="callout callout-info">
+                <strong>Onde executar:</strong> No terminal do servidor, como usuário <code>ubuntu</code>.
+                <br><strong>Propósito:</strong> Reconstruir as imagens Docker do Batuara.net com as novas URLs de produção e reiniciar os contêineres.
+            </div>
+            <div class="callout callout-success">
+                <strong>Hora de Lançar!</strong> Execute os comandos na ordem para construir e iniciar os contêineres do Batuara.net.
+            </div>
+            <div class="code-block">
+                <button class="copy-btn">Copiar</button>
+                <pre><code class="language-bash">cd /var/www/batuara_net
+docker-compose up -d --build
+
+echo "Batuara.net em PRODUÇÃO!"
+</code></pre>
+            </div>
+            <div class="callout callout-success">
+                <strong>Verificação:</strong> Acesse seus domínios (ex: <code>https://batuara.org.br</code> e <code>https://admin.batuara.org.br</code>) no navegador. Verifique os logs com <code>docker-compose logs</code> para garantir que não há erros.
+            </div>
+        </section>
+
+        <section id="validacao-final">
+            <h2>8. Validação Final da Implantação</h2>
+            <p>Após iniciar os contêineres, execute este script para validar se todos os serviços do Batuara.net estão rodando corretamente.</p>
+            <div class="code-block">
+                <button class="copy-btn">Copiar</button>
+                <pre><code class="language-bash"># Cria o script de validação na pasta do projeto
+cat << 'EOF' > /var/www/batuara_net/validate_deployment.sh
+#!/bin/bash
+
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+check_container() {
+    CONTAINER_NAME=$1
+    echo -n "Verificando contêiner '${CONTAINER_NAME}'... "
+    if [ $(docker ps -q -f name=^/${CONTAINER_NAME}$) ]; then
+        STATUS=$(docker inspect --format='{{.State.Health.Status}}' ${CONTAINER_NAME})
+        if [ "${STATUS}" == "healthy" ]; then
+            echo -e "${GREEN}Rodando e Saudável (healthy)${NC}"
+        elif [ "${STATUS}" == "unhealthy" ]; then
+            echo -e "${RED}Rodando mas com Falha (unhealthy)${NC}"
+        else
+            echo -e "${GREEN}Rodando (sem health check)${NC}"
+        fi
+    else
+        echo -e "${RED}NÃO ESTÁ RODANDO${NC}"
+    fi
+}
+
+echo "Iniciando validação da implantação do Batuara.net..."
+
+CONTAINERS=("batuara-db" "batuara-api" "batuara-public-website" "batuara-admin-dashboard")
+for container in "${CONTAINERS[@]}"; do
+    check_container $container
+done
+
+echo "Validação concluída."
+EOF
+
+# Torna o script executável e o executa
+chmod +x /var/www/batuara_net/validate_deployment.sh
+/var/www/batuara_net/validate_deployment.sh
+</code></pre>
+            </div>
+        </section>
+
+        <section id="manutencao">
+            <h2>9. Manutenção</h2>
+            <p>Comandos úteis para gerenciar seu ambiente no dia a dia.</p>
+            <div class="code-block">
+                <button class="copy-btn">Copiar</button>
+                <pre><code class="language-bash"># Ver todos os contêineres em execução
+docker ps
+
+# Ver logs de um serviço específico (ex: batuara-api)
+docker-compose -f /var/www/batuara_net/docker-compose.yml logs -f api
+
+# Parar todas as aplicações do Batuara.net
+cd /var/www/batuara_net && docker-compose down
+
+# Atualizar uma aplicação após mudanças no Git
+cd /var/www/batuara_net
+git pull # Puxar as atualizações
+docker-compose up -d --build # Reconstruir e reiniciar
+</code></pre>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const code = btn.nextElementSibling.querySelector('code').innerText;
+                navigator.clipboard.writeText(code).then(() => {
+                    btn.innerText = 'Copiado!';
+                    setTimeout(() => {
+                        btn.innerText = 'Copiar';
+                    }, 2000);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
