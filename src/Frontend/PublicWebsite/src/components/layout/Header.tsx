@@ -52,8 +52,8 @@ const Header: React.FC = () => {
       let offsetHeight;
       
       if (href === '#home') {
-        // Hero: no mobile fica 40px abaixo da posição atual, no desktop vai para o topo absoluto
-        offsetHeight = isMobile ? 40 : 0;
+        // Hero: no mobile fica com muito mais espaço do header, no desktop vai para o topo absoluto
+        offsetHeight = isMobile ? 0 : 0; // Offset zero para dar máximo espaço visual no mobile
       } else if (href === '#location') {
         // Location: mantém o offset atual (está correto)
         offsetHeight = headerHeight + 16;

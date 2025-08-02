@@ -133,7 +133,7 @@ const GuiasEntidadesSection: React.FC = () => {
               color: 'text.secondary',
               maxWidth: '600px',
               mx: 'auto',
-              lineHeight: 1.6,
+              lineHeight: 1.5,
               fontStyle: 'italic',
             }}
           >

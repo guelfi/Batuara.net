@@ -100,8 +100,8 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
       let offsetHeight;
 
       if (sectionId === '#home') {
-        // Hero: no mobile precisa ficar 15px abaixo do header, no desktop vai para o topo absoluto
-        offsetHeight = isMobile ? headerHeight - 15 : 0; // 56 - 15 = 41px no mobile
+        // Hero: no mobile precisa ficar com muito mais espaço do header, no desktop vai para o topo absoluto
+        offsetHeight = isMobile ? 0 : 0; // Offset zero para dar máximo espaço visual no mobile
       } else if (sectionId === '#location') {
         // Location: mantém o offset atual (está correto)
         offsetHeight = headerHeight + 16;
