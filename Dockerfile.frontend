@@ -3,13 +3,13 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Copia arquivos de dependências (contexto já está em PublicWebsite)
+# Copia arquivos de dependências
 COPY package*.json ./
 
 # Instala dependências
 RUN npm ci --only=production
 
-# Copia código fonte (contexto já está em PublicWebsite)
+# Copia código fonte
 COPY . .
 
 # Debug: Verificar estrutura copiada
@@ -19,21 +19,28 @@ RUN echo "=== ESTRUTURA COPIADA ===" && ls -la && echo "=== PUBLIC FOLDER ===" &
 ARG REACT_APP_API_URL
 ENV REACT_APP_API_URL=${REACT_APP_API_URL}
 
-# Verifica se existe index.html, se não cria um básico
-RUN if [ ! -f "public/index.html" ]; then \
-    mkdir -p public && \
-    echo '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"/><link rel="icon" href="%PUBLIC_URL%/favicon.ico"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#000000"/><meta name="description" content="Casa de Caridade Caboclo Batuara"/><title>Batuara.net</title></head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div></body></html>' > public/index.html; \
-fi
-
 # Build da aplicação
 RUN npm run build
 
-# Copiar logo para a raiz do build (para acesso direto via /batuara_logo.png)
-RUN if [ -f "public/batuara_logo.png" ]; then \
+# Copiar assets críticos para a raiz do build
+RUN echo "=== COPIANDO ASSETS CRÍTICOS ===" && \
+    if [ -f "public/batuara_logo.png" ]; then \
         cp public/batuara_logo.png build/batuara_logo.png; \
         echo "✅ Logo copiado para build/batuara_logo.png"; \
     else \
         echo "❌ Logo não encontrado em public/batuara_logo.png"; \
+    fi && \
+    if [ -f "public/favicon.ico" ]; then \
+        cp public/favicon.ico build/favicon.ico; \
+        echo "✅ Favicon.ico copiado para build/favicon.ico"; \
+    else \
+        echo "❌ Favicon.ico não encontrado em public/favicon.ico"; \
+    fi && \
+    if [ -f "public/favicon.png" ]; then \
+        cp public/favicon.png build/favicon.png; \
+        echo "✅ Favicon.png copiado para build/favicon.png"; \
+    else \
+        echo "⚠️ Favicon.png não encontrado em public/favicon.png"; \
     fi
 
 # Estágio de produção
@@ -42,7 +49,7 @@ FROM nginx:stable-alpine
 # Copia arquivos buildados
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Verificar se os assets críticos estão presentes e listar conteúdo
+# Verificar se os assets críticos estão presentes
 RUN echo "=== VERIFICANDO ASSETS CRÍTICOS ===" && \
     ls -la /usr/share/nginx/html/ && \
     echo "=== VERIFICANDO FAVICON ===" && \
@@ -58,71 +65,56 @@ RUN echo "=== VERIFICANDO ASSETS CRÍTICOS ===" && \
         ls -la /usr/share/nginx/html/batuara_logo.png; \
     else \
         echo "❌ batuara_logo.png NÃO encontrado"; \
-    fi && \
-    echo "=== VERIFICAÇÃO COMPLETA ==="
-
-# Remover configuração nginx padrão e criar nova
-RUN rm -f /etc/nginx/conf.d/default.conf
+    fi
 
 # Criar configuração nginx otimizada
-RUN cat > /etc/nginx/conf.d/default.conf << 'EOF'
-server {
-    listen 80;
-    server_name localhost;
-    root /usr/share/nginx/html;
-    index index.html;
-
-    # Configuração específica para favicon.ico
-    location = /favicon.ico {
-        try_files $uri =404;
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-        add_header Content-Type "image/x-icon";
-        access_log off;
-    }
-
-    # Configuração específica para logo
-    location = /batuara_logo.png {
-        try_files $uri =404;
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-        add_header Content-Type "image/png";
-        access_log off;
-    }
-
-    # Configuração para assets estáticos (imagens, CSS, JS)
-    location ~* \.(png|jpg|jpeg|gif|ico|svg|css|js|woff|woff2|ttf|eot)$ {
-        try_files $uri =404;
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-        access_log off;
-    }
-
-    # Configuração para arquivos estáticos do build
-    location /static/ {
-        try_files $uri =404;
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-        access_log off;
-    }
-
-    # Configuração para API
-    location /api/ {
-        proxy_pass http://batuara-api:8080/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # Configuração para SPA (deve ser a última)
-    location / {
-        try_files $uri $uri/ /index.html;
-        expires -1;
-        add_header Cache-Control "no-cache, no-store, must-revalidate";
-    }
-}
-EOF
+RUN echo 'server {' > /etc/nginx/conf.d/default.conf && \
+    echo '    listen 80;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    server_name localhost;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    root /usr/share/nginx/html;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    index index.html;' >> /etc/nginx/conf.d/default.conf && \
+    echo '' >> /etc/nginx/conf.d/default.conf && \
+    echo '    # Configuração específica para favicon.ico' >> /etc/nginx/conf.d/default.conf && \
+    echo '    location = /favicon.ico {' >> /etc/nginx/conf.d/default.conf && \
+    echo '        try_files $uri =404;' >> /etc/nginx/conf.d/default.conf && \
+    echo '        expires 1y;' >> /etc/nginx/conf.d/default.conf && \
+    echo '        add_header Cache-Control "public, immutable";' >> /etc/nginx/conf.d/default.conf && \
+    echo '        add_header Content-Type "image/x-icon";' >> /etc/nginx/conf.d/default.conf && \
+    echo '        access_log off;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    }' >> /etc/nginx/conf.d/default.conf && \
+    echo '' >> /etc/nginx/conf.d/default.conf && \
+    echo '    # Configuração específica para logo' >> /etc/nginx/conf.d/default.conf && \
+    echo '    location = /batuara_logo.png {' >> /etc/nginx/conf.d/default.conf && \
+    echo '        try_files $uri =404;' >> /etc/nginx/conf.d/default.conf && \
+    echo '        expires 1y;' >> /etc/nginx/conf.d/default.conf && \
+    echo '        add_header Cache-Control "public, immutable";' >> /etc/nginx/conf.d/default.conf && \
+    echo '        add_header Content-Type "image/png";' >> /etc/nginx/conf.d/default.conf && \
+    echo '        access_log off;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    }' >> /etc/nginx/conf.d/default.conf && \
+    echo '' >> /etc/nginx/conf.d/default.conf && \
+    echo '    # Configuração para assets estáticos' >> /etc/nginx/conf.d/default.conf && \
+    echo '    location ~* \.(png|jpg|jpeg|gif|ico|svg|css|js|woff|woff2|ttf|eot)$ {' >> /etc/nginx/conf.d/default.conf && \
+    echo '        try_files $uri =404;' >> /etc/nginx/conf.d/default.conf && \
+    echo '        expires 1y;' >> /etc/nginx/conf.d/default.conf && \
+    echo '        add_header Cache-Control "public, immutable";' >> /etc/nginx/conf.d/default.conf && \
+    echo '        access_log off;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    }' >> /etc/nginx/conf.d/default.conf && \
+    echo '' >> /etc/nginx/conf.d/default.conf && \
+    echo '    # Configuração para arquivos estáticos do build' >> /etc/nginx/conf.d/default.conf && \
+    echo '    location /static/ {' >> /etc/nginx/conf.d/default.conf && \
+    echo '        try_files $uri =404;' >> /etc/nginx/conf.d/default.conf && \
+    echo '        expires 1y;' >> /etc/nginx/conf.d/default.conf && \
+    echo '        add_header Cache-Control "public, immutable";' >> /etc/nginx/conf.d/default.conf && \
+    echo '        access_log off;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    }' >> /etc/nginx/conf.d/default.conf && \
+    echo '' >> /etc/nginx/conf.d/default.conf && \
+    echo '    # Configuração para SPA (deve ser a última)' >> /etc/nginx/conf.d/default.conf && \
+    echo '    location / {' >> /etc/nginx/conf.d/default.conf && \
+    echo '        try_files $uri $uri/ /index.html;' >> /etc/nginx/conf.d/default.conf && \
+    echo '        expires -1;' >> /etc/nginx/conf.d/default.conf && \
+    echo '        add_header Cache-Control "no-cache, no-store, must-revalidate";' >> /etc/nginx/conf.d/default.conf && \
+    echo '    }' >> /etc/nginx/conf.d/default.conf && \
+    echo '}' >> /etc/nginx/conf.d/default.conf
 
 # Verificar se a configuração foi criada corretamente
 RUN echo "=== CONFIGURAÇÃO NGINX CRIADA ===" && cat /etc/nginx/conf.d/default.conf
