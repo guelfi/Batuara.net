@@ -104,11 +104,18 @@ fi
 
 echo "📄 Usando arquivo: $COMPOSE_FILE"
 
-# Rebuildar o container
-if docker-compose -f "$COMPOSE_FILE" up -d --build public-website; then
+# Rebuildar o container com cache limpo
+echo "🧹 Limpando cache do Docker..."
+docker system prune -f
+
+echo "🔨 Reconstruindo container com configuração nginx otimizada..."
+if docker-compose -f "$COMPOSE_FILE" up -d --build --force-recreate public-website; then
     echo "✅ Container do PublicWebsite reconstruído com sucesso!"
 else
     echo "❌ Erro ao reconstruir o container do PublicWebsite"
+    echo ""
+    echo "📋 Verificando logs do build:"
+    docker logs batuara-public-website --tail 50
     echo ""
     echo "🔄 Tentando rollback..."
     

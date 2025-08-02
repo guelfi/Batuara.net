@@ -71,6 +71,9 @@ if [ "$CONTAINER_STATUS" = "running" ]; then
     FAVICON_RESPONSE=$(curl -s -I http://localhost:3000/favicon.ico | head -n 1)
     if echo "$FAVICON_RESPONSE" | grep -q "200"; then
         echo "✅ favicon.ico acessível: $FAVICON_RESPONSE"
+        # Verificar Content-Type
+        FAVICON_TYPE=$(curl -s -I http://localhost:3000/favicon.ico | grep -i "content-type" || echo "Content-Type não encontrado")
+        echo "   Content-Type: $FAVICON_TYPE"
     else
         echo "❌ favicon.ico não acessível: $FAVICON_RESPONSE"
     fi
@@ -80,6 +83,9 @@ if [ "$CONTAINER_STATUS" = "running" ]; then
     LOGO_RESPONSE=$(curl -s -I http://localhost:3000/batuara_logo.png | head -n 1)
     if echo "$LOGO_RESPONSE" | grep -q "200"; then
         echo "✅ batuara_logo.png acessível: $LOGO_RESPONSE"
+        # Verificar Content-Type
+        LOGO_TYPE=$(curl -s -I http://localhost:3000/batuara_logo.png | grep -i "content-type" || echo "Content-Type não encontrado")
+        echo "   Content-Type: $LOGO_TYPE"
     else
         echo "❌ batuara_logo.png não acessível: $LOGO_RESPONSE"
     fi
@@ -92,6 +98,12 @@ if [ "$CONTAINER_STATUS" = "running" ]; then
     else
         echo "❌ Página principal não acessível: $MAIN_RESPONSE"
     fi
+    
+    echo ""
+    echo "🔧 TESTANDO CONFIGURAÇÃO NGINX:"
+    echo "-------------------------------"
+    echo "Verificando configuração nginx no container:"
+    docker exec batuara-public-website cat /etc/nginx/conf.d/default.conf 2>/dev/null || echo "❌ Erro ao ler configuração nginx"
     echo ""
     
     echo "📋 LOGS DO NGINX (últimas 20 linhas):"
