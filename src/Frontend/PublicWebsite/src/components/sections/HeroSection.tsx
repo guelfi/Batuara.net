@@ -18,8 +18,6 @@ import PeopleIcon from '@mui/icons-material/People';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import NavigationDots from '../common/NavigationDots';
-import batuaraLogo from '../../assets/images/batuara_logo.png';
-import bgImage from '../../assets/images/bg.jpg';
 
 const HeroSection: React.FC = () => {
   const theme = useTheme();
@@ -121,7 +119,7 @@ const HeroSection: React.FC = () => {
       id="home"
       sx={{
         // Background image for all devices (mobile and desktop)
-        backgroundImage: `url(${bgImage})`,
+        backgroundImage: `url(/bg.jpg)`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -177,7 +175,7 @@ const HeroSection: React.FC = () => {
                 }}
               >
                 <img
-                  src={batuaraLogo}
+                  src="/batuara_logo.png"
                   alt="Casa de Caridade Caboclo Batuara"
                   style={{
                     height: window.innerWidth < 600 ? '132px' : '152px', // Logo aumentado em 10% (120*1.1=132, 138*1.1=152)

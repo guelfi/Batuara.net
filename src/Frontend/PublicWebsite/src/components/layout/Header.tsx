@@ -16,8 +16,6 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import { NavigationItem } from '../../types';
-// Logo servido diretamente da pasta public
-const batuaraLogo = '/batuara_logo.png';
 
 const navigationItems: NavigationItem[] = [
   { label: 'Início', href: '#home' },
@@ -131,7 +129,7 @@ const Header: React.FC = () => {
             ) : (
               <Box
                 component="img"
-                src={batuaraLogo}
+                src="/batuara_logo.png"
                 alt="Casa de Caridade Caboclo Batuara"
                 sx={{
                   height: 40,
