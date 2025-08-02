@@ -125,7 +125,7 @@ dist
 
 # Gatsby files
 .cache/
-public
+# public - COMENTADO para permitir assets do React
 
 # Storybook build outputs
 .out
@@ -171,7 +171,7 @@ TestResults/
 
 # Docker
 .dockerignore
-Dockerfile*
+# Dockerfile* - COMENTADO para permitir Dockerfiles do projeto
 
 # Backup files
 *.bak
