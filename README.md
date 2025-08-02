@@ -31,6 +31,24 @@ Batuara.net/
 └── install-batuara-vps.sh     # Instalação automatizada
 ```
 
+## 💻 Desenvolvimento Local
+
+Para desenvolvimento, usamos **ambiente nativo** (sem Docker) para máxima performance:
+
+```bash
+# Pré-requisitos: Node.js 18+, npm, Git
+
+# PublicWebsite (Terminal 1)
+cd src/Frontend/PublicWebsite
+npm install && npm start  # http://localhost:3000
+
+# AdminDashboard (Terminal 2)
+cd src/Frontend/AdminDashboard
+npm install && npm start  # http://localhost:3001
+```
+
+📖 **Guia completo**: [Configuração do Ambiente Local](./docs/LOCAL_DEVELOPMENT_SETUP.md)
+
 ## 🌐 Aplicações
 
 ### 📱 PublicWebsite
