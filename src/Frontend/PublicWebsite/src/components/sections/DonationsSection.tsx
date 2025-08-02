@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   Button,
-  TextField,
   Alert,
   Snackbar,
   IconButton,
@@ -17,6 +16,7 @@ import {
   DialogContent,
   DialogActions,
   useTheme,
+  useMediaQuery,
   Chip,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -26,16 +26,25 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import HandshakeIcon from '@mui/icons-material/Handshake';
 import ContactMailIcon from '@mui/icons-material/ContactMail';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import NavigationDots from '../common/NavigationDots';
 import QRCode from 'qrcode';
 
 const DonationsSection: React.FC = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [showPixDialog, setShowPixDialog] = useState(false);
   const [showOtherDonationsDialog, setShowOtherDonationsDialog] = useState(false);
   const [copiedText, setCopiedText] = useState('');
   const [showCopyAlert, setShowCopyAlert] = useState(false);
   const [qrCodeLoading, setQrCodeLoading] = useState(false);
   const qrCodeRef = useRef<HTMLCanvasElement>(null);
+
+  // Estados para o carrossel mobile
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [maxScroll, setMaxScroll] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Informações PIX da Casa Batuara (dados fictícios para demonstração)
   const pixInfo = {
@@ -67,7 +76,7 @@ const DonationsSection: React.FC = () => {
     const element = document.querySelector('#contact');
     if (element) {
       const headerHeight = 32;
-      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
       const offsetPosition = elementPosition - headerHeight;
 
       window.scrollTo({
@@ -77,11 +86,74 @@ const DonationsSection: React.FC = () => {
     }
   };
 
+  // Funções do carrossel
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      setScrollPosition(container.scrollLeft);
+      setMaxScroll(container.scrollWidth - container.clientWidth);
+    }
+  };
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 280; // Largura do card + gap
+      const currentScroll = scrollContainerRef.current.scrollLeft;
+      const targetScroll = direction === 'left'
+        ? currentScroll - scrollAmount
+        : currentScroll + scrollAmount;
+
+      scrollContainerRef.current.scrollTo({
+        left: targetScroll,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleDotClick = (dotIndex: number) => {
+    if (scrollContainerRef.current) {
+      const itemWidth = 260; // Largura do card
+      const gap = 16; // Gap entre cards
+      const itemWithGap = itemWidth + gap;
+      const targetScroll = dotIndex * itemWithGap;
+
+      scrollContainerRef.current.scrollTo({
+        left: targetScroll,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const canScrollLeft = scrollPosition > 0;
+  const canScrollRight = scrollPosition < maxScroll;
+
+  // Inicializar carrossel
+  useEffect(() => {
+    const scrollTimer = setTimeout(() => {
+      if (scrollContainerRef.current) {
+        handleScroll();
+      }
+    }, 50);
+
+    const handleResize = () => {
+      if (scrollContainerRef.current) {
+        handleScroll();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      clearTimeout(scrollTimer);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   // Gerar QR Code quando o dialog PIX abrir
   useEffect(() => {
     if (showPixDialog && qrCodeRef.current) {
       setQrCodeLoading(true);
-      
+
       // Aguardar um pouco para o canvas estar pronto
       setTimeout(() => {
         if (qrCodeRef.current) {
@@ -178,104 +250,328 @@ const DonationsSection: React.FC = () => {
           </Button>
         </Box>
 
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} md={4}>
-            <Card
-              sx={{
-                height: '100%',
-                textAlign: 'center',
-                transition: 'transform 0.3s ease-in-out',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                },
-              }}
-            >
-              <CardContent sx={{ p: 2.5 }}>
-                <FavoriteIcon
-                  sx={{
-                    fontSize: 36,
-                    color: 'secondary.main',
-                    mb: 1.5,
-                  }}
-                />
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, fontSize: '1.1rem' }}>
-                  Assistência Espiritual
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4, fontSize: '0.9rem' }}>
-                  Mantemos nossos trabalhos espirituais gratuitos para todos que nos procuram,
-                  oferecendo consultas, passes e orientação sem custo algum.
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+        {/* Desktop: Grid normal */}
+        {!isMobile && (
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid item xs={12} md={4}>
+              <Card
+                sx={{
+                  height: '100%',
+                  textAlign: 'center',
+                  transition: 'transform 0.3s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                  },
+                }}
+              >
+                <CardContent sx={{ p: 2.5 }}>
+                  <FavoriteIcon
+                    sx={{
+                      fontSize: 36,
+                      color: 'secondary.main',
+                      mb: 1.5,
+                    }}
+                  />
+                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, fontSize: '1.1rem' }}>
+                    Assistência Espiritual
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4, fontSize: '0.9rem' }}>
+                    Mantemos nossos trabalhos espirituais gratuitos para todos que nos procuram,
+                    oferecendo consultas, passes e orientação sem custo algum.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
 
-          <Grid item xs={12} md={4}>
-            <Card
-              sx={{
-                height: '100%',
-                textAlign: 'center',
-                transition: 'transform 0.3s ease-in-out',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                },
-              }}
-            >
-              <CardContent sx={{ p: 2.5 }}>
-                <VolunteerActivismIcon
-                  sx={{
-                    fontSize: 36,
-                    color: 'primary.main',
-                    mb: 1.5,
-                  }}
-                />
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, fontSize: '1.1rem' }}>
-                  Ações Sociais
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4, fontSize: '0.9rem' }}>
-                  Desenvolvemos projetos sociais para ajudar famílias em situação de
-                  vulnerabilidade, distribuindo alimentos, roupas e materiais de higiene.
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+            <Grid item xs={12} md={4}>
+              <Card
+                sx={{
+                  height: '100%',
+                  textAlign: 'center',
+                  transition: 'transform 0.3s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                  },
+                }}
+              >
+                <CardContent sx={{ p: 2.5 }}>
+                  <VolunteerActivismIcon
+                    sx={{
+                      fontSize: 36,
+                      color: 'primary.main',
+                      mb: 1.5,
+                    }}
+                  />
+                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, fontSize: '1.1rem' }}>
+                    Ações Sociais
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4, fontSize: '0.9rem' }}>
+                    Desenvolvemos projetos sociais para ajudar famílias em situação de
+                    vulnerabilidade, distribuindo alimentos, roupas e materiais de higiene.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
 
-          <Grid item xs={12} md={4}>
-            <Card
+            <Grid item xs={12} md={4}>
+              <Card
+                sx={{
+                  height: '100%',
+                  textAlign: 'center',
+                  transition: 'transform 0.3s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                  },
+                }}
+              >
+                <CardContent sx={{ p: 2.5 }}>
+                  <HandshakeIcon
+                    sx={{
+                      fontSize: 36,
+                      color: 'success.main',
+                      mb: 1.5,
+                    }}
+                  />
+                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, fontSize: '1.1rem' }}>
+                    Manutenção da Casa
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4, fontSize: '0.9rem' }}>
+                    Suas contribuições nos ajudam a manter nossa casa funcionando,
+                    cobrindo custos de energia, água, materiais e reformas necessárias.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        )}
+
+        {/* Mobile: Carrossel */}
+        {isMobile && (
+          <Box sx={{ position: 'relative', mb: 4 }}>
+            {/* Botões de navegação */}
+            {canScrollLeft && (
+              <IconButton
+                onClick={() => scroll('left')}
+                sx={{
+                  position: 'absolute',
+                  left: -20,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 2,
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  color: 'primary.main',
+                  boxShadow: 2,
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 1)',
+                  },
+                }}
+              >
+                <ArrowBackIosIcon />
+              </IconButton>
+            )}
+
+            {canScrollRight && (
+              <IconButton
+                onClick={() => scroll('right')}
+                sx={{
+                  position: 'absolute',
+                  right: -20,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 2,
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  color: 'primary.main',
+                  boxShadow: 2,
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 1)',
+                  },
+                }}
+              >
+                <ArrowForwardIosIcon />
+              </IconButton>
+            )}
+
+            {/* Container do carrossel */}
+            <Box
+              ref={scrollContainerRef}
+              onScroll={handleScroll}
               sx={{
-                height: '100%',
-                textAlign: 'center',
-                transition: 'transform 0.3s ease-in-out',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
+                display: 'flex',
+                gap: 2,
+                overflowX: 'auto',
+                scrollBehavior: 'smooth',
+                pb: 2,
+                '&::-webkit-scrollbar': {
+                  display: 'none',
                 },
+                scrollbarWidth: 'none',
               }}
             >
-              <CardContent sx={{ p: 2.5 }}>
-                <HandshakeIcon
-                  sx={{
-                    fontSize: 36,
-                    color: 'success.main',
-                    mb: 1.5,
-                  }}
-                />
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, fontSize: '1.1rem' }}>
-                  Manutenção da Casa
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4, fontSize: '0.9rem' }}>
-                  Suas contribuições nos ajudam a manter nossa casa funcionando,
-                  cobrindo custos de energia, água, materiais e reformas necessárias.
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+              <Card
+                sx={{
+                  minWidth: 260,
+                  textAlign: 'center',
+                  transition: 'transform 0.3s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                  },
+                }}
+              >
+                <CardContent sx={{ p: 2.5 }}>
+                  <FavoriteIcon
+                    sx={{
+                      fontSize: 36,
+                      color: 'secondary.main',
+                      mb: 1.5,
+                    }}
+                  />
+                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, fontSize: '1.1rem' }}>
+                    Assistência Espiritual
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4, fontSize: '0.9rem' }}>
+                    Mantemos nossos trabalhos espirituais gratuitos para todos que nos procuram,
+                    oferecendo consultas, passes e orientação sem custo algum.
+                  </Typography>
+                </CardContent>
+              </Card>
+
+              <Card
+                sx={{
+                  minWidth: 260,
+                  textAlign: 'center',
+                  transition: 'transform 0.3s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                  },
+                }}
+              >
+                <CardContent sx={{ p: 2.5 }}>
+                  <VolunteerActivismIcon
+                    sx={{
+                      fontSize: 36,
+                      color: 'primary.main',
+                      mb: 1.5,
+                    }}
+                  />
+                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, fontSize: '1.1rem' }}>
+                    Ações Sociais
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4, fontSize: '0.9rem' }}>
+                    Desenvolvemos projetos sociais para ajudar famílias em situação de
+                    vulnerabilidade, distribuindo alimentos, roupas e materiais de higiene.
+                  </Typography>
+                </CardContent>
+              </Card>
+
+              <Card
+                sx={{
+                  minWidth: 260,
+                  textAlign: 'center',
+                  transition: 'transform 0.3s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                  },
+                }}
+              >
+                <CardContent sx={{ p: 2.5 }}>
+                  <HandshakeIcon
+                    sx={{
+                      fontSize: 36,
+                      color: 'success.main',
+                      mb: 1.5,
+                    }}
+                  />
+                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, fontSize: '1.1rem' }}>
+                    Manutenção da Casa
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4, fontSize: '0.9rem' }}>
+                    Suas contribuições nos ajudam a manter nossa casa funcionando,
+                    cobrindo custos de energia, água, materiais e reformas necessárias.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Box>
+
+            {/* Navigation Dots */}
+            <Box sx={{ textAlign: 'center', mt: 2 }}>
+              <NavigationDots
+                totalItems={3}
+                currentIndex={(() => {
+                  const itemWidth = 260;
+                  const gap = 16;
+                  const itemWithGap = itemWidth + gap;
+
+                  if (scrollPosition >= maxScroll - 10) {
+                    return 2;
+                  }
+
+                  const adjustedScrollPosition = scrollPosition + (itemWidth / 2);
+                  const calculatedIndex = Math.floor(adjustedScrollPosition / itemWithGap);
+
+                  return Math.min(Math.max(calculatedIndex, 0), 2);
+                })()}
+                itemsPerView={1}
+                onDotClick={handleDotClick}
+                sx={{
+                  '& > div': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.3)',
+                    border: '1px solid rgba(25, 118, 210, 0.5)',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
+                    width: '10px',
+                    height: '10px',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      backgroundColor: 'rgba(25, 118, 210, 0.6)',
+                      transform: 'scale(1.2)',
+                      border: '1px solid rgba(25, 118, 210, 0.8)',
+                    }
+                  },
+                  '& > div[data-active="true"]': {
+                    backgroundColor: theme.palette.primary.main,
+                    border: `2px solid ${theme.palette.primary.main}`,
+                    boxShadow: `0 2px 8px ${theme.palette.primary.main}40`,
+                    width: '12px',
+                    height: '12px',
+                    transform: 'scale(1.1)',
+                  }
+                }}
+              />
+            </Box>
+
+            <Typography
+              variant="body2"
+              sx={{
+                textAlign: 'center',
+                mt: 1,
+                color: 'text.secondary',
+                fontSize: '0.8rem',
+                fontStyle: 'italic',
+              }}
+            >
+              👆 Deslize para ver mais informações
+            </Typography>
+          </Box>
+        )}
 
         <Box sx={{ textAlign: 'center', mt: 4 }}>
-          <Card sx={{ p: 4, backgroundColor: 'primary.light', color: 'primary.contrastText', height: '110px'  }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+          <Card sx={{
+            p: { xs: 3, md: 4 },
+            backgroundColor: 'primary.light',
+            color: 'primary.contrastText',
+            minHeight: { xs: 'auto', md: '110px' } // Altura automática no mobile
+          }}>
+            <Typography variant="h6" sx={{
+              fontWeight: 600,
+              mb: { xs: 1.5, md: 1 },
+              fontSize: { xs: '1.1rem', md: '1.25rem' } // Fonte responsiva
+            }}>
               "Fora da caridade não há salvação"
             </Typography>
-            <Typography variant="body1" sx={{ fontStyle: 'italic' }}>
+            <Typography variant="body1" sx={{
+              fontStyle: 'italic',
+              fontSize: { xs: '0.9rem', md: '1rem' }, // Fonte menor no mobile
+              lineHeight: { xs: 1.5, md: 1.6 } // Espaçamento de linha otimizado
+            }}>
               Sua contribuição, por menor que seja, faz a diferença na vida de muitas pessoas.
               Que os Orixás abençoem sua generosidade e a multipliquem.
             </Typography>
@@ -339,7 +635,7 @@ const DonationsSection: React.FC = () => {
                     `,
                     borderRadius: 1
                   }} />
-                  
+
                   {/* QR Code corners */}
                   <Box sx={{
                     position: 'absolute',
@@ -477,7 +773,7 @@ const DonationsSection: React.FC = () => {
                   </Grid>
                 ))}
               </Grid>
-              
+
               <Card sx={{ mt: 2, backgroundColor: 'success.light' }}>
                 <CardContent sx={{ textAlign: 'center', py: 1.5 }}>
                   <Typography variant="body2" sx={{ color: 'success.contrastText', fontWeight: 600 }}>
