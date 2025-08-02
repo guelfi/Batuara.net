@@ -51,6 +51,30 @@ Este documento descreve os scripts criados para resolver problemas de assets est
 - Clona repositório original do GitHub
 - Reconstrói tudo do zero
 
+### 5. `oracle-deploy-ready.sh` - Deploy Automático (RECOMENDADO)
+**Propósito**: Deploy completo sem necessidade de edição
+**Uso**: `./oracle-deploy-ready.sh`
+
+**✅ PRÉ-CONFIGURADO para Oracle**: Não precisa editar nada!
+
+**O que faz**:
+- Configurado para `/var/www/batuara_net`
+- Para containers e faz backup automático
+- Clona repositório atualizado do GitHub
+- Reconstrói containers com --no-cache
+- Executa diagnóstico automático
+- Testa assets automaticamente
+
+### 6. `oracle-quick-fix.sh` - Correção Rápida
+**Propósito**: Correção rápida sem clonar repositório
+**Uso**: `./oracle-quick-fix.sh`
+
+**O que faz**:
+- Limpa cache do Docker
+- Reconstrói containers existentes
+- Testa assets rapidamente
+- Ideal para problemas simples
+
 ## 🚀 Ordem Recomendada de Execução
 
 ### Para Problemas Simples:
@@ -62,25 +86,27 @@ Este documento descreve os scripts criados para resolver problemas de assets est
 1. `./deploy-oracle-assets-fix.sh` - Deploy com backup
 2. `./diagnose-assets-oracle.sh` - Verificar resultado
 
+### Para Deploy Completo (RECOMENDADO):
+1. `./oracle-deploy-ready.sh` - Deploy automático pré-configurado
+2. Testar no navegador
+
+### Para Correção Rápida:
+1. `./oracle-quick-fix.sh` - Correção sem clonar repositório
+
 ### Para Limpeza Completa (último recurso):
 1. `./clean-and-clone-oracle.sh` - Limpeza total
 2. `./diagnose-assets-oracle.sh` - Verificar resultado
 
 ## ⚙️ Configuração Necessária
 
-### Antes de usar os scripts de deploy:
+### ✅ **Scripts Pré-Configurados - Sem Edição Necessária**
 
-1. **Editar URL do repositório** nos scripts:
-   ```bash
-   # Em deploy-oracle-assets-fix.sh e clean-and-clone-oracle.sh
-   REPO_URL="https://github.com/seu-usuario/Batuara.net.git"  # SUBSTITUA pela URL correta
-   ```
+Os scripts já estão configurados com:
+- **Repositório**: `https://github.com/guelfi/Batuara.net.git`
+- **Branch**: `master`
+- **Diretório Oracle**: `/var/www/batuara_net`
 
-2. **Verificar branch** (se não for 'main'):
-   ```bash
-   # Em clean-and-clone-oracle.sh
-   BRANCH="main"  # ou "master" dependendo do seu repositório
-   ```
+**Não é necessário editar nenhum arquivo!**
 
 ## 🔍 Problemas Comuns e Soluções
 
