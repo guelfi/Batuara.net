@@ -1,151 +1,270 @@
-# Casa de Caridade Caboclo Batuara
+# 🏠 Batuara.net
 
-Sistema web completo para a Casa de Caridade Caboclo Batuara, desenvolvido com tecnologias modernas e seguindo as melhores práticas de desenvolvimento.
+Casa de Caridade Caboclo Batuara - Sistema completo com website público e dashboard administrativo.
 
-## 🚀 Início Rápido
-
-### Desenvolvimento Local
+## 🚀 Instalação Rápida (VPS)
 
 ```bash
-# Iniciar todos os serviços
-./server.sh start
-
-# Ver status dos serviços  
-./server.sh status
-
-# Ver logs em tempo real
-./server.sh logs
-
-# Parar serviços
-./server.sh stop
-
-# Reconstruir containers
-./server.sh build
-
-# Ajuda
-./server.sh help
+# Em um VPS Ubuntu/Debian limpo, execute:
+wget https://raw.githubusercontent.com/guelfi/Batuara.net/master/install-batuara-vps.sh
+chmod +x install-batuara-vps.sh
+./install-batuara-vps.sh
 ```
 
-**Acesso aos serviços:**
-- 🌐 Website Público: http://localhost:3000
-- 🔧 API: http://localhost:8080
+**Pronto!** Suas aplicações estarão rodando em:
+- 📱 **PublicWebsite**: `http://SEU_IP:3000`
+- 🔧 **AdminDashboard**: `http://SEU_IP:3001/dashboard`
 
-### Deploy na Oracle Cloud
+---
 
-```bash
-# Deploy automático completo (recomendado)
-./oracle-deploy-ready.sh
-
-# Correção rápida (sem clonar repositório)
-./oracle-quick-fix.sh
-
-# Diagnóstico de problemas
-./diagnose-assets-oracle.sh
-
-# Limpeza de cache
-./clear-cache-oracle.sh
-```
-
-## 🏗️ Arquitetura
-
-Este projeto segue os princípios de **Clean Architecture** e **Domain-Driven Design (DDD)**, implementando os padrões **SOLID** e práticas de **Clean Code**.
-
-### Estrutura do Projeto
+## 🏗️ Arquitetura do Projeto
 
 ```
 Batuara.net/
-├── src/
-│   ├── Backend/
-│   │   ├── Batuara.Domain/          # Camada de Domínio (DDD)
-│   │   ├── Batuara.Application/     # Camada de Aplicação (CQRS)
-│   │   ├── Batuara.Infrastructure/  # Camada de Infraestrutura
-│   │   └── Batuara.API/            # Camada de Apresentação (Web API)
-│   └── Frontend/
-│       └── PublicWebsite/          # Site público em React
-├── scripts/                        # Scripts de banco de dados
-├── docs/                          # Documentação
-├── tests/                         # Testes automatizados
-├── postman/                       # Coleções de API
-├── docker-compose.yml             # Configuração dos serviços
-├── Dockerfile.frontend            # Build do frontend
-├── server.sh                      # Gerenciador de serviços local
-├── setup-database.sh              # Configuração do banco
-└── ORACLE_DEPLOY_README.md        # Guia de deploy na Oracle
+├── src/Frontend/
+│   ├── PublicWebsite/         # Website público (React + TypeScript)
+│   └── AdminDashboard/        # Dashboard admin (React + TypeScript)
+├── docs/                      # Documentação completa
+├── docker-compose.production.yml  # Deploy em produção
+├── Dockerfile.frontend        # Build otimizado para React
+├── monitor-assets.sh          # Monitoramento automático
+└── install-batuara-vps.sh     # Instalação automatizada
 ```
 
-## 🛠️ Tecnologias
+## 🌐 Aplicações
+
+### 📱 PublicWebsite
+Website público da Casa de Caridade com:
+- ✨ Design responsivo e moderno
+- 📅 Calendário de eventos
+- 🙏 Seções sobre Orixás e Umbanda
+- 💝 Sistema de doações
+- 📍 Localização e contato
+- 🎨 Assets otimizados (favicon, logo, imagens)
+
+### 🔧 AdminDashboard
+Dashboard administrativo para:
+- 📊 Gerenciamento de eventos
+- 💰 Controle de doações
+- ✏️ Administração de conteúdo
+- 📈 Relatórios e estatísticas
+- 👥 Gestão de usuários
+
+## 🛠️ Desenvolvimento Local
+
+### Pré-requisitos
+- Node.js 18+
+- Docker & Docker Compose
+- Git
+
+### Instalação Rápida
+
+```bash
+# Clonar repositório
+git clone https://github.com/guelfi/Batuara.net.git
+cd Batuara.net
+
+# PublicWebsite
+cd src/Frontend/PublicWebsite
+npm install
+npm start  # http://localhost:3000
+
+# AdminDashboard (em outro terminal)
+cd src/Frontend/AdminDashboard
+npm install
+npm start  # http://localhost:3001
+```
+
+## 🌍 Deploy em Produção
+
+### 🚀 Opção 1: Instalação Automatizada (Recomendado)
+
+```bash
+# Execute em qualquer VPS Ubuntu/Debian
+curl -sSL https://raw.githubusercontent.com/guelfi/Batuara.net/master/install-batuara-vps.sh | bash
+```
+
+### 📖 Opção 2: Instalação Manual
+
+1. **[Configurar Infraestrutura VPS](docs/VPS_INFRASTRUCTURE_SETUP.md)** - Docker, firewall, segurança
+2. **[Deploy das Aplicações](docs/VPS_APPLICATION_DEPLOY.md)** - Build e execução
+3. **[Guia por Provedor](docs/VPS_PROVIDERS_GUIDE.md)** - Hostinger, DigitalOcean, AWS, etc.
+
+### 🐳 Opção 3: Docker Compose Direto
+
+```bash
+# Clonar e configurar
+git clone https://github.com/guelfi/Batuara.net.git
+cd Batuara.net
+cp .env.example .env
+
+# Build e iniciar
+docker compose -f docker-compose.production.yml build --no-cache
+docker compose -f docker-compose.production.yml up -d
+
+# Verificar
+docker compose -f docker-compose.production.yml ps
+```
+
+## 📊 Monitoramento e Manutenção
+
+### Monitoramento Automático
+
+```bash
+# Executar teste manual
+./monitor-assets.sh
+
+# Configurar monitoramento automático (a cada 15 min)
+crontab -e
+# Adicionar: */15 * * * * /var/www/Batuara.net/monitor-assets.sh >> /var/log/batuara-monitor.log 2>&1
+
+# Ver logs de monitoramento
+tail -f /var/log/batuara-monitor.log
+```
+
+### Comandos Úteis
+
+```bash
+# Status das aplicações
+docker compose -f docker-compose.production.yml ps
+
+# Logs em tempo real
+docker compose -f docker-compose.production.yml logs -f
+
+# Reiniciar aplicações
+docker compose -f docker-compose.production.yml restart
+
+# Atualizar do GitHub
+git pull origin master
+docker compose -f docker-compose.production.yml build --no-cache
+docker compose -f docker-compose.production.yml up -d
+
+# Limpeza do sistema
+docker system prune -a
+```
+
+## ⚙️ Configuração
+
+### Arquivo .env
+
+```bash
+# Portas das aplicações
+PUBLIC_WEBSITE_PORT=3000
+ADMIN_DASHBOARD_PORT=3001
+API_PORT=8080
+
+# URL da API (ajustar para seu IP/domínio)
+REACT_APP_API_URL=http://SEU_IP:8080
+
+# Database (futuro)
+DB_PASSWORD=sua_senha_segura_aqui
+
+# Ambiente
+ENVIRONMENT=production
+COMPOSE_PROJECT_NAME=batuara
+```
+
+## 🌐 Provedores VPS Suportados
+
+| Provedor | Status | Custo/Mês | Recursos | Observações |
+|----------|--------|-----------|----------|-------------|
+| 🟢 **Oracle Cloud** | ✅ Testado | **Grátis** | 1GB RAM | Always Free Tier |
+| 🟢 **Hostinger** | ✅ Testado | $8 | 2GB RAM | Boa performance |
+| 🟢 **DigitalOcean** | ✅ Testado | $12 | 2GB RAM | Documentação excelente |
+| 🟢 **AWS EC2** | ✅ Testado | $17 | 2GB RAM | Mais recursos |
+| 🟢 **Google Cloud** | ✅ Testado | $15 | 2GB RAM | Créditos iniciais |
+| 🟢 **Vultr** | ✅ Testado | $12 | 2GB RAM | Performance sólida |
+| 🟢 **Linode** | ✅ Testado | $12 | 2GB RAM | Suporte excelente |
+
+## 🔧 Tecnologias
 
 ### Frontend
-- **React.js** - Biblioteca para interfaces de usuário
-- **Material-UI** - Componentes de interface
-- **TypeScript** - Tipagem estática
-- **Nginx** - Servidor web
+- **React 18** com TypeScript
+- **Material-UI (MUI)** para componentes
+- **Responsive Design** para mobile/desktop
+- **Assets otimizados** (favicon, logo, imagens)
 
-### Backend
-- **.NET Core** - Framework web
-- **Entity Framework Core** - ORM
-- **PostgreSQL** - Banco de dados
-- **Docker** - Containerização
+### Infraestrutura
+- **Docker** para containerização
+- **Nginx** para servir aplicações
+- **UFW** para firewall
+- **Cron** para monitoramento automático
 
-### DevOps
-- **Docker Compose** - Orquestração de containers
-- **Scripts Shell** - Automação de deploy
-- **Oracle Cloud** - Hospedagem em produção
+### Deploy
+- **Docker Compose** para orquestração
+- **Multi-stage builds** para otimização
+- **Health checks** para monitoramento
+- **Auto-restart** para alta disponibilidade
 
-## 📋 Funcionalidades
+## 📚 Documentação Completa
 
-### Website Público
-- ✅ Página inicial com informações da casa
-- ✅ Seção sobre a história e missão
-- ✅ Calendário de eventos e atividades
-- ✅ Informações sobre Orixás
-- ✅ Guias e entidades espirituais
-- ✅ Linhas da Umbanda
-- ✅ Orações e conteúdo espiritual
-- ✅ Sistema de doações
-- ✅ Informações de contato e localização
-- ✅ Design responsivo (mobile/desktop)
+- 📖 **[Configuração de Infraestrutura VPS](docs/VPS_INFRASTRUCTURE_SETUP.md)** - Docker, segurança, firewall
+- 🚀 **[Deploy das Aplicações](docs/VPS_APPLICATION_DEPLOY.md)** - Build, execução, monitoramento
+- 🌐 **[Guia por Provedor VPS](docs/VPS_PROVIDERS_GUIDE.md)** - Hostinger, DigitalOcean, AWS, etc.
+- 🗄️ **[Schema do Banco de Dados](docs/database-schema.md)** - Estrutura futura
+- 🌱 **[Dados de Seed](docs/seed-data.md)** - Dados iniciais
 
-### API REST
-- 🔧 Gerenciamento de conteúdo
-- 🔧 Sistema de autenticação
-- 🔧 CRUD de entidades espirituais
-- 🔧 Gerenciamento de eventos
-- 🔧 Sistema de logs
+## 🚨 Troubleshooting
 
-## 🚦 Status do Projeto
+### Problemas Comuns
 
-- ✅ **Frontend**: Website público funcional
-- ✅ **Containerização**: Docker configurado
-- ✅ **Deploy**: Scripts automatizados para Oracle
-- 🔧 **Backend**: API em desenvolvimento
-- 🔧 **Banco de Dados**: Schema em implementação
-- 🔧 **Testes**: Suíte de testes em desenvolvimento
+```bash
+# Aplicação não responde
+docker compose -f docker-compose.production.yml restart
 
-## 📖 Documentação
+# Assets não carregam
+./monitor-assets.sh  # Ver diagnóstico detalhado
 
-- [Guia de Deploy na Oracle](ORACLE_DEPLOY_README.md) - Instruções completas para deploy
-- [Guia de Desenvolvimento](GUIA_DESENVOLVIMENTO.md) - Padrões e práticas do projeto
-- [Scripts de Banco](scripts/) - Scripts SQL para configuração do banco
+# Sem espaço em disco
+docker system prune -a
+
+# Portas bloqueadas
+sudo ufw status
+sudo ufw allow 3000/tcp
+sudo ufw allow 3001/tcp
+
+# Containers não iniciam
+docker compose -f docker-compose.production.yml logs
+```
+
+### Logs Importantes
+
+```bash
+# Logs das aplicações
+docker compose -f docker-compose.production.yml logs -f
+
+# Logs do sistema
+journalctl -u docker.service
+
+# Logs de monitoramento
+tail -f /var/log/batuara-monitor.log
+
+# Logs de acesso (se usando nginx)
+tail -f /var/log/nginx/access.log
+```
 
 ## 🤝 Contribuição
 
 1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
+2. Crie uma branch (`git checkout -b feature/NovaFeature`)
+3. Commit suas mudanças (`git commit -m 'Adicionar NovaFeature'`)
+4. Push para a branch (`git push origin feature/NovaFeature`)
 5. Abra um Pull Request
 
 ## 📄 Licença
 
-Este projeto é desenvolvido para a Casa de Caridade Caboclo Batuara.
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para detalhes.
 
 ## 📞 Contato
 
-Casa de Caridade Caboclo Batuara
-- Website: Em desenvolvimento
-- Email: contato@batuara.net
+**Casa de Caridade Caboclo Batuara**
+- 🌐 Website: http://129.153.86.168:3000 (Demo)
+- 🔧 Admin: http://129.153.86.168:3001/dashboard (Demo)
+- 📧 Email: contato@batuara.net
+- 📱 GitHub: [@guelfi](https://github.com/guelfi)
 
 ---
 
-**Desenvolvido com ❤️ para a comunidade espiritual**
+**Desenvolvido com ❤️ para a Casa de Caridade Caboclo Batuara**
+
+*"Fora da caridade não há salvação"*
