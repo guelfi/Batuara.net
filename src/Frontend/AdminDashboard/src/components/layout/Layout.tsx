@@ -71,9 +71,20 @@ const Layout: React.FC<LayoutProps> = ({ children, selectedItem, onItemSelect })
             <img 
               src="/batuara_logo.png" 
               alt="Batuara Logo" 
-              style={{ height: '32px', marginRight: '12px' }} 
+              style={{ 
+                height: isMobile ? '24px' : '32px', 
+                marginRight: isMobile ? '8px' : '12px' 
+              }} 
             />
-            <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
+            <Typography 
+              variant={isMobile ? "subtitle1" : "h6"} 
+              noWrap 
+              component="div" 
+              sx={{ 
+                fontWeight: 'bold',
+                fontSize: isMobile ? '1rem' : '1.25rem'
+              }}
+            >
               Casa de Caridade Caboclo Batuara
             </Typography>
           </Box>

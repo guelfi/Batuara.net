@@ -10,8 +10,6 @@ import {
   Box,
   Chip,
   Divider,
-  useTheme,
-  useMediaQuery,
 } from '@mui/material';
 import { useResponsiveChips, useIsMobile } from '../../hooks/useResponsiveChips';
 import {
@@ -156,7 +154,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   onItemSelect,
   variant = 'permanent'
 }) => {
-  const theme = useTheme();
   const isMobile = useIsMobile();
   const shouldShowChips = useResponsiveChips();
 
@@ -256,8 +253,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <Typography
                           variant="body2"
                           sx={{
-                            fontWeight: isSelected ? 'bold' : 'normal',
-                            color: isSelected ? 'primary.main' : 'text.primary',
+                            fontWeight: isSelected ? 600 : 'normal',
+                            color: isSelected ? '#1565c0' : 'text.primary',
                             opacity: item.implemented ? 1 : 0.8
                           }}
                         >

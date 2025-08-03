@@ -1,8 +1,5 @@
 import React from 'react';
-import {
-  Box,
-  Typography,
-} from '@mui/material';
+import { Box } from '@mui/material';
 
 // Importar componentes de conteúdo (serão criados nas próximas tarefas)
 import DashboardContent from '../dashboard/DashboardContent';
@@ -18,25 +15,7 @@ interface ContentAreaProps {
   onItemSelect: (itemId: string) => void;
 }
 
-const ContentArea: React.FC<ContentAreaProps> = ({ selectedItem, onItemSelect }) => {
-  const getItemLabel = (itemId: string): string => {
-    const labels: { [key: string]: string } = {
-      dashboard: 'Dashboard',
-      sobre: 'Sobre / História',
-      'filhos-casa': 'Filhos da Casa',
-      mensagens: 'Mensagens',
-      contato: 'Contato', // Manter para compatibilidade
-      localizacao: 'Localização',
-      doacoes: 'Doações',
-      calendario: 'Calendário',
-      eventos: 'Festas e Eventos',
-      orixas: 'Orixás',
-      guias: 'Guias e Entidades',
-      linhas: 'Linhas da Umbanda',
-      oracoes: 'Orações',
-    };
-    return labels[itemId] || 'Dashboard';
-  };
+const ContentArea: React.FC<ContentAreaProps> = ({ selectedItem }) => {
 
   const renderContent = () => {
     switch (selectedItem) {
@@ -89,14 +68,16 @@ const ContentArea: React.FC<ContentAreaProps> = ({ selectedItem, onItemSelect })
         return (
           <PlaceholderContent
             title="Orixás"
-            description="CRUD completo para gerenciamento de informações sobre Orixás"
+            description="Gerenciamento completo de informações sobre os Orixás da Umbanda, suas características, oferendas e histórias sagradas."
             phase="A1"
             phaseLabel="Recursos Avançados"
             features={[
-              'Editor visual de informações',
-              'Upload de imagens',
-              'Gestão de oferendas',
-              'Histórias e características',
+              'Cadastro completo de cada Orixá',
+              'Informações sobre características e domínios',
+              'Galeria de imagens e símbolos',
+              'Gestão de oferendas e rituais',
+              'Histórias e lendas tradicionais',
+              'Pontos cantados e riscados',
               'Sincronização com PublicWebsite'
             ]}
           />
@@ -105,15 +86,18 @@ const ContentArea: React.FC<ContentAreaProps> = ({ selectedItem, onItemSelect })
         return (
           <PlaceholderContent
             title="Guias e Entidades"
-            description="Gerenciamento completo de Guias e Entidades espirituais"
+            description="Sistema completo para gerenciamento de Guias espirituais, Pretos Velhos, Caboclos, Crianças e demais entidades da casa."
             phase="A1"
             phaseLabel="Recursos Avançados"
             features={[
-              'Cadastro de Guias',
-              'Informações detalhadas',
-              'Galeria de imagens',
-              'Histórico de manifestações',
-              'Organização por linhas'
+              'Cadastro detalhado de cada Guia',
+              'Informações sobre manifestações',
+              'Histórico de trabalhos realizados',
+              'Galeria de imagens e símbolos',
+              'Organização por linhas espirituais',
+              'Pontos cantados específicos',
+              'Registro de consultas e orientações',
+              'Calendário de manifestações'
             ]}
           />
         );
@@ -121,15 +105,18 @@ const ContentArea: React.FC<ContentAreaProps> = ({ selectedItem, onItemSelect })
         return (
           <PlaceholderContent
             title="Linhas da Umbanda"
-            description="Informações completas sobre as Linhas da Umbanda"
+            description="Sistema educativo completo sobre as diferentes Linhas da Umbanda, suas características, rituais e ensinamentos tradicionais."
             phase="A1"
             phaseLabel="Recursos Avançados"
             features={[
-              'Descrição das Linhas',
-              'Características específicas',
-              'Pontos cantados',
-              'Rituais e procedimentos',
-              'Material educativo'
+              'Descrição detalhada de cada Linha',
+              'Características e fundamentos específicos',
+              'Hierarquia espiritual de cada linha',
+              'Pontos cantados tradicionais',
+              'Rituais e procedimentos sagrados',
+              'Material educativo e apostilas',
+              'Histórico e origem das tradições',
+              'Calendário de trabalhos por linha'
             ]}
           />
         );
