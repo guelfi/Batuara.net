@@ -163,7 +163,7 @@ const mockRecentActivities = [
                       width: isMobile ? 32 : 40,
                       height: isMobile ? 32 : 40,
                     }}>
-                      <IconComponent fontSize={isMobile ? 'small' : 'medium'} />
+                      <IconComponent sx={{ fontSize: isMobile ? 16 : 20 }} />
                     </Avatar>
                     <Box sx={{ flexGrow: 1 }}>
                       <Typography 
@@ -243,7 +243,7 @@ const mockRecentActivities = [
                             width: isMobile ? 32 : 40,
                             height: isMobile ? 32 : 40,
                           }}>
-                            <IconComponent fontSize="small" />
+                            <IconComponent sx={{ fontSize: 16 }} />
                           </Avatar>
                         </ListItemAvatar>
                         <ListItemText
