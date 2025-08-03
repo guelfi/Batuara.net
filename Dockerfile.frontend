@@ -117,7 +117,7 @@ RUN echo 'server {' > /etc/nginx/conf.d/default.conf && \
     echo '}' >> /etc/nginx/conf.d/default.conf
 
 # Verificar se a configuração foi criada corretamente
-RUN echo "=== CONFIGURAÇÃO NGINX CRIADA ===" && cat /etc/nginx/conf.d/default.conf
+RUN echo "=== CONFIGURAÇÃO NGINX CRIADA ===" && cat /etc/nginx/conf.d/default.confd/default.conf
 
 EXPOSE 80
 
