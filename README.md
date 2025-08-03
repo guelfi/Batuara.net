@@ -2,6 +2,13 @@
 
 Casa de Caridade Caboclo Batuara - Sistema completo com website público e dashboard administrativo.
 
+## 🎯 **STATUS ATUAL: FASE 0 CONCLUÍDA ✅**
+- **PublicWebsite:** Funcional com header atualizado
+- **AdminDashboard:** Interface completa remodelada (aguardando integração com API)
+- **Próxima Etapa:** Desenvolvimento da API .NET 8 e integração
+
+📊 **Ver detalhes completos em:** [STATUS-PROJETO.md](STATUS-PROJETO.md)
+
 ## 🚀 Instalação Rápida (VPS)
 
 ```bash

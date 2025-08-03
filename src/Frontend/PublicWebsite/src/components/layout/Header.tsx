@@ -20,8 +20,8 @@ import { NavigationItem } from '../../types';
 const navigationItems: NavigationItem[] = [
   { label: 'Início', href: '#home' },
   { label: 'Sobre', href: '#about' },
-  { label: 'Eventos', href: '#events' },
-  { label: 'Calendário', href: '#calendar' },
+  { label: 'Calendário', href: '#calendar' },        // MOVIDO PARA CIMA
+  { label: 'Festas e Eventos', href: '#events' },    // RENOMEADO E REORDENADO
   { label: 'Orixás', href: '#orixas' },
   { label: 'Guias e Entidades', href: '#guias-entidades' },
   { label: 'Linhas da Umbanda', href: '#umbanda' },

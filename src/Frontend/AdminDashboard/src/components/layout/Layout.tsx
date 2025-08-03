@@ -1,0 +1,114 @@
+import React, { useState } from 'react';
+import {
+  Box,
+  AppBar,
+  Toolbar,
+  Typography,
+  IconButton,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import {
+  Menu as MenuIcon,
+  AccountCircle as AccountIcon,
+} from '@mui/icons-material';
+import Sidebar from './Sidebar';
+
+interface LayoutProps {
+  children: React.ReactNode;
+  selectedItem: string;
+  onItemSelect: (itemId: string) => void;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children, selectedItem, onItemSelect }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const handleSidebarToggle = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const handleSidebarClose = () => {
+    setSidebarOpen(false);
+  };
+
+  return (
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      {/* AppBar */}
+      <AppBar
+        position="fixed"
+        sx={{
+          zIndex: theme.zIndex.drawer + 1,
+          backgroundColor: 'primary.main',
+        }}
+      >
+        <Toolbar>
+          {isMobile && (
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleSidebarToggle}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+            <img 
+              src="/batuara_logo.png" 
+              alt="Batuara Logo" 
+              style={{ height: '32px', marginRight: '12px' }} 
+            />
+            <Typography variant="h6" noWrap component="div">
+              Batuara - Admin Dashboard
+            </Typography>
+          </Box>
+          <IconButton color="inherit">
+            <AccountIcon />
+          </IconButton>
+        </Toolbar>
+      </AppBar>
+
+      {/* Sidebar */}
+      {isMobile ? (
+        <Sidebar
+          open={sidebarOpen}
+          onClose={handleSidebarClose}
+          selectedItem={selectedItem}
+          onItemSelect={onItemSelect}
+          variant="temporary"
+        />
+      ) : (
+        <Sidebar
+          open={true}
+          onClose={handleSidebarClose}
+          selectedItem={selectedItem}
+          onItemSelect={onItemSelect}
+          variant="permanent"
+        />
+      )}
+
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: { xs: 2, sm: 3 },
+          mt: { xs: 7, sm: 8 }, // Offset for AppBar
+          ml: isMobile ? 0 : '280px', // Offset for Sidebar on desktop
+          minHeight: '100vh',
+          transition: theme.transitions.create(['margin'], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+          }),
+        }}
+      >
+        {children}
+      </Box>
+    </Box>
+  );
+};
+
+export default Layout;
