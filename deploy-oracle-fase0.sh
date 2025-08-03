@@ -32,7 +32,7 @@ docker images | grep batuara | awk '{print $3}' | xargs -r docker rmi -f 2>/dev/
 echo ""
 echo "=== 3. BUILD DOS CONTAINERS ==="
 log_info "Construindo PublicWebsite..."
-if docker-compose -f docker-compose.oracle.yml build public-website --no-cache; then
+if docker-compose -f docker-compose.oracle.yml build --no-cache public-website; then
     log_success "PublicWebsite construído"
 else
     log_error "Falha no build do PublicWebsite"
@@ -40,7 +40,7 @@ else
 fi
 
 log_info "Construindo AdminDashboard..."
-if docker-compose -f docker-compose.oracle.yml build admin-dashboard --no-cache; then
+if docker-compose -f docker-compose.oracle.yml build --no-cache admin-dashboard; then
     log_success "AdminDashboard construído"
 else
     log_error "Falha no build do AdminDashboard"
