@@ -13,6 +13,7 @@ import {
   AccountCircle as AccountIcon,
 } from '@mui/icons-material';
 import Sidebar from './Sidebar';
+import UserProfile from '../common/UserProfile';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -55,19 +56,28 @@ const Layout: React.FC<LayoutProps> = ({ children, selectedItem, onItemSelect })
               <MenuIcon />
             </IconButton>
           )}
-          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              flexGrow: 1,
+              cursor: 'pointer',
+              '&:hover': {
+                opacity: 0.8
+              }
+            }}
+            onClick={() => onItemSelect('dashboard')}
+          >
             <img 
               src="/batuara_logo.png" 
               alt="Batuara Logo" 
               style={{ height: '32px', marginRight: '12px' }} 
             />
-            <Typography variant="h6" noWrap component="div">
-              Batuara - Admin Dashboard
+            <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
+              Casa de Caridade Caboclo Batuara
             </Typography>
           </Box>
-          <IconButton color="inherit">
-            <AccountIcon />
-          </IconButton>
+          <UserProfile />
         </Toolbar>
       </AppBar>
 

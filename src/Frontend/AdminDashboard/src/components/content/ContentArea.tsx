@@ -2,12 +2,7 @@ import React from 'react';
 import {
   Box,
   Typography,
-  Breadcrumbs,
-  Link,
 } from '@mui/material';
-import {
-  NavigateNext as NavigateNextIcon,
-} from '@mui/icons-material';
 
 // Importar componentes de conteúdo (serão criados nas próximas tarefas)
 import DashboardContent from '../dashboard/DashboardContent';
@@ -15,6 +10,7 @@ import SobreContent from './SobreContent';
 import ContatoContent from './ContatoContent';
 import LocalizacaoContent from './LocalizacaoContent';
 import DoacoesContent from './DoacoesContent';
+import FilhosCasaContent from './FilhosCasaContent';
 import PlaceholderContent from './PlaceholderContent';
 
 interface ContentAreaProps {
@@ -27,7 +23,9 @@ const ContentArea: React.FC<ContentAreaProps> = ({ selectedItem, onItemSelect })
     const labels: { [key: string]: string } = {
       dashboard: 'Dashboard',
       sobre: 'Sobre / História',
-      contato: 'Contato',
+      'filhos-casa': 'Filhos da Casa',
+      mensagens: 'Mensagens',
+      contato: 'Contato', // Manter para compatibilidade
       localizacao: 'Localização',
       doacoes: 'Doações',
       calendario: 'Calendário',
@@ -46,7 +44,10 @@ const ContentArea: React.FC<ContentAreaProps> = ({ selectedItem, onItemSelect })
         return <DashboardContent />;
       case 'sobre':
         return <SobreContent />;
-      case 'contato':
+      case 'filhos-casa':
+        return <FilhosCasaContent />;
+      case 'mensagens':
+      case 'contato': // Manter para compatibilidade
         return <ContatoContent />;
       case 'localizacao':
         return <LocalizacaoContent />;
@@ -155,28 +156,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ selectedItem, onItemSelect })
 
   return (
     <Box>
-      {/* Breadcrumbs */}
-      <Breadcrumbs
-        separator={<NavigateNextIcon fontSize="small" />}
-        sx={{ mb: 3 }}
-      >
-        <Link
-          color="inherit"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            onItemSelect('dashboard');
-          }}
-          sx={{ cursor: 'pointer' }}
-        >
-          Dashboard
-        </Link>
-        {selectedItem !== 'dashboard' && (
-          <Typography color="text.primary">
-            {getItemLabel(selectedItem)}
-          </Typography>
-        )}
-      </Breadcrumbs>
+      {/* Breadcrumbs removidos - navegação simplificada */}
 
       {/* Content */}
       {renderContent()}

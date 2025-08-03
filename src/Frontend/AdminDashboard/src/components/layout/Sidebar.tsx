@@ -13,12 +13,14 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
+import { useResponsiveChips, useIsMobile } from '../../hooks/useResponsiveChips';
 import {
   Dashboard as DashboardIcon,
   Info as InfoIcon,
   ContactMail as ContactIcon,
   LocationOn as LocationIcon,
   Favorite as DonationIcon,
+  People as PeopleIcon,
   CalendarToday as CalendarIcon,
   Event as EventIcon,
   Psychology as SpiritualIcon,
@@ -56,8 +58,16 @@ const sidebarItems: SidebarItem[] = [
     priority: 'P0'
   },
   {
-    id: 'contato',
-    label: 'Contato',
+    id: 'filhos-casa',
+    label: 'Filhos da Casa',
+    icon: PeopleIcon,
+    description: 'CRUD completo com dados mockados',
+    implemented: true,
+    priority: 'P0'
+  },
+  {
+    id: 'mensagens',
+    label: 'Mensagens',
     icon: ContactIcon,
     description: 'Interface visual - funcionalidade em desenvolvimento',
     implemented: false,
@@ -147,9 +157,15 @@ const Sidebar: React.FC<SidebarProps> = ({
   variant = 'permanent'
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useIsMobile();
+  const shouldShowChips = useResponsiveChips();
 
   const getChipProps = (item: SidebarItem) => {
+    // Usar hook para controle inteligente de chips
+    if (!shouldShowChips) {
+      return null;
+    }
+    
     if (item.implemented) {
       return { label: 'Funcional', color: 'success' as const, size: 'small' as const };
     }
@@ -176,25 +192,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const drawerContent = (
     <Box sx={{ width: { xs: 280, sm: 280 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Header do Sidebar */}
-      <Box sx={{ p: { xs: 1.5, sm: 2 }, borderBottom: 1, borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <img 
-            src="/batuara_logo.png" 
-            alt="Batuara Logo" 
-            style={{ height: isMobile ? '28px' : '32px', marginRight: '12px' }} 
-          />
-          <Typography 
-            variant={isMobile ? "subtitle1" : "h6"} 
-            sx={{ fontWeight: 'bold', color: 'primary.main' }}
-          >
-            Admin Dashboard
-          </Typography>
-        </Box>
-        <Typography variant="body2" color="text.secondary">
-          Batuara.net
-        </Typography>
-      </Box>
+      {/* Header removido - foco apenas na navegação */}
 
       {/* Lista de itens */}
       <List sx={{ flexGrow: 1, py: 1 }}>
@@ -206,14 +204,14 @@ const Sidebar: React.FC<SidebarProps> = ({
           return (
             <React.Fragment key={item.id}>
               {/* Divider entre seções */}
-              {index === 5 && (
+              {index === 6 && (
                 <Divider sx={{ my: 1 }}>
                   <Typography variant="caption" color="text.secondary">
                     Fundação (F1)
                   </Typography>
                 </Divider>
               )}
-              {index === 7 && (
+              {index === 8 && (
                 <Divider sx={{ my: 1 }}>
                   <Typography variant="caption" color="text.secondary">
                     Recursos Avançados (A1)
@@ -229,16 +227,24 @@ const Sidebar: React.FC<SidebarProps> = ({
                     mx: 1,
                     borderRadius: 1,
                     '&.Mui-selected': {
-                      backgroundColor: 'primary.light',
+                      backgroundColor: 'rgba(25, 118, 210, 0.15)', // Fundo mais claro
+                      borderRadius: 1,
                       '&:hover': {
-                        backgroundColor: 'primary.light',
+                        backgroundColor: 'rgba(25, 118, 210, 0.25)',
                       },
+                      '& .MuiTypography-root': {
+                        color: '#1565c0',      // Fonte mais escura (primary.dark)
+                        fontWeight: 600,       // Peso maior para melhor legibilidade
+                      },
+                      '& .MuiListItemIcon-root': {
+                        color: '#1565c0',      // Ícone mais escuro
+                      }
                     },
                   }}
                 >
                   <ListItemIcon
                     sx={{ 
-                      color: isSelected ? 'primary.main' : 'text.secondary',
+                      color: isSelected ? '#1565c0' : 'text.secondary',
                       opacity: item.implemented ? 1 : 0.6
                     }}
                   >
@@ -257,23 +263,25 @@ const Sidebar: React.FC<SidebarProps> = ({
                         >
                           {item.label}
                         </Typography>
-                        <Chip {...chipProps} />
+                        {chipProps && <Chip {...chipProps} />}
                       </Box>
                     }
                     secondary={
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: 'text.secondary',
-                          opacity: 0.8,
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        {item.description}
-                      </Typography>
+                      shouldShowChips ? (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: 'text.secondary',
+                            opacity: 0.8,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {item.description}
+                        </Typography>
+                      ) : null
                     }
                   />
                 </ListItemButton>
