@@ -1,0 +1,38 @@
+version: '3.3'
+
+services:
+  public-website:
+    build:
+      context: ./src/Frontend/PublicWebsite
+      dockerfile: ../../../Dockerfile.frontend
+    container_name: batuara-public-website
+    restart: unless-stopped
+    ports:
+      - "8003:80"
+    networks:
+      - batuara-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  admin-dashboard:
+    build:
+      context: ./src/Frontend/AdminDashboard
+      dockerfile: ../../../Dockerfile.frontend
+    container_name: batuara-admin-dashboard
+    restart: unless-stopped
+    ports:
+      - "8004:80"
+    networks:
+      - batuara-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+networks:
+  batuara-net:
+    driver: bridge
