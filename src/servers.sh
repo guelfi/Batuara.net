@@ -117,23 +117,25 @@ start_all() {
     check_dependencies
     
     > /tmp/batuara_services.tmp
-    echo -e "${ROCKET} ${BLUE}Iniciando ambiente Batuara.net...${NC}"
+    echo -e "${ROCKET} ${BLUE}Iniciando ambiente Batuara.net (apenas frontends)...${NC}"
+    echo -e "${INFO} ${YELLOW}API desabilitada temporariamente - apenas testes de navegabilidade${NC}"
     
     local started=0
-    start_service "Batuara.API" "$BASE_DIR/Backend/Batuara.API" "dotnet run --urls http://localhost:$API_PORT" $API_PORT "http://localhost:$API_PORT" "API Backend" && ((started++))
+    # TODO: Reativar API quando começar implementação e integração
+    # start_service "Batuara.API" "$BASE_DIR/Backend/Batuara.API" "dotnet run --urls http://localhost:$API_PORT" $API_PORT "http://localhost:$API_PORT" "API Backend" && ((started++))
     start_service "AdminDashboard" "$BASE_DIR/Frontend/AdminDashboard" "PORT=$ADMIN_DASHBOARD_PORT npm start" $ADMIN_DASHBOARD_PORT "http://localhost:$ADMIN_DASHBOARD_PORT" "Painel Admin" && ((started++))
     start_service "PublicWebsite" "$BASE_DIR/Frontend/PublicWebsite" "PORT=$PUBLIC_WEBSITE_PORT npm start" $PUBLIC_WEBSITE_PORT "http://localhost:$PUBLIC_WEBSITE_PORT" "Website Público" && ((started++))
     
     echo -e "\n${INFO} ${YELLOW}Finalizando inicialização...${NC}"
-    for i in {1..5}; do printf "${CYAN}▓"; sleep 1; done
+    for i in {1..3}; do printf "${CYAN}▓"; sleep 1; done
     echo
     
     # Sempre mostrar o status final elegante, independente do sucesso
     echo -e "\n${INFO} ${YELLOW}Exibindo status final dos serviços...${NC}"
     show_detailed_status
     
-    if [ $started -eq 3 ]; then
-        echo -e "\n${SUCCESS} ${GREEN}Ambiente iniciado com sucesso!${NC}"
+    if [ $started -eq 2 ]; then
+        echo -e "\n${SUCCESS} ${GREEN}Frontends iniciados com sucesso!${NC}"
         echo -e "${INFO} ${YELLOW}Pressione Ctrl+C para parar todos os serviços...${NC}"
         
         trap 'echo; echo -e "${STOP} ${YELLOW}Parando serviços...${NC}"; stop_all; exit 0' INT
@@ -149,7 +151,8 @@ stop_all() {
     show_banner
     echo -e "${STOP} ${RED}Parando todos os serviços...${NC}\n"
     
-    kill_port $API_PORT "Batuara.API"
+    # TODO: Reativar quando API for implementada
+    # kill_port $API_PORT "Batuara.API"
     kill_port $ADMIN_DASHBOARD_PORT "AdminDashboard"
     kill_port $PUBLIC_WEBSITE_PORT "PublicWebsite"
     
@@ -173,7 +176,8 @@ show_detailed_status() {
     echo
     
     local services=(
-        "Batuara.API:$API_PORT:Backend API:API Backend do sistema"
+        # TODO: Reativar quando API for implementada
+        # "Batuara.API:$API_PORT:Backend API:API Backend do sistema"
         "AdminDashboard:$ADMIN_DASHBOARD_PORT:Painel Admin:Interface administrativa"
         "PublicWebsite:$PUBLIC_WEBSITE_PORT:Website Público:Site público da Casa Batuara"
     )
@@ -252,10 +256,11 @@ show_help() {
     echo -e "   ${BLUE}status${NC}   ${CYAN}Mostra status dos serviços${NC}"
     echo -e "   ${YELLOW}help${NC}     ${CYAN}Exibe esta ajuda${NC}\n"
     
-    echo -e "${INFO} ${WHITE}SERVIÇOS:${NC}"
-    echo -e "   ${SUCCESS} ${GREEN}Batuara.API${NC}        - Backend (porta $API_PORT)"
+    echo -e "${INFO} ${WHITE}SERVIÇOS ATIVOS:${NC}"
     echo -e "   ${SUCCESS} ${GREEN}AdminDashboard${NC}     - Admin (porta $ADMIN_DASHBOARD_PORT)"
-    echo -e "   ${SUCCESS} ${GREEN}PublicWebsite${NC}      - Website (porta $PUBLIC_WEBSITE_PORT)\n"
+    echo -e "   ${SUCCESS} ${GREEN}PublicWebsite${NC}      - Website (porta $PUBLIC_WEBSITE_PORT)"
+    echo -e "\n${INFO} ${WHITE}SERVIÇOS DESABILITADOS:${NC}"
+    echo -e "   ${WARNING} ${YELLOW}Batuara.API${NC}        - Backend (porta $API_PORT) - Temporariamente desabilitado\n"
 }
 
 case "${1:-help}" in

@@ -288,13 +288,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         })}
       </List>
 
-      {/* Footer do Sidebar */}
+      {/* Footer do Sidebar - Limpo e minimalista */}
       <Box sx={{ p: { xs: 1.5, sm: 2 }, borderTop: 1, borderColor: 'divider' }}>
         <Typography variant="caption" color="text.secondary" align="center" display="block">
-          Fase 0 - Melhorias de Interface
-        </Typography>
-        <Typography variant="caption" color="text.secondary" align="center" display="block">
-          v1.0.0
+          Casa de Caridade Caboclo Batuara
         </Typography>
       </Box>
     </Box>
