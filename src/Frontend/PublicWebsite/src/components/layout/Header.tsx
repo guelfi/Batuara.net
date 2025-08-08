@@ -116,27 +116,52 @@ const Header: React.FC = () => {
             onClick={() => handleNavClick('#home')}
           >
             {isMobile ? (
-              <Typography
-                variant="h6"
-                component="div"
-                sx={{
-                  fontWeight: 600,
-                  fontSize: '1.1rem',
-                }}
-              >
-                Casa de Caridade Caboclo Batuara
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box
+                  component="img"
+                  src="/batuara_logo.png"
+                  alt="Batuara Logo"
+                  sx={{
+                    height: 24,
+                    width: 'auto',
+                    mr: 1,
+                  }}
+                />
+                <Typography
+                  variant="h6"
+                  component="div"
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                  }}
+                >
+                  Casa de Caridade Caboclo Batuara
+                </Typography>
+              </Box>
             ) : (
-              <Box
-                component="img"
-                src="/batuara_logo.png"
-                alt="Casa de Caridade Caboclo Batuara"
-                sx={{
-                  height: 40,
-                  width: 'auto',
-                  maxWidth: 200,
-                }}
-              />
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box
+                  component="img"
+                  src="/batuara_logo.png"
+                  alt="Batuara Logo"
+                  sx={{
+                    height: 40,
+                    width: 'auto',
+                    mr: 2,
+                  }}
+                />
+                <Typography
+                  variant="h6"
+                  component="div"
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: '0.95rem',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Casa de Caridade Caboclo Batuara
+                </Typography>
+              </Box>
             )}
           </Box>
 
@@ -160,10 +185,10 @@ const Header: React.FC = () => {
                   sx={{
                     textTransform: 'none',
                     fontWeight: 500,
-                    px: 0.8,
+                    px: 0.7,
                     py: 1,
                     minWidth: 'auto',
-                    fontSize: '0.85rem',
+                    fontSize: '0.8rem',
                     whiteSpace: 'nowrap',
                     '&:hover': {
                       backgroundColor: 'rgba(255, 255, 255, 0.1)',

@@ -188,11 +188,34 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const drawerContent = (
-    <Box sx={{ width: { xs: 280, sm: 280 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ 
+      width: { xs: 320, sm: 287 }, 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      // Fixar conteúdo completamente no mobile
+      position: 'relative',
+      overflow: 'hidden',
+      minWidth: { xs: 320, sm: 287 }, // Garantir largura mínima
+      maxWidth: { xs: 320, sm: 287 }  // Garantir largura máxima
+    }}>
       {/* Header removido - foco apenas na navegação */}
 
       {/* Lista de itens */}
-      <List sx={{ flexGrow: 1, py: 1 }}>
+      <List sx={{ 
+        flexGrow: 1, 
+        py: 2, 
+        pt: { xs: '20px', sm: '80px' }, // Aumentar padding-top no desktop para ficar abaixo do header
+        // Comportamento diferente para mobile e desktop
+        position: 'relative',
+        overflow: { xs: 'visible', sm: 'auto' }, // Mobile: fixo, Desktop: scroll
+        width: '100%',       // Ocupar toda a largura disponível
+        minWidth: 0,         // Evitar overflow
+        '& .MuiListItem-root': {
+          width: '100%',     // Garantir que itens ocupem toda largura
+          flexShrink: 0      // Evitar encolhimento
+        }
+      }}>
         {sidebarItems.map((item, index) => {
           const IconComponent = item.icon;
           const chipProps = getChipProps(item);
@@ -289,7 +312,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       </List>
 
       {/* Footer do Sidebar - Limpo e minimalista */}
-      <Box sx={{ p: { xs: 1.5, sm: 2 }, borderTop: 1, borderColor: 'divider' }}>
+      <Box sx={{ 
+        p: { xs: 1.5, sm: 2 }, 
+        borderTop: 1, 
+        borderColor: 'divider',
+        // Fixar footer no mobile
+        position: 'relative',
+        flexShrink: 0
+      }}>
         <Typography variant="caption" color="text.secondary" align="center" display="block">
           Casa de Caridade Caboclo Batuara
         </Typography>
@@ -308,9 +338,18 @@ const Sidebar: React.FC<SidebarProps> = ({
       sx={{
         '& .MuiDrawer-paper': {
           boxSizing: 'border-box',
-          width: { xs: 280, sm: 280 },
+          width: { xs: 320, sm: 287 },
           borderRight: 1,
           borderColor: 'divider',
+          // Comportamento diferente para mobile e desktop
+          position: 'fixed',
+          overflowX: 'hidden', // Sempre remover scroll horizontal
+          overflowY: { xs: 'hidden', sm: 'auto' }, // Mobile: sem scroll, Desktop: com scroll
+          // Posicionar abaixo do AppBar em mobile
+          ...(variant === 'temporary' && {
+            top: { xs: 56, sm: 64 }, // Altura do AppBar
+            height: { xs: 'calc(100vh - 56px)', sm: 'calc(100vh - 64px)' },
+          }),
         },
       }}
     >

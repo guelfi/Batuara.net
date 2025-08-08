@@ -118,7 +118,7 @@ const Layout: React.FC<LayoutProps> = ({ children, selectedItem, onItemSelect })
           flexGrow: 1,
           p: { xs: 2, sm: 3 },
           mt: { xs: 7, sm: 8 }, // Offset for AppBar
-          ml: isMobile ? 0 : '280px', // Offset for Sidebar on desktop
+          ml: isMobile ? 0 : '287px', // Offset for Sidebar on desktop
           minHeight: '100vh',
           transition: theme.transitions.create(['margin'], {
             easing: theme.transitions.easing.sharp,

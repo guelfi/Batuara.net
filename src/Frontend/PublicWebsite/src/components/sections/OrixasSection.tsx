@@ -5,27 +5,22 @@ import {
   Typography,
   Card,
   CardContent,
-  Button,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton,
   Grid,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { orixasData, Orixa } from '../../data/orixasData';
 import NavigationDots from '../common/NavigationDots';
+import SpiritualDetailModal from '../common/SpiritualDetailModal';
+import { convertOrixaToModalData, getColorFromAttribute } from '../../utils/spiritualDataDetail';
 
 const OrixasSection: React.FC = () => {
   const theme = useTheme();
-  const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectedOrixa, setSelectedOrixa] = useState<Orixa | null>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -87,39 +82,25 @@ const OrixasSection: React.FC = () => {
     }
   }, []);
 
-  const getOrixaColor = (name: string): string => {
-    const colorMap: { [key: string]: string } = {
-      'Oxalá': '#e8eaf6', // Azul muito claro para Oxalá (branco com toque de azul)
-      'Iemanjá': '#1976d2',
-      'Nanã': '#9c27b0',
-      'Oxum': '#ffc107',
-      'Ogum': '#d32f2f',
-      'Oxóssi': '#388e3c',
-      'Xangô': '#795548',
-      'Iansã': '#ff9800',
-      'Obaluaê': '#673ab7',
-      'Exu': '#212121', // Preto para Exu
-      'Pomba Gira': '#d32f2f', // Vermelho para Pomba Gira
-      'Ossain': '#4caf50',
-      'Oxumarê': '#ffeb3b'
-    };
-    return colorMap[name] || theme.palette.primary.main;
+  // Usar a função unificada baseada no atributo 'cor'
+  const getOrixaColor = (orixa: Orixa): string => {
+    return getColorFromAttribute(orixa.cor);
   };
 
-  const getOrixaNameColor = (name: string): string => {
+  const getOrixaNameColor = (orixa: Orixa): string => {
     // Para Oxalá, usar uma cor mais escura para contraste com fundo branco
-    if (name === 'Oxalá') return '#1a237e'; // Azul escuro para contraste
+    if (orixa.cor === 'Branco') return '#1a237e'; // Azul escuro para contraste
     // Para outros Orixás, usar suas cores próprias
-    return getOrixaColor(name);
+    return getOrixaColor(orixa);
   };
 
-  const getOrixaIconColor = (name: string): string => {
+  const getOrixaIconColor = (orixa: Orixa): string => {
     // Para Oxalá, usar texto escuro para contraste no ícone
-    if (name === 'Oxalá') return '#1a237e';
+    if (orixa.cor === 'Branco') return '#1a237e';
     // Para Exu, usar texto branco no ícone
-    if (name === 'Exu') return '#ffffff';
+    if (orixa.cor === 'Preto') return '#ffffff';
     // Para outros Orixás com cores claras, usar texto escuro no ícone
-    if (['Oxum', 'Oxumarê'].includes(name)) return '#333333';
+    if (['Amarelo'].includes(orixa.cor)) return '#333333';
     // Para o resto, usar branco no ícone
     return '#ffffff';
   };
@@ -259,7 +240,7 @@ const OrixasSection: React.FC = () => {
                     left: 0,
                     right: 0,
                     height: 4,
-                    backgroundColor: getOrixaColor(orixa.name),
+                    backgroundColor: getOrixaColor(orixa),
                   },
                   '&::after': {
                     content: '""',
@@ -268,7 +249,7 @@ const OrixasSection: React.FC = () => {
                     left: 0,
                     right: 0,
                     height: 4,
-                    backgroundColor: getOrixaColor(orixa.name),
+                    backgroundColor: getOrixaColor(orixa),
                   },
                 }}
               >
@@ -279,7 +260,7 @@ const OrixasSection: React.FC = () => {
                         width: 80,
                         height: 80,
                         borderRadius: '50%',
-                        backgroundColor: getOrixaColor(orixa.name),
+                        backgroundColor: getOrixaColor(orixa),
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -288,13 +269,13 @@ const OrixasSection: React.FC = () => {
                         boxShadow: theme.shadows[4],
                       }}
                     >
-                      <AutoAwesomeIcon sx={{ fontSize: 40, color: getOrixaIconColor(orixa.name) }} />
+                      <AutoAwesomeIcon sx={{ fontSize: 40, color: getOrixaIconColor(orixa) }} />
                     </Box>
                     <Typography
                       variant="h5"
                       sx={{
                         fontWeight: 600,
-                        color: getOrixaNameColor(orixa.name),
+                        color: getOrixaNameColor(orixa),
                         mb: 0.5,
                       }}
                     >
@@ -319,13 +300,13 @@ const OrixasSection: React.FC = () => {
                       label={orixa.saudacao}
                       size="small"
                       sx={{
-                        backgroundColor: getOrixaColor(orixa.name),
-                        color: getSaudacaoTextColor(orixa.name),
+                        backgroundColor: getOrixaColor(orixa),
+                        color: getOrixaIconColor(orixa),
                         fontSize: '0.7rem',
                         fontWeight: 500,
                         height: '20px',
                         '& .MuiChip-label': {
-                          color: getSaudacaoTextColor(orixa.name),
+                          color: getOrixaIconColor(orixa),
                         },
                       }}
                     />
@@ -363,8 +344,8 @@ const OrixasSection: React.FC = () => {
                             width: 16,
                             height: 16,
                             borderRadius: '50%',
-                            backgroundColor: getOrixaColor(orixa.name),
-                          border: orixa.name === 'Oxalá' ? '1px solid #ccc' : 'none',
+                            backgroundColor: getOrixaColor(orixa),
+                          border: orixa.cor === 'Branco' ? '1px solid #ccc' : 'none',
                         }}
                       />
                         <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
@@ -435,146 +416,15 @@ const OrixasSection: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Dialog com detalhes do Orixá */}
-        <Dialog
-          open={!!selectedOrixa}
-          onClose={handleCloseDialog}
-          fullScreen={fullScreen}
-          maxWidth="md"
-          fullWidth
-        >
-          {selectedOrixa && (
-            <>
-              <DialogTitle
-                sx={{
-                  backgroundColor: getOrixaColor(selectedOrixa.name),
-                  color: selectedOrixa.name === 'Oxalá' ? 'black' : 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Box>
-                  <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                    {selectedOrixa.name}
-                  </Typography>
-                  <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
-                    {selectedOrixa.saudacao}
-                  </Typography>
-                </Box>
-                <IconButton
-                  onClick={handleCloseDialog}
-                  sx={{ color: selectedOrixa.name === 'Oxalá' ? 'black' : 'white' }}
-                >
-                  <CloseIcon />
-                </IconButton>
-              </DialogTitle>
-
-              <DialogContent sx={{ p: 4 }}>
-                <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' } }}>
-                  <Box sx={{ flex: 2 }}>
-                    <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                      Sobre {selectedOrixa.name}
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.7 }}>
-                      {selectedOrixa.description}
-                    </Typography>
-
-                    <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                      Elemento e Habitat
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 1, lineHeight: 1.7 }}>
-                      <strong>Elemento:</strong> {selectedOrixa.element}
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.7 }}>
-                      <strong>Habitat:</strong> {selectedOrixa.habitat}
-                    </Typography>
-
-                    <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                      Atuação na Casa Batuara
-                    </Typography>
-                    <Typography variant="body1" sx={{ lineHeight: 1.7 }}>
-                      {selectedOrixa.name} atua principalmente na área de <strong>{selectedOrixa.atuacao}</strong>, 
-                      sendo uma das forças fundamentais que orientam nossos trabalhos espirituais e 
-                      ensinamentos na Casa de Caridade Caboclo Batuara.
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ flex: 1 }}>
-                    <Box sx={{ mb: 3 }}>
-                      <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                        Informações Rituais
-                      </Typography>
-                      
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                          Cor:
-                        </Typography>
-                        <Chip
-                          label={selectedOrixa.cor}
-                          sx={{
-                            backgroundColor: getOrixaColor(selectedOrixa.name),
-                            color: selectedOrixa.name === 'Oxalá' ? 'black' : 'white',
-                          }}
-                        />
-                      </Box>
-
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                          Símbolo:
-                        </Typography>
-                        <Typography variant="body2">{selectedOrixa.simbolo}</Typography>
-                      </Box>
-
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                          Dia da Semana:
-                        </Typography>
-                        <Chip label={selectedOrixa.diaSemana} variant="outlined" />
-                      </Box>
-
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                          Fruta:
-                        </Typography>
-                        <Typography variant="body2">{selectedOrixa.fruta}</Typography>
-                      </Box>
-
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                          Comida:
-                        </Typography>
-                        <Typography variant="body2">{selectedOrixa.comida}</Typography>
-                      </Box>
-
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                          Bebida:
-                        </Typography>
-                        <Typography variant="body2">{selectedOrixa.bebida}</Typography>
-                      </Box>
-
-                      {selectedOrixa.dataComemoração !== 'Data não especificada' && (
-                        <Box>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                            Data de Comemoração:
-                          </Typography>
-                          <Typography variant="body2">{selectedOrixa.dataComemoração}</Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  </Box>
-                </Box>
-              </DialogContent>
-
-              <DialogActions sx={{ p: 3 }}>
-                <Button onClick={handleCloseDialog} variant="outlined">
-                  Fechar
-                </Button>
-              </DialogActions>
-            </>
-          )}
-        </Dialog>
+        {/* Modal fullscreen com detalhes do Orixá */}
+        {selectedOrixa && (
+          <SpiritualDetailModal
+            open={!!selectedOrixa}
+            onClose={handleCloseDialog}
+            data={convertOrixaToModalData(selectedOrixa)}
+            tipo="orixa"
+          />
+        )}
       </Container>
     </Box>
   );

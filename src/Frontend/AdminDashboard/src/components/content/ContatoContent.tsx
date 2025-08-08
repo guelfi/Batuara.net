@@ -212,7 +212,7 @@ const ContatoContent: React.FC = () => {
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <Typography variant="h5" sx={{ flexGrow: 1 }}>
-              Gerenciamento de Contatos
+              Gerenciamento de Mensagens
             </Typography>
             <Chip label="Implementado" color="success" size="small" />
           </Box>

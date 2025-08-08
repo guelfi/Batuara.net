@@ -8,6 +8,8 @@ import {
   Chip,
   Alert,
   IconButton,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   DataGrid,
@@ -27,6 +29,8 @@ import { mockFilhosCasa, getFilhosCasaStats } from '../../data/mockFilhosCasa';
 import FilhoCasaForm from '../forms/FilhoCasaForm';
 
 const FilhosCasaContent: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [filhosCasa, setFilhosCasa] = useState<FilhoCasa[]>(mockFilhosCasa);
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [formOpen, setFormOpen] = useState(false);
@@ -119,7 +123,34 @@ const FilhosCasaContent: React.FC = () => {
     setEditingFilho(null);
   };
 
-  const columns: GridColDef[] = [
+  // Colunas responsivas baseadas no tamanho da tela
+  const columns: GridColDef[] = isMobile ? [
+    // Mobile: apenas nome e telefone
+    {
+      field: 'nome',
+      headerName: 'Nome',
+      flex: 1,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <PeopleIcon sx={{ mr: 1, color: 'primary.main', fontSize: 16 }} />
+          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+            {params.value}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'telefone',
+      headerName: 'Celular',
+      flex: 1,
+      renderCell: (params) => (
+        <Typography variant="body2">
+          {params.value || 'Não informado'}
+        </Typography>
+      ),
+    },
+  ] : [
+    // Desktop: todas as colunas
     {
       field: 'nome',
       headerName: 'Nome',
@@ -169,24 +200,7 @@ const FilhosCasaContent: React.FC = () => {
       width: 120,
       renderCell: (params) => getStatusChip(params.value),
     },
-    {
-      field: 'observacoes',
-      headerName: 'Observações',
-      width: 250,
-      renderCell: (params) => (
-        <Typography 
-          variant="body2" 
-          color="text.secondary"
-          sx={{
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          {params.value || 'Sem observações'}
-        </Typography>
-      ),
-    },
+
     {
       field: 'actions',
       type: 'actions',
@@ -237,28 +251,33 @@ const FilhosCasaContent: React.FC = () => {
             </Typography>
           </Alert>
 
-          {/* Estatísticas */}
-          <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-            <Chip 
-              label={`Total: ${stats.total}`} 
-              color="primary" 
-              variant="outlined" 
-            />
-            <Chip 
-              label={`Ativos: ${stats.ativos}`} 
-              color="success" 
-              variant="outlined" 
-            />
-            <Chip 
-              label={`Afastados: ${stats.afastados}`} 
-              color="warning" 
-              variant="outlined" 
-            />
-            <Chip 
-              label={`Inativos: ${stats.inativos}`} 
-              color="error" 
-              variant="outlined" 
-            />
+          {/* Chips de filtro e controles */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Chip 
+                label={`Total: ${stats.total}`} 
+                color="primary" 
+                variant="outlined" 
+              />
+              <Chip 
+                label={`Ativos: ${stats.ativos}`} 
+                color="success" 
+                variant="outlined" 
+              />
+              <Chip 
+                label={`Afastados: ${stats.afastados}`} 
+                color="warning" 
+                variant="outlined" 
+              />
+              <Chip 
+                label={`Inativos: ${stats.inativos}`} 
+                color="error" 
+                variant="outlined" 
+              />
+            </Box>
+            <Typography variant="body2" color="text.secondary">
+              Paginação: 6 itens por página
+            </Typography>
           </Box>
 
           {/* DataGrid */}
@@ -268,15 +287,16 @@ const FilhosCasaContent: React.FC = () => {
               columns={columns}
               initialState={{
                 pagination: {
-                  paginationModel: { page: 0, pageSize: 10 },
+                  paginationModel: { page: 0, pageSize: 6 },
                 },
                 sorting: {
                   sortModel: [{ field: 'nome', sort: 'asc' }],
                 },
               }}
-              pageSizeOptions={[5, 10, 20]}
-              checkboxSelection
+              pageSizeOptions={[6, 12, 18]}
+              checkboxSelection={!isMobile}
               disableRowSelectionOnClick
+              onRowClick={isMobile ? (params) => handleView(params.id as string) : undefined}
               onRowSelectionModelChange={(newSelection) => {
                 setSelectedRows(newSelection as string[]);
               }}

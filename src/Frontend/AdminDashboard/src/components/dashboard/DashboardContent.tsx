@@ -32,7 +32,7 @@ import { useIsMobile } from '../../hooks/useResponsiveChips';
 interface MetricCardData {
   title: string;
   value: string | number;
-  icon: React.ComponentType;
+  icon: React.ComponentType<any>;
   color: string;
   trend?: {
     value: number;
@@ -80,40 +80,40 @@ const DashboardContent: React.FC = () => {
     }
   ];
 
-const mockRecentActivities = [
-  {
-    id: 1,
-    title: 'Nova mensagem de contato recebida',
-    description: 'Maria Silva enviou uma mensagem sobre consulta',
-    time: '2 horas atrás',
-    icon: ContactIcon,
-    color: '#1976d2'
-  },
-  {
-    id: 2,
-    title: 'Gira de Oxalá agendada',
-    description: 'Próxima sexta-feira às 20:00',
-    time: '5 horas atrás',
-    icon: ScheduleIcon,
-    color: '#388e3c'
-  },
-  {
-    id: 3,
-    title: 'Doação recebida',
-    description: 'R$ 50,00 via PIX',
-    time: '1 dia atrás',
-    icon: DonationIcon,
-    color: '#f57c00'
-  },
-  {
-    id: 4,
-    title: 'Evento "Festa de Iemanjá" criado',
-    description: 'Programado para 2 de fevereiro',
-    time: '2 dias atrás',
-    icon: EventIcon,
-    color: '#7b1fa2'
-  }
-];
+  const mockRecentActivities = [
+    {
+      id: 1,
+      title: 'Nova mensagem de contato recebida',
+      description: 'Maria Silva enviou uma mensagem sobre consulta',
+      time: '2 horas atrás',
+      icon: ContactIcon,
+      color: '#1976d2'
+    },
+    {
+      id: 2,
+      title: 'Gira de Oxalá agendada',
+      description: 'Próxima sexta-feira às 20:00',
+      time: '5 horas atrás',
+      icon: ScheduleIcon,
+      color: '#388e3c'
+    },
+    {
+      id: 3,
+      title: 'Doação recebida',
+      description: 'R$ 50,00 via PIX',
+      time: '1 dia atrás',
+      icon: DonationIcon,
+      color: '#f57c00'
+    },
+    {
+      id: 4,
+      title: 'Evento "Festa de Iemanjá" criado',
+      description: 'Programado para 2 de fevereiro',
+      time: '2 dias atrás',
+      icon: EventIcon,
+      color: '#7b1fa2'
+    }
+  ];
 
   const getPhaseChip = (phase: string) => {
     switch (phase) {
@@ -139,11 +139,11 @@ const mockRecentActivities = [
         {mockMetricData.map((metric, index) => {
           const IconComponent = metric.icon;
           const TrendIcon = metric.trend?.isPositive ? TrendingUpIcon : TrendingDownIcon;
-          
+
           return (
             <Grid item xs={isMobile ? 6 : 12} sm={6} md={3} key={index}>
-              <Card 
-                sx={{ 
+              <Card
+                sx={{
                   height: isMobile ? 120 : '100%',
                   minHeight: isMobile ? 120 : 160,
                   background: `linear-gradient(135deg, ${metric.color}15 0%, ${metric.color}05 100%)`,
@@ -157,8 +157,8 @@ const mockRecentActivities = [
               >
                 <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: isMobile ? 1 : 2 }}>
-                    <Avatar sx={{ 
-                      bgcolor: metric.color, 
+                    <Avatar sx={{
+                      bgcolor: metric.color,
                       mr: isMobile ? 1 : 2,
                       width: isMobile ? 32 : 40,
                       height: isMobile ? 32 : 40,
@@ -166,8 +166,8 @@ const mockRecentActivities = [
                       <IconComponent sx={{ fontSize: isMobile ? 16 : 20 }} />
                     </Avatar>
                     <Box sx={{ flexGrow: 1 }}>
-                      <Typography 
-                        color="textSecondary" 
+                      <Typography
+                        color="textSecondary"
                         variant={isMobile ? "caption" : "body2"}
                         sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
                       >
@@ -176,27 +176,27 @@ const mockRecentActivities = [
                       {!isMobile && getPhaseChip(metric.phase)}
                     </Box>
                   </Box>
-                  
-                  <Typography 
-                    variant={isMobile ? "h5" : "h4"} 
-                    component="h2" 
+
+                  <Typography
+                    variant={isMobile ? "h5" : "h4"}
+                    component="h2"
                     sx={{ mb: 0.5, fontWeight: 'bold' }}
                   >
                     {metric.value}
                   </Typography>
-                  
+
                   {metric.trend && (
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <TrendIcon 
-                        sx={{ 
+                      <TrendIcon
+                        sx={{
                           color: metric.trend.isPositive ? 'success.main' : 'error.main',
                           mr: 0.5,
                           fontSize: isMobile ? 14 : 16
-                        }} 
+                        }}
                       />
-                      <Typography 
+                      <Typography
                         variant={isMobile ? "caption" : "body2"}
-                        sx={{ 
+                        sx={{
                           color: metric.trend.isPositive ? 'success.main' : 'error.main',
                           fontWeight: 'medium',
                           fontSize: isMobile ? '0.7rem' : undefined
@@ -217,7 +217,7 @@ const mockRecentActivities = [
       <Grid container spacing={isMobile ? 2 : 3}>
         {/* Atividades Recentes */}
         <Grid item xs={12} md={8}>
-          <Card sx={{ 
+          <Card sx={{
             height: '100%',
             maxHeight: isMobile ? 300 : 'none',
             overflow: isMobile ? 'auto' : 'visible'
@@ -230,7 +230,7 @@ const mockRecentActivities = [
                 </Typography>
                 {!isMobile && <Chip label="Dados Mockados" color="success" size="small" sx={{ ml: 'auto' }} />}
               </Box>
-              
+
               <List dense={isMobile}>
                 {mockRecentActivities.slice(0, isMobile ? 3 : 4).map((activity, index) => {
                   const IconComponent = activity.icon;
@@ -238,7 +238,7 @@ const mockRecentActivities = [
                     <React.Fragment key={activity.id}>
                       <ListItem alignItems="flex-start" sx={{ px: 0, py: isMobile ? 0.5 : 1 }}>
                         <ListItemAvatar>
-                          <Avatar sx={{ 
+                          <Avatar sx={{
                             bgcolor: activity.color,
                             width: isMobile ? 32 : 40,
                             height: isMobile ? 32 : 40,
@@ -248,8 +248,8 @@ const mockRecentActivities = [
                         </ListItemAvatar>
                         <ListItemText
                           primary={
-                            <Typography 
-                              variant={isMobile ? "body2" : "body1"} 
+                            <Typography
+                              variant={isMobile ? "body2" : "body1"}
                               sx={{ fontWeight: 'medium' }}
                             >
                               {activity.title}
@@ -257,8 +257,8 @@ const mockRecentActivities = [
                           }
                           secondary={
                             <Box>
-                              <Typography 
-                                variant={isMobile ? "caption" : "body2"} 
+                              <Typography
+                                variant={isMobile ? "caption" : "body2"}
                                 color="text.secondary"
                               >
                                 {activity.description}
@@ -387,7 +387,7 @@ const mockRecentActivities = [
       {/* Informação sobre a Fase 0.1 */}
       <Paper sx={{ p: 2, mt: 3, bgcolor: 'info.light' }}>
         <Typography variant="body2" color="info.dark">
-          <strong>Fase 0.1 - Melhorias UX:</strong> Os dados de "Filhos da Casa" são funcionais com CRUD completo. 
+          <strong>Fase 0.1 - Melhorias UX:</strong> Os dados de "Filhos da Casa" são funcionais com CRUD completo.
           Outros dados são mockados para demonstração. Na Fase Fundação, todos os dados serão integrados com a API.
         </Typography>
       </Paper>

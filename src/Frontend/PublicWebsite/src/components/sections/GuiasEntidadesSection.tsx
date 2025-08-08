@@ -5,27 +5,22 @@ import {
   Typography,
   Card,
   CardContent,
-  Button,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton,
   useTheme,
   useMediaQuery,
   Grid,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import PeopleIcon from '@mui/icons-material/People';
 import { guiasEntidadesData, GuiaEntidade } from '../../data/guiasEntidadesData';
+import { convertGuiaToModalData, getColorFromAttribute } from '../../utils/spiritualDataDetail';
 import NavigationDots from '../common/NavigationDots';
+import SpiritualDetailModal from '../common/SpiritualDetailModal';
 
 const GuiasEntidadesSection: React.FC = () => {
   const theme = useTheme();
-  const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectedGuia, setSelectedGuia] = useState<GuiaEntidade | null>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -87,17 +82,9 @@ const GuiasEntidadesSection: React.FC = () => {
     }
   }, []);
 
-  const getGuiaColor = (name: string): string => {
-    const colorMap: { [key: string]: string } = {
-      'Baiano': '#ff9800',
-      'Preto Velho': '#795548',
-      'Erês': '#e91e63',
-      'Boiadeiro': '#8bc34a',
-      'Marinheiro': '#2196f3',
-      'Cigano': '#9c27b0',
-      'Malandro': '#f44336'
-    };
-    return colorMap[name] || theme.palette.primary.main;
+  // Usar a função unificada baseada no atributo 'cor'
+  const getGuiaColor = (guia: GuiaEntidade): string => {
+    return getColorFromAttribute(guia.cor);
   };
 
   return (
@@ -226,7 +213,7 @@ const GuiasEntidadesSection: React.FC = () => {
                     left: 0,
                     right: 0,
                     height: 4,
-                    backgroundColor: getGuiaColor(guia.name),
+                    backgroundColor: getGuiaColor(guia),
                   },
                   '&::after': {
                     content: '""',
@@ -235,7 +222,7 @@ const GuiasEntidadesSection: React.FC = () => {
                     left: 0,
                     right: 0,
                     height: 4,
-                    backgroundColor: getGuiaColor(guia.name),
+                    backgroundColor: getGuiaColor(guia),
                   },
                 }}
               >
@@ -246,7 +233,7 @@ const GuiasEntidadesSection: React.FC = () => {
                         width: 80,
                         height: 80,
                         borderRadius: '50%',
-                        backgroundColor: getGuiaColor(guia.name),
+                        backgroundColor: getGuiaColor(guia),
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -261,7 +248,7 @@ const GuiasEntidadesSection: React.FC = () => {
                       variant="h5"
                       sx={{
                         fontWeight: 600,
-                        color: getGuiaColor(guia.name),
+                        color: getGuiaColor(guia),
                         mb: 1,
                       }}
                     >
@@ -302,7 +289,7 @@ const GuiasEntidadesSection: React.FC = () => {
                       label={guia.saudacao}
                       size="small"
                       sx={{
-                        backgroundColor: getGuiaColor(guia.name),
+                        backgroundColor: getGuiaColor(guia),
                         color: 'white',
                         fontSize: '0.7rem',
                         fontWeight: 500,
@@ -346,7 +333,7 @@ const GuiasEntidadesSection: React.FC = () => {
                             width: 16,
                             height: 16,
                             borderRadius: '50%',
-                            backgroundColor: getGuiaColor(guia.name),
+                            backgroundColor: getGuiaColor(guia),
                           }}
                         />
                         <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
@@ -417,148 +404,13 @@ const GuiasEntidadesSection: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Dialog com detalhes da Guia/Entidade */}
-        <Dialog
+        {/* Modal com detalhes da Guia/Entidade */}
+        <SpiritualDetailModal
           open={!!selectedGuia}
           onClose={handleCloseDialog}
-          fullScreen={fullScreen}
-          maxWidth="md"
-          fullWidth
-        >
-          {selectedGuia && (
-            <>
-              <DialogTitle
-                sx={{
-                  backgroundColor: getGuiaColor(selectedGuia.name),
-                  color: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Box>
-                  <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                    {selectedGuia.name}
-                  </Typography>
-                  <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
-                    {selectedGuia.saudacao}
-                  </Typography>
-                </Box>
-                <IconButton
-                  onClick={handleCloseDialog}
-                  sx={{ color: 'white' }}
-                >
-                  <CloseIcon />
-                </IconButton>
-              </DialogTitle>
-
-              <DialogContent sx={{ p: 4 }}>
-                <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' } }}>
-                  <Box sx={{ flex: 2 }}>
-                    <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                      Sobre {selectedGuia.name}
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.7 }}>
-                      {selectedGuia.description}
-                    </Typography>
-
-                    <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                      Características
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
-                      {selectedGuia.caracteristicas.map((caracteristica, index) => (
-                        <Chip
-                          key={index}
-                          label={caracteristica}
-                          variant="outlined"
-                          size="small"
-                          sx={{ mb: 1 }}
-                        />
-                      ))}
-                    </Box>
-
-                    <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                      Trabalho na Casa Batuara
-                    </Typography>
-                    <Typography variant="body1" sx={{ lineHeight: 1.7 }}>
-                      {selectedGuia.name} é uma das entidades que trabalham conosco na Casa de Caridade Caboclo Batuara,
-                      trazendo seus ensinamentos e proteção espiritual para todos que buscam orientação e auxílio.
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ flex: 1 }}>
-                    <Box sx={{ mb: 3 }}>
-                      <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                        Informações Rituais
-                      </Typography>
-
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                          Data de Comemoração:
-                        </Typography>
-                        <Typography variant="body2">{selectedGuia.comemoracao}</Typography>
-                      </Box>
-
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                          Habitat:
-                        </Typography>
-                        <Typography variant="body2">{selectedGuia.habitat}</Typography>
-                      </Box>
-
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                          Cor:
-                        </Typography>
-                        <Chip
-                          label={selectedGuia.cor}
-                          sx={{
-                            backgroundColor: getGuiaColor(selectedGuia.name),
-                            color: 'white',
-                          }}
-                        />
-                      </Box>
-
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                          Dia da Semana:
-                        </Typography>
-                        <Chip label={selectedGuia.diaSemana} variant="outlined" />
-                      </Box>
-
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                          Fruta:
-                        </Typography>
-                        <Typography variant="body2">{selectedGuia.fruta}</Typography>
-                      </Box>
-
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                          Bebida:
-                        </Typography>
-                        <Typography variant="body2">{selectedGuia.bebida}</Typography>
-                      </Box>
-
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                          Comida:
-                        </Typography>
-                        <Typography variant="body2">{selectedGuia.comida}</Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-                </Box>
-              </DialogContent>
-
-              <DialogActions sx={{ p: 3 }}>
-                <Button onClick={handleCloseDialog} variant="outlined">
-                  Fechar
-                </Button>
-              </DialogActions>
-            </>
-          )}
-        </Dialog>
+          data={selectedGuia ? convertGuiaToModalData(selectedGuia) : {} as any}
+          tipo="guia"
+        />
       </Container>
     </Box>
   );

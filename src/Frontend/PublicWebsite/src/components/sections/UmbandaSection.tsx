@@ -5,22 +5,18 @@ import {
   Card,
   CardContent,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   IconButton,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
 import { 
-  Close as CloseIcon,
   ArrowBackIos as ArrowBackIcon,
   ArrowForwardIos as ArrowForwardIcon
 } from '@mui/icons-material';
 import { linhasUmbandaData, LinhaUmbanda } from '../../data/linhasUmbandaData';
+import { convertLinhaToModalData, getColorFromAttribute } from '../../utils/spiritualDataDetail';
 import NavigationDots from '../common/NavigationDots';
+import SpiritualDetailModal from '../common/SpiritualDetailModal';
 
 const UmbandaSection: React.FC = () => {
   const [selectedLinha, setSelectedLinha] = useState<LinhaUmbanda | null>(null);
@@ -35,17 +31,9 @@ const UmbandaSection: React.FC = () => {
     return name.replace(/^Linha de |^Linha da /, '');
   };
 
-  const getLinhaColor = (cor: string): string => {
-    const colorMap: { [key: string]: string } = {
-      'Branco': '#f5f5f5', // Cinza muito claro para contraste
-      'Vermelho': '#d32f2f',
-      'Verde': '#388e3c',
-      'Marrom': '#8d6e63',
-      'Azul-claro': '#42a5f5',
-      'Amarelo': '#fbc02d',
-      'Preto e vermelho': '#d32f2f',
-    };
-    return colorMap[cor] || '#757575';
+  // Usar a função unificada baseada no atributo 'cor'
+  const getLinhaColor = (linha: LinhaUmbanda): string => {
+    return getColorFromAttribute(linha.cor);
   };
 
   const getChipTextColor = (cor: string): string => {
@@ -54,12 +42,12 @@ const UmbandaSection: React.FC = () => {
     return lightColors.includes(cor) ? '#333333' : 'white';
   };
 
-  const getBorderColor = (cor: string): string => {
+  const getBorderColor = (linha: LinhaUmbanda): string => {
     // Para branco, usar uma borda mais visível
-    if (cor === 'Branco') {
+    if (linha.cor === 'Branco') {
       return '#e0e0e0';
     }
-    return getLinhaColor(cor);
+    return getLinhaColor(linha);
   };
 
   const handleCardClick = (linha: LinhaUmbanda) => {
@@ -244,7 +232,7 @@ const UmbandaSection: React.FC = () => {
                   transform: 'translateY(-8px)',
                   boxShadow: 6,
                 },
-                borderTop: `4px solid ${getBorderColor(linha.cor)}`,
+                borderTop: `4px solid ${getBorderColor(linha)}`,
               }}
             >
               <CardContent sx={{ p: 3 }}>
@@ -276,7 +264,7 @@ const UmbandaSection: React.FC = () => {
                     label={linha.cor}
                     size="small"
                     sx={{
-                      backgroundColor: getLinhaColor(linha.cor),
+                      backgroundColor: getLinhaColor(linha),
                       color: getChipTextColor(linha.cor),
                       fontWeight: 500,
                       mb: 2,
@@ -295,7 +283,7 @@ const UmbandaSection: React.FC = () => {
                         label={entidade}
                         size="small"
                         sx={{
-                          backgroundColor: getLinhaColor(linha.cor),
+                          backgroundColor: getLinhaColor(linha),
                           color: getChipTextColor(linha.cor),
                           fontSize: '0.75rem',
                           fontWeight: 500,
@@ -385,120 +373,13 @@ const UmbandaSection: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Dialog com informações detalhadas */}
-      <Dialog
+      {/* Modal com informações detalhadas */}
+      <SpiritualDetailModal
         open={!!selectedLinha}
         onClose={handleCloseDialog}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            maxHeight: '90vh',
-          },
-        }}
-      >
-        {selectedLinha && (
-          <>
-            <DialogTitle
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderBottom: `3px solid ${getBorderColor(selectedLinha.cor)}`,
-                pb: 2,
-              }}
-            >
-              <Typography variant="h5" sx={{ fontWeight: 600, color: 'primary.main' }}>
-                {formatLinhaName(selectedLinha.name)}
-              </Typography>
-              <IconButton onClick={handleCloseDialog} size="small">
-                <CloseIcon />
-              </IconButton>
-            </DialogTitle>
-            
-            <DialogContent sx={{ pt: 3 }}>
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                  Descrição
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.6 }}>
-                  {selectedLinha.description}
-                </Typography>
-              </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                  Informações Gerais
-                </Typography>
-                
-                <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                  <Box>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                      Regida por:
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                      {selectedLinha.regidaPor}
-                    </Typography>
-                  </Box>
-                  
-                  <Box>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                      Cor:
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box
-                        sx={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: '50%',
-                          backgroundColor: getLinhaColor(selectedLinha.cor),
-                          border: selectedLinha.cor === 'Branco' ? '1px solid #ccc' : 'none',
-                        }}
-                      />
-                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                        {selectedLinha.cor}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-              </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                  Entidades
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  {selectedLinha.entidades.map((entidade: string, index: number) => (
-                    <Chip
-                      key={index}
-                      label={entidade}
-                      variant="outlined"
-                      size="small"
-                      sx={{ mb: 1 }}
-                    />
-                  ))}
-                </Box>
-              </Box>
-
-              <Box>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                  Área de Atuação
-                </Typography>
-                <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
-                  {selectedLinha.atuacao}
-                </Typography>
-              </Box>
-            </DialogContent>
-            
-            <DialogActions sx={{ p: 3, pt: 1 }}>
-              <Button onClick={handleCloseDialog} variant="contained">
-                Fechar
-              </Button>
-            </DialogActions>
-          </>
-        )}
-      </Dialog>
+        data={selectedLinha ? convertLinhaToModalData(selectedLinha) : {} as any}
+        tipo="linha"
+      />
     </Box>
   );
 };
