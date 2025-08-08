@@ -10,7 +10,7 @@ services:
     container_name: batuara-public-website
     restart: unless-stopped
     ports:
-      - "8003:80"
+      - "3000:80"
     logging:
       driver: "json-file"
       options:
@@ -26,7 +26,7 @@ services:
     container_name: batuara-admin-dashboard
     restart: unless-stopped
     ports:
-      - "8004:80"
+      - "3001:80"
     logging:
       driver: "json-file"
       options:
