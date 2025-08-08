@@ -61,8 +61,16 @@ const Layout: React.FC<LayoutProps> = ({ children, selectedItem, onItemSelect })
               alignItems: 'center', 
               flexGrow: 1,
               cursor: 'pointer',
+              borderRadius: 1,
+              px: 1,
+              py: 0.5,
+              transition: 'all 0.2s ease-in-out',
               '&:hover': {
-                opacity: 0.8
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                transform: 'scale(1.02)'
+              },
+              '&:active': {
+                transform: 'scale(0.98)'
               }
             }}
             onClick={() => {
@@ -71,6 +79,7 @@ const Layout: React.FC<LayoutProps> = ({ children, selectedItem, onItemSelect })
                 setSidebarOpen(false);
               }
             }}
+            title="Voltar ao Dashboard"
           >
             <img 
               src="/batuara_logo.png" 
@@ -122,13 +131,16 @@ const Layout: React.FC<LayoutProps> = ({ children, selectedItem, onItemSelect })
           flexGrow: 1,
           p: { xs: 2, sm: 3 },
           mt: { xs: 7, sm: 8 }, // Offset for AppBar
-          ml: isMobile ? 0 : '287px', // Offset for Sidebar on desktop
+          ml: isMobile ? 0 : '320px', // Offset for Sidebar on desktop
           minHeight: '100vh',
+          maxHeight: '100vh',
+          overflow: 'auto', // Permitir scroll na área principal
           transition: theme.transitions.create(['margin'], {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),
         }}
+        id="main-content" // ID para facilitar o scroll
       >
         {children}
       </Box>

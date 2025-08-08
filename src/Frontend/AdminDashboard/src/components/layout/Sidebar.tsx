@@ -163,7 +163,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (!shouldShowChips) {
       return null;
     }
-    
+
     if (item.implemented) {
       return { label: 'Funcional', color: 'success' as const, size: 'small' as const };
     }
@@ -199,25 +199,25 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const drawerContent = (
-    <Box sx={{ 
-      width: { xs: 320, sm: 287 }, 
-      height: '100%', 
-      display: 'flex', 
+    <Box sx={{
+      width: { xs: 340, sm: 320 },
+      height: '100%',
+      display: 'flex',
       flexDirection: 'column',
       // Fixar conteúdo completamente no mobile
       position: 'relative',
       overflow: 'hidden',
-      minWidth: { xs: 320, sm: 287 }, // Garantir largura mínima
-      maxWidth: { xs: 320, sm: 287 }  // Garantir largura máxima
+      minWidth: { xs: 340, sm: 320 }, // Garantir largura mínima
+      maxWidth: { xs: 340, sm: 320 }  // Garantir largura máxima
     }}>
       {/* Header removido - foco apenas na navegação */}
 
       {/* Lista de itens */}
-      <List 
+      <List
         ref={listRef}
-        sx={{ 
-          flexGrow: 1, 
-          py: 2, 
+        sx={{
+          flexGrow: 1,
+          py: 2,
           pt: { xs: '20px', sm: '80px' }, // Aumentar padding-top no desktop para ficar abaixo do header
           // Comportamento diferente para mobile e desktop
           position: 'relative',
@@ -276,7 +276,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   }}
                 >
                   <ListItemIcon
-                    sx={{ 
+                    sx={{
                       color: isSelected ? '#1565c0' : 'text.secondary',
                       opacity: item.implemented ? 1 : 0.6
                     }}
@@ -325,9 +325,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       </List>
 
       {/* Footer do Sidebar - Limpo e minimalista */}
-      <Box sx={{ 
-        p: { xs: 1.5, sm: 2 }, 
-        borderTop: 1, 
+      <Box sx={{
+        p: { xs: 1.5, sm: 2 },
+        borderTop: 1,
         borderColor: 'divider',
         // Fixar footer no mobile
         position: 'relative',
@@ -351,7 +351,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       sx={{
         '& .MuiDrawer-paper': {
           boxSizing: 'border-box',
-          width: { xs: 320, sm: 287 },
+          width: { xs: 340, sm: 320 },
           borderRight: 1,
           borderColor: 'divider',
           // Comportamento diferente para mobile e desktop
