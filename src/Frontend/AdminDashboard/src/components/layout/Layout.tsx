@@ -10,7 +10,6 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  AccountCircle as AccountIcon,
 } from '@mui/icons-material';
 import Sidebar from './Sidebar';
 import UserProfile from '../common/UserProfile';
@@ -66,7 +65,12 @@ const Layout: React.FC<LayoutProps> = ({ children, selectedItem, onItemSelect })
                 opacity: 0.8
               }
             }}
-            onClick={() => onItemSelect('dashboard')}
+            onClick={() => {
+              onItemSelect('dashboard');
+              if (isMobile) {
+                setSidebarOpen(false);
+              }
+            }}
           >
             <img 
               src="/batuara_logo.png" 

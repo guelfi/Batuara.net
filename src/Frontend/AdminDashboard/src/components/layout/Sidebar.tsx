@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useEffect, useRef } from 'react';
 import {
   Drawer,
   List,
@@ -156,6 +156,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const shouldShowChips = useResponsiveChips();
+  const listRef = useRef<HTMLUListElement>(null);
 
   const getChipProps = (item: SidebarItem) => {
     // Usar hook para controle inteligente de chips
@@ -180,6 +181,16 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
+  // Scroll para o topo quando Dashboard for selecionado
+  useEffect(() => {
+    if (selectedItem === 'dashboard' && listRef.current && !isMobile) {
+      listRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  }, [selectedItem, isMobile]);
+
   const handleItemClick = (itemId: string) => {
     onItemSelect(itemId);
     if (isMobile) {
@@ -202,20 +213,22 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Header removido - foco apenas na navegação */}
 
       {/* Lista de itens */}
-      <List sx={{ 
-        flexGrow: 1, 
-        py: 2, 
-        pt: { xs: '20px', sm: '80px' }, // Aumentar padding-top no desktop para ficar abaixo do header
-        // Comportamento diferente para mobile e desktop
-        position: 'relative',
-        overflow: { xs: 'visible', sm: 'auto' }, // Mobile: fixo, Desktop: scroll
-        width: '100%',       // Ocupar toda a largura disponível
-        minWidth: 0,         // Evitar overflow
-        '& .MuiListItem-root': {
-          width: '100%',     // Garantir que itens ocupem toda largura
-          flexShrink: 0      // Evitar encolhimento
-        }
-      }}>
+      <List 
+        ref={listRef}
+        sx={{ 
+          flexGrow: 1, 
+          py: 2, 
+          pt: { xs: '20px', sm: '80px' }, // Aumentar padding-top no desktop para ficar abaixo do header
+          // Comportamento diferente para mobile e desktop
+          position: 'relative',
+          overflow: { xs: 'visible', sm: 'auto' }, // Mobile: fixo, Desktop: scroll
+          width: '100%',       // Ocupar toda a largura disponível
+          minWidth: 0,         // Evitar overflow
+          '& .MuiListItem-root': {
+            width: '100%',     // Garantir que itens ocupem toda largura
+            flexShrink: 0      // Evitar encolhimento
+          }
+        }}>
         {sidebarItems.map((item, index) => {
           const IconComponent = item.icon;
           const chipProps = getChipProps(item);
