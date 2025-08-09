@@ -74,7 +74,28 @@ const Layout: React.FC<LayoutProps> = ({ children, selectedItem, onItemSelect })
               }
             }}
             onClick={() => {
+              // Sempre selecionar dashboard e forçar scroll para o topo
               onItemSelect('dashboard');
+              
+              // Forçar scroll do sidebar para o topo imediatamente
+              setTimeout(() => {
+                const drawerPaper = document.querySelector('.MuiDrawer-paper');
+                if (drawerPaper) {
+                  drawerPaper.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                  });
+                }
+                
+                const listContainer = document.querySelector('.MuiList-root');
+                if (listContainer) {
+                  listContainer.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                  });
+                }
+              }, 10);
+              
               if (isMobile) {
                 setSidebarOpen(false);
               }

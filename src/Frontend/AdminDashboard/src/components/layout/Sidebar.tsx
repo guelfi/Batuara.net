@@ -183,13 +183,44 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // Scroll para o topo quando Dashboard for selecionado
   useEffect(() => {
-    if (selectedItem === 'dashboard' && listRef.current && !isMobile) {
-      listRef.current.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
+    if (selectedItem === 'dashboard') {
+      // Função para fazer scroll para o topo
+      const scrollToTop = () => {
+        // 1. Tentar scroll na lista primeiro
+        if (listRef.current) {
+          listRef.current.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+        
+        // 2. Scroll no drawer paper (container principal)
+        const drawerPaper = document.querySelector('.MuiDrawer-paper');
+        if (drawerPaper) {
+          drawerPaper.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+
+        // 3. Scroll no container da lista como fallback
+        const listContainer = document.querySelector('.MuiList-root');
+        if (listContainer) {
+          listContainer.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+      };
+
+      // Executar imediatamente
+      scrollToTop();
+      
+      // Executar novamente após um pequeno delay para garantir que funcionou
+      setTimeout(scrollToTop, 50);
+      setTimeout(scrollToTop, 150);
     }
-  }, [selectedItem, isMobile]);
+  }, [selectedItem]);
 
   const handleItemClick = (itemId: string) => {
     onItemSelect(itemId);
