@@ -1,0 +1,196 @@
+// ============================================================================
+// MIXINS SASS PARA SISTEMA DE CORES ESPIRITUAIS
+// ============================================================================
+// Mixins para aplicação rápida de cores baseadas no atributo 'cor'
+// Facilita a aplicação consistente de cores em componentes
+// ============================================================================
+
+@import 'variables';
+@import 'functions';
+
+// ============================================================================
+// MIXINS PARA BACKGROUNDS
+// ============================================================================
+
+/// Aplica background suave baseado no atributo 'cor'
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+/// @param {Number} $opacity - Opacidade do background (opcional)
+@mixin spiritual-background-soft($color-name, $opacity: $soft-opacity) {
+  background-color: get-soft-color($color-name, $opacity);
+}
+
+/// Aplica background médio baseado no atributo 'cor'
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+/// @param {Number} $opacity - Opacidade do background (opcional)
+@mixin spiritual-background-medium($color-name, $opacity: $medium-opacity) {
+  background-color: get-medium-color($color-name, $opacity);
+}
+
+/// Aplica background forte baseado no atributo 'cor'
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+/// @param {String} $variant - Variação da cor (opcional)
+@mixin spiritual-background-strong($color-name, $variant: 'primary') {
+  background-color: get-strong-color($color-name, $variant);
+  color: get-spiritual-contrast-text($color-name);
+}
+
+// ============================================================================
+// MIXINS PARA TEXTOS
+// ============================================================================
+
+/// Aplica cor de texto baseada no atributo 'cor'
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+/// @param {String} $variant - Variação da cor (opcional)
+@mixin spiritual-text($color-name, $variant: 'primary') {
+  color: get-strong-color($color-name, $variant);
+}
+
+/// Aplica cor de texto escura para maior contraste
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+@mixin spiritual-text-dark($color-name) {
+  color: get-dark-color($color-name);
+}
+
+/// Aplica cor de texto clara
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+@mixin spiritual-text-light($color-name) {
+  color: get-light-color($color-name);
+}
+
+// ============================================================================
+// MIXINS PARA BORDAS
+// ============================================================================
+
+/// Aplica borda baseada no atributo 'cor'
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+/// @param {String} $width - Largura da borda (padrão: 1px)
+/// @param {String} $style - Estilo da borda (padrão: solid)
+/// @param {String} $variant - Variação da cor (opcional)
+@mixin spiritual-border($color-name, $width: 1px, $style: solid, $variant: 'primary') {
+  border: $width $style get-strong-color($color-name, $variant);
+}/// 
+Aplica borda suave baseada no atributo 'cor'
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+/// @param {String} $width - Largura da borda (padrão: 1px)
+/// @param {String} $style - Estilo da borda (padrão: solid)
+/// @param {Number} $opacity - Opacidade da borda (opcional)
+@mixin spiritual-border-soft($color-name, $width: 1px, $style: solid, $opacity: $medium-opacity) {
+  border: $width $style get-medium-color($color-name, $opacity);
+}
+
+// ============================================================================
+// MIXINS PARA CARDS ESPIRITUAIS
+// ============================================================================
+
+/// Aplica estilo completo para card espiritual
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+/// @param {String} $background-type - Tipo de background: 'soft', 'medium', 'strong'
+@mixin spiritual-card($color-name, $background-type: 'soft') {
+  @if $background-type == 'soft' {
+    @include spiritual-background-soft($color-name);
+    @include spiritual-text-dark($color-name);
+    @include spiritual-border-soft($color-name);
+  } @else if $background-type == 'medium' {
+    @include spiritual-background-medium($color-name);
+    @include spiritual-text-dark($color-name);
+    @include spiritual-border($color-name);
+  } @else if $background-type == 'strong' {
+    @include spiritual-background-strong($color-name);
+    // Cor do texto já é aplicada no background-strong
+    border: 1px solid transparent;
+  }
+  
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/// Aplica estilo para modal/card flutuante espiritual
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+@mixin spiritual-modal($color-name) {
+  @include spiritual-background-soft($color-name, 0.05);
+  @include spiritual-border-soft($color-name, 2px);
+  
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  
+  .modal-header {
+    @include spiritual-background-medium($color-name, 0.2);
+    @include spiritual-text-dark($color-name);
+    border-bottom: 1px solid get-medium-color($color-name, 0.3);
+    border-radius: 12px 12px 0 0;
+    padding: 16px 24px;
+    font-weight: 600;
+  }
+  
+  .modal-content {
+    padding: 24px;
+    @include spiritual-text($color-name);
+  }
+}
+
+// ============================================================================
+// MIXINS PARA BOTÕES ESPIRITUAIS
+// ============================================================================
+
+/// Aplica estilo para botão espiritual
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+/// @param {String} $variant - Variante: 'filled', 'outlined', 'text'
+@mixin spiritual-button($color-name, $variant: 'filled') {
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  
+  @if $variant == 'filled' {
+    @include spiritual-background-strong($color-name);
+    
+    &:hover {
+      background-color: get-dark-color($color-name);
+    }
+  } @else if $variant == 'outlined' {
+    background-color: transparent;
+    @include spiritual-text($color-name);
+    @include spiritual-border($color-name, 2px);
+    
+    &:hover {
+      @include spiritual-background-soft($color-name);
+    }
+  } @else if $variant == 'text' {
+    background-color: transparent;
+    @include spiritual-text($color-name);
+    border: none;
+    
+    &:hover {
+      @include spiritual-background-soft($color-name, 0.1);
+    }
+  }
+  
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// ============================================================================
+// MIXINS UTILITÁRIOS
+// ============================================================================
+
+/// Aplica gradiente baseado em duas cores espirituais
+/// @param {String} $color1 - Primeira cor
+/// @param {String} $color2 - Segunda cor (opcional)
+/// @param {String} $direction - Direção do gradiente (padrão: to right)
+@mixin spiritual-gradient($color1, $color2: null, $direction: to right) {
+  @if $color2 {
+    background: linear-gradient($direction, get-spiritual-color($color1), get-spiritual-color($color2));
+  } @else {
+    background: linear-gradient($direction, get-light-color($color1), get-dark-color($color1));
+  }
+}

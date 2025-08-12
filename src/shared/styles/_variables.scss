@@ -1,0 +1,196 @@
+// ============================================================================
+// SISTEMA DE CORES ESPIRITUAIS - CASA BATUARA
+// ============================================================================
+// Baseado nos atributos 'cor' dos dados espirituais da Apostila Batuara 2024
+// Cores organizadas por categoria: Orixás, Guias/Entidades, Linhas da Umbanda
+// ============================================================================
+
+// ============================================================================
+// CORES DOS ORIXÁS
+// ============================================================================
+
+// Oxalá - Branco (Espiritualidade, Paz, Pureza)
+$oxala-primary: #ffffff;
+$oxala-light: #fafafa;
+$oxala-dark: #f5f5f5;
+
+// Iemanjá - Azul (Família, Maternidade, Mar)
+$iemanja-primary: #1976d2;
+$iemanja-light: #42a5f5;
+$iemanja-dark: #1565c0;
+
+// Nanã - Lilás (Emoções, Sabedoria Ancestral)
+$nana-primary: #9c27b0;
+$nana-light: #ba68c8;
+$nana-dark: #7b1fa2;
+
+// Oxum - Dourado (Amor, Fertilidade, Beleza)
+$oxum-primary: #ffc107;
+$oxum-light: #ffeb3b;
+$oxum-dark: #ff8f00;
+
+// Ogum - Vermelho (Batalha, Força, Proteção)
+$ogum-primary: #d32f2f;
+$ogum-light: #f44336;
+$ogum-dark: #c62828;
+
+// Oxóssi - Verde (Prosperidade, Natureza, Fartura)
+$oxossi-primary: #4caf50;
+$oxossi-light: #81c784;
+$oxossi-dark: #388e3c;
+
+// Xangô - Marrom (Justiça, Firmeza, Sabedoria)
+$xango-primary: #8d6e63;
+$xango-light: #a1887f;
+$xango-dark: #6d4c41;
+
+// Iansã - Alaranjado (Transformação, Ventos, Mudanças)
+$iansa-primary: #ff9800;
+$iansa-light: #ffb74d;
+$iansa-dark: #f57c00;
+
+// Obaluaê - Roxo (Saúde, Cura, Vida e Morte)
+$obaluae-primary: #673ab7;
+$obaluae-light: #9575cd;
+$obaluae-dark: #512da8;
+
+// Exu - Vermelho (Caminhos, Comunicação)
+$exu-primary: #d32f2f;
+$exu-light: #f44336;
+$exu-dark: #c62828;
+
+// Pomba Gira - Preto (Mistérios Femininos, Encruzilhadas)
+$pomba-gira-primary: #212121;
+$pomba-gira-light: #424242;
+$pomba-gira-dark: #000000;
+
+// Ossain - Verde (Cura, Ervas Medicinais)
+$ossain-primary: #4caf50;
+$ossain-light: #81c784;
+$ossain-dark: #388e3c;
+
+// Oxumarê - Amarelo e Verde (Transformação, Arco-íris)
+$oxumare-primary: #ffeb3b;
+$oxumare-secondary: #4caf50;
+$oxumare-light: #fff176;
+$oxumare-dark: #fbc02d;
+
+// ============================================================================
+// CORES DAS GUIAS E ENTIDADES
+// ============================================================================
+
+// Baiano - Amarelo e Vermelho (Alegria, Festa, Bahia)
+$baiano-primary: #ffeb3b;
+$baiano-secondary: #d32f2f;
+$baiano-light: #fff176;
+$baiano-dark: #fbc02d;
+
+// Preto Velho - Branco e Preto (Sabedoria, Humildade)
+$preto-velho-primary: #ffffff;
+$preto-velho-secondary: #212121;
+$preto-velho-light: #fafafa;
+$preto-velho-dark: #f5f5f5;
+
+// Erês - Rosa e Azul (Pureza, Inocência, Alegria)
+$eres-primary: #e91e63;
+$eres-secondary: #2196f3;
+$eres-light: #f48fb1;
+$eres-dark: #c2185b;
+
+// Boiadeiro - Marrom e Bege (Força, Campo, Simplicidade)
+$boiadeiro-primary: #8d6e63;
+$boiadeiro-secondary: #d7ccc8;
+$boiadeiro-light: #a1887f;
+$boiadeiro-dark: #6d4c41;
+
+// Marinheiro - Azul e Branco (Mar, Navegação, Aventura)
+$marinheiro-primary: #1976d2;
+$marinheiro-secondary: #ffffff;
+$marinheiro-light: #42a5f5;
+$marinheiro-dark: #1565c0;
+
+// Cigano - Dourado e Roxo (Mistério, Magia, Destino)
+$cigano-primary: #ffc107;
+$cigano-secondary: #9c27b0;
+$cigano-light: #ffeb3b;
+$cigano-dark: #ff8f00;
+
+// Malandro - Preto e Branco (Esperteza, Rua, Proteção)
+$malandro-primary: #212121;
+$malandro-secondary: #ffffff;
+$malandro-light: #424242;
+$malandro-dark: #000000;
+
+// ============================================================================
+// CORES DAS LINHAS DA UMBANDA
+// ============================================================================
+
+// Linha de Oxalá - Branco (Fé, Iluminação)
+$linha-oxala: $oxala-primary;
+
+// Linha de Ogum - Vermelho (Lei e Ordem)
+$linha-ogum: $ogum-primary;
+
+// Linha de Oxóssi - Verde (Conhecimento)
+$linha-oxossi: $oxossi-primary;
+
+// Linha de Xangô - Marrom (Justiça)
+$linha-xango: $xango-primary;
+
+// Linha de Iemanjá - Azul-claro (Amor e Geração)
+$linha-iemanja: $iemanja-light;
+
+// Linha de Iansã - Amarelo (Almas e Espíritos)
+$linha-iansa: #ffeb3b;
+
+// Linha de Exu - Preto e Vermelho (Comunicação e Movimento)
+$linha-exu-primary: $pomba-gira-primary;
+$linha-exu-secondary: $exu-primary;
+
+// ============================================================================
+// MAPEAMENTO DE CORES POR NOME
+// ============================================================================
+
+// Mapa principal de cores espirituais
+$spiritual-colors: (
+  // Cores básicas
+  'branco': $oxala-primary,
+  'azul': $iemanja-primary,
+  'azul-claro': $iemanja-light,
+  'lilás': $nana-primary,
+  'dourado': $oxum-primary,
+  'vermelho': $ogum-primary,
+  'verde': $oxossi-primary,
+  'marrom': $xango-primary,
+  'alaranjado': $iansa-primary,
+  'roxo': $obaluae-primary,
+  'preto': $pomba-gira-primary,
+  'amarelo': $oxumare-primary,
+  'rosa': $eres-primary,
+  'bege': $boiadeiro-secondary,
+  
+  // Cores compostas (primeira cor como principal)
+  'amarelo e vermelho': $baiano-primary,
+  'branco e preto': $preto-velho-primary,
+  'rosa e azul': $eres-primary,
+  'marrom e bege': $boiadeiro-primary,
+  'azul e branco': $marinheiro-primary,
+  'dourado e roxo': $cigano-primary,
+  'preto e branco': $malandro-primary,
+  'amarelo e verde': $oxumare-primary,
+  'preto e vermelho': $linha-exu-primary
+);
+
+// ============================================================================
+// CONFIGURAÇÕES GLOBAIS
+// ============================================================================
+
+// Opacidades para cores suaves e fortes
+$soft-opacity: 0.1;
+$medium-opacity: 0.3;
+$strong-opacity: 0.8;
+
+// Configurações de contraste
+$light-text: #ffffff;
+$dark-text: #212121;
+$contrast-threshold: 0.5;

@@ -1,0 +1,126 @@
+// ============================================================================
+// FUNÇÕES SASS PARA SISTEMA DE CORES ESPIRITUAIS
+// ============================================================================
+// Funções para obter cores baseadas no atributo 'cor' dos dados espirituais
+// Suporte para cores suaves (backgrounds) e fortes (textos/bordas)
+// ============================================================================
+
+@import 'variables';
+
+// ============================================================================
+// FUNÇÃO PRINCIPAL - OBTER COR POR ATRIBUTO
+// ============================================================================
+
+/// Obtém a cor baseada no atributo 'cor' dos dados espirituais
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+/// @param {String} $variant - Variação da cor: 'primary', 'light', 'dark'
+/// @return {Color} - Cor correspondente
+@function get-spiritual-color($color-name, $variant: 'primary') {
+  $normalized-name: to-lower-case(strip-units($color-name));
+  
+  @if map-has-key($spiritual-colors, $normalized-name) {
+    $base-color: map-get($spiritual-colors, $normalized-name);
+    
+    @if $variant == 'light' {
+      @return lighten($base-color, 15%);
+    } @else if $variant == 'dark' {
+      @return darken($base-color, 15%);
+    } @else {
+      @return $base-color;
+    }
+  }
+  
+  // Fallback para cor padrão (Iemanjá - azul)
+  @warn "Cor '#{$color-name}' não encontrada. Usando cor padrão.";
+  @return $iemanja-primary;
+}
+
+// ============================================================================
+// FUNÇÕES PARA CORES SUAVES (BACKGROUNDS)
+// ============================================================================
+
+/// Gera cor suave para backgrounds baseada no atributo 'cor'
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+/// @param {Number} $opacity - Opacidade da cor (0.1 padrão)
+/// @return {Color} - Cor suave para background
+@function get-soft-color($color-name, $opacity: $soft-opacity) {
+  $base-color: get-spiritual-color($color-name);
+  @return rgba($base-color, $opacity);
+}/// Ge
+ra cor média para elementos intermediários
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+/// @param {Number} $opacity - Opacidade da cor (0.3 padrão)
+/// @return {Color} - Cor média para elementos
+@function get-medium-color($color-name, $opacity: $medium-opacity) {
+  $base-color: get-spiritual-color($color-name);
+  @return rgba($base-color, $opacity);
+}
+
+// ============================================================================
+// FUNÇÕES PARA CORES FORTES (TEXTOS/BORDAS)
+// ============================================================================
+
+/// Gera cor forte para textos e bordas baseada no atributo 'cor'
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+/// @param {String} $variant - Variação: 'primary', 'dark' (mais forte)
+/// @return {Color} - Cor forte para texto/borda
+@function get-strong-color($color-name, $variant: 'primary') {
+  @return get-spiritual-color($color-name, $variant);
+}
+
+/// Gera cor forte escurecida para maior contraste
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+/// @return {Color} - Cor escurecida para alto contraste
+@function get-dark-color($color-name) {
+  @return get-spiritual-color($color-name, 'dark');
+}
+
+/// Gera cor forte clareada para fundos claros
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+/// @return {Color} - Cor clareada
+@function get-light-color($color-name) {
+  @return get-spiritual-color($color-name, 'light');
+}
+
+// ============================================================================
+// FUNÇÕES DE CONTRASTE E ACESSIBILIDADE
+// ============================================================================
+
+/// Determina se deve usar texto claro ou escuro baseado na cor de fundo
+/// @param {Color} $background-color - Cor de fundo
+/// @return {Color} - Cor de texto com melhor contraste
+@function get-contrast-text($background-color) {
+  $lightness: lightness($background-color);
+  
+  @if $lightness > 50% {
+    @return $dark-text;
+  } @else {
+    @return $light-text;
+  }
+}
+
+/// Obtém cor de texto com contraste adequado para cor espiritual
+/// @param {String} $color-name - Nome da cor conforme atributo 'cor'
+/// @return {Color} - Cor de texto com contraste adequado
+@function get-spiritual-contrast-text($color-name) {
+  $background-color: get-spiritual-color($color-name);
+  @return get-contrast-text($background-color);
+}
+
+// ============================================================================
+// FUNÇÕES UTILITÁRIAS
+// ============================================================================
+
+/// Remove unidades de um valor
+/// @param {Number} $value - Valor com ou sem unidade
+/// @return {Number} - Valor sem unidade
+@function strip-units($value) {
+  @return $value / ($value * 0 + 1);
+}
+
+/// Converte string para lowercase (compatibilidade)
+/// @param {String} $string - String para converter
+/// @return {String} - String em lowercase
+@function to-lower-case($string) {
+  @return unquote(str-slice(inspect($string), 2, -2));
+}

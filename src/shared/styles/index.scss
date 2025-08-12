@@ -1,0 +1,137 @@
+// ============================================================================
+// SISTEMA DE CORES ESPIRITUAIS - CASA BATUARA
+// ============================================================================
+// Arquivo principal de importação do sistema Sass centralizado
+// Importa todas as variáveis, funções e mixins para uso nos projetos
+// ============================================================================
+
+// Importações na ordem correta de dependência
+@import 'variables';  // Variáveis de cores espirituais
+@import 'functions';  // Funções para manipulação de cores
+@import 'mixins';     // Mixins para aplicação de estilos
+
+// ============================================================================
+// CLASSES UTILITÁRIAS GERADAS AUTOMATICAMENTE
+// ============================================================================
+
+// Gerar classes utilitárias para cores mais comuns
+$common-colors: (
+  'branco', 'azul', 'vermelho', 'verde', 'dourado', 'roxo', 'marrom', 'preto'
+);
+
+// Classes para backgrounds suaves
+@each $color in $common-colors {
+  .bg-#{$color}-soft {
+    @include spiritual-background-soft($color);
+  }
+  
+  .bg-#{$color}-medium {
+    @include spiritual-background-medium($color);
+  }
+  
+  .bg-#{$color}-strong {
+    @include spiritual-background-strong($color);
+  }
+}
+
+// Classes para textos
+@each $color in $common-colors {
+  .text-#{$color} {
+    @include spiritual-text($color);
+  }
+  
+  .text-#{$color}-dark {
+    @include spiritual-text-dark($color);
+  }
+  
+  .text-#{$color}-light {
+    @include spiritual-text-light($color);
+  }
+}
+
+// Classes para bordas
+@each $color in $common-colors {
+  .border-#{$color} {
+    @include spiritual-border($color);
+  }
+  
+  .border-#{$color}-soft {
+    @include spiritual-border-soft($color);
+  }
+}
+
+// ============================================================================
+// CLASSES PARA COMPONENTES ESPIRITUAIS
+// ============================================================================
+
+// Classe base para cards espirituais
+.spiritual-card {
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// Classe base para modais espirituais
+.spiritual-modal {
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+// Classe base para botões espirituais
+.spiritual-button {
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// ============================================================================
+// EXPORTAÇÃO PARA JAVASCRIPT
+// ============================================================================
+
+// Exportar variáveis para uso em JavaScript (CSS Custom Properties)
+:root {
+  // Cores dos Orixás
+  --oxala-primary: #{$oxala-primary};
+  --iemanja-primary: #{$iemanja-primary};
+  --nana-primary: #{$nana-primary};
+  --oxum-primary: #{$oxum-primary};
+  --ogum-primary: #{$ogum-primary};
+  --oxossi-primary: #{$oxossi-primary};
+  --xango-primary: #{$xango-primary};
+  --iansa-primary: #{$iansa-primary};
+  --obaluae-primary: #{$obaluae-primary};
+  --exu-primary: #{$exu-primary};
+  --pomba-gira-primary: #{$pomba-gira-primary};
+  --ossain-primary: #{$ossain-primary};
+  --oxumare-primary: #{$oxumare-primary};
+  
+  // Cores das Guias
+  --baiano-primary: #{$baiano-primary};
+  --preto-velho-primary: #{$preto-velho-primary};
+  --eres-primary: #{$eres-primary};
+  --boiadeiro-primary: #{$boiadeiro-primary};
+  --marinheiro-primary: #{$marinheiro-primary};
+  --cigano-primary: #{$cigano-primary};
+  --malandro-primary: #{$malandro-primary};
+  
+  // Configurações globais
+  --soft-opacity: #{$soft-opacity};
+  --medium-opacity: #{$medium-opacity};
+  --strong-opacity: #{$strong-opacity};
+  --light-text: #{$light-text};
+  --dark-text: #{$dark-text};
+}

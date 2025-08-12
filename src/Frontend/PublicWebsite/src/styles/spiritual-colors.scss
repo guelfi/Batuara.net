@@ -1,0 +1,94 @@
+// ============================================================================
+// IMPORTAÇÃO DO SISTEMA DE CORES ESPIRITUAIS - PUBLICWEBSITE
+// ============================================================================
+// Importa o sistema Sass centralizado para uso no PublicWebsite
+// ============================================================================
+
+@import '../../../shared/styles/index.scss';
+
+// ============================================================================
+// ESTILOS ESPECÍFICOS PARA COMPONENTES DO PUBLICWEBSITE
+// ============================================================================
+
+// Cards de Orixás
+.orixa-card {
+  @extend .spiritual-card;
+  
+  // Aplicar cor dinamicamente via atributo data-color
+  &[data-color="branco"] { @include spiritual-card('branco'); }
+  &[data-color="azul"] { @include spiritual-card('azul'); }
+  &[data-color="lilás"] { @include spiritual-card('lilás'); }
+  &[data-color="dourado"] { @include spiritual-card('dourado'); }
+  &[data-color="vermelho"] { @include spiritual-card('vermelho'); }
+  &[data-color="verde"] { @include spiritual-card('verde'); }
+  &[data-color="marrom"] { @include spiritual-card('marrom'); }
+  &[data-color="alaranjado"] { @include spiritual-card('alaranjado'); }
+  &[data-color="roxo"] { @include spiritual-card('roxo'); }
+  &[data-color="preto"] { @include spiritual-card('preto'); }
+  &[data-color="amarelo"] { @include spiritual-card('amarelo'); }
+  &[data-color="amarelo e verde"] { @include spiritual-card('amarelo e verde'); }
+}
+
+// Cards de Guias e Entidades
+.guia-card {
+  @extend .spiritual-card;
+  
+  &[data-color="amarelo e vermelho"] { @include spiritual-card('amarelo e vermelho'); }
+  &[data-color="branco e preto"] { @include spiritual-card('branco e preto'); }
+  &[data-color="rosa e azul"] { @include spiritual-card('rosa e azul'); }
+  &[data-color="marrom e bege"] { @include spiritual-card('marrom e bege'); }
+  &[data-color="azul e branco"] { @include spiritual-card('azul e branco'); }
+  &[data-color="dourado e roxo"] { @include spiritual-card('dourado e roxo'); }
+  &[data-color="preto e branco"] { @include spiritual-card('preto e branco'); }
+}
+
+// Cards de Linhas da Umbanda
+.linha-card {
+  @extend .spiritual-card;
+  
+  &[data-color="branco"] { @include spiritual-card('branco'); }
+  &[data-color="vermelho"] { @include spiritual-card('vermelho'); }
+  &[data-color="verde"] { @include spiritual-card('verde'); }
+  &[data-color="marrom"] { @include spiritual-card('marrom'); }
+  &[data-color="azul-claro"] { @include spiritual-card('azul-claro'); }
+  &[data-color="amarelo"] { @include spiritual-card('amarelo'); }
+  &[data-color="preto e vermelho"] { @include spiritual-card('preto e vermelho'); }
+}
+
+// Modal de detalhes espirituais
+.spiritual-detail-modal {
+  @extend .spiritual-modal;
+  
+  // Aplicar cor dinamicamente via atributo data-color
+  &[data-color="branco"] { @include spiritual-modal('branco'); }
+  &[data-color="azul"] { @include spiritual-modal('azul'); }
+  &[data-color="lilás"] { @include spiritual-modal('lilás'); }
+  &[data-color="dourado"] { @include spiritual-modal('dourado'); }
+  &[data-color="vermelho"] { @include spiritual-modal('vermelho'); }
+  &[data-color="verde"] { @include spiritual-modal('verde'); }
+  &[data-color="marrom"] { @include spiritual-modal('marrom'); }
+  &[data-color="alaranjado"] { @include spiritual-modal('alaranjado'); }
+  &[data-color="roxo"] { @include spiritual-modal('roxo'); }
+  &[data-color="preto"] { @include spiritual-modal('preto'); }
+  &[data-color="amarelo"] { @include spiritual-modal('amarelo'); }
+  // Adicionar outras cores conforme necessário
+}
+
+// Botões espirituais
+.spiritual-btn {
+  @extend .spiritual-button;
+  
+  &.btn-filled {
+    &[data-color="azul"] { @include spiritual-button('azul', 'filled'); }
+    &[data-color="verde"] { @include spiritual-button('verde', 'filled'); }
+    &[data-color="dourado"] { @include spiritual-button('dourado', 'filled'); }
+    // Adicionar outras cores conforme necessário
+  }
+  
+  &.btn-outlined {
+    &[data-color="azul"] { @include spiritual-button('azul', 'outlined'); }
+    &[data-color="verde"] { @include spiritual-button('verde', 'outlined'); }
+    &[data-color="dourado"] { @include spiritual-button('dourado', 'outlined'); }
+    // Adicionar outras cores conforme necessário
+  }
+}

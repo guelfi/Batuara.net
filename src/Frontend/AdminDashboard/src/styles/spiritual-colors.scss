@@ -1,0 +1,113 @@
+// ============================================================================
+// IMPORTAÇÃO DO SISTEMA DE CORES ESPIRITUAIS - ADMINDASHBOARD
+// ============================================================================
+// Importa o sistema Sass centralizado para uso no AdminDashboard
+// ============================================================================
+
+@import '../../../shared/styles/index.scss';
+
+// ============================================================================
+// ESTILOS ESPECÍFICOS PARA COMPONENTES DO ADMINDASHBOARD
+// ============================================================================
+
+// Cards de dashboard
+.dashboard-card {
+  @extend .spiritual-card;
+  
+  &.primary { @include spiritual-card('azul', 'soft'); }
+  &.success { @include spiritual-card('verde', 'soft'); }
+  &.warning { @include spiritual-card('dourado', 'soft'); }
+  &.error { @include spiritual-card('vermelho', 'soft'); }
+  &.info { @include spiritual-card('azul-claro', 'soft'); }
+}
+
+// Chips de status
+.status-chip {
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  
+  &.active { @include spiritual-background-strong('verde'); }
+  &.inactive { @include spiritual-background-medium('vermelho'); }
+  &.pending { @include spiritual-background-medium('dourado'); }
+}
+
+// Botões de ação
+.action-button {
+  @extend .spiritual-button;
+  
+  &.primary { @include spiritual-button('azul', 'filled'); }
+  &.secondary { @include spiritual-button('azul', 'outlined'); }
+  &.success { @include spiritual-button('verde', 'filled'); }
+  &.danger { @include spiritual-button('vermelho', 'filled'); }
+  &.warning { @include spiritual-button('dourado', 'filled'); }
+}
+
+// Sidebar com cores espirituais
+.sidebar-item {
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    @include spiritual-background-soft('azul');
+  }
+  
+  &.active {
+    @include spiritual-background-medium('azul');
+    @include spiritual-text-dark('azul');
+  }
+}
+
+// Modais do dashboard
+.dashboard-modal {
+  @extend .spiritual-modal;
+  @include spiritual-modal('azul');
+}
+
+// Formulários com cores espirituais
+.form-field {
+  &.error {
+    .MuiOutlinedInput-root {
+      @include spiritual-border('vermelho');
+    }
+  }
+  
+  &.success {
+    .MuiOutlinedInput-root {
+      @include spiritual-border('verde');
+    }
+  }
+}
+
+// Alertas e notificações
+.alert {
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  
+  &.success {
+    @include spiritual-background-soft('verde');
+    @include spiritual-text-dark('verde');
+    @include spiritual-border-soft('verde');
+  }
+  
+  &.error {
+    @include spiritual-background-soft('vermelho');
+    @include spiritual-text-dark('vermelho');
+    @include spiritual-border-soft('vermelho');
+  }
+  
+  &.warning {
+    @include spiritual-background-soft('dourado');
+    @include spiritual-text-dark('dourado');
+    @include spiritual-border-soft('dourado');
+  }
+  
+  &.info {
+    @include spiritual-background-soft('azul');
+    @include spiritual-text-dark('azul');
+    @include spiritual-border-soft('azul');
+  }
+}
