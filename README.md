@@ -196,6 +196,7 @@ COMPOSE_PROJECT_NAME=batuara
 | 🟢 **Oracle Cloud** | ✅ Testado | **Grátis** | 1GB RAM | Always Free Tier |
 | 🟢 **Hostinger** | ✅ Testado | $8 | 2GB RAM | Boa performance |
 | 🟢 **DigitalOcean** | ✅ Testado | $12 | 2GB RAM | Documentação excelente |
+| 🟢 **Microsoft Azure** | ✅ Testado | $14 | 2GB RAM | Integração Microsoft |
 | 🟢 **AWS EC2** | ✅ Testado | $17 | 2GB RAM | Mais recursos |
 | 🟢 **Google Cloud** | ✅ Testado | $15 | 2GB RAM | Créditos iniciais |
 | 🟢 **Vultr** | ✅ Testado | $12 | 2GB RAM | Performance sólida |
