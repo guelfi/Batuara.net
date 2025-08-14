@@ -3,12 +3,17 @@
   "version": "1.0.0",
   "description": "Frontend projects for Casa de Caridade Batuara",
   "scripts": {
-    "install:all": "cd public-website && npm install && cd ../AdminDashboard && npm install",
-    "start:public": "cd public-website && npm start",
-    "start:admin": "cd AdminDashboard && PORT=3001 npm start",
-    "start:all": "concurrently \"npm run start:public\" \"npm run start:admin\"",
-    "build:all": "cd public-website && npm run build && cd ../AdminDashboard && npm run build",
-    "test:all": "cd public-website && npm test && cd ../AdminDashboard && npm test"
+    "install:all": "cd PublicWebsite && npm install && cd ../AdminDashboard && npm install",
+    "start:public": "cd PublicWebsite && npm start",
+    "start:admin": "cd AdminDashboard && set PORT=3001 && npm start",
+    "kill-ports": "powershell -ExecutionPolicy Bypass -File kill-ports.ps1",
+    "start:all": "npm run kill-ports && concurrently \"npm run start:public\" \"npm run start:admin\"",
+    "stop": "powershell -ExecutionPolicy Bypass -File manage-services.ps1 stop",
+    "status": "powershell -ExecutionPolicy Bypass -File manage-services.ps1 status",
+    "restart": "powershell -ExecutionPolicy Bypass -File manage-services.ps1 restart",
+    "services": "powershell -ExecutionPolicy Bypass -File manage-services.ps1",
+    "build:all": "cd PublicWebsite && npm run build && cd ../AdminDashboard && npm run build",
+    "test:all": "cd PublicWebsite && npm test && cd ../AdminDashboard && npm test"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
