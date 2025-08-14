@@ -12,6 +12,7 @@
     "status": "powershell -ExecutionPolicy Bypass -File manage-services.ps1 status",
     "restart": "powershell -ExecutionPolicy Bypass -File manage-services.ps1 restart",
     "services": "powershell -ExecutionPolicy Bypass -File manage-services.ps1",
+    "start:bg": "powershell -ExecutionPolicy Bypass -File start-background.ps1",
     "build:all": "cd PublicWebsite && npm run build && cd ../AdminDashboard && npm run build",
     "test:all": "cd PublicWebsite && npm test && cd ../AdminDashboard && npm test"
   },

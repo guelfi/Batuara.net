@@ -138,15 +138,53 @@ function Start-AllServices {
         Stop-ProcessOnPort -Port $AdminDashboardPort -ServiceName "AdminDashboard"
     }
     
-    # Iniciar servicos usando concurrently
-    Write-Host "`nIniciando PublicWebsite (porta $PublicWebsitePort) e AdminDashboard (porta $AdminDashboardPort)..." -ForegroundColor Green
-    Write-Host "PublicWebsite: http://localhost:$PublicWebsitePort" -ForegroundColor Blue
-    Write-Host "AdminDashboard: http://localhost:$AdminDashboardPort" -ForegroundColor Blue
-    Write-Host "`nUse Ctrl+C para parar os servicos ou execute: .\manage-services.ps1 stop" -ForegroundColor Yellow
-    Write-Host "---------------------------------------------------------------" -ForegroundColor Gray
+    Write-Host "`nIniciando servicos em segundo plano..." -ForegroundColor Green
     
-    # Executar npm run start:all
-    npm run start:all
+    # Iniciar PublicWebsite em segundo plano
+    Write-Host "Iniciando PublicWebsite..." -ForegroundColor Blue
+    Start-Process powershell -ArgumentList "-NoExit", "-WindowStyle", "Minimized", "-Command", "cd '$PublicWebsitePath'; npm start" -WindowStyle Hidden
+    
+    # Aguardar um pouco antes de iniciar o proximo
+    Start-Sleep -Seconds 2
+    
+    # Iniciar AdminDashboard em segundo plano
+    Write-Host "Iniciando AdminDashboard..." -ForegroundColor Blue
+    Start-Process powershell -ArgumentList "-NoExit", "-WindowStyle", "Minimized", "-Command", "cd '$AdminDashboardPath'; `$env:PORT=$AdminDashboardPort; npm start" -WindowStyle Hidden
+    
+    # Aguardar os servicos iniciarem
+    Write-Host "`nAguardando servicos iniciarem..." -ForegroundColor Yellow
+    Start-Sleep -Seconds 10
+    
+    # Verificar se os servicos estao rodando
+    $publicRunning = Test-PortInUse -Port $PublicWebsitePort
+    $adminRunning = Test-PortInUse -Port $AdminDashboardPort
+    
+    Write-Host "`nStatus dos servicos:" -ForegroundColor Cyan
+    if ($publicRunning) {
+        Write-Host "PublicWebsite: " -NoNewline -ForegroundColor White
+        Write-Host "RODANDO" -ForegroundColor Green
+        Write-Host "   URL: http://localhost:$PublicWebsitePort" -ForegroundColor Blue
+    } else {
+        Write-Host "PublicWebsite: " -NoNewline -ForegroundColor White
+        Write-Host "FALHOU AO INICIAR" -ForegroundColor Red
+    }
+    
+    if ($adminRunning) {
+        Write-Host "AdminDashboard: " -NoNewline -ForegroundColor White
+        Write-Host "RODANDO" -ForegroundColor Green
+        Write-Host "   URL: http://localhost:$AdminDashboardPort" -ForegroundColor Blue
+    } else {
+        Write-Host "AdminDashboard: " -NoNewline -ForegroundColor White
+        Write-Host "FALHOU AO INICIAR" -ForegroundColor Red
+    }
+    
+    if ($publicRunning -and $adminRunning) {
+        Write-Host "`nTodos os servicos foram iniciados com sucesso!" -ForegroundColor Green
+        Write-Host "Use '.\manage-services.ps1 status' para verificar o status" -ForegroundColor Yellow
+        Write-Host "Use '.\manage-services.ps1 stop' para parar os servicos" -ForegroundColor Yellow
+    } else {
+        Write-Host "`nAlguns servicos falharam ao iniciar. Verifique os logs." -ForegroundColor Yellow
+    }
 }
 
 # Funcao para reiniciar servicos
