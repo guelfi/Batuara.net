@@ -1,0 +1,42 @@
+# Dockerfile para API .NET
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+EXPOSE 8080
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copiar arquivos de projeto
+COPY ["src/Backend/Batuara.API/Batuara.API.csproj", "src/Backend/Batuara.API/"]
+COPY ["src/Backend/Batuara.Core/Batuara.Core.csproj", "src/Backend/Batuara.Core/"]
+COPY ["src/Backend/Batuara.Infrastructure/Batuara.Infrastructure.csproj", "src/Backend/Batuara.Infrastructure/"]
+
+# Restaurar dependências
+RUN dotnet restore "src/Backend/Batuara.API/Batuara.API.csproj"
+
+# Copiar código fonte
+COPY . .
+WORKDIR "/src/src/Backend/Batuara.API"
+
+# Build da aplicação
+RUN dotnet build "Batuara.API.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "Batuara.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+
+# Criar diretório de logs
+RUN mkdir -p /app/logs
+
+# Configurar variáveis de ambiente
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+
+ENTRYPOINT ["dotnet", "Batuara.API.dll"]
