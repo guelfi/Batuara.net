@@ -7,7 +7,7 @@ Casa de Caridade Caboclo Batuara - Sistema completo com website público e dashb
 - **AdminDashboard:** Interface completa remodelada (aguardando integração com API)
 - **Próxima Etapa:** Desenvolvimento da API .NET 8 e integração
 
-📊 **Ver detalhes completos em:** [STATUS-PROJETO.md](STATUS-PROJETO.md)
+📊 **Ver detalhes completos em:** [STATUS-PROJETO.md](docs/STATUS-PROJETO.md)
 
 ## 🚀 Instalação Rápida (VPS)
 
@@ -54,7 +54,7 @@ cd src/Frontend/AdminDashboard
 npm install && npm start  # http://localhost:3001
 ```
 
-📖 **Guia completo**: [Configuração do Ambiente Local](./docs/LOCAL_DEVELOPMENT_SETUP.md)
+📖 **Guia completo**: [Configuração do Ambiente Local](docs/LOCAL_DEVELOPMENT_SETUP.md)
 
 ## 🌐 Aplicações
 
@@ -111,9 +111,9 @@ curl -sSL https://raw.githubusercontent.com/guelfi/Batuara.net/master/install-ba
 
 ### 📖 Opção 2: Instalação Manual
 
-1. **[Configurar Infraestrutura VPS](docs/VPS_INFRASTRUCTURE_SETUP.md)** - Docker, firewall, segurança
-2. **[Deploy das Aplicações](docs/VPS_APPLICATION_DEPLOY.md)** - Build e execução
-3. **[Guia por Provedor](docs/VPS_PROVIDERS_GUIDE.md)** - Hostinger, DigitalOcean, AWS, etc.
+1. **[Guia de Deploy Oracle](docs/DEPLOY.md)** - Deploy na Oracle Cloud Infrastructure
+2. **[Scripts de Deploy](docs/ORACLE_DEPLOY_README.md)** - Scripts específicos Oracle
+3. **[Guia de Desenvolvimento](docs/GUIA_DESENVOLVIMENTO.md)** - Para iniciantes React
 
 ### 🐳 Opção 3: Docker Compose Direto
 
@@ -223,11 +223,13 @@ COMPOSE_PROJECT_NAME=batuara
 
 ## 📚 Documentação Completa
 
-- 📖 **[Configuração de Infraestrutura VPS](docs/VPS_INFRASTRUCTURE_SETUP.md)** - Docker, segurança, firewall
-- 🚀 **[Deploy das Aplicações](docs/VPS_APPLICATION_DEPLOY.md)** - Build, execução, monitoramento
-- 🌐 **[Guia por Provedor VPS](docs/VPS_PROVIDERS_GUIDE.md)** - Hostinger, DigitalOcean, AWS, etc.
-- 🗄️ **[Schema do Banco de Dados](docs/database-schema.md)** - Estrutura futura
-- 🌱 **[Dados de Seed](docs/seed-data.md)** - Dados iniciais
+- 📊 **[Status do Projeto](docs/STATUS-PROJETO.md)** - Fases, cronograma e progresso
+- 🚀 **[Deploy Oracle](docs/DEPLOY.md)** - Guia completo de deploy na OCI
+- 🛠️ **[Scripts Oracle](docs/ORACLE_DEPLOY_README.md)** - Scripts de deploy e correção
+- 💻 **[Setup Local](docs/LOCAL_DEVELOPMENT_SETUP.md)** - Configuração ambiente desenvolvimento
+- �  **[Guia Iniciantes](docs/GUIA_DESENVOLVIMENTO.md)** - Para novos desenvolvedores React
+- 🗄️ **[Schema do Banco](docs/database-schema.md)** - Estrutura PostgreSQL
+- 🌱 **[Dados Iniciais](docs/seed-data.md)** - Seed data da Casa Batuara
 
 ## 🚨 Troubleshooting
 
