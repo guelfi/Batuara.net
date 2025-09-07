@@ -5,9 +5,9 @@ namespace Batuara.Domain.Entities
 {
     public class RefreshToken : BaseEntity
     {
-        public string Token { get; private set; }
+        public required string Token { get; set; }
         public DateTime ExpiresAt { get; private set; }
-        public string CreatedByIp { get; private set; }
+        public required string CreatedByIp { get; set; }
         public DateTime? RevokedAt { get; private set; }
         public string? RevokedByIp { get; private set; }
         public string? ReplacedByToken { get; private set; }

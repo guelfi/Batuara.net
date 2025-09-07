@@ -100,6 +100,12 @@ namespace Batuara.Domain.Entities
             var today = DateTime.Today;
             return EventDate.Date.Year == today.Year && EventDate.Date.Month == today.Month;
         }
+
+        public void Deactivate()
+        {
+            IsActive = false;
+            UpdateTimestamp();
+        }
     }
 
     public enum EventType

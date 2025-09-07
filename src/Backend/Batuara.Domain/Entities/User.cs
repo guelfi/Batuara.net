@@ -7,9 +7,9 @@ namespace Batuara.Domain.Entities
 {
     public class User : BaseEntity
     {
-        public string Email { get; private set; }
-        public string PasswordHash { get; private set; }
-        public string Name { get; private set; }
+        public required string Email { get; set; }
+        public required string PasswordHash { get; set; }
+        public required string Name { get; set; }
         public UserRole Role { get; private set; }
         public new bool IsActive { get; private set; }
         public DateTime? LastLoginAt { get; private set; }
@@ -76,7 +76,11 @@ namespace Batuara.Domain.Entities
 
         public void AddRefreshToken(string token, DateTime expiresAt, string createdByIp)
         {
-            RefreshTokens.Add(new RefreshToken(token, expiresAt, createdByIp));
+            RefreshTokens.Add(new RefreshToken(token, expiresAt, createdByIp)
+            {
+                Token = token,
+                CreatedByIp = createdByIp
+            });
             UpdatedAt = DateTime.UtcNow;
         }
 
