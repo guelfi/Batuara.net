@@ -1,0 +1,142 @@
+version: '3.8'
+
+# Configuração de produção para Batuara.net
+# Para usar: docker-compose -f docker-compose.production.yml up -d
+
+services:
+  publicwebsite:
+    build:
+      context: ./src/Frontend/PublicWebsite
+      dockerfile: ../../../Dockerfile.frontend
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
+    container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-public-website
+    ports:
+      - "${PUBLIC_WEBSITE_PORT:-3000}:80"
+    networks:
+      - ${DOCKER_NETWORK:-batuara-network}
+    restart: unless-stopped
+    labels:
+      - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
+      - "project.name=${PROJECT_NAME:-batuara}"
+      - "service.type=frontend"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  admindashboard:
+    build:
+      context: ./src/Frontend/AdminDashboard
+      dockerfile: ../../../Dockerfile.frontend
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
+    container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-admin-dashboard
+    ports:
+      - "${ADMIN_DASHBOARD_PORT:-3001}:80"
+    networks:
+      - ${DOCKER_NETWORK:-batuara-network}
+    restart: unless-stopped
+    labels:
+      - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
+      - "project.name=${PROJECT_NAME:-batuara}"
+      - "service.type=frontend"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-api
+    ports:
+      - "${API_PORT:-3003}:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=${COMPOSE_PROJECT_NAME:-batuara-net}-db;Database=${DB_NAME:-batuara_db};Username=${PROJECT_NAME:-batuara}_user;Password=${DB_PASSWORD}
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Production}
+    networks:
+      - ${DOCKER_NETWORK:-batuara-network}
+    restart: unless-stopped
+    labels:
+      - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
+      - "project.name=${PROJECT_NAME:-batuara}"
+      - "service.type=backend"
+    depends_on:
+      - db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  db:
+    image: postgres:15-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-db
+    environment:
+      - POSTGRES_DB=${DB_NAME:-batuara_db}
+      - POSTGRES_USER=${PROJECT_NAME:-batuara}_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - ${VOLUME_PREFIX:-batuara}-db-data:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - ${DOCKER_NETWORK:-batuara-network}
+    restart: unless-stopped
+    labels:
+      - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
+      - "project.name=${PROJECT_NAME:-batuara}"
+      - "service.type=database"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PROJECT_NAME:-batuara}_user -d ${DB_NAME:-batuara_db}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  batuara-network:
+    name: ${DOCKER_NETWORK:-batuara-network}
+    driver: bridge
+    labels:
+      - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
+      - "project.name=${PROJECT_NAME:-batuara}"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  batuara-db-data:
+    name: ${VOLUME_PREFIX:-batuara}-db-data
+    labels:
+      - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
+      - "project.name=${PROJECT_NAME:-batuara}"

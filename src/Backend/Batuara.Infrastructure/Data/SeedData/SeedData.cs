@@ -29,7 +29,12 @@ namespace Batuara.Infrastructure.Data.SeedData
                     
                     // Create admin user
                     var passwordHash = passwordService.HashPassword("admin123");
-                    var user = new User("admin@casabatuara.org.br", passwordHash, "Administrador", UserRole.Admin);
+                    var user = new User("admin@casabatuara.org.br", passwordHash, "Administrador", UserRole.Admin)
+                    {
+                        Email = "admin@casabatuara.org.br",
+                        PasswordHash = passwordHash,
+                        Name = "Administrador"
+                    };
                     
                     await userRepository.AddAsync(user);
                     

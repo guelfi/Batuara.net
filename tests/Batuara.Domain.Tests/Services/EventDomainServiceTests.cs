@@ -121,6 +121,12 @@ namespace Batuara.Domain.Tests.Services
                 CreateEvent("Conflicting Event", date, TimeSpan.FromHours(20), TimeSpan.FromHours(22))
             };
 
+            // Debug: Verificar se HasTimeConflict funciona diretamente
+            var hasDirectConflict = _eventDomainService.HasTimeConflict(existingEvents[0], newEvent);
+            Console.WriteLine($"HasTimeConflict direct call: {hasDirectConflict}");
+            Console.WriteLine($"New Event: {newEvent.EventDate.Date} {newEvent.EventDate.StartTime}-{newEvent.EventDate.EndTime}");
+            Console.WriteLine($"Existing Event: {existingEvents[0].EventDate.Date} {existingEvents[0].EventDate.StartTime}-{existingEvents[0].EventDate.EndTime}");
+
             // Act
             var canSchedule = await _eventDomainService.CanScheduleEventAsync(newEvent, existingEvents);
 
@@ -280,6 +286,21 @@ namespace Batuara.Domain.Tests.Services
                 : new EventDate(date);
 
             return new Event(title, "Test Description", eventDate, type);
+        }
+
+        [Fact]
+        public void HasTimeConflict_WithOverlappingTimes_ShouldReturnTrue()
+        {
+            // Arrange
+            var date = DateTime.Today.AddDays(7);
+            var newEvent = CreateEvent("New Event", date, TimeSpan.FromHours(19), TimeSpan.FromHours(21));
+            var existingEvent = CreateEvent("Conflicting Event", date, TimeSpan.FromHours(20), TimeSpan.FromHours(22));
+
+            // Act
+            var hasConflict = _eventDomainService.HasTimeConflict(existingEvent, newEvent);
+
+            // Assert
+            hasConflict.Should().BeTrue();
         }
 
         private static DateTime GetNextSunday()

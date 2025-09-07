@@ -146,7 +146,12 @@ namespace Batuara.Infrastructure.Auth.Services
             var passwordHash = _passwordService.HashPassword(request.Password);
 
             // Create user
-            var user = new User(request.Email, passwordHash, request.Name, request.Role);
+            var user = new User(request.Email, passwordHash, request.Name, request.Role)
+            {
+                Email = request.Email,
+                PasswordHash = passwordHash,
+                Name = request.Name
+            };
             await _userRepository.AddAsync(user);
 
             _logger.LogInformation("New user registered: {Email} with role {Role}", user.Email, user.Role);

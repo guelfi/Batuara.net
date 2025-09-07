@@ -10,7 +10,7 @@ namespace Batuara.Domain.Services
     {
         public bool HasTimeConflict(Event existingEvent, Event newEvent)
         {
-            if (!existingEvent.IsActive || existingEvent.Id == newEvent.Id)
+            if (!existingEvent.IsActive || !newEvent.IsActive || existingEvent.Id == newEvent.Id)
                 return false;
 
             // Se as datas são diferentes, não há conflito
@@ -83,13 +83,13 @@ namespace Batuara.Domain.Services
             var errors = new List<string>();
 
             // Regra: Eventos não podem ser agendados no passado
-            if (eventEntity.EventDate.Date < DateTime.Today)
+            if (eventEntity.EventDate.Date <= DateTime.Today)
             {
                 errors.Add("Eventos não podem ser agendados no passado");
             }
 
             // Regra: Eventos devem ser agendados com pelo menos 24h de antecedência
-            if (eventEntity.EventDate.Date <= DateTime.Today.AddDays(1) && !IsSpecialEvent(eventEntity))
+            if (eventEntity.EventDate.Date < DateTime.Today.AddDays(1) && !IsSpecialEvent(eventEntity))
             {
                 errors.Add("Eventos devem ser agendados com pelo menos 24 horas de antecedência");
             }
@@ -118,7 +118,7 @@ namespace Batuara.Domain.Services
                 errors.Add("Eventos aos domingos devem ser agendados após 14h");
             }
 
-            return (errors.Count == 0, errors.ToArray());
+            return (IsValid: errors.Count == 0, Errors: errors.ToArray());
         }
 
         public IEnumerable<DateTime> SuggestAlternativeDates(Event eventEntity, IEnumerable<Event> existingEvents, int maxSuggestions = 5)
