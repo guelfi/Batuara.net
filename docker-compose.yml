@@ -1,4 +1,7 @@
-version: '3.3'
+version: '3.8'
+
+# Docker Compose para desenvolvimento local
+# Para produção, use: docker-compose -f scripts/docker/docker-compose.production.yml
 
 services:
   public-website:
@@ -6,37 +9,50 @@ services:
       context: ./src/Frontend/PublicWebsite
       dockerfile: ../../../Dockerfile.frontend
       args:
-        REACT_APP_API_URL: ${REACT_APP_API_URL}
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8080}
     container_name: batuara-public-website
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "${PUBLIC_WEBSITE_PORT:-3000}:80"
     networks:
       - batuara-net
     logging:
       driver: "json-file"
       options:
-        max-size: "5m"
-        max-file: "3"
+        max-size: "10m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   admin-dashboard:
     build:
       context: ./src/Frontend/AdminDashboard
       dockerfile: ../../../Dockerfile.frontend
       args:
-        REACT_APP_API_URL: ${REACT_APP_API_URL}
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8080}
     container_name: batuara-admin-dashboard
     restart: unless-stopped
     ports:
-      - "3001:80"
+      - "${ADMIN_DASHBOARD_PORT:-3001}:80"
     networks:
       - batuara-net
     logging:
       driver: "json-file"
       options:
-        max-size: "5m"
-        max-file: "3"
+        max-size: "10m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   batuara-net:
     driver: bridge
+    
+# Para incluir a API e banco de dados no desenvolvimento:
+# docker-compose -f docker-compose.yml -f scripts/docker/docker-compose.oracle.yml up -d

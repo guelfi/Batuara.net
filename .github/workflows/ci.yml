@@ -1,0 +1,261 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ develop, feature/* ]
+
+jobs:
+  lint-and-format:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'src/Frontend/package-lock.json'
+        
+    - name: Install .NET format tool
+      run: dotnet tool install -g dotnet-format
+      
+    - name: Check .NET formatting
+      run: dotnet format --verify-no-changes --verbosity diagnostic
+      
+    - name: Install Frontend dependencies
+      run: |
+        cd src/Frontend
+        npm ci
+        
+    - name: Lint Frontend code
+      run: |
+        cd src/Frontend
+        npm run lint
+        
+    - name: Check Frontend formatting
+      run: |
+        cd src/Frontend
+        npm run format:check
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_USER: test_user
+          POSTGRES_DB: batuara_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+      
+    - name: Run unit tests
+      run: |
+        dotnet test tests/Batuara.Domain.Tests/ --no-build --configuration Release --logger trx --collect:"XPlat Code Coverage"
+        dotnet test tests/Batuara.Application.Tests/ --no-build --configuration Release --logger trx --collect:"XPlat Code Coverage"
+        
+    - name: Run integration tests
+      env:
+        ConnectionStrings__DefaultConnection: "Host=localhost;Database=batuara_test;Username=test_user;Password=test_password"
+      run: |
+        dotnet test tests/Batuara.API.Tests/ --no-build --configuration Release --logger trx --collect:"XPlat Code Coverage"
+        dotnet test tests/Batuara.Infrastructure.Tests/ --no-build --configuration Release --logger trx --collect:"XPlat Code Coverage"
+        
+    - name: Generate test report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Backend Tests
+        path: '**/*.trx'
+        reporter: dotnet-trx
+        
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v4
+      if: always()
+      with:
+        directory: ./coverage
+        flags: backend
+        name: backend-coverage
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'src/Frontend/package-lock.json'
+        
+    - name: Install dependencies
+      run: |
+        cd src/Frontend
+        npm ci
+        
+    - name: Run PublicWebsite tests
+      run: |
+        cd src/Frontend/PublicWebsite
+        npm test -- --coverage --watchAll=false --testResultsProcessor=jest-sonar-reporter
+        
+    - name: Run AdminDashboard tests
+      run: |
+        cd src/Frontend/AdminDashboard
+        npm test -- --coverage --watchAll=false --testResultsProcessor=jest-sonar-reporter
+        
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v4
+      if: always()
+      with:
+        directory: ./src/Frontend
+        flags: frontend
+        name: frontend-coverage
+
+  build-test-images:
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Build API Docker image
+      run: |
+        docker build -f Dockerfile.api -t batuara-api:test .
+        
+    - name: Build Frontend Docker image
+      run: |
+        docker build -f Dockerfile.frontend -t batuara-frontend:test .
+        
+    - name: Test Docker images
+      run: |
+        # Testar se as imagens foram criadas corretamente
+        docker images | grep batuara
+        
+        # Testar se os containers iniciam corretamente
+        docker run -d --name test-api -p 8080:8080 batuara-api:test
+        docker run -d --name test-frontend -p 3000:80 batuara-frontend:test
+        
+        # Aguardar inicialização
+        sleep 10
+        
+        # Verificar se os containers estão rodando
+        docker ps
+        
+        # Limpar containers de teste
+        docker stop test-api test-frontend
+        docker rm test-api test-frontend
+        docker rmi batuara-api:test batuara-frontend:test
+
+  validate-deployment-config:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Validate Docker Compose files
+      run: |
+        # Validar arquivos docker-compose
+        for file in scripts/docker/*.yml; do
+          if [ -f "$file" ]; then
+            echo "Validating $file"
+            docker-compose -f "$file" config
+          fi
+        done
+        
+    - name: Validate Dockerfiles
+      run: |
+        # Verificar se os Dockerfiles existem e são válidos
+        if [ -f "Dockerfile.api" ]; then
+          echo "✅ Dockerfile.api encontrado"
+        else
+          echo "❌ Dockerfile.api não encontrado"
+          exit 1
+        fi
+        
+        if [ -f "Dockerfile.frontend" ]; then
+          echo "✅ Dockerfile.frontend encontrado"
+        else
+          echo "❌ Dockerfile.frontend não encontrado"
+          exit 1
+        fi
+        
+    - name: Validate Oracle scripts
+      run: |
+        # Verificar se os scripts Oracle existem
+        ORACLE_SCRIPTS=(
+          "scripts/oracle/oracle-deploy-ready.sh"
+          "scripts/oracle/diagnose-assets-oracle.sh"
+          "scripts/oracle/clear-cache-oracle.sh"
+        )
+        
+        for script in "${ORACLE_SCRIPTS[@]}"; do
+          if [ -f "$script" ]; then
+            echo "✅ $script encontrado"
+            # Verificar se o script é executável
+            if [ -x "$script" ]; then
+              echo "✅ $script é executável"
+            else
+              echo "⚠️ $script não é executável, corrigindo..."
+              chmod +x "$script"
+            fi
+          else
+            echo "❌ $script não encontrado"
+          fi
+        done

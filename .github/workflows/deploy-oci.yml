@@ -1,0 +1,350 @@
+name: Deploy to Oracle Cloud Infrastructure
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME_API: ${{ github.repository }}-api
+  IMAGE_NAME_FRONTEND: ${{ github.repository }}-frontend
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'src/Frontend/package-lock.json'
+        
+    - name: Restore .NET dependencies
+      run: dotnet restore
+      
+    - name: Build .NET solution
+      run: dotnet build --no-restore --configuration Release
+      
+    - name: Run .NET tests
+      run: dotnet test --no-build --configuration Release --verbosity normal
+      
+    - name: Install Frontend dependencies
+      run: |
+        cd src/Frontend
+        npm ci
+        
+    - name: Build Frontend applications
+      run: |
+        cd src/Frontend
+        npm run build:all
+        
+    - name: Run Frontend tests
+      run: |
+        cd src/Frontend
+        npm test -- --coverage --watchAll=false
+
+  build-images:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Extract metadata for API
+      id: meta-api
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+          
+    - name: Extract metadata for Frontend
+      id: meta-frontend
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+          
+    - name: Build and push API image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.api
+        push: true
+        tags: ${{ steps.meta-api.outputs.tags }}
+        labels: ${{ steps.meta-api.outputs.labels }}
+        
+    - name: Build and push Frontend image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.frontend
+        push: true
+        tags: ${{ steps.meta-frontend.outputs.tags }}
+        labels: ${{ steps.meta-frontend.outputs.labels }}
+
+  deploy-to-oci:
+    needs: build-images
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    
+    environment:
+      name: production
+      url: http://${{ secrets.OCI_SERVER_IP }}:3000
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.OCI_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H 129.153.86.168 >> ~/.ssh/known_hosts
+      
+    - name: Deploy to Oracle Cloud
+      run: |
+        ssh -o StrictHostKeyChecking=no ubuntu@129.153.86.168 << 'EOF'
+          set -e
+          
+          # Definir variáveis com isolamento
+          PROJECT_NAME="batuara"
+          PROJECT_DIR="/home/ubuntu/$PROJECT_NAME"
+          BACKUP_DIR="/home/ubuntu/backups/${PROJECT_NAME}_backup_$(date +%Y%m%d_%H%M%S)"
+          COMPOSE_PROJECT_NAME="batuara-net"
+          
+          # Portas específicas do Batuara (isoladas dos outros projetos)
+          PUBLIC_WEBSITE_PORT=3000
+          ADMIN_DASHBOARD_PORT=3001
+          API_PORT=8080
+          
+          # Verificar conflitos de porta antes do deploy
+          echo "🔍 Verificando conflitos de porta..."
+          check_port_conflict() {
+            local port=$1
+            local service=$2
+            if netstat -tuln | grep -q ":$port "; then
+              local pid=$(lsof -ti:$port 2>/dev/null || echo "unknown")
+              echo "⚠️  Porta $port ($service) está em uso (PID: $pid)"
+              # Verificar se é do nosso projeto
+              if docker ps --format "table {{.Names}}\t{{.Ports}}" | grep -q "$COMPOSE_PROJECT_NAME"; then
+                echo "✅ Porta $port pertence ao projeto $PROJECT_NAME - continuando..."
+              else
+                echo "❌ Conflito de porta detectado! Porta $port está sendo usada por outro serviço."
+                return 1
+              fi
+            else
+              echo "✅ Porta $port ($service) disponível"
+            fi
+          }
+          
+          check_port_conflict $PUBLIC_WEBSITE_PORT "Website Público"
+          check_port_conflict $ADMIN_DASHBOARD_PORT "Dashboard Admin"
+          check_port_conflict $API_PORT "API Backend"
+          
+          echo "🚀 Iniciando deploy do Batuara.net..."
+          
+          # Criar diretórios se não existirem
+          mkdir -p /home/ubuntu/backups
+          mkdir -p $PROJECT_DIR
+          
+          # Fazer backup se projeto existir
+          if [ -d "$PROJECT_DIR/.git" ]; then
+            echo "📦 Criando backup..."
+            cp -r $PROJECT_DIR $BACKUP_DIR
+            echo "✅ Backup criado em: $BACKUP_DIR"
+          fi
+          
+          # Navegar para diretório do projeto
+          cd $PROJECT_DIR
+          
+          # Parar apenas containers do nosso projeto
+          echo "⏹️ Parando containers do projeto $PROJECT_NAME..."
+          if [ -f "docker-compose.prod.yml" ]; then
+            timeout 60 docker-compose -f docker-compose.prod.yml -p $COMPOSE_PROJECT_NAME down --remove-orphans 2>/dev/null || true
+          fi
+          
+          # Limpar apenas containers órfãos do nosso projeto
+          docker container ls -a --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" -q | xargs -r docker rm -f 2>/dev/null || true
+          
+          # Atualizar código
+          echo "📥 Atualizando código..."
+          if [ -d ".git" ]; then
+            git fetch origin
+            git reset --hard origin/${{ github.ref_name }}
+          else
+            git clone -b ${{ github.ref_name }} https://github.com/${{ github.repository }}.git .
+          fi
+          
+          # Login no registry
+          echo "🔐 Fazendo login no registry..."
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          
+          # Usar docker-compose de produção existente
+          echo "🐳 Configurando ambiente de produção..."
+          cp scripts/docker/docker-compose.production.yml docker-compose.prod.yml
+          
+          # Configurar variáveis de ambiente com isolamento
+          cat > .env.production << 'ENVEOF'
+          COMPOSE_PROJECT_NAME=batuara-net
+          ENVIRONMENT=production
+          PROJECT_NAME=batuara
+          
+          # URLs da API (isoladas)
+          REACT_APP_API_URL=http://${{ secrets.OCI_SERVER_IP }}:8080
+          VITE_API_BASE_URL_TEST=http://${{ secrets.OCI_SERVER_IP }}:8080
+          
+          # Portas dos serviços (específicas do Batuara)
+          PUBLIC_WEBSITE_PORT=3000
+          ADMIN_DASHBOARD_PORT=3001
+          API_PORT=8080
+          
+          # Rede Docker isolada
+          DOCKER_NETWORK=batuara-network
+          
+          # Database com prefixo
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_NAME=batuara_db
+          
+          # Volumes com prefixo para isolamento
+          VOLUME_PREFIX=batuara
+          ENVEOF
+          
+          # Criar rede Docker isolada se não existir
+          echo "🌐 Configurando rede Docker isolada..."
+          docker network create batuara-network 2>/dev/null || echo "Rede batuara-network já existe"
+          
+          # Iniciar os serviços com isolamento
+          echo "🚀 Iniciando serviços do $PROJECT_NAME..."
+          docker-compose -f docker-compose.prod.yml --env-file .env.production -p $COMPOSE_PROJECT_NAME pull
+          docker-compose -f docker-compose.prod.yml --env-file .env.production -p $COMPOSE_PROJECT_NAME up -d --build
+          
+          # Verificar se outros projetos ainda estão rodando
+          echo "📊 Verificando status de outros projetos..."
+          if docker ps --format "table {{.Names}}\t{{.Status}}" | grep -E "mobilemed|other-project" > /dev/null 2>&1; then
+            echo "✅ Outros projetos continuam executando normalmente"
+            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "mobilemed|batuara"
+          else
+            echo "ℹ️  Nenhum outro projeto detectado em execução"
+          fi
+          
+          # Aguardar inicialização com timeout
+          echo "⏳ Aguardando inicialização dos serviços..."
+          sleep 45
+          
+          # Health checks robustos
+          echo "🔍 Executando health checks..."
+          
+          # Função para health check com retry
+          health_check() {
+            local url=$1
+            local service=$2
+            local max_attempts=10
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              if curl -f --connect-timeout 5 --max-time 10 $url > /dev/null 2>&1; then
+                echo "✅ $service: OK"
+                return 0
+              fi
+              echo "⏳ $service: Tentativa $attempt/$max_attempts..."
+              sleep 6
+              attempt=$((attempt + 1))
+            done
+            
+            echo "❌ $service: FALHA após $max_attempts tentativas"
+            return 1
+          }
+          
+          # Executar health checks
+          HEALTH_FAILED=0
+          health_check "http://localhost:3000" "Website Público" || HEALTH_FAILED=1
+          health_check "http://localhost:3001" "Dashboard Admin" || HEALTH_FAILED=1
+          health_check "http://localhost:8080/health" "API Backend" || HEALTH_FAILED=1
+          
+          # Verificar status dos containers do nosso projeto
+          echo "📊 Status dos containers do $PROJECT_NAME:"
+          docker-compose -f docker-compose.prod.yml -p $COMPOSE_PROJECT_NAME ps
+          
+          # Mostrar resumo de todos os projetos ativos
+          echo "\n🌐 Resumo de todos os projetos na OCI:"
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | head -1
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "batuara|mobilemed" || echo "Nenhum projeto encontrado"
+          
+          # Rollback em caso de falha
+          if [ $HEALTH_FAILED -eq 1 ]; then
+            echo "❌ Health checks falharam. Iniciando rollback..."
+            
+            # Parar apenas containers do nosso projeto com falha
+            docker-compose -f docker-compose.prod.yml -p $COMPOSE_PROJECT_NAME down
+            
+            # Restaurar backup se existir
+            if [ -d "$BACKUP_DIR" ]; then
+              echo "🔄 Restaurando backup..."
+              rm -rf $PROJECT_DIR/*
+              cp -r $BACKUP_DIR/* $PROJECT_DIR/
+              cd $PROJECT_DIR
+              docker-compose up -d
+              echo "✅ Rollback concluído"
+            fi
+            
+            exit 1
+          fi
+          
+          echo "🎉 Deploy concluído com sucesso!"
+          echo "🌐 Website: http://${{ secrets.OCI_SERVER_IP }}:3000"
+          echo "🔧 Dashboard: http://${{ secrets.OCI_SERVER_IP }}:3001"
+          echo "🚀 API: http://${{ secrets.OCI_SERVER_IP }}:8080"
+        EOF
+
+  notify-deployment:
+    needs: deploy-to-oci
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Notify deployment status
+      run: |
+        if [ "${{ needs.deploy-to-oci.result }}" == "success" ]; then
+          echo "✅ Deploy realizado com sucesso!"
+          echo "🌐 Website: http://${{ secrets.OCI_SERVER_IP }}:3000"
+          echo "🔧 Dashboard: http://${{ secrets.OCI_SERVER_IP }}:3001"
+          echo "🚀 API: http://${{ secrets.OCI_SERVER_IP }}:8080"
+        else
+          echo "❌ Deploy falhou. Verifique os logs para mais detalhes."
+          exit 1
+        fi
