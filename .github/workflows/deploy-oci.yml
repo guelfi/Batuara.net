@@ -143,8 +143,8 @@ jobs:
           
           # Definir variáveis com isolamento
           PROJECT_NAME="batuara"
-          PROJECT_DIR="/home/ubuntu/$PROJECT_NAME"
-          BACKUP_DIR="/home/ubuntu/backups/${PROJECT_NAME}_backup_$(date +%Y%m%d_%H%M%S)"
+          PROJECT_DIR="/var/www/batuara_net"
+          BACKUP_DIR="/var/www/backups/${PROJECT_NAME}_backup_$(date +%Y%m%d_%H%M%S)"
           COMPOSE_PROJECT_NAME="batuara-net"
           
           # Portas específicas do Batuara (isoladas dos outros projetos)
@@ -179,7 +179,7 @@ jobs:
           echo "🚀 Iniciando deploy do Batuara.net..."
           
           # Criar diretórios se não existirem
-          mkdir -p /home/ubuntu/backups
+          mkdir -p /var/www/backups
           mkdir -p $PROJECT_DIR
           
           # Fazer backup se projeto existir
@@ -216,7 +216,7 @@ jobs:
           
           # Usar docker-compose de produção existente
           echo "🐳 Configurando ambiente de produção..."
-          cp scripts/docker/docker-compose.production.yml docker-compose.prod.yml
+          cp docker-compose.production.yml docker-compose.prod.yml
           
           # Configurar variáveis de ambiente com isolamento
           cat > .env.production << 'ENVEOF'
