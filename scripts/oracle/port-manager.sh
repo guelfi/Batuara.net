@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # Configuração de portas por projeto
 declare -A PROJECT_PORTS=(
-    ["batuara"]="3000,3001,8080,5432"
+    ["batuara"]="3000,3001,3003,5432"
     ["mobilemed"]="5000,5005,3306,6379"
     ["nginx"]="80,443"
 )
