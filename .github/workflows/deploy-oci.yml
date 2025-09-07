@@ -225,13 +225,13 @@ jobs:
           PROJECT_NAME=batuara
           
           # URLs da API (isoladas)
-          REACT_APP_API_URL=http://${{ secrets.OCI_SERVER_IP }}:8080
-          VITE_API_BASE_URL_TEST=http://${{ secrets.OCI_SERVER_IP }}:8080
+          REACT_APP_API_URL=http://${{ secrets.OCI_SERVER_IP }}:3003
+          VITE_API_BASE_URL_TEST=http://${{ secrets.OCI_SERVER_IP }}:3003
           
           # Portas dos serviços (específicas do Batuara)
           PUBLIC_WEBSITE_PORT=3000
           ADMIN_DASHBOARD_PORT=3001
-          API_PORT=8080
+          API_PORT=3003
           
           # Rede Docker isolada
           DOCKER_NETWORK=batuara-network
@@ -294,7 +294,7 @@ jobs:
           HEALTH_FAILED=0
           health_check "http://localhost:3000" "Website Público" || HEALTH_FAILED=1
           health_check "http://localhost:3001" "Dashboard Admin" || HEALTH_FAILED=1
-          health_check "http://localhost:8080/health" "API Backend" || HEALTH_FAILED=1
+          health_check "http://localhost:3003/health" "API Backend" || HEALTH_FAILED=1
           
           # Verificar status dos containers do nosso projeto
           echo "📊 Status dos containers do $PROJECT_NAME:"
@@ -328,7 +328,7 @@ jobs:
           echo "🎉 Deploy concluído com sucesso!"
           echo "🌐 Website: http://${{ secrets.OCI_SERVER_IP }}:3000"
           echo "🔧 Dashboard: http://${{ secrets.OCI_SERVER_IP }}:3001"
-          echo "🚀 API: http://${{ secrets.OCI_SERVER_IP }}:8080"
+          echo "🚀 API: http://${{ secrets.OCI_SERVER_IP }}:3003"
         EOF
 
   notify-deployment:

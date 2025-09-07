@@ -9,7 +9,7 @@ services:
       context: ./src/Frontend/PublicWebsite
       dockerfile: ../../../Dockerfile.frontend
       args:
-        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8080}
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-public-website
     ports:
       - "${PUBLIC_WEBSITE_PORT:-3000}:80"
@@ -37,7 +37,7 @@ services:
       context: ./src/Frontend/AdminDashboard
       dockerfile: ../../../Dockerfile.frontend
       args:
-        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8080}
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-admin-dashboard
     ports:
       - "${ADMIN_DASHBOARD_PORT:-3001}:80"
@@ -67,7 +67,7 @@ services:
       dockerfile: Dockerfile.api
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-api
     ports:
-      - "${API_PORT:-8080}:8080"
+      - "${API_PORT:-3003}:8080"
     environment:
       - ConnectionStrings__DefaultConnection=Host=${COMPOSE_PROJECT_NAME:-batuara-net}-db;Database=${DB_NAME:-batuara_db};Username=${PROJECT_NAME:-batuara}_user;Password=${DB_PASSWORD}
       - ASPNETCORE_URLS=http://+:8080
