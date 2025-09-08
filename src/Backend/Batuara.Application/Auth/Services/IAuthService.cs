@@ -10,8 +10,8 @@ namespace Batuara.Application.Auth.Services
         Task<bool> RevokeTokenAsync(string token, string ipAddress);
         Task<UserDto> RegisterUserAsync(RegisterUserRequest request);
         Task<UserDto> RegisterFirstAdminAsync(RegisterUserRequest request);
-        Task<User> GetUserByEmailAsync(string email);
-        Task<User> GetUserByIdAsync(int id);
+        Task<User?> GetUserByEmailAsync(string email);
+        Task<User?> GetUserByIdAsync(int id);
         Task<bool> ValidateTokenAsync(string token);
     }
 }

@@ -10,6 +10,7 @@ using Batuara.Infrastructure.Auth.Services;
 using Batuara.Infrastructure.Data;
 using Batuara.Infrastructure.Data.Repositories;
 using Serilog;
+using FluentValidation;
 using FluentValidation.AspNetCore;
 using System.Text.Json.Serialization;
 
@@ -28,8 +29,12 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-    })
-    .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Program>());
+    });
+
+// Configure FluentValidation
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -72,7 +77,7 @@ builder.Services.AddAuthentication(options =>
         {
             if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
             {
-                context.Response.Headers.Add("Token-Expired", "true");
+                context.Response.Headers["Token-Expired"] = "true";
             }
             return Task.CompletedTask;
         }

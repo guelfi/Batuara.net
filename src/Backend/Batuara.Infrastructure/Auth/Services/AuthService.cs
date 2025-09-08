@@ -177,12 +177,12 @@ namespace Batuara.Infrastructure.Auth.Services
             return await RegisterUserAsync(request);
         }
 
-        public async Task<User> GetUserByEmailAsync(string email)
+        public async Task<User?> GetUserByEmailAsync(string email)
         {
             return await _userRepository.GetByEmailAsync(email);
         }
 
-        public async Task<User> GetUserByIdAsync(int id)
+        public async Task<User?> GetUserByIdAsync(int id)
         {
             return await _userRepository.GetByIdAsync(id);
         }
