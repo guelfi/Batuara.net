@@ -28,11 +28,11 @@ namespace Batuara.Domain.ValueObjects
             if (startTime.HasValue && endTime.HasValue && startTime >= endTime)
                 throw new ArgumentException("Start time must be before end time");
 
-            if (startTime.HasValue && (startTime.Value < TimeSpan.Zero || startTime.Value >= TimeSpan.FromHours(24)))
-                throw new ArgumentException("Start time must be between 00:00 and 23:59");
+            if (startTime.HasValue && (startTime.Value < TimeSpan.Zero || startTime.Value > TimeSpan.FromHours(24)))
+                throw new ArgumentException("Start time must be between 00:00 and 24:00");
 
-            if (endTime.HasValue && (endTime.Value < TimeSpan.Zero || endTime.Value >= TimeSpan.FromHours(24)))
-                throw new ArgumentException("End time must be between 00:00 and 23:59");
+            if (endTime.HasValue && (endTime.Value < TimeSpan.Zero || endTime.Value > TimeSpan.FromHours(24)))
+                throw new ArgumentException("End time must be between 00:00 and 24:00");
         }
 
         public bool IsAllDay => !StartTime.HasValue && !EndTime.HasValue;
