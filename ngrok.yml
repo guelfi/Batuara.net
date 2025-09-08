@@ -1,0 +1,13 @@
+version: "2"
+authtoken: ""
+tunnels:
+  publicwebsite:
+    addr: 3000
+    proto: http
+  admindashboard:
+    addr: 3001
+    proto: http
+web_addr: localhost:4040
+log_level: info
+log_format: logfmt
+log: stdout
