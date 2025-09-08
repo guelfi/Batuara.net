@@ -5,12 +5,10 @@ version: '3.8'
 
 services:
   publicwebsite:
-    build:
-      context: ./src/Frontend/PublicWebsite
-      dockerfile: ../../../Dockerfile.frontend
-      args:
-        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
+    image: ghcr.io/guelfi/batuara.net-frontend:latest
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-public-website
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
     ports:
       - "${PUBLIC_WEBSITE_PORT:-3000}:80"
     networks:
@@ -33,12 +31,10 @@ services:
         max-file: "3"
 
   admindashboard:
-    build:
-      context: ./src/Frontend/AdminDashboard
-      dockerfile: ../../../Dockerfile.frontend
-      args:
-        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
+    image: ghcr.io/guelfi/batuara.net-frontend:latest
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-admin-dashboard
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
     ports:
       - "${ADMIN_DASHBOARD_PORT:-3001}:80"
     networks:
@@ -61,9 +57,7 @@ services:
         max-file: "3"
 
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
+    image: ghcr.io/guelfi/batuara.net-api:latest
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-api
     ports:
       - "${API_PORT:-3003}:8080"

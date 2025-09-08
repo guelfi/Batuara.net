@@ -106,6 +106,7 @@ jobs:
         push: true
         tags: ${{ steps.meta-api.outputs.tags }}
         labels: ${{ steps.meta-api.outputs.labels }}
+        platforms: linux/amd64
         
     - name: Build and push Frontend image
       uses: docker/build-push-action@v5
@@ -115,6 +116,7 @@ jobs:
         push: true
         tags: ${{ steps.meta-frontend.outputs.tags }}
         labels: ${{ steps.meta-frontend.outputs.labels }}
+        platforms: linux/amd64
 
   deploy-to-oci:
     needs: build-images
@@ -342,7 +344,7 @@ jobs:
           echo "✅ Deploy realizado com sucesso!"
           echo "🌐 Website: http://${{ secrets.OCI_SERVER_IP }}:3000"
           echo "🔧 Dashboard: http://${{ secrets.OCI_SERVER_IP }}:3001"
-          echo "🚀 API: http://${{ secrets.OCI_SERVER_IP }}:8080"
+          echo "🚀 API: http://${{ secrets.OCI_SERVER_IP }}:3003"
         else
           echo "❌ Deploy falhou. Verifique os logs para mais detalhes."
           exit 1
