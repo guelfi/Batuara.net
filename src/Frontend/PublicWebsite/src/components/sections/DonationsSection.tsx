@@ -38,7 +38,7 @@ const DonationsSection: React.FC = () => {
   const [showOtherDonationsDialog, setShowOtherDonationsDialog] = useState(false);
   const [copiedText, setCopiedText] = useState('');
   const [showCopyAlert, setShowCopyAlert] = useState(false);
-  const [qrCodeLoading, setQrCodeLoading] = useState(false);
+
   const qrCodeRef = useRef<HTMLCanvasElement>(null);
 
   // Estados para o carrossel mobile
