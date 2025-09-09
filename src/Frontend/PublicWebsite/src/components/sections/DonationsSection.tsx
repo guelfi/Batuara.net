@@ -152,8 +152,6 @@ const DonationsSection: React.FC = () => {
   // Gerar QR Code quando o dialog PIX abrir
   useEffect(() => {
     if (showPixDialog && qrCodeRef.current) {
-      setQrCodeLoading(true);
-
       // Aguardar um pouco para o canvas estar pronto
       setTimeout(() => {
         if (qrCodeRef.current) {
@@ -173,10 +171,9 @@ const DonationsSection: React.FC = () => {
               light: '#ffffff',
             },
           }).then(() => {
-            setQrCodeLoading(false);
+            // QR Code gerado com sucesso
           }).catch((err: any) => {
             console.error('Erro ao gerar QR Code:', err);
-            setQrCodeLoading(false);
           });
         }
       }, 100);

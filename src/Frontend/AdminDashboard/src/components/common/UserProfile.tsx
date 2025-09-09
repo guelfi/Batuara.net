@@ -17,7 +17,6 @@ import {
   Person as PersonIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
-  AccountCircle as AccountIcon,
 } from '@mui/icons-material';
 
 interface UserProfileProps {

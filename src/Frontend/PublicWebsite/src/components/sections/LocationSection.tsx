@@ -4,11 +4,9 @@ import {
   Container,
   Typography,
   Card,
-  useTheme,
 } from '@mui/material';
 
 const LocationSection: React.FC = () => {
-  const theme = useTheme();
 
   // Casa de Caridade Batuara - Coordenadas reais
   const mapSrc = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3656.8!2d-46.5213317!3d-23.4310269!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94cef4d679ef9ab5%3A0x79a018e2faeb00d7!2sCASA%20DE%20CARIDADE%20BATUARA!5e0!3m2!1spt-BR!2sbr!4v1642000000000";
