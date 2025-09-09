@@ -11,7 +11,6 @@ import {
   Divider,
   Grid,
   Paper,
-  Avatar,
 } from '@mui/material';
 import {
   Edit as EditIcon,
