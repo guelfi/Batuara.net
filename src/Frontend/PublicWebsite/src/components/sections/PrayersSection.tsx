@@ -5,7 +5,6 @@ import {
   Typography,
   Grid,
   Card,
-  CardContent,
   Accordion,
   AccordionSummary,
   AccordionDetails,
