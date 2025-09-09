@@ -10,7 +10,6 @@ import {
   Alert,
   Snackbar,
   useTheme,
-  useMediaQuery,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -25,7 +24,6 @@ interface ContactForm {
 
 const ContactSection: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [formData, setFormData] = useState<ContactForm>({
     name: '',
     email: '',

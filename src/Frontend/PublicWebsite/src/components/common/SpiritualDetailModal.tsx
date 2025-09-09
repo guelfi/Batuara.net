@@ -105,11 +105,7 @@ const SpiritualDetailModal: React.FC<SpiritualDetailModalProps> = ({
     return textColorMap[corTematica] || '#1976d2';
   };
 
-  // Função para determinar se o texto do botão deve ser branco ou preto
-  const getButtonTextColor = (corTematica: string): string => {
-    const lightColors = ['#e8eaf6', '#ffc107', '#ffeb3b', '#fff8e1', '#fffde7', '#8bc34a'];
-    return lightColors.includes(corTematica) ? '#000000' : '#ffffff';
-  };
+
 
 
 

@@ -105,12 +105,7 @@ const OrixasSection: React.FC = () => {
     return '#ffffff';
   };
 
-  const getSaudacaoTextColor = (name: string): string => {
-    // Para Orixás com cores claras, usar texto escuro para melhor contraste
-    if (['Oxalá', 'Oxum', 'Oxumarê'].includes(name)) return '#333333';
-    // Para o resto, usar branco
-    return '#ffffff';
-  };
+
 
   return (
     <Box id="orixas" sx={{ py: 8, backgroundColor: 'background.paper' }}>

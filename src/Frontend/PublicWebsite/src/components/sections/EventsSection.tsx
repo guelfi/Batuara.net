@@ -23,7 +23,7 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { mockEvents } from '../../data/mockData';
-import { Event, EventType } from '../../types';
+import { EventType } from '../../types';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import NavigationDots from '../common/NavigationDots';
