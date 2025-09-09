@@ -30,7 +30,10 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: 'src/Frontend/package-lock.json'
+        cache-dependency-path: |
+          src/Frontend/package-lock.json
+          src/Frontend/PublicWebsite/package-lock.json
+          src/Frontend/AdminDashboard/package-lock.json
         
     - name: Restore .NET dependencies
       run: dotnet restore
@@ -38,15 +41,30 @@ jobs:
     - name: Build .NET solution
       run: dotnet build --no-restore --configuration Release /p:Platform="Any CPU"
       
-    - name: Install Frontend dependencies
+    - name: Install Frontend root dependencies
       run: |
         cd src/Frontend
         npm ci
         
-    - name: Build Frontend applications
+    - name: Install PublicWebsite dependencies
       run: |
-        cd src/Frontend
-        npm run build:all
+        cd src/Frontend/PublicWebsite
+        npm ci
+        
+    - name: Install AdminDashboard dependencies
+      run: |
+        cd src/Frontend/AdminDashboard
+        npm ci
+        
+    - name: Build PublicWebsite
+      run: |
+        cd src/Frontend/PublicWebsite
+        npm run build
+        
+    - name: Build AdminDashboard
+      run: |
+        cd src/Frontend/AdminDashboard
+        npm run build
 
   build-images:
     needs: build-and-test
