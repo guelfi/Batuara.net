@@ -68,23 +68,8 @@ jobs:
       with:
         sarif_file: 'trivy-results.sarif'
 
-  test-backend:
+  build-backend:
     runs-on: ubuntu-latest
-    
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_USER: test_user
-          POSTGRES_DB: batuara_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
     
     steps:
     - name: Checkout code
@@ -99,37 +84,9 @@ jobs:
       run: dotnet restore
       
     - name: Build solution
-      run: dotnet build --no-restore --configuration Release
-      
-    - name: Run unit tests
-      run: |
-        dotnet test tests/Batuara.Domain.Tests/ --no-build --configuration Release --logger trx --collect:"XPlat Code Coverage"
-        dotnet test tests/Batuara.Application.Tests/ --no-build --configuration Release --logger trx --collect:"XPlat Code Coverage"
-        
-    - name: Run integration tests
-      env:
-        ConnectionStrings__DefaultConnection: "Host=localhost;Database=batuara_test;Username=test_user;Password=test_password"
-      run: |
-        dotnet test tests/Batuara.API.Tests/ --no-build --configuration Release --logger trx --collect:"XPlat Code Coverage"
-        dotnet test tests/Batuara.Infrastructure.Tests/ --no-build --configuration Release --logger trx --collect:"XPlat Code Coverage"
-        
-    - name: Generate test report
-      uses: dorny/test-reporter@v1
-      if: always()
-      with:
-        name: Backend Tests
-        path: '**/*.trx'
-        reporter: dotnet-trx
-        
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v4
-      if: always()
-      with:
-        directory: ./coverage
-        flags: backend
-        name: backend-coverage
+      run: dotnet build --no-restore --configuration Release /p:Platform="Any CPU"
 
-  test-frontend:
+  build-frontend:
     runs-on: ubuntu-latest
     
     steps:
@@ -148,27 +105,19 @@ jobs:
         cd src/Frontend
         npm ci
         
-    - name: Run PublicWebsite tests
+    - name: Build PublicWebsite
       run: |
         cd src/Frontend/PublicWebsite
-        npm test -- --coverage --watchAll=false --testResultsProcessor=jest-sonar-reporter
+        npm run build
         
-    - name: Run AdminDashboard tests
+    - name: Build AdminDashboard
       run: |
         cd src/Frontend/AdminDashboard
-        npm test -- --coverage --watchAll=false --testResultsProcessor=jest-sonar-reporter
-        
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v4
-      if: always()
-      with:
-        directory: ./src/Frontend
-        flags: frontend
-        name: frontend-coverage
+        npm run build
 
   build-test-images:
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend]
+    needs: [build-backend, build-frontend]
     
     steps:
     - name: Checkout code

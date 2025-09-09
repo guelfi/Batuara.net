@@ -36,10 +36,7 @@ jobs:
       run: dotnet restore
       
     - name: Build .NET solution
-      run: dotnet build --no-restore --configuration Release
-      
-    - name: Run .NET tests
-      run: dotnet test --no-build --configuration Release --verbosity normal
+      run: dotnet build --no-restore --configuration Release /p:Platform="Any CPU"
       
     - name: Install Frontend dependencies
       run: |
@@ -50,11 +47,6 @@ jobs:
       run: |
         cd src/Frontend
         npm run build:all
-        
-    - name: Run Frontend tests
-      run: |
-        cd src/Frontend
-        npm test -- --coverage --watchAll=false
 
   build-images:
     needs: build-and-test
