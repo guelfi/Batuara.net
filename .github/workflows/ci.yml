@@ -24,7 +24,10 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: 'src/Frontend/package-lock.json'
+        cache-dependency-path: |
+          src/Frontend/package-lock.json
+          src/Frontend/PublicWebsite/package-lock.json
+          src/Frontend/AdminDashboard/package-lock.json
         
     - name: Install .NET format tool
       run: dotnet tool install -g dotnet-format
@@ -98,11 +101,24 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: 'src/Frontend/package-lock.json'
+        cache-dependency-path: |
+          src/Frontend/package-lock.json
+          src/Frontend/PublicWebsite/package-lock.json
+          src/Frontend/AdminDashboard/package-lock.json
         
-    - name: Install dependencies
+    - name: Install Frontend root dependencies
       run: |
         cd src/Frontend
+        npm ci
+        
+    - name: Install PublicWebsite dependencies
+      run: |
+        cd src/Frontend/PublicWebsite
+        npm ci
+        
+    - name: Install AdminDashboard dependencies
+      run: |
+        cd src/Frontend/AdminDashboard
         npm ci
         
     - name: Build PublicWebsite
