@@ -171,7 +171,7 @@ jobs:
             local port=$1
             local service=$2
             if ss -tuln | grep -q ":$port "; then
-              local pid=$(lsof -ti:$port 2>/dev/null || echo "unknown")
+              local pid=$(lsof -nti:$port 2>/dev/null || echo "unknown")
               echo "⚠️  Porta $port ($service) está em uso (PID: $pid)"
               # Verificar se é do nosso projeto
               local container_name=$(docker ps --format "{{.Names}}" --filter "publish=$port")
