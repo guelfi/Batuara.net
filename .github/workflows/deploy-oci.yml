@@ -151,6 +151,8 @@ jobs:
       run: |
         ssh -o StrictHostKeyChecking=no ubuntu@129.153.86.168 << 'EOF'
           set -e
+          sudo apt-get update
+          sudo apt-get install -y lsof
           
           # Definir variáveis com isolamento
           PROJECT_NAME="batuara"
@@ -172,7 +174,8 @@ jobs:
               local pid=$(lsof -ti:$port 2>/dev/null || echo "unknown")
               echo "⚠️  Porta $port ($service) está em uso (PID: $pid)"
               # Verificar se é do nosso projeto
-              if docker ps --format "table {{.Names}}\t{{.Ports}}" | grep -q "$COMPOSE_PROJECT_NAME"; then
+              local container_name=$(docker ps --format "{{.Names}}" --filter "publish=$port")
+              if [[ -n "$container_name" && "$container_name" == *"$COMPOSE_PROJECT_NAME"* ]]; then
                 echo "✅ Porta $port pertence ao projeto $PROJECT_NAME - continuando..."
               else
                 echo "❌ Conflito de porta detectado! Porta $port está sendo usada por outro serviço."
