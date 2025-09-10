@@ -4,13 +4,13 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 # Copia arquivos de dependências
-COPY package*.json ./
+COPY src/Frontend/PublicWebsite/package*.json ./
 
 # Instala dependências
 RUN npm ci --only=production
 
 # Copia código fonte
-COPY . .
+COPY src/Frontend/PublicWebsite/ ./
 
 # Debug: Verificar estrutura copiada
 RUN echo "=== ESTRUTURA COPIADA ===" && ls -la && echo "=== PUBLIC FOLDER ===" && ls -la public/ || echo "Public folder not found"
