@@ -175,7 +175,8 @@ jobs:
               echo "⚠️  Porta $port ($service) está em uso (PID: $pid)"
               # Verificar se é do nosso projeto
               local container_name=$(docker ps --format "{{.Names}}" --filter "publish=$port")
-              if [[ -n "$container_name" && "$container_name" == *"$COMPOSE_PROJECT_NAME"* ]]; then
+              echo "Container name using port $port: $container_name"
+              if [[ -n "$container_name" ]] && echo "$container_name" | grep -q "$COMPOSE_PROJECT_NAME"; then
                 echo "✅ Porta $port pertence ao projeto $PROJECT_NAME - continuando..."
               else
                 echo "❌ Conflito de porta detectado! Porta $port está sendo usada por outro serviço."
