@@ -168,7 +168,7 @@ jobs:
           check_port_conflict() {
             local port=$1
             local service=$2
-            if netstat -tuln | grep -q ":$port "; then
+            if ss -tuln | grep -q ":$port "; then
               local pid=$(lsof -ti:$port 2>/dev/null || echo "unknown")
               echo "⚠️  Porta $port ($service) está em uso (PID: $pid)"
               # Verificar se é do nosso projeto
@@ -190,13 +190,13 @@ jobs:
           echo "🚀 Iniciando deploy do Batuara.net..."
           
           # Criar diretórios se não existirem
-          mkdir -p /var/www/backups
-          mkdir -p $PROJECT_DIR
+          sudo mkdir -p /var/www/backups
+          sudo mkdir -p $PROJECT_DIR
           
           # Fazer backup se projeto existir
           if [ -d "$PROJECT_DIR/.git" ]; then
             echo "📦 Criando backup..."
-            cp -r $PROJECT_DIR $BACKUP_DIR
+            sudo cp -r $PROJECT_DIR $BACKUP_DIR
             echo "✅ Backup criado em: $BACKUP_DIR"
           fi
           
