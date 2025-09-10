@@ -145,7 +145,6 @@ const CalendarSection: React.FC = () => {
           <Tabs
             value={selectedTab}
             onChange={(_, newValue) => setSelectedTab(newValue)}
-            centered
             variant="scrollable"
             scrollButtons="auto"
           >
