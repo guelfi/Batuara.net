@@ -164,6 +164,10 @@ jobs:
           PUBLIC_WEBSITE_PORT=3000
           ADMIN_DASHBOARD_PORT=3001
           API_PORT=8080
+
+          echo "🔪 Forçando o encerramento de processos nas portas 3000 e 3001..."
+          sudo lsof -ti:3000 | xargs -r sudo kill -9 || echo "Porta 3000 já estava livre."
+          sudo lsof -ti:3001 | xargs -r sudo kill -9 || echo "Porta 3001 já estava livre."
           
           # Verificar conflitos de porta antes do deploy
           echo "🔍 Verificando conflitos de porta..."
