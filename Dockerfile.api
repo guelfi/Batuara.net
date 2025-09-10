@@ -8,7 +8,8 @@ WORKDIR /src
 
 # Copiar arquivos de projeto
 COPY ["src/Backend/Batuara.API/Batuara.API.csproj", "src/Backend/Batuara.API/"]
-COPY ["src/Backend/Batuara.Core/Batuara.Core.csproj", "src/Backend/Batuara.Core/"]
+COPY ["src/Backend/Batuara.Application/Batuara.Application.csproj", "src/Backend/Batuara.Application/"]
+COPY ["src/Backend/Batuara.Domain/Batuara.Domain.csproj", "src/Backend/Batuara.Domain/"]
 COPY ["src/Backend/Batuara.Infrastructure/Batuara.Infrastructure.csproj", "src/Backend/Batuara.Infrastructure/"]
 
 # Restaurar dependências
