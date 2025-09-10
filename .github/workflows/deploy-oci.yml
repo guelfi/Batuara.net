@@ -150,7 +150,7 @@ jobs:
     - name: Deploy to Oracle Cloud
       run: |
         ssh -o StrictHostKeyChecking=no ubuntu@129.153.86.168 << 'EOF'
-          set -e
+          set -ex
           sudo apt-get update
           sudo apt-get install -y lsof
           
