@@ -13,7 +13,6 @@ const useAutoScrollToHome = () => {
         const element = document.querySelector('#home');
         if (element) {
           const isMobile = window.innerWidth < 768;
-          const headerHeight = isMobile ? 56 : 64;
           
           // Offset ajustado para aproximar as seções do header
           // Using the same logic as in Header.tsx for #home
