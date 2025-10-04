@@ -95,19 +95,6 @@ const HeroSection: React.FC = () => {
       }
     }, 50);
 
-    // Garantir que a página inicie no topo correto
-    const pageTimer = setTimeout(() => {
-      if (window.location.hash === '' || window.location.hash === '#home') {
-        // Scroll to the home section element instead of just top of page
-        const homeElement = document.getElementById('home');
-        if (homeElement) {
-          homeElement.scrollIntoView({ behavior: 'auto' });
-        } else {
-          window.scrollTo({ top: 0, behavior: 'auto' });
-        }
-      }
-    }, 100);
-
     // Listener para redimensionamento da janela
     const handleResize = () => {
       if (scrollContainerRef.current) {
@@ -119,7 +106,6 @@ const HeroSection: React.FC = () => {
 
     return () => {
       clearTimeout(scrollTimer);
-      clearTimeout(pageTimer);
       window.removeEventListener('resize', handleResize);
     };
   }, []);
