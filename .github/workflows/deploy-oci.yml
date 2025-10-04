@@ -129,7 +129,7 @@ jobs:
         platforms: linux/amd64
 
   deploy-to-oci:
-    needs: build-images
+    needs: build-and-test
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     
