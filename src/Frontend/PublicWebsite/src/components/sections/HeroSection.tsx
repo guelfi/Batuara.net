@@ -18,6 +18,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import NavigationDots from '../common/NavigationDots';
+import useAutoScrollToHome from '../../hooks/useAutoScrollToHome';
 
 const HeroSection: React.FC = () => {
   const theme = useTheme();
@@ -25,6 +26,9 @@ const HeroSection: React.FC = () => {
   const [scrollPosition, setScrollPosition] = useState(0);
   const [maxScroll, setMaxScroll] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Use the custom hook to auto-scroll to home on page load
+  useAutoScrollToHome();
 
   const handleScrollToSection = (sectionId: string) => {
     const element = document.querySelector(sectionId);
@@ -94,7 +98,13 @@ const HeroSection: React.FC = () => {
     // Garantir que a página inicie no topo correto
     const pageTimer = setTimeout(() => {
       if (window.location.hash === '' || window.location.hash === '#home') {
-        window.scrollTo({ top: 0, behavior: 'auto' });
+        // Scroll to the home section element instead of just top of page
+        const homeElement = document.getElementById('home');
+        if (homeElement) {
+          homeElement.scrollIntoView({ behavior: 'auto' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'auto' });
+        }
       }
     }, 100);
 
