@@ -14,5 +14,14 @@ namespace Batuara.Auth.Services
         Task<bool> ChangePasswordAsync(int id, ChangePasswordDto passwordDto);
         Task<User?> GetUserEntityByEmailAsync(string email);
         Task<User?> GetUserEntityByIdAsync(int id);
+        
+        // User Activity methods
+        Task<IEnumerable<UserActivityDto>> GetUserActivitiesAsync(int userId, int pageNumber = 1, int pageSize = 10);
+        Task<int> GetUserActivitiesCountAsync(int userId);
+        
+        // User Preferences methods
+        Task<UserPreferencesDto?> GetUserPreferencesAsync(int userId);
+        Task<UserPreferencesDto> UpdateUserPreferencesAsync(int userId, UpdateUserPreferencesDto preferencesDto);
+        Task<UserPreferencesDto> CreateOrUpdateUserPreferencesAsync(int userId, UpdateUserPreferencesDto preferencesDto);
     }
 }

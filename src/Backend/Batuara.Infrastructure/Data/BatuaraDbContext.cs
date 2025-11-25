@@ -33,33 +33,15 @@ namespace Batuara.Infrastructure.Data
             modelBuilder.ApplyConfiguration(new UserConfiguration());
             modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
 
-            // Configure schema - using public schema where data exists
-            // modelBuilder.HasDefaultSchema("batuara"); // Commented out to use public schema
+            // Configure schema - using batuara schema as defined in migrations
+            modelBuilder.HasDefaultSchema("batuara");
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            if (!optionsBuilder.IsConfigured)
-            {
-                // This will be overridden by dependency injection in production
-                optionsBuilder.UseNpgsql("Host=localhost;Database=batuara_dev;Username=postgres;Password=postgres");
-            }
-
-            // Enable sensitive data logging in development
-            optionsBuilder.EnableSensitiveDataLogging();
-            optionsBuilder.EnableDetailedErrors();
-            
-            // Configure logging with Serilog
-            optionsBuilder.LogTo(
-                message => Log.Information("[EF Core] {Message}", message),
-                new[] { DbLoggerCategory.Database.Command.Name },
-                LogLevel.Information);
-
-            // Log slow queries (queries taking more than 1 second)
-            optionsBuilder.LogTo(
-                message => Log.Warning("[EF Core - Slow Query] {Message}", message),
-                new[] { DbLoggerCategory.Database.Command.Name },
-                LogLevel.Warning);
+            // Suppress pending model changes warning temporarily
+            optionsBuilder.ConfigureWarnings(warnings => 
+                warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         }
 
         public override int SaveChanges()

@@ -238,11 +238,10 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("expires_at");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                    b.Property<string>("ReasonRevoked")
+                        .HasColumnType("text");
 
                     b.Property<string>("ReplacedByToken")
-                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("replaced_by_token");
@@ -252,7 +251,6 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .HasColumnName("revoked_at");
 
                     b.Property<string>("RevokedByIp")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("revoked_by_ip");

@@ -18,6 +18,8 @@ import {
   Settings as SettingsIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface UserProfileProps {
   user?: {
@@ -29,13 +31,14 @@ interface UserProfileProps {
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({ 
-  user = { 
-    name: 'Administrador', 
-    email: 'admin@batuara.net' 
-  }, 
-  onLogout 
+  user: externalUser
 }) => {
+  const { user: authUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+
+  // Usar usuário do contexto de autenticação se não for fornecido externamente
+  const user = externalUser || authUser;
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -45,15 +48,19 @@ const UserProfile: React.FC<UserProfileProps> = ({
     setAnchorEl(null);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     handleClose();
-    if (onLogout) {
-      onLogout();
-    } else {
-      // Simulação de logout na Fase 0
-      console.log('Logout simulado - será implementado na Fundação');
-      alert('Logout simulado - funcionalidade será implementada na Fase Fundação');
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
     }
+  };
+
+  const handleProfile = () => {
+    handleClose();
+    navigate('/profile');
   };
 
   const open = Boolean(anchorEl);
@@ -79,7 +86,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
             fontSize: '1rem'
           }}
         >
-          {user.name.charAt(0).toUpperCase()}
+          {user?.name.charAt(0).toUpperCase()}
         </Avatar>
       </IconButton>
 
@@ -113,14 +120,14 @@ const UserProfile: React.FC<UserProfileProps> = ({
                   fontSize: '1.2rem'
                 }}
               >
-                {user.name.charAt(0).toUpperCase()}
+                {user?.name.charAt(0).toUpperCase()}
               </Avatar>
               <Box>
                 <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                  {user.name}
+                  {user?.name}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {user.email}
+                  {user?.email}
                 </Typography>
               </Box>
             </Box>
@@ -131,7 +138,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
             <List dense sx={{ py: 0 }}>
               <ListItem 
                 button 
-                onClick={handleClose}
+                onClick={handleProfile}
                 sx={{ 
                   borderRadius: 1,
                   '&:hover': {

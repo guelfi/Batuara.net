@@ -22,8 +22,16 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  user: User;
+  refreshToken: string;
   expiresAt: string;
+  user: User;
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  success: boolean;
+  message?: string;
+  errors?: string[];
 }
 
 export interface Event {
@@ -116,6 +124,10 @@ export enum SpiritualContentType {
   Meditation = 3,
 }
 
+export interface RevokeTokenRequest {
+  refreshToken: string;
+}
+
 // Tipos específicos do dashboard
 export interface DashboardStats {
   totalEvents: number;
@@ -134,13 +146,6 @@ export interface ActivityLog {
   entityId: string;
   timestamp: string;
   details?: string;
-}
-
-export interface ApiResponse<T> {
-  data: T;
-  success: boolean;
-  message?: string;
-  errors?: string[];
 }
 
 export interface PaginatedResponse<T> {

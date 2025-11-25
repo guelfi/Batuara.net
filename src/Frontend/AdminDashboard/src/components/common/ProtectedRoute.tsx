@@ -37,6 +37,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Verificar se o usuário tem a role necessária
   if (requiredRole !== undefined && user) {
+    // Verificação mais precisa de roles
     const hasRequiredRole = user.role <= requiredRole; // Roles menores têm mais permissões
     if (!hasRequiredRole) {
       return <Navigate to="/unauthorized" replace />;

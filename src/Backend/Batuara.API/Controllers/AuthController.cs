@@ -23,7 +23,7 @@ namespace Batuara.API.Controllers
         [HttpPost("login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             try
             {
@@ -33,17 +33,28 @@ namespace Batuara.API.Controllers
                 // Set refresh token in cookie
                 SetRefreshTokenCookie(response.RefreshToken);
                 
-                return Ok(response);
+                // Return in the format expected by frontend
+                return Ok(new 
+                {
+                    success = true,
+                    data = new 
+                    {
+                        token = response.AccessToken,
+                        refreshToken = response.RefreshToken,
+                        expiresAt = response.TokenExpiration,
+                        user = response.User
+                    }
+                });
             }
             catch (UnauthorizedAccessException ex)
             {
                 _logger.LogWarning(ex, "Login failed: {Message}", ex.Message);
-                return Unauthorized(new { message = ex.Message });
+                return Unauthorized(new { success = false, message = ex.Message });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during login");
-                return StatusCode(500, new { message = "An error occurred during login" });
+                return StatusCode(500, new { success = false, message = "An error occurred during login" });
             }
         }
 

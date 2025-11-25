@@ -1,12 +1,14 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { ApiResponse, PaginatedResponse } from '../types';
 
 class ApiService {
   private api: AxiosInstance;
+  private isRefreshing = false;
+  private failedQueue: any[] = [];
 
   constructor() {
     this.api = axios.create({
-      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3003/api',
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
@@ -34,54 +36,103 @@ class ApiService {
     // Response interceptor para tratar erros globalmente
     this.api.interceptors.response.use(
       (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          // Token expirado ou inválido
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
+      async (error: AxiosError) => {
+        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+        // Se o token expirou
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          if (this.isRefreshing) {
+            // Se já estamos atualizando o token, enfileiramos a requisição
+            return new Promise((resolve, reject) => {
+              this.failedQueue.push({ resolve, reject });
+            }).then(token => {
+              if (originalRequest) {
+                originalRequest.headers.Authorization = `Bearer ${token}`;
+                return this.api(originalRequest);
+              }
+              return Promise.reject(new Error('Original request is undefined'));
+            }).catch(err => {
+              return Promise.reject(err);
+            });
+          }
+
+          originalRequest._retry = true;
+          this.isRefreshing = true;
+
+          try {
+            const refreshToken = this.getRefreshToken();
+            if (refreshToken) {
+              const response = await this.refreshToken(refreshToken);
+              const newToken = response.data.data.token;
+              
+              // Atualizar token no localStorage
+              localStorage.setItem('authToken', newToken);
+              
+              // Processar requisições pendentes
+              this.processQueue(null, newToken);
+              
+              // Tentar novamente a requisição original
+              if (originalRequest) {
+                originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                return this.api(originalRequest);
+              }
+            } else {
+              throw new Error('No refresh token available');
+            }
+          } catch (refreshError) {
+            // Se falhar ao atualizar o token, limpar dados e redirecionar para login
+            this.processQueue(refreshError, null);
+            this.clearAuthData();
+            window.location.href = '/login';
+            return Promise.reject(refreshError);
+          } finally {
+            this.isRefreshing = false;
+          }
         }
+        
         return Promise.reject(error);
       }
     );
   }
 
+  private getRefreshToken(): string | null {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        return user.refreshToken || null;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  private async refreshToken(refreshToken: string) {
+    return this.post<ApiResponse<any>>('/auth/refresh', { refreshToken });
+  }
+
+  private processQueue(error: any, token: string | null = null) {
+    this.failedQueue.forEach(prom => {
+      if (error) {
+        prom.reject(error);
+      } else {
+        prom.resolve(token);
+      }
+    });
+    
+    this.failedQueue = [];
+  }
+
+  private clearAuthData() {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+  }
+
   // Métodos genéricos
   async get<T>(url: string, params?: any): Promise<ApiResponse<T>> {
-    // Mock para desenvolvimento enquanto o backend não está disponível
-    if (url === '/auth/verify') {
-      return {
-        success: true,
-        data: null,
-        message: 'Token válido'
-      } as ApiResponse<T>;
-    }
-
-    if (url === '/auth/me') {
-      return {
-        success: true,
-        data: {
-          id: 1,
-          name: 'Administrador',
-          email: 'admin@casabatuara.org.br',
-          role: 'admin',
-          avatar: null
-        } as unknown as T,
-        message: 'Dados do usuário'
-      };
-    }
-
-    try {
-      const response: AxiosResponse<ApiResponse<T>> = await this.api.get(url, { params });
-      return response.data;
-    } catch (error) {
-      console.warn(`API não disponível para GET ${url}, retornando mock`);
-      return {
-        success: false,
-        data: null,
-        message: 'API não disponível'
-      } as ApiResponse<T>;
-    }
+    const response: AxiosResponse<ApiResponse<T>> = await this.api.get(url, { params });
+    return response.data;
   }
 
   async post<T>(url: string, data?: any): Promise<ApiResponse<T>> {
@@ -100,76 +151,17 @@ class ApiService {
   }
 
   async getPaginated<T>(url: string, params?: any): Promise<PaginatedResponse<T>> {
-    try {
-      const response: AxiosResponse<PaginatedResponse<T>> = await this.api.get(url, { params });
-      return response.data;
-    } catch (error) {
-      console.warn(`API não disponível para getPaginated ${url}, retornando mock`);
-      // Mock genérico para dados paginados
-      return {
-        data: [] as T[],
-        totalCount: 0,
-        pageNumber: 1,
-        pageSize: 10,
-        totalPages: 0
-      };
-    }
+    const response: AxiosResponse<PaginatedResponse<T>> = await this.api.get(url, { params });
+    return response.data;
   }
 
-  // Métodos específicos para autenticação com mock para desenvolvimento
-  async login(email: string, password: string) {
-    // Mock para desenvolvimento enquanto o backend não está disponível
-    if (email === 'admin@casabatuara.org.br' && password === 'admin123') {
-      return {
-        success: true,
-        data: {
-          token: 'mock-jwt-token',
-          user: {
-            id: 1,
-            name: 'Administrador',
-            email: 'admin@casabatuara.org.br',
-            role: 'admin',
-            avatar: null
-          }
-        },
-        message: 'Login realizado com sucesso'
-      };
-    } else {
-      // Simular erro de autenticação
-      throw {
-        response: {
-          data: {
-            success: false,
-            message: 'Credenciais inválidas'
-          }
-        }
-      };
-    }
-    // Código original comentado
-    // return this.post('/auth/login', { email, password });
+  // Métodos para autenticação e usuário
+  async getUserPreferences() {
+    return this.get<ApiResponse<any>>('/auth/preferences');
   }
 
-  async logout() {
-    // Mock para desenvolvimento
-    return {
-      success: true,
-      message: 'Logout realizado com sucesso'
-    };
-    // Código original comentado
-    // return this.post('/auth/logout');
-  }
-
-  async refreshToken() {
-    // Mock para desenvolvimento
-    return {
-      success: true,
-      data: {
-        token: 'mock-jwt-token-refreshed'
-      },
-      message: 'Token atualizado com sucesso'
-    };
-    // Código original comentado
-    // return this.post('/auth/refresh');
+  async updateUserPreferences(data: any) {
+    return this.put<ApiResponse<any>>('/auth/preferences', data);
   }
 
   // Métodos para eventos
@@ -279,45 +271,11 @@ class ApiService {
 
   // Métodos para dashboard
   async getDashboardStats() {
-    // Mock para desenvolvimento
-    return {
-      success: true,
-      data: {
-        totalEvents: 24,
-        upcomingEvents: 5,
-        totalAttendances: 156,
-        totalOrixas: 16,
-        totalUmbandaLines: 7,
-        totalSpiritualContents: 42,
-        recentActivity: [
-          { id: 1, type: 'event', action: 'create', user: 'Administrador', date: new Date().toISOString(), description: 'Criou evento Festa de Iemanjá' },
-          { id: 2, type: 'attendance', action: 'update', user: 'Administrador', date: new Date().toISOString(), description: 'Atualizou horário de atendimento' },
-          { id: 3, type: 'content', action: 'create', user: 'Administrador', date: new Date().toISOString(), description: 'Adicionou nova oração' }
-        ]
-      },
-      message: 'Estatísticas do dashboard'
-    };
-    // return this.get('/dashboard/stats');
+    return this.get('/dashboard/stats');
   }
 
   async getActivityLogs(params?: any) {
-    // Mock para desenvolvimento
-    const activityLogs = [
-      { id: 1, type: 'event', action: 'create', user: 'Administrador', date: new Date().toISOString(), description: 'Criou evento Festa de Iemanjá' },
-      { id: 2, type: 'attendance', action: 'update', user: 'Administrador', date: new Date().toISOString(), description: 'Atualizou horário de atendimento' },
-      { id: 3, type: 'content', action: 'create', user: 'Administrador', date: new Date().toISOString(), description: 'Adicionou nova oração' },
-      { id: 4, type: 'orixa', action: 'update', user: 'Administrador', date: new Date().toISOString(), description: 'Atualizou informações de Oxalá' },
-      { id: 5, type: 'umbanda', action: 'create', user: 'Administrador', date: new Date().toISOString(), description: 'Adicionou nova linha de Umbanda' }
-    ];
-
-    return {
-      data: activityLogs,
-      totalCount: activityLogs.length,
-      pageNumber: 1,
-      pageSize: 10,
-      totalPages: 1
-    };
-    // return this.getPaginated('/dashboard/activity-logs', params);
+    return this.getPaginated('/dashboard/activity-logs', params);
   }
 }
 
