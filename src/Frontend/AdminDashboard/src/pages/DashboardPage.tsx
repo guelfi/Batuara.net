@@ -32,6 +32,7 @@ const DashboardPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('DashboardPage mounted - Version 2.0 FIXED');
     loadDashboardData();
   }, []);
 
@@ -39,7 +40,7 @@ const DashboardPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Como ainda não temos o backend, vamos usar dados mock
       const mockStats: DashboardStats = {
         totalEvents: 15,
@@ -142,8 +143,8 @@ const DashboardPage: React.FC = () => {
       </Typography>
 
       {/* Cards de estatísticas */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+      <Grid container spacing={3} sx={{ mb: 4, justifyContent: 'flex-start', maxWidth: '100%' }}>
+        <Grid item xs={12} sm={6} md={6} lg={3}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -162,7 +163,7 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={6} lg={3}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -181,7 +182,7 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={6} lg={3}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -200,7 +201,7 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={6} lg={3}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -248,6 +249,7 @@ const DashboardPage: React.FC = () => {
                             label={activity.entityType}
                             size="small"
                             variant="outlined"
+                            sx={{ ml: 1 }}
                           />
                         </Box>
                       }
@@ -290,7 +292,7 @@ const DashboardPage: React.FC = () => {
                   02/02/2024 às 19:00
                 </Typography>
               </Box>
-              
+
               <Box>
                 <Typography variant="body2" color="text.secondary">
                   Próximo atendimento

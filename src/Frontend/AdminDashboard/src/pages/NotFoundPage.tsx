@@ -6,11 +6,14 @@ import {
   Typography,
   Button,
 } from '@mui/material';
-import { SearchOff as SearchOffIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 const NotFoundPage: React.FC = () => {
   const navigate = useNavigate();
+
+  const handleGoHome = () => {
+    navigate('/dashboard');
+  };
 
   return (
     <Box
@@ -19,26 +22,31 @@ const NotFoundPage: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'background.default',
+        background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
         p: 2,
       }}
     >
       <Container maxWidth="sm">
         <Paper
-          elevation={3}
+          elevation={8}
           sx={{
             p: 4,
-            textAlign: 'center',
             borderRadius: 3,
+            textAlign: 'center',
           }}
         >
-          <SearchOffIcon
+          <Typography
+            variant="h1"
             sx={{
-              fontSize: 64,
-              color: 'text.secondary',
+              fontSize: '4rem',
+              fontWeight: 700,
+              color: 'primary.main',
               mb: 2,
             }}
-          />
+          >
+            404
+          </Typography>
+          
           <Typography
             variant="h4"
             sx={{
@@ -48,21 +56,26 @@ const NotFoundPage: React.FC = () => {
           >
             Página Não Encontrada
           </Typography>
+          
           <Typography
             variant="body1"
             sx={{
-              mb: 3,
+              mb: 4,
               color: 'text.secondary',
             }}
           >
-            A página que você está procurando não existe ou foi movida.
+            Desculpe, a página que você está procurando não existe ou foi movida.
           </Typography>
+          
           <Button
             variant="contained"
-            onClick={() => navigate('/dashboard')}
-            size="large"
+            onClick={handleGoHome}
+            sx={{
+              py: 1.5,
+              px: 3,
+            }}
           >
-            Voltar ao Dashboard
+            Voltar para o Dashboard
           </Button>
         </Paper>
       </Container>

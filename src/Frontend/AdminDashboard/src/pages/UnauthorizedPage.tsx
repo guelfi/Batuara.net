@@ -6,11 +6,18 @@ import {
   Typography,
   Button,
 } from '@mui/material';
-import { Block as BlockIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 const UnauthorizedPage: React.FC = () => {
   const navigate = useNavigate();
+
+  const handleGoBack = () => {
+    navigate('/dashboard');
+  };
+
+  const handleLogin = () => {
+    navigate('/login');
+  };
 
   return (
     <Box
@@ -19,53 +26,75 @@ const UnauthorizedPage: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'background.default',
+        background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
         p: 2,
       }}
     >
       <Container maxWidth="sm">
         <Paper
-          elevation={3}
+          elevation={8}
           sx={{
             p: 4,
-            textAlign: 'center',
             borderRadius: 3,
+            textAlign: 'center',
           }}
         >
-          <BlockIcon
+          <Typography
+            variant="h1"
             sx={{
-              fontSize: 64,
-              color: 'error.main',
+              fontSize: '4rem',
+              fontWeight: 700,
+              color: 'primary.main',
               mb: 2,
             }}
-          />
+          >
+            403
+          </Typography>
+          
           <Typography
             variant="h4"
             sx={{
               mb: 2,
               fontWeight: 600,
-              color: 'error.main',
             }}
           >
-            Acesso Negado
+            Acesso Não Autorizado
           </Typography>
+          
           <Typography
             variant="body1"
             sx={{
-              mb: 3,
+              mb: 4,
               color: 'text.secondary',
             }}
           >
             Você não tem permissão para acessar esta página. 
-            Entre em contato com o administrador se acredita que isso é um erro.
+            Se você acredita que isso é um erro, entre em contato com o administrador do sistema.
           </Typography>
-          <Button
-            variant="contained"
-            onClick={() => navigate('/dashboard')}
-            size="large"
-          >
-            Voltar ao Dashboard
-          </Button>
+          
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+            <Button
+              variant="contained"
+              onClick={handleGoBack}
+              sx={{
+                py: 1.5,
+                px: 3,
+              }}
+            >
+              Voltar para o Dashboard
+            </Button>
+            
+            <Button
+              variant="outlined"
+              onClick={handleLogin}
+              sx={{
+                py: 1.5,
+                px: 3,
+              }}
+            >
+              Fazer Login
+            </Button>
+          </Box>
         </Paper>
       </Container>
     </Box>

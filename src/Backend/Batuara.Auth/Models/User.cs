@@ -33,6 +33,8 @@ namespace Batuara.Auth.Models
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         
         public List<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+        public List<UserActivity> Activities { get; set; } = new List<UserActivity>();
+        public UserPreferences? Preferences { get; set; }
         
         public void RecordLogin()
         {
@@ -73,6 +75,21 @@ namespace Batuara.Auth.Models
         public RefreshToken? GetActiveRefreshToken()
         {
             return RefreshTokens.SingleOrDefault(r => !r.IsRevoked && !r.IsExpired);
+        }
+        
+        public void AddActivity(string action, string entityType, string? entityId = null, string? ipAddress = null, string? userAgent = null, string? details = null)
+        {
+            Activities.Add(new UserActivity
+            {
+                UserId = Id,
+                Action = action,
+                EntityType = entityType,
+                EntityId = entityId,
+                IpAddress = ipAddress ?? "unknown",
+                UserAgent = userAgent,
+                Details = details,
+                CreatedAt = DateTime.UtcNow
+            });
         }
     }
 }

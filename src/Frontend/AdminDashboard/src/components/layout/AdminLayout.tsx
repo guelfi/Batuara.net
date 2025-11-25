@@ -124,7 +124,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 >
                   {item.icon}
                 </ListItemIcon>
-                <ListItemText 
+                <ListItemText
                   primary={item.text}
                   primaryTypographyProps={{
                     fontWeight: location.pathname === item.path ? 600 : 400,
@@ -158,9 +158,48 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Dashboard Administrativo
-          </Typography>
+
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              flexGrow: 1,
+              cursor: 'pointer',
+              px: 1,
+              py: 0.5,
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                transform: 'scale(1.02)'
+              },
+              '&:active': {
+                transform: 'scale(0.98)'
+              }
+            }}
+            onClick={() => navigate('/dashboard')}
+            title="Voltar ao Dashboard"
+          >
+            <img
+              src="/batuara_logo.png"
+              alt="Batuara Logo"
+              style={{
+                height: isMobile ? '24px' : '32px',
+                marginRight: isMobile ? '8px' : '12px'
+              }}
+            />
+            <Typography
+              variant={isMobile ? "subtitle1" : "h6"}
+              noWrap
+              component="div"
+              sx={{
+                fontWeight: 'bold',
+                fontSize: isMobile ? '1rem' : '1.25rem'
+              }}
+            >
+              Casa de Caridade Caboclo Batuara
+            </Typography>
+          </Box>
+
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
               {user?.name}

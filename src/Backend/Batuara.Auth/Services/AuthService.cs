@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Batuara.Auth.Data;
 using Batuara.Auth.DTOs;
 using Batuara.Auth.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace Batuara.Auth.Services
 {
@@ -14,19 +15,22 @@ namespace Batuara.Auth.Services
         private readonly IPasswordService _passwordService;
         private readonly IJwtService _jwtService;
         private readonly ILogger<AuthService> _logger;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         
         public AuthService(
             AuthDbContext context,
             IUserService userService,
             IPasswordService passwordService,
             IJwtService jwtService,
-            ILogger<AuthService> logger)
+            ILogger<AuthService> logger,
+            IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _userService = userService;
             _passwordService = passwordService;
             _jwtService = jwtService;
             _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
         }
         
         public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request, string ipAddress)
@@ -59,6 +63,10 @@ namespace Batuara.Auth.Services
             // Save refresh token
             user.AddRefreshToken(refreshToken, refreshTokenExpiryTime, ipAddress);
             user.RecordLogin();
+            
+            // Log user activity
+            var userAgent = _httpContextAccessor?.HttpContext?.Request?.Headers["User-Agent"].ToString() ?? "Unknown";
+            user.AddActivity("Login", "Auth", null, ipAddress, userAgent, "User logged in successfully");
             
             await _context.SaveChangesAsync();
             
@@ -127,6 +135,10 @@ namespace Batuara.Auth.Services
             // Save new refresh token
             user.AddRefreshToken(newRefreshToken, refreshTokenExpiryTime, ipAddress);
             
+            // Log user activity
+            var userAgent = _httpContextAccessor?.HttpContext?.Request?.Headers["User-Agent"].ToString() ?? "Unknown";
+            user.AddActivity("Token Refresh", "Auth", null, ipAddress, userAgent, "User token refreshed successfully");
+            
             await _context.SaveChangesAsync();
             
             _logger.LogInformation("Refresh token rotated for user {Email}", user.Email);
@@ -172,6 +184,10 @@ namespace Batuara.Auth.Services
             refreshToken.RevokedAt = DateTime.UtcNow;
             refreshToken.RevokedByIp = ipAddress;
             refreshToken.ReasonRevoked = "Revoked without replacement";
+            
+            // Log user activity
+            var userAgent = _httpContextAccessor?.HttpContext?.Request?.Headers["User-Agent"].ToString() ?? "Unknown";
+            refreshToken.User?.AddActivity("Token Revoke", "Auth", null, ipAddress, userAgent, "User token revoked successfully");
             
             await _context.SaveChangesAsync();
             

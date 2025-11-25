@@ -11,6 +11,14 @@ namespace Batuara.Auth.Mapping
             // User mappings
             CreateMap<User, UserDto>();
             CreateMap<CreateUserDto, User>();
+            
+            // UserActivity mappings
+            CreateMap<UserActivity, UserActivityDto>();
+            
+            // UserPreferences mappings
+            CreateMap<UserPreferences, UserPreferencesDto>();
+            CreateMap<UpdateUserPreferencesDto, UserPreferences>()
+                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
         }
     }
 }

@@ -11,6 +11,7 @@ namespace Batuara.Domain.Entities
         public DateTime? RevokedAt { get; private set; }
         public string? RevokedByIp { get; private set; }
         public string? ReplacedByToken { get; private set; }
+        public string? ReasonRevoked { get; private set; }
         public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
         public bool IsRevoked => RevokedAt != null;
         public new bool IsActive => !IsRevoked && !IsExpired;
@@ -30,11 +31,12 @@ namespace Batuara.Domain.Entities
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void Revoke(string revokedByIp, string? replacedByToken = null)
+        public void Revoke(string revokedByIp, string? replacedByToken = null, string? reasonRevoked = null)
         {
             RevokedAt = DateTime.UtcNow;
             RevokedByIp = revokedByIp;
             ReplacedByToken = replacedByToken;
+            ReasonRevoked = reasonRevoked;
             UpdatedAt = DateTime.UtcNow;
         }
     }

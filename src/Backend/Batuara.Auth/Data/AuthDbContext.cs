@@ -17,6 +17,8 @@ namespace Batuara.Auth.Data
         
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+        public DbSet<UserActivity> UserActivities { get; set; } = null!;
+        public DbSet<UserPreferences> UserPreferences { get; set; } = null!;
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -26,30 +28,50 @@ namespace Batuara.Auth.Data
             foreach (var entity in modelBuilder.Model.GetEntityTypes())
             {
                 // Converter nome da tabela para snake_case
-                entity.SetTableName(ToSnakeCase(entity.GetTableName()));
+                var tableName = entity.GetTableName();
+                if (!string.IsNullOrEmpty(tableName))
+                {
+                    entity.SetTableName(ToSnakeCase(tableName));
+                }
                 
                 // Converter nome das colunas para snake_case
                 foreach (var property in entity.GetProperties())
                 {
-                    property.SetColumnName(ToSnakeCase(property.GetColumnName()));
+                    var columnName = property.GetColumnName();
+                    if (!string.IsNullOrEmpty(columnName))
+                    {
+                        property.SetColumnName(ToSnakeCase(columnName));
+                    }
                 }
                 
                 // Converter nome das chaves para snake_case
                 foreach (var key in entity.GetKeys())
                 {
-                    key.SetName(ToSnakeCase(key.GetName()));
+                    var keyName = key.GetName();
+                    if (!string.IsNullOrEmpty(keyName))
+                    {
+                        key.SetName(ToSnakeCase(keyName));
+                    }
                 }
                 
                 // Converter nome dos índices para snake_case
                 foreach (var index in entity.GetIndexes())
                 {
-                    index.SetDatabaseName(ToSnakeCase(index.GetDatabaseName()));
+                    var indexName = index.GetDatabaseName();
+                    if (!string.IsNullOrEmpty(indexName))
+                    {
+                        index.SetDatabaseName(ToSnakeCase(indexName));
+                    }
                 }
                 
                 // Converter nome das chaves estrangeiras para snake_case
                 foreach (var foreignKey in entity.GetForeignKeys())
                 {
-                    foreignKey.SetConstraintName(ToSnakeCase(foreignKey.GetConstraintName()));
+                    var constraintName = foreignKey.GetConstraintName();
+                    if (!string.IsNullOrEmpty(constraintName))
+                    {
+                        foreignKey.SetConstraintName(ToSnakeCase(constraintName));
+                    }
                 }
             }
             
@@ -73,6 +95,18 @@ namespace Batuara.Auth.Data
                       .WithOne(e => e.User)
                       .HasForeignKey(e => e.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
+                      
+                // Configure relationship with UserActivities
+                entity.HasMany(e => e.Activities)
+                      .WithOne(e => e.User)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+                      
+                // Configure relationship with UserPreferences
+                entity.HasOne(e => e.Preferences)
+                      .WithOne(e => e.User)
+                      .HasForeignKey<UserPreferences>(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
             
             // Configure RefreshToken entity
@@ -88,6 +122,46 @@ namespace Batuara.Auth.Data
                 entity.Property(e => e.CreatedByIp).IsRequired();
                 entity.Property(e => e.CreatedAt).IsRequired();
                 entity.Property(e => e.UpdatedAt).IsRequired();
+            });
+            
+            // Configure UserActivity entity
+            modelBuilder.Entity<UserActivity>(entity =>
+            {
+                entity.ToTable("user_activities");
+                entity.HasKey(e => e.Id);
+                
+                entity.Property(e => e.Action).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.EntityType).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.IpAddress).IsRequired().HasMaxLength(45);
+                entity.Property(e => e.UserAgent).HasMaxLength(500);
+                entity.Property(e => e.Details).HasMaxLength(1000);
+                entity.Property(e => e.CreatedAt).IsRequired();
+                
+                // Configure relationship with User
+                entity.HasOne(e => e.User)
+                      .WithMany(e => e.Activities)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+            
+            // Configure UserPreferences entity
+            modelBuilder.Entity<UserPreferences>(entity =>
+            {
+                entity.ToTable("user_preferences");
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.UserId).IsUnique();
+                
+                entity.Property(e => e.Language).HasMaxLength(10);
+                entity.Property(e => e.Theme).HasMaxLength(20);
+                entity.Property(e => e.TimeZone).HasMaxLength(50);
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.Property(e => e.UpdatedAt).IsRequired();
+                
+                // Configure relationship with User
+                entity.HasOne(e => e.User)
+                      .WithOne(e => e.Preferences)
+                      .HasForeignKey<UserPreferences>(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
         
@@ -121,12 +195,12 @@ namespace Batuara.Auth.Data
             // Update timestamps for modified entities
             var entries = ChangeTracker
                 .Entries()
-                .Where(e => e.Entity is User || e.Entity is RefreshToken)
+                .Where(e => e.Entity is User || e.Entity is RefreshToken || e.Entity is UserActivity || e.Entity is UserPreferences)
                 .Where(e => e.State == EntityState.Modified);
 
             foreach (var entityEntry in entries)
             {
-                if (entityEntry.Entity is User || entityEntry.Entity is RefreshToken)
+                if (entityEntry.Entity is User || entityEntry.Entity is RefreshToken || entityEntry.Entity is UserActivity || entityEntry.Entity is UserPreferences)
                 {
                     ((dynamic)entityEntry.Entity).UpdatedAt = DateTime.UtcNow;
                 }

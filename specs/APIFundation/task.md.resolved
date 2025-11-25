@@ -1,0 +1,16 @@
+# Tarefas: Planejamento da Fase Fundação (API e Integração)
+
+- [/] Analisar estado atual da API .NET 8 <!-- id: 0 -->
+    - [x] Verificar Controllers existentes (Apenas AuthController encontrado) <!-- id: 1 -->
+    - [x] Verificar Entidades e Contexto do Banco de Dados (Entidades existem: Event, Orixa, etc.) <!-- id: 2 -->
+    - [x] Verificar Services e Repositories (Estrutura modular confirmada: Application/Auth, Infrastructure/Auth) <!-- id: 11 -->
+    - [x] Analisar padrão de implementação do módulo Auth <!-- id: 12 -->
+- [ ] Definir escopo da Fase Fundação <!-- id: 3 -->
+    - [x] Mapear conteúdo do PublicWebsite para CMS (Identificado: About, Hero, Prayers, etc.) <!-- id: 13 -->
+    - [ ] Priorizar funcionalidades (Eventos, Calendário, Filhos da Casa) <!-- id: 4 -->
+    - [ ] Identificar endpoints necessários <!-- id: 5 -->
+- [ ] Criar Plano de Implementação ([implementation_plan.md](file:///home/guelfi/.gemini/antigravity/brain/3036b0d0-f301-4267-ac6f-e315ca610671/implementation_plan.md)) <!-- id: 6 -->
+    - [ ] Detalhar mudanças no Backend <!-- id: 7 -->
+    - [ ] Detalhar integração no Frontend <!-- id: 8 -->
+    - [ ] Planejar Deploy <!-- id: 9 -->
+- [ ] Validar plano com o usuário <!-- id: 10 -->
