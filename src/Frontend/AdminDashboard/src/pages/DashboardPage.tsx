@@ -14,22 +14,38 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
-import {
-  Event as EventIcon,
-  CalendarToday as CalendarIcon,
-  People as PeopleIcon,
-  TrendingUp as TrendingUpIcon,
-  Notifications as NotificationsIcon,
-} from '@mui/icons-material';
-import { DashboardStats, ActivityLog } from '../types';
-import { apiService } from '../services/api';
+import EventIcon from '@mui/icons-material/Event';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import PeopleIcon from '@mui/icons-material/People';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+// Interfaces (mockadas por enquanto, idealmente viriam de types)
+interface Activity {
+  id: string;
+  userId: string;
+  userName: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  timestamp: string;
+  details: string;
+}
+
+interface DashboardStats {
+  totalEvents: number;
+  activeEvents: number;
+  totalAttendances: number;
+  totalUsers: number;
+  recentActivity: Activity[];
+}
+
 const DashboardPage: React.FC = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
     console.log('DashboardPage mounted - Version 2.0 FIXED');
@@ -103,7 +119,7 @@ const DashboardPage: React.FC = () => {
       case 'Event':
         return <EventIcon fontSize="small" />;
       case 'CalendarAttendance':
-        return <CalendarIcon fontSize="small" />;
+        return <CalendarMonthIcon fontSize="small" />;
       case 'Orixa':
       case 'UmbandaLine':
       case 'SpiritualContent':
@@ -167,7 +183,7 @@ const DashboardPage: React.FC = () => {
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <CalendarIcon sx={{ color: 'secondary.main', mr: 1 }} />
+                <CalendarMonthIcon sx={{ color: 'secondary.main', mr: 1 }} />
                 <Typography variant="h6" color="secondary">
                   Atendimentos
                 </Typography>

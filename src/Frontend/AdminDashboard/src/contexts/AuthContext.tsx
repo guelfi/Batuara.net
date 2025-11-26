@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, LoginRequest, LoginResponse, RevokeTokenRequest } from '../types';
 import { apiService } from '../services/api';
 
@@ -13,6 +13,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Session timeout configuration (30 minutes of inactivity)
+const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+const WARNING_TIME = 5 * 60 * 1000; // 5 minutes before timeout
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -23,54 +27,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [warningShown, setWarningShown] = useState(false);
 
-  // Session timeout configuration (30 minutes of inactivity)
-  const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
-  const WARNING_TIME = 5 * 60 * 1000; // 5 minutes before timeout
-
   const isAuthenticated = !!user;
 
-  // Update last activity on user interaction
-  const updateLastActivity = () => {
+  const updateLastActivity = useCallback(() => {
     setLastActivity(Date.now());
-    setWarningShown(false);
-  };
-
-  useEffect(() => {
-    initializeAuth();
-    
-    // Add event listeners for user activity
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-    const handleActivity = () => updateLastActivity();
-    
-    events.forEach(event => {
-      window.addEventListener(event, handleActivity);
-    });
-    
-    // Check for inactivity periodically
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const timeSinceLastActivity = now - lastActivity;
-      
-      // Show warning 5 minutes before timeout
-      if (timeSinceLastActivity > (SESSION_TIMEOUT - WARNING_TIME) && !warningShown && isAuthenticated) {
-        setWarningShown(true);
-        // Here you could show a warning notification to the user
-        console.warn('Session will expire in 5 minutes due to inactivity');
-      }
-      
-      // Logout if session has expired
-      if (timeSinceLastActivity > SESSION_TIMEOUT && isAuthenticated) {
-        handleSessionTimeout();
-      }
-    }, 1000); // Check every second
-    
-    return () => {
-      events.forEach(event => {
-        window.removeEventListener(event, handleActivity);
-      });
-      clearInterval(interval);
-    };
-  }, [lastActivity, warningShown, isAuthenticated]);
+    if (warningShown) {
+      setWarningShown(false);
+    }
+  }, [warningShown]);
 
   const initializeAuth = async () => {
     try {
@@ -80,7 +44,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (token && userData) {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
-        
+
         // Verify if the token is still valid
         try {
           await apiService.get('/auth/verify');
@@ -116,21 +80,58 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       setUser(null);
-      
+
       // Redirect to login page
       window.location.href = '/login';
     }
   };
+
+  useEffect(() => {
+    initializeAuth();
+
+    // Add event listeners for user activity
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    const handleActivity = () => updateLastActivity();
+
+    events.forEach(event => {
+      window.addEventListener(event, handleActivity);
+    });
+
+    // Check for inactivity periodically
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const timeSinceLastActivity = now - lastActivity;
+
+      // Show warning 5 minutes before timeout
+      if (timeSinceLastActivity > (SESSION_TIMEOUT - WARNING_TIME) && !warningShown && isAuthenticated) {
+        setWarningShown(true);
+        // Here you could show a warning notification to the user
+        console.warn('Session will expire in 5 minutes due to inactivity');
+      }
+
+      // Logout if session has expired
+      if (timeSinceLastActivity > SESSION_TIMEOUT && isAuthenticated) {
+        handleSessionTimeout();
+      }
+    }, 1000); // Check every second
+
+    return () => {
+      events.forEach(event => {
+        window.removeEventListener(event, handleActivity);
+      });
+      clearInterval(interval);
+    };
+  }, [lastActivity, warningShown, isAuthenticated, updateLastActivity]);
 
   const login = async (credentials: LoginRequest) => {
     try {
       setIsLoading(true);
       // Use the real API instead of mock
       const response = await apiService.post<LoginResponse>('/auth/login', credentials);
-      
+
       if (response.success && response.data) {
         const { token, refreshToken, user: userData } = response.data;
-        
+
         // Store token and user data
         localStorage.setItem('authToken', token);
         localStorage.setItem('user', JSON.stringify({
@@ -138,7 +139,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           refreshToken: refreshToken
         }));
         setUser(userData);
-        
+
         // Reset activity tracking
         updateLastActivity();
       } else {
@@ -170,7 +171,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       setUser(null);
-      
+
       // Reset activity tracking
       setLastActivity(Date.now());
       setWarningShown(false);
