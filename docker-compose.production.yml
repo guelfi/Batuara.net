@@ -5,7 +5,7 @@ version: '3.8'
 
 services:
   publicwebsite:
-    image: ghcr.io/guelfi/batuara.net-frontend:latest
+    image: ghcr.io/guelfi/batuara.net-frontend:${IMAGE_TAG:-latest}
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-public-website
     environment:
       - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
@@ -31,7 +31,7 @@ services:
         max-file: "3"
 
   admindashboard:
-    image: ghcr.io/guelfi/batuara.net-admin:latest
+    image: ghcr.io/guelfi/batuara.net-admin:${IMAGE_TAG:-latest}
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-admin-dashboard
     environment:
       - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
@@ -57,7 +57,7 @@ services:
         max-file: "3"
 
   api:
-    image: ghcr.io/guelfi/batuara.net-api:latest
+    image: ghcr.io/guelfi/batuara.net-api:${IMAGE_TAG:-latest}
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-api
     ports:
       - "${API_PORT:-3003}:8080"

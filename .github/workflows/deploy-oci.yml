@@ -12,6 +12,7 @@ env:
   IMAGE_NAME_API: ${{ github.repository }}-api
   IMAGE_NAME_FRONTEND: ${{ github.repository }}-frontend
   IMAGE_NAME_ADMIN: ${{ github.repository }}-admin
+  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
   build-and-test:
@@ -280,6 +281,7 @@ jobs:
           COMPOSE_PROJECT_NAME=batuara-net
           ENVIRONMENT=production
           PROJECT_NAME=batuara
+          IMAGE_TAG=${{ github.sha }}
           
           # URLs da API (isoladas)
           REACT_APP_API_URL=http://${{ secrets.OCI_SERVER_IP }}:3003
@@ -314,7 +316,7 @@ jobs:
           docker rmi ghcr.io/guelfi/batuara.net-api:latest 2>/dev/null || true
           
           docker-compose -f docker-compose.prod.yml --env-file .env.production -p $COMPOSE_PROJECT_NAME pull
-          docker-compose -f docker-compose.prod.yml --env-file .env.production -p $COMPOSE_PROJECT_NAME up -d --build
+          docker-compose -f docker-compose.prod.yml --env-file .env.production -p $COMPOSE_PROJECT_NAME up -d
           
           # Verificar se outros projetos ainda estão rodando
           echo "📊 Verificando status de outros projetos..."
