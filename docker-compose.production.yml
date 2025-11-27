@@ -19,7 +19,7 @@ services:
       - "project.name=${PROJECT_NAME:-batuara}"
       - "service.type=frontend"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      test: [ "CMD", "curl", "-f", "http://localhost:80" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -31,7 +31,7 @@ services:
         max-file: "3"
 
   admindashboard:
-    image: ghcr.io/guelfi/batuara.net-frontend:latest
+    image: ghcr.io/guelfi/batuara.net-admin:latest
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-admin-dashboard
     environment:
       - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
@@ -45,7 +45,7 @@ services:
       - "project.name=${PROJECT_NAME:-batuara}"
       - "service.type=frontend"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      test: [ "CMD", "curl", "-f", "http://localhost:80" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -75,7 +75,7 @@ services:
     depends_on:
       - db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -105,7 +105,7 @@ services:
       - "project.name=${PROJECT_NAME:-batuara}"
       - "service.type=database"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PROJECT_NAME:-batuara}_user -d ${DB_NAME:-batuara_db}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${PROJECT_NAME:-batuara}_user -d ${DB_NAME:-batuara_db}" ]
       interval: 30s
       timeout: 10s
       retries: 5

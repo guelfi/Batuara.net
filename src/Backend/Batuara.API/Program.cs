@@ -143,8 +143,6 @@ var app = builder.Build();
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
     app.UseDeveloperExceptionPage();
 }
 else
@@ -152,6 +150,10 @@ else
     app.UseExceptionHandler("/error");
     app.UseHsts();
 }
+
+// Enable Swagger in all environments
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 app.UseSerilogRequestLogging();
