@@ -11,6 +11,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME_API: ${{ github.repository }}-api
   IMAGE_NAME_FRONTEND: ${{ github.repository }}-frontend
+  IMAGE_NAME_ADMIN: ${{ github.repository }}-admin
 
 jobs:
   build-and-test:
@@ -108,6 +109,17 @@ jobs:
           type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
           
+    - name: Extract metadata for Admin
+      id: meta-admin
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_ADMIN }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+          
     - name: Build and push API image
       uses: docker/build-push-action@v5
       with:
@@ -126,6 +138,26 @@ jobs:
         push: true
         tags: ${{ steps.meta-frontend.outputs.tags }}
         labels: ${{ steps.meta-frontend.outputs.labels }}
+        platforms: linux/amd64
+
+    - name: Build and push Admin image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.admin
+        push: true
+        tags: ${{ steps.meta-admin.outputs.tags }}
+        labels: ${{ steps.meta-admin.outputs.labels }}
+        platforms: linux/amd64
+
+    - name: Build and push Admin image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.admin
+        push: true
+        tags: ${{ steps.meta-admin.outputs.tags }}
+        labels: ${{ steps.meta-admin.outputs.labels }}
         platforms: linux/amd64
 
   deploy-to-oci:
