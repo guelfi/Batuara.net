@@ -41,22 +41,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const token = localStorage.getItem('authToken');
       const userData = localStorage.getItem('user');
 
-      if (token && userData) {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
+      // If no token exists, clear everything and finish loading
+      if (!token || !userData) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
 
-        // Verify if the token is still valid
-        try {
-          await apiService.get('/auth/verify');
-        } catch (error) {
-          // Invalid token, clear data
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('user');
-          setUser(null);
-        }
+      // Try to verify the token before setting user
+      try {
+        const parsedUser = JSON.parse(userData);
+        await apiService.get('/auth/verify');
+
+        // Token is valid, set the user
+        setUser(parsedUser);
+      } catch (error) {
+        // Invalid token or verification failed, clear everything
+        console.warn('Token verification failed, clearing auth data');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        setUser(null);
       }
     } catch (error) {
       console.error('Error initializing authentication:', error);
+      // On any error, clear auth data to be safe
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -86,8 +99,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Effect 1: Initialize authentication ONCE on mount
   useEffect(() => {
     initializeAuth();
+  }, []);
+
+  // Effect 2: Handle activity listeners and timeout
+  useEffect(() => {
+    if (!isAuthenticated) return;
 
     // Add event listeners for user activity
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];

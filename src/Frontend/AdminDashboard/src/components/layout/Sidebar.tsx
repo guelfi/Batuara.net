@@ -22,6 +22,11 @@ import {
   Favorite as FavoriteIcon,
   Mail as MailIcon,
   Settings as SettingsIcon,
+  MenuBook as HistoryIcon,
+  Groups as GuidesIcon,
+  Timeline as LinesIcon,
+  MusicNote as PrayersIcon,
+  VolunteerActivism as DonationIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -35,19 +40,16 @@ interface SidebarProps {
 
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Festas e Eventos', icon: <EventIcon />, path: '/events' },
-  { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
-  { text: 'Orixás', icon: <FavoriteIcon />, path: '/orixas' },
-  { text: 'Linhas da Umbanda', icon: <PeopleIcon />, path: '/umbanda-lines' },
-  { text: 'Conteúdo Espiritual', icon: <InfoIcon />, path: '/spiritual-content' },
-];
-
-const systemItems = [
-  { text: 'Sobre a Casa', icon: <InfoIcon />, path: '/sobre' },
-  { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/filhos-casa' },
-  { text: 'Mensagens', icon: <MailIcon />, path: '/contato' },
-  { text: 'Localização', icon: <LocationIcon />, path: '/localizacao' },
-  { text: 'Doações', icon: <FavoriteIcon />, path: '/doacoes' },
+  { text: 'Nossa História', icon: <HistoryIcon />, path: '/history' },
+  { text: 'Calendário Giras', icon: <CalendarIcon />, path: '/calendar' },
+  { text: 'Eventos e Festas', icon: <EventIcon />, path: '/events' },
+  { text: 'Nossos Orixás', icon: <FavoriteIcon />, path: '/orixas' },
+  { text: 'Guias e Entidades', icon: <GuidesIcon />, path: '/guides' },
+  { text: 'Linhas da Umbanda', icon: <LinesIcon />, path: '/umbanda-lines' },
+  { text: 'Orações e Pontos', icon: <PrayersIcon />, path: '/prayers' },
+  { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members' },
+  { text: 'Doações e Contato', icon: <DonationIcon />, path: '/donations-contact' },
+  { text: 'Localização', icon: <LocationIcon />, path: '/location' },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent' }) => {
@@ -98,55 +100,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent' 
         {/* Menu Principal */}
         <List>
           {menuItems.map((item) => (
-            <ListItem
-              button
-              key={item.text}
-              onClick={() => handleItemClick(item.path)}
-              selected={location.pathname === item.path}
-              sx={{
-                '&.Mui-selected': {
-                  bgcolor: 'primary.light',
-                  '&:hover': {
-                    bgcolor: 'primary.light',
-                  },
-                },
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  color: location.pathname === item.path ? 'primary.main' : 'inherit',
-                }}
-              >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                primaryTypographyProps={{
-                  sx: {
-                    fontWeight: location.pathname === item.path ? 600 : 400,
-                  },
-                }}
-              />
-            </ListItem>
-          ))}
-        </List>
-
-        <Divider />
-
-        {/* Sistema */}
-        <List>
-          <ListItem>
-            <ListItemText
-              primary="Sistema"
-              primaryTypographyProps={{
-                sx: {
-                  fontWeight: 600,
-                  color: 'text.secondary',
-                },
-              }}
-            />
-          </ListItem>
-          {systemItems.map((item) => (
             <ListItem
               button
               key={item.text}
