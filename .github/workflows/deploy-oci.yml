@@ -269,6 +269,12 @@ jobs:
           echo "🐳 Configurando ambiente de produção..."
           cp docker-compose.production.yml docker-compose.prod.yml
           
+          # Debug: Verificar conteúdo do arquivo compose
+          echo "🔍 Conteúdo do docker-compose.prod.yml:"
+          cat docker-compose.prod.yml
+          
+          # Configurar variáveis de ambiente com isolamento
+          
           # Configurar variáveis de ambiente com isolamento
           cat > .env.production << 'ENVEOF'
           COMPOSE_PROJECT_NAME=batuara-net
@@ -301,6 +307,12 @@ jobs:
           
           # Iniciar os serviços com isolamento
           echo "🚀 Iniciando serviços do $PROJECT_NAME..."
+          
+          # Forçar remoção de imagens antigas para garantir update
+          docker rmi ghcr.io/guelfi/batuara.net-admin:latest 2>/dev/null || true
+          docker rmi ghcr.io/guelfi/batuara.net-frontend:latest 2>/dev/null || true
+          docker rmi ghcr.io/guelfi/batuara.net-api:latest 2>/dev/null || true
+          
           docker-compose -f docker-compose.prod.yml --env-file .env.production -p $COMPOSE_PROJECT_NAME pull
           docker-compose -f docker-compose.prod.yml --env-file .env.production -p $COMPOSE_PROJECT_NAME up -d --build
           

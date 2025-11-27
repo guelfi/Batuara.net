@@ -165,6 +165,13 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Redirect root to Swagger
+app.MapGet("/", async context =>
+{
+    context.Response.Redirect("/swagger");
+    await Task.CompletedTask;
+});
+
 // Ensure database is created and migrations are applied
 using (var scope = app.Services.CreateScope())
 {
