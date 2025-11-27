@@ -16,6 +16,7 @@ import SpiritualContentPage from './pages/SpiritualContentPage';
 import ProfilePage from './pages/ProfilePage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import NotFoundPage from './pages/NotFoundPage';
+import PlaceholderPage from './pages/PlaceholderPage';
 
 // Configuração do React Query
 const queryClient = new QueryClient({
@@ -38,10 +39,10 @@ function App() {
             <Routes>
               {/* Rota pública de login */}
               <Route path="/login" element={<LoginPage />} />
-              
+
               {/* Rota de não autorizado */}
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
-              
+
               {/* Rotas protegidas */}
               <Route
                 path="/*"
@@ -51,11 +52,17 @@ function App() {
                       <Routes>
                         <Route path="/" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/dashboard" element={<DashboardPage />} />
+                        <Route path="/history" element={<PlaceholderPage title="Nossa História" />} />
                         <Route path="/events" element={<EventsPage />} />
                         <Route path="/calendar" element={<CalendarPage />} />
                         <Route path="/orixas" element={<OrixasPage />} />
+                        <Route path="/guides" element={<PlaceholderPage title="Guias e Entidades" />} />
                         <Route path="/umbanda-lines" element={<UmbandaLinesPage />} />
+                        <Route path="/prayers" element={<PlaceholderPage title="Orações e Pontos" />} />
                         <Route path="/spiritual-content" element={<SpiritualContentPage />} />
+                        <Route path="/members" element={<PlaceholderPage title="Filhos da Casa" />} />
+                        <Route path="/donations-contact" element={<PlaceholderPage title="Doações e Contato" />} />
+                        <Route path="/location" element={<PlaceholderPage title="Localização" />} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="*" element={<NotFoundPage />} />
                       </Routes>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -18,13 +18,11 @@ import {
   TableRow,
   Chip,
   Pagination,
-  TablePagination,
   IconButton,
   Tooltip,
 } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { useForm } from 'react-hook-form';
-import { User, ApiResponse } from '../types';
 import { apiService } from '../services/api';
 import InfoIcon from '@mui/icons-material/Info';
 
@@ -79,7 +77,6 @@ const ProfilePage: React.FC = () => {
     register: registerProfile,
     handleSubmit: handleSubmitProfile,
     formState: { errors: profileErrors },
-    reset: resetProfile,
   } = useForm<ProfileFormData>({
     defaultValues: {
       name: user?.name || '',
@@ -92,16 +89,11 @@ const ProfilePage: React.FC = () => {
     handleSubmit: handleSubmitPassword,
     formState: { errors: passwordErrors },
     watch,
-    reset: resetPassword,
   } = useForm<PasswordFormData>();
 
   const newPassword = watch('newPassword');
 
-  useEffect(() => {
-    fetchUserActivities();
-  }, [page]);
-
-  const fetchUserActivities = async () => {
+  const fetchUserActivities = useCallback(async () => {
     try {
       setActivitiesLoading(true);
       const response = await apiService.get<ActivityResponseData>('/auth/activities', {
@@ -110,7 +102,7 @@ const ProfilePage: React.FC = () => {
           pageSize: pageSize
         }
       });
-      
+
       if (response.success) {
         setActivities(response.data.data);
         setTotalPages(response.data.pagination.totalPages);
@@ -120,20 +112,24 @@ const ProfilePage: React.FC = () => {
     } finally {
       setActivitiesLoading(false);
     }
-  };
+  }, [page, pageSize]);
+
+  useEffect(() => {
+    fetchUserActivities();
+  }, [fetchUserActivities]);
 
   const handleProfileSubmit = async (data: ProfileFormData) => {
     try {
       setLoading(true);
       setError(null);
       setSuccess(null);
-      
+
       // Update user profile via API
       await apiService.put('/auth/me', data);
-      
+
       // Refresh user data in context
       await refreshUser();
-      
+
       setSuccess('Perfil atualizado com sucesso!');
       setSnackbarOpen(true);
     } catch (err: any) {
@@ -149,20 +145,19 @@ const ProfilePage: React.FC = () => {
         setPasswordError('As senhas não coincidem');
         return;
       }
-      
+
       setPasswordLoading(true);
       setPasswordError(null);
       setPasswordSuccess(null);
-      
+
       // Change password via API
       await apiService.put('/auth/change-password', {
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
       });
-      
+
       setPasswordSuccess('Senha alterada com sucesso!');
       setSnackbarOpen(true);
-      resetPassword();
     } catch (err: any) {
       setPasswordError(err.response?.data?.message || err.message || 'Erro ao alterar senha');
     } finally {
@@ -193,8 +188,8 @@ const ProfilePage: React.FC = () => {
 
   return (
     <Container maxWidth="lg" role="main">
-      <Typography 
-        variant="h4" 
+      <Typography
+        variant="h4"
         sx={{ mb: 4, fontWeight: 600 }}
         id="profile-page-title"
         tabIndex={-1}
@@ -203,8 +198,8 @@ const ProfilePage: React.FC = () => {
       </Typography>
 
       {success && (
-        <Alert 
-          severity="success" 
+        <Alert
+          severity="success"
           sx={{ mb: 3 }}
           role="alert"
           aria-live="polite"
@@ -214,8 +209,8 @@ const ProfilePage: React.FC = () => {
       )}
 
       {error && (
-        <Alert 
-          severity="error" 
+        <Alert
+          severity="error"
           sx={{ mb: 3 }}
           role="alert"
           aria-live="polite"
@@ -226,24 +221,24 @@ const ProfilePage: React.FC = () => {
 
       <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', lg: 'row' } }}>
         {/* Informações do Perfil */}
-        <Paper 
+        <Paper
           sx={{ p: 3, flex: 1 }}
           role="region"
           aria-labelledby="profile-info-heading"
         >
-          <Typography 
-            variant="h6" 
+          <Typography
+            variant="h6"
             sx={{ mb: 3, fontWeight: 600 }}
             id="profile-info-heading"
           >
             Informações Pessoais
           </Typography>
-          
+
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <Avatar 
-              sx={{ 
-                width: 64, 
-                height: 64, 
+            <Avatar
+              sx={{
+                width: 64,
+                height: 64,
                 mr: 2,
                 bgcolor: 'primary.main',
                 fontSize: '1.5rem'
@@ -262,9 +257,9 @@ const ProfilePage: React.FC = () => {
               </Typography>
             </Box>
           </Box>
-          
-          <Box 
-            component="form" 
+
+          <Box
+            component="form"
             onSubmit={handleSubmitProfile(handleProfileSubmit)}
             aria-labelledby="profile-info-heading"
           >
@@ -288,9 +283,9 @@ const ProfilePage: React.FC = () => {
               }}
             />
             {profileErrors.name && (
-              <Typography 
-                id="name-error" 
-                color="error" 
+              <Typography
+                id="name-error"
+                color="error"
                 variant="caption"
                 role="alert"
                 aria-live="polite"
@@ -298,7 +293,7 @@ const ProfilePage: React.FC = () => {
                 {profileErrors.name.message}
               </Typography>
             )}
-            
+
             <TextField
               fullWidth
               label="E-mail"
@@ -320,9 +315,9 @@ const ProfilePage: React.FC = () => {
               }}
             />
             {profileErrors.email && (
-              <Typography 
-                id="email-error" 
-                color="error" 
+              <Typography
+                id="email-error"
+                color="error"
                 variant="caption"
                 role="alert"
                 aria-live="polite"
@@ -330,7 +325,7 @@ const ProfilePage: React.FC = () => {
                 {profileErrors.email.message}
               </Typography>
             )}
-            
+
             <Button
               type="submit"
               variant="contained"
@@ -351,22 +346,22 @@ const ProfilePage: React.FC = () => {
         </Paper>
 
         {/* Alteração de Senha */}
-        <Paper 
+        <Paper
           sx={{ p: 3, flex: 1 }}
           role="region"
           aria-labelledby="change-password-heading"
         >
-          <Typography 
-            variant="h6" 
+          <Typography
+            variant="h6"
             sx={{ mb: 3, fontWeight: 600 }}
             id="change-password-heading"
           >
             Alterar Senha
           </Typography>
-          
+
           {passwordSuccess && (
-            <Alert 
-              severity="success" 
+            <Alert
+              severity="success"
               sx={{ mb: 3 }}
               role="alert"
               aria-live="polite"
@@ -376,8 +371,8 @@ const ProfilePage: React.FC = () => {
           )}
 
           {passwordError && (
-            <Alert 
-              severity="error" 
+            <Alert
+              severity="error"
               sx={{ mb: 3 }}
               role="alert"
               aria-live="polite"
@@ -385,9 +380,9 @@ const ProfilePage: React.FC = () => {
               {passwordError}
             </Alert>
           )}
-          
-          <Box 
-            component="form" 
+
+          <Box
+            component="form"
             onSubmit={handleSubmitPassword(handlePasswordSubmit)}
             aria-labelledby="change-password-heading"
           >
@@ -413,9 +408,9 @@ const ProfilePage: React.FC = () => {
               }}
             />
             {passwordErrors.currentPassword && (
-              <Typography 
-                id="current-password-error" 
-                color="error" 
+              <Typography
+                id="current-password-error"
+                color="error"
                 variant="caption"
                 role="alert"
                 aria-live="polite"
@@ -423,7 +418,7 @@ const ProfilePage: React.FC = () => {
                 {passwordErrors.currentPassword.message}
               </Typography>
             )}
-            
+
             <TextField
               fullWidth
               label="Nova Senha"
@@ -446,9 +441,9 @@ const ProfilePage: React.FC = () => {
               }}
             />
             {passwordErrors.newPassword && (
-              <Typography 
-                id="new-password-error" 
-                color="error" 
+              <Typography
+                id="new-password-error"
+                color="error"
                 variant="caption"
                 role="alert"
                 aria-live="polite"
@@ -456,7 +451,7 @@ const ProfilePage: React.FC = () => {
                 {passwordErrors.newPassword.message}
               </Typography>
             )}
-            
+
             <TextField
               fullWidth
               label="Confirmar Nova Senha"
@@ -464,7 +459,7 @@ const ProfilePage: React.FC = () => {
               margin="normal"
               {...registerPassword('confirmPassword', {
                 required: 'Confirmação de senha é obrigatória',
-                validate: value => 
+                validate: value =>
                   value === newPassword || 'As senhas não coincidem'
               })}
               error={!!passwordErrors.confirmPassword}
@@ -477,9 +472,9 @@ const ProfilePage: React.FC = () => {
               }}
             />
             {passwordErrors.confirmPassword && (
-              <Typography 
-                id="confirm-password-error" 
-                color="error" 
+              <Typography
+                id="confirm-password-error"
+                color="error"
                 variant="caption"
                 role="alert"
                 aria-live="polite"
@@ -487,7 +482,7 @@ const ProfilePage: React.FC = () => {
                 {passwordErrors.confirmPassword.message}
               </Typography>
             )}
-            
+
             <Button
               type="submit"
               variant="contained"
@@ -509,19 +504,19 @@ const ProfilePage: React.FC = () => {
       </Box>
 
       {/* Histórico de Atividades */}
-      <Paper 
+      <Paper
         sx={{ p: 3, mt: 4 }}
         role="region"
         aria-labelledby="activity-history-heading"
       >
-        <Typography 
-          variant="h6" 
+        <Typography
+          variant="h6"
           sx={{ mb: 3, fontWeight: 600 }}
           id="activity-history-heading"
         >
           Histórico de Atividades
         </Typography>
-        
+
         {activitiesLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress aria-label="Carregando histórico de atividades" />
@@ -549,8 +544,8 @@ const ProfilePage: React.FC = () => {
                   {activities.map((activity) => (
                     <TableRow key={activity.id}>
                       <TableCell>
-                        <Chip 
-                          label={activity.action} 
+                        <Chip
+                          label={activity.action}
                           color={getActionColor(activity.action) as any}
                           size="small"
                           aria-label={`Ação: ${activity.action}`}
@@ -574,12 +569,12 @@ const ProfilePage: React.FC = () => {
                 </TableBody>
               </Table>
             </TableContainer>
-            
+
             {totalPages > 1 && (
               <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                <Pagination 
-                  count={totalPages} 
-                  page={page} 
+                <Pagination
+                  count={totalPages}
+                  page={page}
                   onChange={handlePageChange}
                   color="primary"
                   aria-label="Paginação do histórico de atividades"
