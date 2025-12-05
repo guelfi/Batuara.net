@@ -6,10 +6,12 @@ version: '3.3'
 services:
   publicwebsite:
     build:
-      context: ../../src/Frontend/PublicWebsite
-      dockerfile: ../../Dockerfile.frontend
+      context: ../../
+      dockerfile: Dockerfile.frontend
       args:
         - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
+        - APP_PATH=src/Frontend/PublicWebsite
+        - WEB_BASE_PATH=/batuara-public
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-public-website
     ports:
       - "${PUBLIC_WEBSITE_PORT:-3000}:80"
@@ -34,10 +36,12 @@ services:
 
   admindashboard:
     build:
-      context: ../../src/Frontend/AdminDashboard
-      dockerfile: ../../../Dockerfile.frontend
+      context: ../../
+      dockerfile: Dockerfile.frontend
       args:
         - REACT_APP_API_URL=${REACT_APP_API_URL:-/batuara-api}
+        - APP_PATH=src/Frontend/AdminDashboard
+        - WEB_BASE_PATH=/batuara-admin
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-admin-dashboard
     ports:
       - "${ADMIN_DASHBOARD_PORT:-3001}:80"
