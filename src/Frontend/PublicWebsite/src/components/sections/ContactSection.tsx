@@ -57,7 +57,7 @@ const ContactSection: React.FC = () => {
   };
 
   return (
-    <Box id="contact" sx={{ py: 6, backgroundColor: 'background.default', minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
+    <Box id="contact" sx={{ py: 6, backgroundColor: 'background.default' }}>
       <Container maxWidth="md">
         <Box sx={{ textAlign: 'center', mb: 2.5 }}>
           <Box
@@ -69,9 +69,9 @@ const ContactSection: React.FC = () => {
               mb: 1.5,
             }}
           >
-            <AutoAwesomeIcon 
-              sx={{ 
-                fontSize: 28, 
+            <AutoAwesomeIcon
+              sx={{
+                fontSize: 28,
                 color: 'primary.main',
                 animation: 'pulse 2s infinite',
                 '@keyframes pulse': {
@@ -79,7 +79,7 @@ const ContactSection: React.FC = () => {
                   '50%': { opacity: 0.7 },
                   '100%': { opacity: 1 },
                 },
-              }} 
+              }}
             />
             <Typography
               variant="h2"
@@ -91,9 +91,9 @@ const ContactSection: React.FC = () => {
             >
               Entre em Contato
             </Typography>
-            <AutoAwesomeIcon 
-              sx={{ 
-                fontSize: 28, 
+            <AutoAwesomeIcon
+              sx={{
+                fontSize: 28,
                 color: 'primary.main',
                 animation: 'pulse 2s infinite',
                 '@keyframes pulse': {
@@ -101,7 +101,7 @@ const ContactSection: React.FC = () => {
                   '50%': { opacity: 0.7 },
                   '100%': { opacity: 1 },
                 },
-              }} 
+              }}
             />
           </Box>
           <Typography
@@ -132,8 +132,8 @@ const ContactSection: React.FC = () => {
           </Typography>
         </Box>
 
-        <Card 
-          sx={{ 
+        <Card
+          sx={{
             p: { xs: 2, md: 2.5 },
             borderRadius: 2,
             boxShadow: theme.shadows[6],
