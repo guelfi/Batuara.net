@@ -6,8 +6,8 @@ version: '3.3'
 services:
   publicwebsite:
     build:
-      context: ../../../src/Frontend/PublicWebsite
-      dockerfile: ../../../Dockerfile.frontend
+      context: ../../src/Frontend/PublicWebsite
+      dockerfile: ../../Dockerfile.frontend
       args:
         - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-public-website
@@ -34,7 +34,7 @@ services:
 
   admindashboard:
     build:
-      context: ../../../src/Frontend/AdminDashboard
+      context: ../../src/Frontend/AdminDashboard
       dockerfile: ../../../Dockerfile.frontend
       args:
         - REACT_APP_API_URL=${REACT_APP_API_URL:-/batuara-api}
