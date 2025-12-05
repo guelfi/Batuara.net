@@ -37,7 +37,7 @@ services:
       context: ./src/Frontend/AdminDashboard
       dockerfile: ../../../Dockerfile.frontend
       args:
-        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-/batuara-api}
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-admin-dashboard
     ports:
       - "${ADMIN_DASHBOARD_PORT:-3001}:80"
