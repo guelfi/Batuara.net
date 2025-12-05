@@ -35,7 +35,7 @@ function App() {
       <ThemeProvider theme={adminTheme}>
         <CssBaseline />
         <AuthProvider>
-          <Router>
+          <Router basename="/batuara-admin/">
             <Routes>
               {/* Rota pública de login */}
               <Route path="/login" element={<LoginPage />} />

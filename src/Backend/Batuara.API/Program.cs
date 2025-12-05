@@ -36,15 +36,14 @@ builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
-// Configure CORS
+// Configure CORS for Nginx Proxy
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowedOrigins", policy =>
+    options.AddPolicy("AllowProxy", policy =>
     {
-        policy.WithOrigins(builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:3000", "http://localhost:3001" })
+        policy.AllowAnyOrigin()
             .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
+            .AllowAnyHeader();
     });
 });
 
@@ -151,14 +150,21 @@ else
     app.UseHsts();
 }
 
+// Configure PathBase for Nginx Proxy
+app.UsePathBase("/batuara-api");
+
 // Enable Swagger in all environments
 app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/batuara-api/swagger/v1/swagger.json", "Batuara API V1");
+    c.RoutePrefix = "swagger";
+});
 
 app.UseHttpsRedirection();
 app.UseSerilogRequestLogging();
 
-app.UseCors("AllowedOrigins");
+app.UseCors("AllowProxy");
 
 app.UseAuthentication();
 app.UseAuthorization();
