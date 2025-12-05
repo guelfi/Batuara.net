@@ -45,10 +45,10 @@ const Header: React.FC = () => {
     if (element) {
       const isMobile = window.innerWidth < 768;
       const headerHeight = isMobile ? 56 : 64;
-      
+
       // Offset ajustado para aproximar as seções do header
       let offsetHeight;
-      
+
       if (href === '#home') {
         // Hero: no mobile fica com muito mais espaço do header, no desktop vai para o topo absoluto
         offsetHeight = isMobile ? 0 : 0; // Offset zero para dar máximo espaço visual no mobile
@@ -59,7 +59,7 @@ const Header: React.FC = () => {
         // Outras seções: diminuir 60px do offset anterior para aproximar do header
         offsetHeight = headerHeight - 44; // headerHeight + 16 - 60 = headerHeight - 44
       }
-      
+
       const elementPosition = element.getBoundingClientRect().top + window.scrollY;
       const offsetPosition = elementPosition - offsetHeight;
 
@@ -80,12 +80,12 @@ const Header: React.FC = () => {
       </Box>
       <List>
         {navigationItems.map((item) => (
-          <ListItem 
+          <ListItem
             key={item.label}
             onClick={() => handleNavClick(item.href)}
             sx={{ cursor: 'pointer' }}
           >
-            <ListItemText 
+            <ListItemText
               primary={item.label}
               sx={{
                 '& .MuiListItemText-primary': {
@@ -119,7 +119,7 @@ const Header: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Box
                   component="img"
-                  src="/batuara_logo.png"
+                  src={`${process.env.PUBLIC_URL}/batuara_logo.png`}
                   alt="Batuara Logo"
                   sx={{
                     height: 24,
@@ -142,7 +142,7 @@ const Header: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Box
                   component="img"
-                  src="/batuara_logo.png"
+                  src={`${process.env.PUBLIC_URL}/batuara_logo.png`}
                   alt="Batuara Logo"
                   sx={{
                     height: 40,
@@ -167,9 +167,9 @@ const Header: React.FC = () => {
 
           {/* Menu centralizado (apenas desktop) */}
           {!isMobile && (
-            <Box 
-              sx={{ 
-                display: 'flex', 
+            <Box
+              sx={{
+                display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
                 gap: 0.5,

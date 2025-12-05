@@ -115,7 +115,7 @@ const HeroSection: React.FC = () => {
       id="home"
       sx={{
         // Background image for all devices (mobile and desktop)
-        backgroundImage: `url(/bg.jpg)`,
+        backgroundImage: `url(${process.env.PUBLIC_URL}/bg.jpg)`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -524,17 +524,17 @@ const HeroSection: React.FC = () => {
                     const itemWidth = 160; // Tamanho dos cards
                     const gap = 12; // Gap entre cards (1.5 * 8 = 12px do tema MUI)
                     const itemWithGap = itemWidth + gap;
-                    
+
                     // Se chegou ao final do scroll, mostrar o último dot
                     if (scrollPosition >= maxScroll - 10) {
                       return 3;
                     }
-                    
+
                     // Calcular o índice baseado na posição do scroll
                     // Adicionar metade do itemWidth para melhor detecção do centro
                     const adjustedScrollPosition = scrollPosition + (itemWidth / 2);
                     const calculatedIndex = Math.floor(adjustedScrollPosition / itemWithGap);
-                    
+
                     // Garantir que o índice esteja dentro dos limites
                     return Math.min(Math.max(calculatedIndex, 0), 3);
                   })()}
