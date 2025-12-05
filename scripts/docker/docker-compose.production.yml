@@ -127,7 +127,7 @@ services:
 networks:
   # Rede isolada para evitar conflitos com outros projetos
   batuara-network:
-    name: ${DOCKER_NETWORK:-batuara-network}
+
     driver: bridge
     labels:
       - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
@@ -140,7 +140,7 @@ networks:
 volumes:
   # Volumes com prefixo para isolamento
   batuara-db-data:
-    name: ${VOLUME_PREFIX:-batuara}-db-data
+
     labels:
       - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
       - "project.name=${PROJECT_NAME:-batuara}"
