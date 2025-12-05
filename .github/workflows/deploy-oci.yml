@@ -189,7 +189,7 @@ jobs:
           
           # Definir variáveis com isolamento
           PROJECT_NAME="batuara"
-          PROJECT_DIR="/var/www/batuara_net"
+          PROJECT_DIR="/var/www/Batuara"
           BACKUP_DIR="/var/www/backups/${PROJECT_NAME}_backup_$(date +%Y%m%d_%H%M%S)"
           COMPOSE_PROJECT_NAME="batuara-net"
           
