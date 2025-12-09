@@ -163,6 +163,17 @@ const HeroSection: React.FC = () => {
                 mb: 2
               }}
             >
+              <Box
+                component="img"
+                src={`${process.env.PUBLIC_URL}/batuara_logo.png`}
+                alt="Casa de Caridade Caboclo Batuara"
+                sx={{
+                  height: { xs: 96, md: 152 },
+                  width: 'auto',
+                  mb: { xs: 1, md: 2 },
+                  filter: 'drop-shadow(rgba(0, 0, 0, 0.8) 2px 2px 4px)'
+                }}
+              />
               <Typography
                 variant="h1"
                 sx={{
