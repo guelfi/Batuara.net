@@ -39,7 +39,7 @@ services:
       context: ../../
       dockerfile: Dockerfile.frontend
       args:
-        - REACT_APP_API_URL=${REACT_APP_API_URL:-/batuara-api}
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-/batuara-api/api}
         - APP_PATH=src/Frontend/AdminDashboard
         - WEB_BASE_PATH=/batuara-admin
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-admin-dashboard
