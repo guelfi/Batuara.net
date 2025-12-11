@@ -8,11 +8,11 @@ services:
     image: ghcr.io/guelfi/batuara.net-frontend:${IMAGE_TAG:-latest}
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-public-website
     environment:
-      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-/batuara-api}
     ports:
       - "${PUBLIC_WEBSITE_PORT:-3000}:80"
     networks:
-      - ${DOCKER_NETWORK:-batuara-network}
+      - ${DOCKER_NETWORK:-www_projetos-net}
     restart: unless-stopped
     labels:
       - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
@@ -34,11 +34,11 @@ services:
     image: ghcr.io/guelfi/batuara.net-admin:${IMAGE_TAG:-latest}
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-admin-dashboard
     environment:
-      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-/batuara-api/api}
     ports:
       - "${ADMIN_DASHBOARD_PORT:-3001}:80"
     networks:
-      - ${DOCKER_NETWORK:-batuara-network}
+      - ${DOCKER_NETWORK:-www_projetos-net}
     restart: unless-stopped
     labels:
       - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
@@ -55,6 +55,8 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    depends_on:
+      - api
 
   api:
     image: ghcr.io/guelfi/batuara.net-api:${IMAGE_TAG:-latest}
@@ -66,7 +68,7 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Production}
     networks:
-      - ${DOCKER_NETWORK:-batuara-network}
+      - ${DOCKER_NETWORK:-www_projetos-net}
     restart: unless-stopped
     labels:
       - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
@@ -98,7 +100,7 @@ services:
       - ${VOLUME_PREFIX:-batuara}-db-data:/var/lib/postgresql/data
       - /etc/localtime:/etc/localtime:ro
     networks:
-      - ${DOCKER_NETWORK:-batuara-network}
+      - ${DOCKER_NETWORK:-www_projetos-net}
     restart: unless-stopped
     labels:
       - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
@@ -118,7 +120,7 @@ services:
 
 networks:
   batuara-network:
-    name: ${DOCKER_NETWORK:-batuara-network}
+    name: ${DOCKER_NETWORK:-www_projetos-net}
     driver: bridge
     labels:
       - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
