@@ -171,6 +171,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
 // Redirect root to Swagger
 app.MapGet("/", async context =>
 {

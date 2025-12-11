@@ -77,24 +77,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const handleSessionTimeout = async () => {
     try {
-      // Revoke refresh token before logout
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const userData = JSON.parse(userStr);
-        if (userData.refreshToken) {
-          const revokeRequest: RevokeTokenRequest = { refreshToken: userData.refreshToken };
-          await apiService.post('/auth/revoke', revokeRequest);
-        }
-      }
+      await apiService.post('/auth/logout');
     } catch (error) {
-      console.error('Error revoking token on session timeout:', error);
+      console.error('Error during session timeout logout:', error);
     } finally {
-      // Clear local storage and update state
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
+      try {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+      } catch (_) {}
       setUser(null);
-
-      // Redirect to login page
+      document.cookie = 'token=; Max-Age=0; path=/';
+      document.cookie = 'session=; Max-Age=0; path=/';
       window.location.href = '/login';
     }
   };
@@ -174,24 +167,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Get refresh token from localStorage
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const userData = JSON.parse(userStr);
-        // Call revoke endpoint with refresh token if it exists
-        if (userData.refreshToken) {
-          const revokeRequest: RevokeTokenRequest = { refreshToken: userData.refreshToken };
-          await apiService.post('/auth/revoke', revokeRequest);
-        }
-      }
+      await apiService.post('/auth/logout');
     } catch (error) {
       console.error('Error during logout:', error);
     } finally {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
+      try {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+      } catch (_) {}
       setUser(null);
-
-      // Reset activity tracking
+      document.cookie = 'token=; Max-Age=0; path=/';
+      document.cookie = 'session=; Max-Age=0; path=/';
       setLastActivity(Date.now());
       setWarningShown(false);
     }

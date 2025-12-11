@@ -89,8 +89,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   const handleLogout = async () => {
     handleMenuClose();
-    await logout();
-    navigate('/login');
+    try {
+      await logout();
+    } finally {
+      navigate('/login');
+    }
   };
 
   const handleNavigation = (path: string) => {
@@ -190,7 +193,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             title="Voltar ao Dashboard"
           >
             <img
-              src="/batuara_logo.png"
+              src={`${process.env.PUBLIC_URL || '/batuara-admin'}/batuara_logo.png`}
               alt="Batuara Logo"
               style={{
                 height: isMobile ? '24px' : '32px',

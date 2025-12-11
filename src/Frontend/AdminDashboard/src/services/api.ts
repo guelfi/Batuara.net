@@ -8,7 +8,7 @@ class ApiService {
 
   constructor() {
     this.api = axios.create({
-      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3003/api',
+      baseURL: process.env.REACT_APP_API_URL || '/batuara-api/api',
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
@@ -110,6 +110,10 @@ class ApiService {
 
   private async refreshToken(refreshToken: string) {
     return this.post<ApiResponse<any>>('/auth/refresh', { refreshToken });
+  }
+
+  async logout() {
+    return this.post<ApiResponse<any>>('/auth/logout');
   }
 
   private processQueue(error: any, token: string | null = null) {

@@ -123,6 +123,7 @@ const LoginPage: React.FC = () => {
               label="E-mail"
               type="email"
               margin="normal"
+              inputProps={{ autoComplete: 'username' }}
               {...register('email', {
                 required: 'E-mail é obrigatório',
                 pattern: {
@@ -146,6 +147,7 @@ const LoginPage: React.FC = () => {
               label="Senha"
               type={showPassword ? 'text' : 'password'}
               margin="normal"
+              inputProps={{ autoComplete: 'current-password' }}
               {...register('password', {
                 required: 'Senha é obrigatória',
                 minLength: {
