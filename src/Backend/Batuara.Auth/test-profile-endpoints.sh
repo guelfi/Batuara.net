@@ -75,11 +75,11 @@ make_request "POST" "/auth/login" '{"email":"admin@casabatuara.org.br","password
 
 # Test 6: Change password back to original
 echo -e "\n${GREEN}=== Teste 6: Alterar senha de volta para a original ===${NC}"
-NEW_TOKEN=$(curl -s -X "POST" "$API_URL/auth/login" -H "Content-Type: application/json" -d '{"email":"admin@casabatuara.org.br","password":"novasenha123"}' | jq -r '.data.token')
+NEW_TOKEN=$(curl -s -X "POST" "$API_URL/auth/login" -H "Content-Type: application/json" -d '{"email":"admin@batuara.org.br","password":"novasenha123"}' | jq -r '.data.token')
 make_request "PUT" "/auth/change-password" '{"currentPassword":"novasenha123","newPassword":"admin123"}' "$NEW_TOKEN"
 
 # Test 7: Login with original password
 echo -e "\n${GREEN}=== Teste 7: Login com senha original ===${NC}"
-make_request "POST" "/auth/login" '{"email":"admin@casabatuara.org.br","password":"admin123"}'
+make_request "POST" "/auth/login" '{"email":"admin@batuara.org.br","password":"admin123"}'
 
 echo -e "\n${BLUE}=== Testes concluídos ===${NC}"

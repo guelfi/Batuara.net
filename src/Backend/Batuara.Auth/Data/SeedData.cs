@@ -22,7 +22,7 @@ namespace Batuara.Auth.Data
             // Create admin user
             var adminUser = new User
             {
-                Email = "admin@casabatuara.org.br",
+                Email = "admin@batuara.org.br",
                 Name = "Administrador",
                 PasswordHash = passwordService.HashPassword("admin123"), // Change in production!
                 Role = UserRole.Admin,

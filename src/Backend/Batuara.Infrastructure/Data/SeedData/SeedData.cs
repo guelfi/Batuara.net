@@ -21,7 +21,7 @@ namespace Batuara.Infrastructure.Data.SeedData
                 var logger = services.GetRequiredService<ILogger<BatuaraDbContext>>();
 
                 // Check if admin user exists
-                var adminUser = await userRepository.GetByEmailAsync("admin@casabatuara.org.br");
+                var adminUser = await userRepository.GetByEmailAsync("admin@batuara.org.br");
                 
                 if (adminUser == null)
                 {
@@ -29,9 +29,9 @@ namespace Batuara.Infrastructure.Data.SeedData
                     
                     // Create admin user
                     var passwordHash = passwordService.HashPassword("admin123");
-                    var user = new User("admin@casabatuara.org.br", passwordHash, "Administrador", UserRole.Admin)
+                    var user = new User("admin@batuara.org.br", passwordHash, "Administrador", UserRole.Admin)
                     {
-                        Email = "admin@casabatuara.org.br",
+                        Email = "admin@batuara.org.br",
                         PasswordHash = passwordHash,
                         Name = "Administrador"
                     };
