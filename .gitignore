@@ -181,4 +181,4 @@ TestResults/
 # Application specific
 appsettings.Development.json
 appsettings.Production.json
-connectionstrings.json
+connectionstrings.json.cursor/
