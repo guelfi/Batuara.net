@@ -12,8 +12,8 @@ ENV REACT_APP_API_URL=${REACT_APP_API_URL}
 # Copia arquivos de dependências
 COPY ${APP_PATH}/package*.json ./
 
-# Instala dependências
-RUN npm ci
+# Instala dependências (npm install gera package-lock se não existir)
+RUN npm install --legacy-peer-deps
 
 # Copia código fonte
 COPY ${APP_PATH}/ ./
