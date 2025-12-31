@@ -64,13 +64,13 @@ class ApiService {
             if (refreshToken) {
               const response = await this.refreshToken(refreshToken);
               const newToken = response.data.data.token;
-              
+
               // Atualizar token no localStorage
               localStorage.setItem('authToken', newToken);
-              
+
               // Processar requisições pendentes
               this.processQueue(null, newToken);
-              
+
               // Tentar novamente a requisição original
               if (originalRequest) {
                 originalRequest.headers.Authorization = `Bearer ${newToken}`;
@@ -83,13 +83,13 @@ class ApiService {
             // Se falhar ao atualizar o token, limpar dados e redirecionar para login
             this.processQueue(refreshError, null);
             this.clearAuthData();
-            window.location.href = '/login';
+            window.location.href = '/batuara-admin/login';
             return Promise.reject(refreshError);
           } finally {
             this.isRefreshing = false;
           }
         }
-        
+
         return Promise.reject(error);
       }
     );
@@ -124,7 +124,7 @@ class ApiService {
         prom.resolve(token);
       }
     });
-    
+
     this.failedQueue = [];
   }
 
