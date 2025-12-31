@@ -84,11 +84,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
-      } catch (_) {}
+      } catch (_) { }
       setUser(null);
       document.cookie = 'token=; Max-Age=0; path=/';
       document.cookie = 'session=; Max-Age=0; path=/';
-      window.location.href = '/login';
+      window.location.href = '/batuara-admin/login';
     }
   };
 
@@ -174,7 +174,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
-      } catch (_) {}
+      } catch (_) { }
       setUser(null);
       document.cookie = 'token=; Max-Age=0; path=/';
       document.cookie = 'session=; Max-Age=0; path=/';
