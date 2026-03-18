@@ -1,8 +1,11 @@
 name: CD - Deploy to OCI
 
 on:
-  push:
+  # Only deploy after CI passes on master
+  workflow_run:
+    workflows: ["CI - Build & Validate"]
     branches: [master]
+    types: [completed]
   workflow_dispatch:
 
 # Prevent concurrent deployments
@@ -14,8 +17,11 @@ jobs:
   deploy:
     name: Deploy to Oracle Cloud
     runs-on: ubuntu-latest
-    # Only deploy on direct pushes to master (merged PRs), not on PR builds
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    # Only deploy if CI succeeded (or manual trigger)
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'master')
     environment: production
 
     steps:
@@ -35,19 +41,25 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
+          SCP_CMD="scp -i ~/.ssh/oci_key -o StrictHostKeyChecking=no"
           SSH_CMD="ssh -i ~/.ssh/oci_key -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST}"
 
           # Upload deploy script
-          scp -i ~/.ssh/oci_key -o StrictHostKeyChecking=no \
-            scripts/ci/deploy-rolling.sh \
-            ${OCI_USER}@${OCI_HOST}:/tmp/deploy-rolling.sh
+          $SCP_CMD scripts/ci/deploy-rolling.sh ${OCI_USER}@${OCI_HOST}:/tmp/deploy-rolling.sh
 
-          # Execute deploy with environment variables
+          # Write secrets to a temporary env file and upload it (safer than shell interpolation)
+          TMPENV=$(mktemp)
+          printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD" > "$TMPENV"
+          printf 'JWT_SECRET=%s\n' "$JWT_SECRET" >> "$TMPENV"
+          printf 'GITHUB_SHA=%s\n' "$GITHUB_SHA" >> "$TMPENV"
+          $SCP_CMD "$TMPENV" ${OCI_USER}@${OCI_HOST}:/tmp/deploy-env
+          rm -f "$TMPENV"
+
+          # Execute deploy sourcing the env file
           $SSH_CMD "chmod +x /tmp/deploy-rolling.sh && \
-            DB_PASSWORD='${DB_PASSWORD}' \
-            JWT_SECRET='${JWT_SECRET}' \
-            GITHUB_SHA='${GITHUB_SHA}' \
-            /tmp/deploy-rolling.sh"
+            set -a && source /tmp/deploy-env && set +a && \
+            /tmp/deploy-rolling.sh; \
+            EXIT_CODE=\$?; rm -f /tmp/deploy-env /tmp/deploy-rolling.sh; exit \$EXIT_CODE"
 
       - name: Verify deployment
         env:
@@ -64,7 +76,7 @@ jobs:
 
           echo ""
           echo "=== Health Check ==="
-          $SSH_CMD "curl -sf http://localhost:8080/health || echo 'API health check failed (may need more time)'"
+          $SSH_CMD "curl -sf http://localhost:3003/health || echo 'API health check failed (may need more time)'"
 
       - name: Cleanup SSH key
         if: always()
