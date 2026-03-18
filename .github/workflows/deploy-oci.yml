@@ -27,24 +27,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup SSH key
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.OCI_SSH_KEY }}
+
+      - name: Add OCI host to known_hosts
+        run: ssh-keyscan -H ${{ secrets.OCI_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Validate SSH connection
+        env:
+          OCI_HOST: ${{ secrets.OCI_HOST }}
+          OCI_USER: ${{ secrets.OCI_USER }}
         run: |
-          mkdir -p ~/.ssh
-          # Support both base64-encoded and plain-text SSH keys
-          # Try base64 decode first; if it fails, use the value as-is
-          echo "${{ secrets.OCI_SSH_KEY }}" | base64 -d > /tmp/ssh_test 2>/dev/null
-          if [ $? -eq 0 ] && head -1 /tmp/ssh_test | grep -q "BEGIN"; then
-            mv /tmp/ssh_test ~/.ssh/oci_key
-            echo "SSH key decoded from base64"
-          else
-            rm -f /tmp/ssh_test
-            printf '%s\n' "${{ secrets.OCI_SSH_KEY }}" > ~/.ssh/oci_key
-            echo "SSH key used as plain text"
-          fi
-          # Strip Windows carriage returns (\r) that cause "error in libcrypto"
-          sed -i 's/\r$//' ~/.ssh/oci_key
-          chmod 600 ~/.ssh/oci_key
-          ssh-keyscan -H ${{ secrets.OCI_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST} "echo 'SSH connection OK'"
 
       - name: Deploy to OCI server
         env:
@@ -53,8 +49,8 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
-          SCP_CMD="scp -i ~/.ssh/oci_key -o StrictHostKeyChecking=no"
-          SSH_CMD="ssh -i ~/.ssh/oci_key -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST}"
+          SCP_CMD="scp -o StrictHostKeyChecking=no"
+          SSH_CMD="ssh -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST}"
 
           # Upload deploy script
           $SCP_CMD scripts/ci/deploy-rolling.sh ${OCI_USER}@${OCI_HOST}:/tmp/deploy-rolling.sh
@@ -78,7 +74,7 @@ jobs:
           OCI_HOST: ${{ secrets.OCI_HOST }}
           OCI_USER: ${{ secrets.OCI_USER }}
         run: |
-          SSH_CMD="ssh -i ~/.ssh/oci_key -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST}"
+          SSH_CMD="ssh -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST}"
 
           echo "Waiting 60s for containers to stabilize..."
           sleep 60
@@ -89,7 +85,3 @@ jobs:
           echo ""
           echo "=== Health Check ==="
           $SSH_CMD "curl -sf http://localhost:3003/health || echo 'API health check failed (may need more time)'"
-
-      - name: Cleanup SSH key
-        if: always()
-        run: rm -f ~/.ssh/oci_key
