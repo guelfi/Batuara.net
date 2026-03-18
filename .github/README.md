@@ -34,7 +34,7 @@ Configure em: **Settings > Secrets and variables > Actions**
 
 | Secret | Descricao | Exemplo |
 |--------|-----------|---------|
-| `OCI_SSH_KEY` | Chave SSH privada para acesso ao servidor | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
+| `OCI_SSH_KEY` | Chave SSH privada (base64-encoded recomendado, ver abaixo) | Ver instrucoes abaixo |
 | `OCI_HOST` | IP publico do servidor Oracle Cloud | `129.153.86.168` |
 | `OCI_USER` | Usuario SSH do servidor | `ubuntu` ou `opc` |
 | `DB_PASSWORD` | Senha do PostgreSQL em producao | Gerar com `openssl rand -base64 32` |
@@ -47,6 +47,24 @@ Configure em: **Settings > Secrets and variables > Actions**
 3. Clique em **New repository secret**
 4. Adicione cada secret da tabela acima
 5. Opcional: crie um Environment chamado `production` para protecao extra
+
+### OCI_SSH_KEY - Formato Recomendado (Base64)
+
+O GitHub Secrets pode corromper chaves SSH (newlines removidos). Use base64:
+
+**Linux/macOS/WSL:**
+```bash
+base64 -w 0 < sua_chave.key
+```
+
+**PowerShell (Windows):**
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("sua_chave.key"))
+```
+
+Copie a saida (texto longo em uma linha) e cole como valor do secret `OCI_SSH_KEY`.
+
+O workflow detecta automaticamente se a chave esta em base64 ou texto plano.
 
 ## Estrutura do Deploy Rolling
 
@@ -74,7 +92,7 @@ Para triggerar um deploy manualmente:
 ```bash
 ssh usuario@servidor
 docker ps --format 'table {{.Names}}\t{{.Status}}' | grep batuara
-curl -sf http://localhost:8080/health
+curl -sf http://localhost:3003/health
 ```
 
 ### Health check completo
