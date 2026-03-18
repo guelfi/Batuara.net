@@ -18,6 +18,13 @@ class ApiService {
     this.setupInterceptors();
   }
 
+  // URLs that should NOT trigger the 401 refresh interceptor
+  // to avoid deadlocks (refresh calling itself)
+  private isAuthEndpoint(url: string | undefined): boolean {
+    if (!url) return false;
+    return url.includes('/auth/refresh') || url.includes('/auth/verify') || url.includes('/auth/login');
+  }
+
   private setupInterceptors() {
     // Request interceptor para adicionar token de autenticação
     this.api.interceptors.request.use(
@@ -39,8 +46,8 @@ class ApiService {
       async (error: AxiosError) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-        // Se o token expirou
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Se o token expirou (skip auth endpoints to avoid deadlock)
+        if (error.response?.status === 401 && !originalRequest._retry && !this.isAuthEndpoint(originalRequest.url)) {
           if (this.isRefreshing) {
             // Se já estamos atualizando o token, enfileiramos a requisição
             return new Promise((resolve, reject) => {
