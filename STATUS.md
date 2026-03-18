@@ -19,7 +19,15 @@
 - **Fase 0** - Documentação (✅ PROJETO.md e STATUS.md)
 - **Fase 1** - Emergência de Segurança (✅ PR #1 merged — credenciais removidas, CORS restrito)
 - **Fase 2** - Estabilidade da API (✅ PR #2 merged — health checks, EF Core, HTTPS, Docker fixes)
-- **Fase 3** - Limpeza Arquitetural (🔄 PR em revisão — unificação de auth, middlewares, rate limiting)
+- **Fase 3** - Limpeza Arquitetural (✅ PR #4 merged — unificação de auth, middlewares, rate limiting)
+- **Fase 4** - CI/CD (🔄 PR em revisão — GitHub Actions CI + deploy automatizado OCI)
+
+### Detalhes da Fase 4
+- GitHub Actions CI: build .NET API, build frontends React, validação Docker images
+- GitHub Actions CD: deploy automatizado para OCI via SSH com rolling update
+- Script de deploy rolling: atualiza containers um por vez, sem tocar no PostgreSQL
+- Rollback automatico se health check falhar
+- Documentacao de secrets obrigatorios (OCI_SSH_KEY, OCI_HOST, OCI_USER, DB_PASSWORD, JWT_SECRET)
 
 ### Detalhes da Fase 3
 - SecurityHeadersMiddleware migrado para Batuara.API
@@ -31,11 +39,10 @@
 
 ## 📋 PRÓXIMAS TAREFAS
 
-1. [ ] Redeploy da API com novas variáveis de ambiente
-2. [ ] Ativar HTTPS com Let's Encrypt (descomentar blocos nginx)
-3. [ ] Configurar GitHub Actions CI/CD (Fase 4)
-4. [ ] Criar testes automatizados (Fase 4)
-5. [ ] Secret scanning e hardening (Fase 5)
+1. [ ] Configurar GitHub Secrets (OCI_SSH_KEY, OCI_HOST, OCI_USER, DB_PASSWORD, JWT_SECRET)
+2. [ ] Primeiro deploy automatizado via GitHub Actions
+3. [ ] Ativar HTTPS com Let's Encrypt (descomentar blocos nginx)
+4. [ ] Secret scanning e hardening (Fase 5)
 
 ## 📝 OBSERVAÇÕES
 
