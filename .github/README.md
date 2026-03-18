@@ -34,7 +34,7 @@ Configure em: **Settings > Secrets and variables > Actions**
 
 | Secret | Descricao | Exemplo |
 |--------|-----------|---------|
-| `OCI_SSH_KEY` | Chave SSH privada (texto plano, incluindo BEGIN/END) | Conteudo completo do arquivo `.key` |
+| `OCI_SSH_PRIVATE_KEY` | Chave SSH privada (texto plano, incluindo BEGIN/END) | Conteudo completo do arquivo `.key` |
 | `OCI_HOST` | IP publico do servidor Oracle Cloud | `129.153.86.168` |
 | `OCI_USER` | Usuario SSH do servidor | `ubuntu` ou `opc` |
 | `DB_PASSWORD` | Senha do PostgreSQL em producao | Gerar com `openssl rand -base64 32` |
@@ -48,7 +48,7 @@ Configure em: **Settings > Secrets and variables > Actions**
 4. Adicione cada secret da tabela acima
 5. Opcional: crie um Environment chamado `production` para protecao extra
 
-### OCI_SSH_KEY - Como Configurar
+### OCI_SSH_PRIVATE_KEY - Como Configurar
 
 Cole o conteudo completo da chave SSH privada, incluindo as linhas
 `-----BEGIN ... PRIVATE KEY-----` e `-----END ... PRIVATE KEY-----`.
