@@ -208,6 +208,125 @@ namespace Batuara.Infrastructure.Auth.Services
             return user != null && user.IsActive;
         }
 
+        public async Task<UserDto> UpdateUserProfileAsync(int userId, UpdateUserRequest request)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("Update profile attempt for non-existent user: {UserId}", userId);
+                throw new KeyNotFoundException("User not found");
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Email) && request.Email != user.Email)
+            {
+                var existingUser = await _userRepository.GetByEmailAsync(request.Email);
+                if (existingUser != null)
+                {
+                    throw new InvalidOperationException("Email is already in use");
+                }
+                user.UpdateEmail(request.Email);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Name))
+            {
+                user.UpdateName(request.Name);
+            }
+
+            await _userRepository.UpdateAsync(user);
+            _logger.LogInformation("User profile updated: {Email}", user.Email);
+
+            return _mapper.Map<UserDto>(user);
+        }
+
+        public async Task<bool> ChangePasswordAsync(int userId, ChangePasswordRequest request)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("Change password attempt for non-existent user: {UserId}", userId);
+                return false;
+            }
+
+            if (!_passwordService.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+            {
+                _logger.LogWarning("Incorrect current password for user: {Email}", user.Email);
+                throw new UnauthorizedAccessException("Current password is incorrect");
+            }
+
+            if (!_passwordService.ValidatePasswordStrength(request.NewPassword))
+            {
+                _logger.LogWarning("Weak new password attempt for user: {Email}", user.Email);
+                throw new InvalidOperationException("New password does not meet security requirements");
+            }
+
+            var newHash = _passwordService.HashPassword(request.NewPassword);
+            user.UpdatePassword(newHash);
+            await _userRepository.UpdateAsync(user);
+
+            _logger.LogInformation("Password changed for user: {Email}", user.Email);
+            return true;
+        }
+
+        public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
+        {
+            var users = await _userRepository.GetAllAsync();
+            return users.Select(u => _mapper.Map<UserDto>(u));
+        }
+
+        public async Task<UserDto> AdminUpdateUserAsync(int userId, AdminUpdateUserRequest request)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("Admin update attempt for non-existent user: {UserId}", userId);
+                throw new KeyNotFoundException("User not found");
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Email) && request.Email != user.Email)
+            {
+                var existingUser = await _userRepository.GetByEmailAsync(request.Email);
+                if (existingUser != null)
+                {
+                    throw new InvalidOperationException("Email is already in use");
+                }
+                user.UpdateEmail(request.Email);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Name))
+            {
+                user.UpdateName(request.Name);
+            }
+
+            if (request.Role.HasValue)
+            {
+                user.UpdateRole(request.Role.Value);
+            }
+
+            if (request.IsActive.HasValue)
+            {
+                user.SetActive(request.IsActive.Value);
+            }
+
+            await _userRepository.UpdateAsync(user);
+            _logger.LogInformation("Admin updated user: {Email}", user.Email);
+
+            return _mapper.Map<UserDto>(user);
+        }
+
+        public async Task<bool> DeleteUserAsync(int userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("Delete attempt for non-existent user: {UserId}", userId);
+                return false;
+            }
+
+            await _userRepository.DeleteAsync(userId);
+            _logger.LogInformation("User deleted: {Email}", user.Email);
+            return true;
+        }
+
         private async Task<User> GetUserByRefreshTokenAsync(string refreshToken)
         {
             var users = await _userRepository.GetAllAsync();

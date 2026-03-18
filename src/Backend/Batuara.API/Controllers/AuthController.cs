@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Batuara.Application.Auth.Models;
 using Batuara.Application.Auth.Services;
 using Microsoft.Extensions.Logging;
@@ -21,6 +22,7 @@ namespace Batuara.API.Controllers
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting("login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
@@ -59,6 +61,7 @@ namespace Batuara.API.Controllers
         }
 
         [HttpPost("refresh")]
+        [EnableRateLimiting("refresh")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<LoginResponse>> RefreshToken()
@@ -238,6 +241,70 @@ namespace Batuara.API.Controllers
             }
         }
 
+        [HttpPut("me")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<UserDto>> UpdateCurrentUser([FromBody] UpdateUserRequest request)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null)
+                    return Unauthorized(new { success = false, message = "Invalid token" });
+
+                var user = await _authService.UpdateUserProfileAsync(userId.Value, request);
+                return Ok(new { success = true, data = user });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { success = false, message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating user profile");
+                return StatusCode(500, new { success = false, message = "An error occurred while updating profile" });
+            }
+        }
+
+        [HttpPut("change-password")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null)
+                    return Unauthorized(new { success = false, message = "Invalid token" });
+
+                var result = await _authService.ChangePasswordAsync(userId.Value, request);
+                if (!result)
+                    return NotFound(new { success = false, message = "User not found" });
+
+                return Ok(new { success = true, message = "Password changed successfully" });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error changing password");
+                return StatusCode(500, new { success = false, message = "An error occurred while changing password" });
+            }
+        }
+
         [HttpGet("verify")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -245,6 +312,14 @@ namespace Batuara.API.Controllers
         public IActionResult VerifyToken()
         {
             return Ok(new { message = "Token is valid", user = new { id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value } });
+        }
+
+        private int? GetCurrentUserId()
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var id))
+                return null;
+            return id;
         }
 
         private string GetIpAddress()
