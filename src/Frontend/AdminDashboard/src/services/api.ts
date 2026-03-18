@@ -22,7 +22,7 @@ class ApiService {
   // to avoid deadlocks (refresh calling itself)
   private isAuthEndpoint(url: string | undefined): boolean {
     if (!url) return false;
-    return url.includes('/auth/refresh') || url.includes('/auth/verify') || url.includes('/auth/login');
+    return url.includes('/auth/refresh') || url.includes('/auth/login');
   }
 
   private setupInterceptors() {
