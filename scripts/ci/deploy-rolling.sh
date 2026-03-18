@@ -106,8 +106,7 @@ rollback() {
         git checkout "$PREVIOUS_COMMIT" -- . 2>/dev/null || true
 
         # Rebuild all services (except db)
-        docker compose -f "$COMPOSE_FILE" up -d --build --no-deps publicwebsite admindashboard api 2>/dev/null || \
-        docker-compose -f "$COMPOSE_FILE" up -d --build --no-deps publicwebsite admindashboard api 2>/dev/null || true
+        $COMPOSE_CMD --env-file .env.production -f "$COMPOSE_FILE" up -d --build --no-deps publicwebsite admindashboard api 2>/dev/null || true
 
         log_warning "Rollback attempted. Check container status manually."
     else
@@ -212,7 +211,7 @@ log_info "Step 4: Rebuilding and restarting API (rolling)..."
 API_CONTAINER="${COMPOSE_PROJECT_NAME:-batuara-net}-api"
 $COMPOSE_CMD --env-file .env.production -f "$COMPOSE_FILE" up -d --build --no-deps api
 
-if ! wait_for_healthy "$API_CONTAINER" "http://localhost:8080/health" $HEALTH_TIMEOUT; then
+if ! wait_for_healthy "$API_CONTAINER" "http://localhost:${API_PORT:-3003}/health" $HEALTH_TIMEOUT; then
     log_error "API failed health check!"
     rollback
 fi
@@ -249,15 +248,18 @@ docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -i batuara
 
 echo ""
 echo "=== Health Checks ==="
-for check in "http://localhost:8080/health:API" "http://localhost:3000:PublicWebsite" "http://localhost:3001:AdminDashboard"; do
-    url=$(echo "$check" | cut -d: -f1-2)
-    name=$(echo "$check" | cut -d: -f3)
+check_endpoint() {
+    local url=$1
+    local name=$2
     if curl -sf --max-time 5 "$url" > /dev/null 2>&1; then
         log_success "$name: OK"
     else
         log_warning "$name: Not responding (may need more time)"
     fi
-done
+}
+check_endpoint "http://localhost:${API_PORT:-3003}/health" "API"
+check_endpoint "http://localhost:${PUBLIC_WEBSITE_PORT:-3000}" "PublicWebsite"
+check_endpoint "http://localhost:${ADMIN_DASHBOARD_PORT:-3001}" "AdminDashboard"
 
 # --- Cleanup ---
 log_info "Cleaning up old Docker images..."
