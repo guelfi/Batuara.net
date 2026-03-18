@@ -7,7 +7,7 @@ services:
     environment:
       - POSTGRES_DB=CasaBatuara
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=@5ST73EA4x
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-CHANGE_ME_SET_SECURE_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
