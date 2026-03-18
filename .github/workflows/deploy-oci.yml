@@ -30,7 +30,14 @@ jobs:
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.OCI_SSH_KEY }}" > ~/.ssh/oci_key
+          # Support both base64-encoded and plain-text SSH keys
+          # Try base64 decode first; if it fails, use the value as-is
+          if echo "${{ secrets.OCI_SSH_KEY }}" | base64 -d > ~/.ssh/oci_key 2>/dev/null && head -1 ~/.ssh/oci_key | grep -q "BEGIN"; then
+            echo "SSH key decoded from base64"
+          else
+            echo "${{ secrets.OCI_SSH_KEY }}" > ~/.ssh/oci_key
+            echo "SSH key used as plain text"
+          fi
           chmod 600 ~/.ssh/oci_key
           ssh-keyscan -H ${{ secrets.OCI_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
