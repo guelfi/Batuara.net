@@ -32,12 +32,17 @@ jobs:
           mkdir -p ~/.ssh
           # Support both base64-encoded and plain-text SSH keys
           # Try base64 decode first; if it fails, use the value as-is
-          if echo "${{ secrets.OCI_SSH_KEY }}" | base64 -d > ~/.ssh/oci_key 2>/dev/null && head -1 ~/.ssh/oci_key | grep -q "BEGIN"; then
+          echo "${{ secrets.OCI_SSH_KEY }}" | base64 -d > /tmp/ssh_test 2>/dev/null
+          if [ $? -eq 0 ] && head -1 /tmp/ssh_test | grep -q "BEGIN"; then
+            mv /tmp/ssh_test ~/.ssh/oci_key
             echo "SSH key decoded from base64"
           else
-            echo "${{ secrets.OCI_SSH_KEY }}" > ~/.ssh/oci_key
+            rm -f /tmp/ssh_test
+            printf '%s\n' "${{ secrets.OCI_SSH_KEY }}" > ~/.ssh/oci_key
             echo "SSH key used as plain text"
           fi
+          # Strip Windows carriage returns (\r) that cause "error in libcrypto"
+          sed -i 's/\r$//' ~/.ssh/oci_key
           chmod 600 ~/.ssh/oci_key
           ssh-keyscan -H ${{ secrets.OCI_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
