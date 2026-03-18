@@ -13,5 +13,14 @@ namespace Batuara.Application.Auth.Services
         Task<User?> GetUserByEmailAsync(string email);
         Task<User?> GetUserByIdAsync(int id);
         Task<bool> ValidateTokenAsync(string token);
+
+        // User profile management
+        Task<UserDto> UpdateUserProfileAsync(int userId, UpdateUserRequest request);
+        Task<bool> ChangePasswordAsync(int userId, ChangePasswordRequest request);
+
+        // Admin user management
+        Task<IEnumerable<UserDto>> GetAllUsersAsync();
+        Task<UserDto> AdminUpdateUserAsync(int userId, AdminUpdateUserRequest request);
+        Task<bool> DeleteUserAsync(int userId);
     }
 }

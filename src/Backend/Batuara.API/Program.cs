@@ -1,10 +1,13 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Batuara.Application.Auth.Services;
 using Batuara.Application.Common.Mappings;
+using Batuara.API.Middleware;
 using Batuara.Domain.Repositories;
 using Batuara.Infrastructure.Auth.Services;
 using Batuara.Infrastructure.Data;
@@ -173,6 +176,39 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+// Configure Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Login endpoint: 5 requests per minute
+    options.AddFixedWindowLimiter("login", opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+
+    // Token refresh: 10 requests per minute
+    options.AddFixedWindowLimiter("refresh", opt =>
+    {
+        opt.PermitLimit = 10;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+
+    // General API: 100 requests per minute per IP
+    options.AddFixedWindowLimiter("general", opt =>
+    {
+        opt.PermitLimit = 100;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 2;
+    });
+});
+
 // Configure Health Checks
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddHealthChecks()
@@ -206,10 +242,15 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
+// Security headers
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
 app.UseHttpsRedirection();
 app.UseSerilogRequestLogging();
 
 app.UseCors("AllowProxy");
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
