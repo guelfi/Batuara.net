@@ -178,7 +178,19 @@ TestResults/
 *.backup
 *.tmp
 
+# Security - Private keys and certificates
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Production environment files with secrets
+.env.production
+
 # Application specific
 appsettings.Development.json
 appsettings.Production.json
-connectionstrings.json.cursor/
+connectionstrings.json
+
+# Cursor IDE
+.cursor/

@@ -21,7 +21,7 @@ namespace Batuara.Infrastructure.Data
             
             // Use connection string from environment or default
             var connectionString = Environment.GetEnvironmentVariable("BATUARA_CONNECTION_STRING") 
-                ?? "Host=localhost;Database=CasaBatuara;Username=postgres;Password=@5ST73EA4x";
+                ?? "Host=localhost;Database=CasaBatuara;Username=postgres;Password=CHANGE_ME_USE_ENV_VAR";
 
             optionsBuilder.UseNpgsql(connectionString, options =>
             {
@@ -35,8 +35,11 @@ namespace Batuara.Infrastructure.Data
             optionsBuilder.EnableDetailedErrors();
             optionsBuilder.EnableSensitiveDataLogging();
 
+            // Mask password in log output
+            var maskedConnectionString = System.Text.RegularExpressions.Regex.Replace(
+                connectionString, @"Password=[^;]*", "Password=***");
             Log.Information("Creating DbContext for design-time with connection: {ConnectionString}", 
-                connectionString.Replace("Password=@5ST73EA4x", "Password=***"));
+                maskedConnectionString);
 
             return new BatuaraDbContext(optionsBuilder.Options);
         }
