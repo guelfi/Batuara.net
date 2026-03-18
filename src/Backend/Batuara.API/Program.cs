@@ -13,6 +13,8 @@ using Serilog;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,14 +38,26 @@ builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
-// Configure CORS for Nginx Proxy
+// Configure CORS using allowed origins from configuration
+var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowProxy", policy =>
     {
-        policy.AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
+        }
+        else
+        {
+            // Fallback for development only
+            policy.AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        }
     });
 });
 
@@ -137,6 +151,15 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+// Configure Health Checks
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddHealthChecks()
+    .AddNpgSql(
+        connectionString ?? throw new InvalidOperationException("DefaultConnection not configured"),
+        name: "postgresql",
+        timeout: TimeSpan.FromSeconds(5),
+        tags: new[] { "db", "ready" });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
@@ -171,7 +194,26 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+// Health check endpoints
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var result = JsonSerializer.Serialize(new
+        {
+            status = report.Status.ToString(),
+            timestamp = DateTime.UtcNow,
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                duration = e.Value.Duration.TotalMilliseconds
+            })
+        });
+        await context.Response.WriteAsync(result);
+    }
+});
 
 // Redirect root to Swagger
 app.MapGet("/", async context =>
