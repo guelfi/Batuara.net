@@ -63,7 +63,29 @@ builder.Services.AddCors(options =>
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var key = Encoding.ASCII.GetBytes(jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT Secret not configured"));
+var jwtSecret = jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT Secret not configured");
+
+// Validate JWT Secret strength
+if (jwtSecret.Contains("CHANGE_ME") || jwtSecret.Contains("your-256-bit-secret") || jwtSecret == string.Empty)
+{
+    if (builder.Environment.IsProduction())
+    {
+        throw new InvalidOperationException(
+            "JWT Secret is a placeholder. Set a strong secret via environment variable JwtSettings__Secret or JWT_SECRET. " +
+            "Generate one with: openssl rand -base64 64");
+    }
+    Log.Warning("JWT Secret is a placeholder. This is acceptable in Development but MUST be changed in Production. " +
+        "Generate a strong secret with: openssl rand -base64 64");
+}
+
+if (jwtSecret.Length < 32)
+{
+    throw new InvalidOperationException(
+        $"JWT Secret must be at least 32 characters long (current: {jwtSecret.Length}). " +
+        "Generate a strong secret with: openssl rand -base64 64");
+}
+
+var key = Encoding.ASCII.GetBytes(jwtSecret);
 
 builder.Services.AddAuthentication(options =>
 {

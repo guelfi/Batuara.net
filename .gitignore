@@ -187,8 +187,8 @@ TestResults/
 # Production environment files with secrets
 .env.production
 
-# Application specific
-appsettings.Development.json
+# Application specific - Production configs with real secrets
+# NOTE: appsettings.Development.json is tracked intentionally (contains dev-only secrets)
 appsettings.Production.json
 connectionstrings.json
 
