@@ -1,175 +1,92 @@
-# 🚀 GitHub Actions - Deploy Automático para OCI
+# CI/CD - GitHub Actions para Batuara.net
 
-> **Baseado nas práticas bem-sucedidas do projeto MobileMed**
+## Workflows
 
-Este sistema de deploy automático foi desenvolvido utilizando as melhores práticas identificadas no projeto MobileMed, que possui uma implementação robusta e confiável de GitHub Actions para Oracle Cloud Infrastructure.
+### 1. `ci.yml` - Integracao Continua
+**Trigger**: Push e Pull Request para `master`
 
-Este diretório contém os workflows do GitHub Actions para automatizar o processo de CI/CD do projeto Batuara.net.
+**Jobs**:
+1. **build-api** - Restore, build e publish do .NET 8 API
+2. **build-public-website** - npm ci + build do React (PublicWebsite)
+3. **build-admin-dashboard** - npm ci + build do React (AdminDashboard)
+4. **docker-build** - Valida que as 3 imagens Docker constroem corretamente
 
-## 📋 Workflows Disponíveis
-
-### 1. `deploy-oci.yml` - Deploy para Produção
-**Trigger**: Push para `main` ou `master`
-
-**Etapas**:
-1. **Build e Testes** - Compila e testa backend (.NET) e frontend (React)
-2. **Build de Imagens** - Cria imagens Docker e publica no GitHub Container Registry
-3. **Deploy na OCI** - Faz deploy automático no servidor Oracle Cloud
-4. **Notificação** - Informa o status do deploy
-
-### 2. `ci.yml` - Integração Contínua
-**Trigger**: Pull requests e pushes para branches de desenvolvimento
+### 2. `deploy-oci.yml` - Deploy para Oracle Cloud
+**Trigger**: Push para `master` (merge de PRs) ou dispatch manual
 
 **Etapas**:
-1. **Lint e Formatação** - Verifica padrões de código
-2. **Scan de Segurança** - Analisa vulnerabilidades com Trivy
-3. **Testes Backend** - Executa testes unitários e de integração
-4. **Testes Frontend** - Executa testes dos componentes React
-5. **Build de Teste** - Valida se as imagens Docker são criadas corretamente
-6. **Validação de Configuração** - Verifica arquivos de deploy
+1. Configura chave SSH para acesso ao servidor OCI
+2. Envia script de deploy rolling para o servidor
+3. Executa deploy com rolling update (um container por vez)
+4. Verifica health checks apos deploy
+5. Limpa chave SSH
 
-## 🔐 Configuração de Secrets
+**Protecoes**:
+- Concurrency lock: apenas um deploy por vez
+- Database NUNCA e tocado/reconstruido
+- Rolling update: containers sao atualizados individualmente
+- Rollback automatico se API falhar health check
+- Health check com timeout de 120s para cada servico
 
-Para que os workflows funcionem corretamente, você precisa configurar os seguintes secrets no GitHub:
+## Secrets Obrigatorios
 
-### Secrets Obrigatórios
+Configure em: **Settings > Secrets and variables > Actions**
 
-1. **`OCI_SERVER_IP`** - IP público do servidor Oracle Cloud
-   ```
-   Exemplo: 123.456.789.012
-   ```
+| Secret | Descricao | Exemplo |
+|--------|-----------|---------|
+| `OCI_SSH_KEY` | Chave SSH privada para acesso ao servidor | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
+| `OCI_HOST` | IP publico do servidor Oracle Cloud | `129.153.86.168` |
+| `OCI_USER` | Usuario SSH do servidor | `ubuntu` ou `opc` |
+| `DB_PASSWORD` | Senha do PostgreSQL em producao | Gerar com `openssl rand -base64 32` |
+| `JWT_SECRET` | Secret para assinatura JWT (min 32 chars) | Gerar com `openssl rand -base64 64` |
 
-2. **`OCI_SERVER_USER`** - Usuário SSH do servidor (geralmente `ubuntu` ou `opc`)
-   ```
-   Exemplo: ubuntu
-   ```
+## Como Configurar
 
-3. **`OCI_SSH_PRIVATE_KEY`** - Chave SSH privada para acesso ao servidor
-   ```
-   -----BEGIN OPENSSH PRIVATE KEY-----
-   [conteúdo da chave privada]
-   -----END OPENSSH PRIVATE KEY-----
-   ```
-
-4. **`DB_PASSWORD`** - Senha do banco de dados PostgreSQL
-   ```
-   Exemplo: senha_segura_postgres
-   ```
-
-### Secrets Opcionais
-
-5. **`OCI_SSH_PORT`** - Porta SSH (padrão: 22)
-   ```
-   Exemplo: 22
-   ```
-
-6. **`GITHUB_TOKEN`** - Token para acesso ao GitHub Container Registry (configurado automaticamente)
-
-## ⚙️ Como Configurar os Secrets
-
-1. Acesse seu repositório no GitHub
-2. Vá em **Settings** → **Secrets and variables** → **Actions**
+1. Acesse o repositorio no GitHub
+2. Va em **Settings** > **Secrets and variables** > **Actions**
 3. Clique em **New repository secret**
-4. Adicione cada secret com o nome exato listado acima
+4. Adicione cada secret da tabela acima
+5. Opcional: crie um Environment chamado `production` para protecao extra
 
-## 🏗️ Estrutura do Deploy (Baseado no MobileMed)
+## Estrutura do Deploy Rolling
 
-O deploy automático realiza as seguintes ações no servidor OCI:
-
-1. **Backup Automático** - Cria backup completo do projeto atual com timestamp
-2. **Parada Segura** - Para containers existentes com timeout configurável
-3. **Atualização de Código** - Clona a versão mais recente via Git
-4. **Build e Registry** - Baixa as imagens Docker do GitHub Container Registry
-5. **Deploy Controlado** - Inicia os serviços com docker-compose
-6. **Health Checks Robustos** - Testa conectividade e funcionalidade com retry
-7. **Rollback Automático** - Restaura versão anterior em caso de falha
-8. **Configuração Nginx** - Atualiza proxy reverso se configurado
-
-## 🌐 Serviços Deployados
-
-Após o deploy bem-sucedido, os seguintes serviços estarão disponíveis:
-
-### Acesso Direto (Portas):
-- **Website Público**: `http://[OCI_SERVER_IP]:3000`
-- **Dashboard Admin**: `http://[OCI_SERVER_IP]:3001`
-- **API Backend**: `http://[OCI_SERVER_IP]:8080`
-
-### Acesso via Nginx (Recomendado):
-- **Website Público**: `http://[OCI_SERVER_IP]/`
-- **Dashboard Admin**: `http://[OCI_SERVER_IP]/admin`
-- **API Backend**: `http://[OCI_SERVER_IP]/api/`
-
-### Health Checks:
-- **API Health**: `http://[OCI_SERVER_IP]:8080/health`
-- **Nginx Status**: `http://[OCI_SERVER_IP]/nginx_status` (se configurado)
-
-## 🔧 Troubleshooting
-
-### Deploy Falhou?
-
-1. **Verifique os logs** do workflow no GitHub Actions
-2. **Acesse o servidor** via SSH e verifique:
-   ```bash
-   cd /home/ubuntu/batuara
-   docker-compose ps
-   docker-compose logs
-   ```
-3. **Execute health check**: `./scripts/oracle/health-check.sh full`
-
-### Problemas Comuns
-
-- **Erro de SSH**: Verifique se a chave privada está no formato OpenSSH correto
-- **Erro de Docker**: Verifique se o Docker está instalado e o usuário tem permissões
-- **Health Check Falha**: O sistema executa rollback automático - verifique backup
-- **Erro de Permissões**: Certifique-se de que o usuário SSH tem permissões para executar Docker
-- **Porta em Uso**: Verifique se as portas 3000, 3001, 8080 estão disponíveis
-
-### Scripts de Diagnóstico (Baseados no MobileMed)
-
-No servidor, você pode usar os scripts de diagnóstico:
-
-```bash
-# Health check completo
-./scripts/oracle/health-check.sh full
-
-# Diagnóstico completo
-./scripts/oracle/diagnose-assets-oracle.sh
-
-# Limpeza de cache
-./scripts/oracle/clear-cache-oracle.sh
-
-# Deploy manual (se necessário)
-./scripts/oracle/oracle-deploy-ready.sh
-
-# Restaurar backup
-cp -r /home/ubuntu/backups/batuara_backup_YYYYMMDD_HHMMSS/* /home/ubuntu/batuara/
+```
+1. git pull (atualiza codigo no servidor)
+2. Verifica se PostgreSQL esta rodando (NAO reconstroi)
+3. Reconstroi e reinicia API -> espera health check OK
+4. Reconstroi e reinicia PublicWebsite -> espera health check OK
+5. Reconstroi e reinicia AdminDashboard -> espera health check OK
+6. Limpeza de imagens Docker antigas
 ```
 
-### Rollback Automático
+Se a API falhar o health check, o deploy faz rollback automatico para o commit anterior.
 
-Em caso de falha nos health checks, o sistema:
-1. Para os novos containers
-2. Restaura o backup anterior automaticamente
-3. Reinicia os serviços da versão estável
-4. Registra logs detalhados da falha
+## Deploy Manual
 
-## 📚 Documentação Adicional
+Para triggerar um deploy manualmente:
+1. Va em **Actions** > **CD - Deploy to OCI**
+2. Clique em **Run workflow**
+3. Selecione a branch `master`
 
-- [Configuração do Servidor OCI](../docs/DEPLOY.md)
-- [Scripts Oracle](../docs/ORACLE_DEPLOY_README.md)
-- [Guia de Desenvolvimento](../docs/GUIA_DESENVOLVIMENTO.md)
+## Troubleshooting
 
-## 🤝 Contribuindo
+### Verificar status no servidor
+```bash
+ssh usuario@servidor
+docker ps --format 'table {{.Names}}\t{{.Status}}' | grep batuara
+curl -sf http://localhost:8080/health
+```
 
-Para contribuir com melhorias nos workflows:
+### Health check completo
+```bash
+cd /var/www/batuara_net/Batuara.net
+./scripts/oracle/health-check.sh full
+```
 
-1. Crie uma branch de feature
-2. Faça suas alterações
-3. Teste localmente quando possível
-4. Abra um Pull Request
-
-Os workflows de CI irão validar automaticamente suas alterações antes do merge.
-
----
-
-**Nota**: Este sistema de deploy foi configurado especificamente para Oracle Cloud Infrastructure. Para outros provedores, ajustes nos workflows podem ser necessários.
+### Rollback manual
+```bash
+cd /var/www/batuara_net/Batuara.net
+git log --oneline -5  # encontrar commit anterior
+git checkout <commit-anterior> -- .
+docker compose -f scripts/docker/docker-compose.production.yml up -d --build --no-deps api publicwebsite admindashboard
+```

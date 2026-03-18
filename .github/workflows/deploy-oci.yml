@@ -1,0 +1,71 @@
+name: CD - Deploy to OCI
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Prevent concurrent deployments
+concurrency:
+  group: deploy-oci
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Oracle Cloud
+    runs-on: ubuntu-latest
+    # Only deploy on direct pushes to master (merged PRs), not on PR builds
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.OCI_SSH_KEY }}" > ~/.ssh/oci_key
+          chmod 600 ~/.ssh/oci_key
+          ssh-keyscan -H ${{ secrets.OCI_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy to OCI server
+        env:
+          OCI_HOST: ${{ secrets.OCI_HOST }}
+          OCI_USER: ${{ secrets.OCI_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: |
+          SSH_CMD="ssh -i ~/.ssh/oci_key -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST}"
+
+          # Upload deploy script
+          scp -i ~/.ssh/oci_key -o StrictHostKeyChecking=no \
+            scripts/ci/deploy-rolling.sh \
+            ${OCI_USER}@${OCI_HOST}:/tmp/deploy-rolling.sh
+
+          # Execute deploy with environment variables
+          $SSH_CMD "chmod +x /tmp/deploy-rolling.sh && \
+            DB_PASSWORD='${DB_PASSWORD}' \
+            JWT_SECRET='${JWT_SECRET}' \
+            GITHUB_SHA='${GITHUB_SHA}' \
+            /tmp/deploy-rolling.sh"
+
+      - name: Verify deployment
+        env:
+          OCI_HOST: ${{ secrets.OCI_HOST }}
+          OCI_USER: ${{ secrets.OCI_USER }}
+        run: |
+          SSH_CMD="ssh -i ~/.ssh/oci_key -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST}"
+
+          echo "Waiting 60s for containers to stabilize..."
+          sleep 60
+
+          echo "=== Container Status ==="
+          $SSH_CMD "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -i batuara || echo 'No batuara containers found'"
+
+          echo ""
+          echo "=== Health Check ==="
+          $SSH_CMD "curl -sf http://localhost:8080/health || echo 'API health check failed (may need more time)'"
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/oci_key
