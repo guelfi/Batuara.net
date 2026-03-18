@@ -18,12 +18,12 @@
 **PostgreSQL Dev:**
 - Database: `batuara_dev`
 - User: `batuara_user`
-- Password: `dev123`
+- Password: *(definida via variável de ambiente `DB_PASSWORD`)*
 
 **PostgreSQL Prod:**
 - Database: `CasaBatuara`
 - User: `batuara`
-- Password: `batuara123`
+- Password: *(definida via variável de ambiente `DB_PASSWORD`)*
 
 ## 🚀 DEPLOY
 
