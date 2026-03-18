@@ -29,15 +29,19 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# Criar diretório de logs
+# Install curl for Docker health checks
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create logs directory
 RUN mkdir -p /app/logs
 
-# Configurar variáveis de ambiente
+# Environment variables
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+# Health check with increased start period for DB migration
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
   CMD curl -f http://localhost:8080/health || exit 1
 
 ENTRYPOINT ["dotnet", "Batuara.API.dll"]
