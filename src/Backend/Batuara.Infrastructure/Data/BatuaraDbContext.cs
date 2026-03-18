@@ -37,13 +37,6 @@ namespace Batuara.Infrastructure.Data
             modelBuilder.HasDefaultSchema("batuara");
         }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            // Suppress pending model changes warning temporarily
-            optionsBuilder.ConfigureWarnings(warnings => 
-                warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
-        }
-
         public override int SaveChanges()
         {
             UpdateAuditFields();
