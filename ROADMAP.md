@@ -389,7 +389,7 @@ Batuara.net/
 ├── Dockerfile.api                  # Build da API .NET
 ├── Dockerfile.frontend             # Build do Public Website
 ├── Dockerfile.admin                # Build do Admin Dashboard
-└── Correcoes.md                    # Este documento
+└── ROADMAP.md                      # Este documento
 ```
 
 ### Stack Tecnológica
