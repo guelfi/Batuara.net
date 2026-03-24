@@ -105,7 +105,7 @@ Batuara.net/
 ├── Dockerfile.api                    # Build da API .NET
 ├── Dockerfile.frontend               # Build do Public Website
 ├── Dockerfile.admin                  # Build do Admin Dashboard
-├── Correcoes.md                      # Registro de correcoes e roadmap
+├── ROADMAP.md                        # Registro de correcoes, melhorias e roadmap
 └── docs/                             # Documentacao adicional
 ```
 
@@ -353,8 +353,7 @@ git push origin master
 
 | Documento | Descricao |
 |-----------|-----------|
-| [Correcoes.md](Correcoes.md) | Registro completo de correcoes, melhorias e roadmap |
-| [docs/STATUS-PROJETO.md](docs/STATUS-PROJETO.md) | Status detalhado do projeto por fases |
+| [ROADMAP.md](ROADMAP.md) | Registro completo de correcoes, melhorias e roadmap do projeto |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Guia de deploy na Oracle Cloud |
 | [docs/LOCAL_DEVELOPMENT_SETUP.md](docs/LOCAL_DEVELOPMENT_SETUP.md) | Setup do ambiente de desenvolvimento |
 | [docs/database-schema.md](docs/database-schema.md) | Schema do banco de dados PostgreSQL |
