@@ -172,10 +172,13 @@ Adicionado método `isAuthEndpoint()` no `ApiService` que exclui `/auth/refresh`
 **Status:** Pendente  
 **Objetivo:** Fortalecer a segurança, observabilidade e resiliência do sistema em produção.
 
+> Itens ordenados por facilidade de implementação + criticidade. Itens mais rápidos e de maior impacto primeiro.
+
 ### 5.1 — Secret Scanning no CI
 
 **Prioridade:** Alta  
-**Estimativa:** 2-4 horas
+**Facilidade:** Muito fácil  
+**Estimativa:** 2 horas
 
 **O que fazer:**
 - Adicionar [gitleaks](https://github.com/gitleaks/gitleaks) como step no workflow de CI (`.github/workflows/ci.yml`)
@@ -195,122 +198,10 @@ Adicionado método `isAuthEndpoint()` no `ApiService` que exclui `/auth/refresh`
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-### 5.2 — Content Security Policy Mais Restritivo
-
-**Prioridade:** Média  
-**Estimativa:** 2-3 horas
-
-**O que fazer:**
-- Expandir os headers CSP no `SecurityHeadersMiddleware.cs` para bloquear inline scripts
-- Configurar CSP no Nginx (`nginx/batuara.conf`) como camada adicional
-- Adicionar `nonce` ou `hash` para scripts inline necessários
-- Testar que as aplicações frontend continuam funcionando após a restrição
-
-**Arquivos a modificar:**
-- `src/Backend/Batuara.API/Middleware/SecurityHeadersMiddleware.cs`
-- `nginx/batuara.conf`
-
-**Estado atual do CSP:**
-```
-X-Frame-Options: DENY
-X-Content-Type-Options: nosniff
-X-XSS-Protection: 1; mode=block
-```
-
-**CSP recomendado:**
-```
-Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' <API_URL>; frame-ancestors 'none';
-```
-
-### 5.3 — Logging Centralizado (Serilog)
+### 5.2 — Audit de Dependências Vulneráveis
 
 **Prioridade:** Alta  
-**Estimativa:** 3-5 horas
-
-**O que fazer:**
-- O Serilog já está instalado (`Serilog.AspNetCore` e `Serilog.Sinks.File` no `.csproj`)
-- Configurar output estruturado (JSON) para facilitar parsing
-- Adicionar rotação de arquivos de log (por tamanho e data)
-- Configurar níveis de log por namespace (ex: `Warning` para Microsoft, `Information` para Batuara)
-- Adicionar enriquecimento de logs (request ID, user ID, IP)
-
-**Arquivos a modificar:**
-- `src/Backend/Batuara.API/Program.cs` — Configuração do Serilog
-- `appsettings.json` — Seção de configuração de logging
-
-**Exemplo de configuração:**
-```csharp
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-    .Enrich.FromLogContext()
-    .Enrich.WithMachineName()
-    .WriteTo.Console(new JsonFormatter())
-    .WriteTo.File("logs/batuara-.log",
-        rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 30,
-        formatter: new JsonFormatter())
-    .CreateLogger();
-```
-
-### 5.4 — Backup Automatizado do PostgreSQL
-
-**Prioridade:** Alta  
-**Estimativa:** 3-4 horas
-
-**O que fazer:**
-- Criar script de backup usando `pg_dump` dentro do container PostgreSQL
-- Implementar rotação de backups (manter últimos 7 diários e 4 semanais)
-- Configurar agendamento via cron no servidor OCI
-- Documentar processo de restauração
-- Opcionalmente, enviar backups para storage externo (OCI Object Storage)
-
-**Arquivos a criar:**
-- `scripts/backup/backup-postgres.sh` — Script de backup
-- `scripts/backup/restore-postgres.sh` — Script de restauração
-- `scripts/backup/setup-cron.sh` — Configuração do cron
-
-**Exemplo de script de backup:**
-```bash
-#!/bin/bash
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR="/var/backups/batuara"
-mkdir -p $BACKUP_DIR
-
-docker exec batuara-postgres pg_dump -U postgres batuara > "$BACKUP_DIR/batuara_$TIMESTAMP.sql"
-gzip "$BACKUP_DIR/batuara_$TIMESTAMP.sql"
-
-# Rotação: manter últimos 7 dias
-find $BACKUP_DIR -name "*.sql.gz" -mtime +7 -delete
-```
-
-### 5.5 — Runbook de Operações
-
-**Prioridade:** Média  
-**Estimativa:** 3-4 horas
-
-**O que fazer:**
-- Documentar procedimentos operacionais para manutenção do sistema
-- Incluir: deploy manual, rollback, troubleshooting, restauração de backup
-- Formato: Markdown com comandos copy-paste prontos para uso
-
-**Arquivo a criar:**
-- `docs/RUNBOOK.md`
-
-**Seções recomendadas:**
-1. Acesso ao servidor (SSH)
-2. Verificação de status dos serviços
-3. Deploy manual (sem CI/CD)
-4. Rollback para versão anterior
-5. Troubleshooting da API (logs, health check, DB)
-6. Backup e restauração do banco
-7. Rotação de secrets (JWT, DB password)
-8. Monitoramento e alertas
-9. Procedimento de emergência (serviço down)
-
-### 5.6 — Audit de Dependências Vulneráveis
-
-**Prioridade:** Alta  
+**Facilidade:** Fácil  
 **Estimativa:** 2-3 horas
 
 **O que fazer:**
@@ -340,6 +231,169 @@ updates:
     schedule:
       interval: "weekly"
 ```
+
+### 5.3 — HTTPS com Let's Encrypt
+
+**Prioridade:** Crítica  
+**Facilidade:** Média  
+**Estimativa:** 2-3 horas
+
+**O que fazer:**
+- Instalar Certbot no servidor OCI
+- Obter certificado SSL para o domínio/IP
+- Configurar Nginx para servir HTTPS (porta 443) e redirecionar HTTP (80) para HTTPS
+- Configurar renovação automática do certificado (cron)
+- Atualizar URLs de produção nos frontends se necessário
+
+**Por que é crítico:**
+- Produção atualmente roda em HTTP — credenciais de login e tokens JWT trafegam em texto plano
+- Vulnerável a ataques man-in-the-middle
+- Navegadores modernos marcam sites HTTP como "Não Seguro"
+
+**Arquivos a modificar:**
+- `nginx/batuara.conf` — Adicionar bloco server HTTPS, redirecionar HTTP para HTTPS
+- `scripts/ci/deploy-rolling.sh` — Ajustar health check se URLs mudarem para HTTPS
+
+**Nota:** Let's Encrypt não emite certificados para endereços IP puros. Se o servidor usar apenas IP (sem domínio), será necessário configurar um domínio apontando para o IP, ou usar um certificado self-signed como alternativa temporária.
+
+**Referência:**
+```bash
+# Instalar Certbot
+sudo apt install certbot python3-certbot-nginx
+
+# Obter certificado
+sudo certbot --nginx -d batuara.net -d www.batuara.net
+
+# Renovação automática (já configurado pelo Certbot)
+sudo certbot renew --dry-run
+```
+
+### 5.4 — Content Security Policy Mais Restritivo
+
+**Prioridade:** Média  
+**Facilidade:** Média  
+**Estimativa:** 2-3 horas
+
+**O que fazer:**
+- Expandir os headers CSP no `SecurityHeadersMiddleware.cs` para bloquear inline scripts
+- Configurar CSP no Nginx (`nginx/batuara.conf`) como camada adicional
+- Adicionar `nonce` ou `hash` para scripts inline necessários
+- Testar que as aplicações frontend continuam funcionando após a restrição
+
+**Arquivos a modificar:**
+- `src/Backend/Batuara.API/Middleware/SecurityHeadersMiddleware.cs`
+- `nginx/batuara.conf`
+
+**Estado atual do CSP:**
+```
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+```
+
+**CSP recomendado:**
+```
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' <API_URL>; frame-ancestors 'none';
+```
+
+### 5.5 — Logging Centralizado (Serilog)
+
+**Prioridade:** Alta  
+**Facilidade:** Média  
+**Estimativa:** 3-5 horas
+
+**O que fazer:**
+- O Serilog já está instalado (`Serilog.AspNetCore` e `Serilog.Sinks.File` no `.csproj`)
+- Configurar output estruturado (JSON) para facilitar parsing
+- Adicionar rotação de arquivos de log (por tamanho e data)
+- Configurar níveis de log por namespace (ex: `Warning` para Microsoft, `Information` para Batuara)
+- Adicionar enriquecimento de logs (request ID, user ID, IP)
+
+**Arquivos a modificar:**
+- `src/Backend/Batuara.API/Program.cs` — Configuração do Serilog
+- `appsettings.json` — Seção de configuração de logging
+
+**Exemplo de configuração:**
+```csharp
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .WriteTo.Console(new JsonFormatter())
+    .WriteTo.File("logs/batuara-.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 30,
+        formatter: new JsonFormatter())
+    .CreateLogger();
+```
+
+### 5.6 — Backup Automatizado do PostgreSQL
+
+**Prioridade:** Alta  
+**Facilidade:** Média  
+**Estimativa:** 3-4 horas
+
+**O que fazer:**
+- Criar script de backup usando `pg_dump` dentro do container PostgreSQL
+- Implementar rotação de backups (manter últimos 7 diários e 4 semanais)
+- Configurar agendamento via cron no servidor OCI
+- Documentar processo de restauração
+- Opcionalmente, enviar backups para storage externo (OCI Object Storage)
+
+**Arquivos a criar:**
+- `scripts/backup/backup-postgres.sh` — Script de backup
+- `scripts/backup/restore-postgres.sh` — Script de restauração
+- `scripts/backup/setup-cron.sh` — Configuração do cron
+
+**Exemplo de script de backup:**
+```bash
+#!/bin/bash
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+BACKUP_DIR="/var/backups/batuara"
+mkdir -p $BACKUP_DIR
+
+docker exec batuara-postgres pg_dump -U postgres batuara > "$BACKUP_DIR/batuara_$TIMESTAMP.sql"
+gzip "$BACKUP_DIR/batuara_$TIMESTAMP.sql"
+
+# Rotação: manter últimos 7 dias
+find $BACKUP_DIR -name "*.sql.gz" -mtime +7 -delete
+```
+
+### 5.7 — Runbook de Operações
+
+**Prioridade:** Média  
+**Facilidade:** Fácil (documentação pura)  
+**Estimativa:** 3-4 horas
+
+**O que fazer:**
+- Documentar procedimentos operacionais para manutenção do sistema
+- Incluir: deploy manual, rollback, troubleshooting, restauração de backup
+- Formato: Markdown com comandos copy-paste prontos para uso
+- Depende dos itens anteriores para documentar procedimentos completos
+
+**Arquivo a criar:**
+- `docs/RUNBOOK.md`
+
+**Seções recomendadas:**
+1. Acesso ao servidor (SSH)
+2. Verificação de status dos serviços
+3. Deploy manual (sem CI/CD)
+4. Rollback para versão anterior
+5. Troubleshooting da API (logs, health check, DB)
+6. Backup e restauração do banco
+7. Rotação de secrets (JWT, DB password)
+8. Monitoramento e alertas
+9. Procedimento de emergência (serviço down)
+
+---
+
+### Melhorias Futuras (Opcionais)
+
+Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não são críticos no momento atual mas podem ser implementados conforme o projeto cresce:
+
+- **docker-compose.local.yml** — Docker Compose dedicado para ambiente de desenvolvimento completo (já existe `docker-compose.db.yml` para PostgreSQL e os frontends rodam com `npm start`)
+- **Script dev.sh** — Script para subir todo o ambiente de desenvolvimento com um único comando (os passos já estão documentados no README.md)
 
 ---
 
