@@ -1,0 +1,165 @@
+# Gitleaks configuration for Batuara.net
+# https://github.com/gitleaks/gitleaks
+
+[[rules]]
+# Generic API Key
+id = "generic-api-key"
+description = "Generic API Key"
+regex = '''(?i)(api[_-]?key|apikey|api[_-]?token|apitoken)['\"]?\s*[:=]\s*['\"]?[a-zA-Z0-9]{16,64}['\"]?'''
+
+[[rules]]
+# AWS Access Key
+id = "aws-access-key"
+description = "AWS Access Key"
+regex = '''(A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}'''
+
+[[rules]]
+# AWS Secret Key
+id = "aws-secret-key"
+description = "AWS Secret Key"
+regex = '''(?i)aws(.{0,20})?['\"][0-9a-zA-Z\/+]{40}['\"]'''
+
+[[rules]]
+# Azure Access Token
+id = "azure-access-token"
+description = "Azure Access Token"
+regex = '''(?i)azure[a-z0-9_./-]{0,30}[a-z0-9_./-]{32,}'''
+
+[[rules]]
+# GitHub Personal Access Token
+id = "github-personal-access-token"
+description = "GitHub Personal Access Token"
+regex = '''gh[pousr]_[A-Za-z0-9_]{36,}'''
+
+[[rules]]
+# GitHub OAuth Access Token
+id = "github-oauth-token"
+description = "GitHub OAuth Access Token"
+regex = '''gho_[A-Za-z0-9_]{36,}'''
+
+[[rules]]
+# GitHub App Token
+id = "github-app-token"
+description = "GitHub App Token"
+regex = '''(gh1|ghr)_[A-Za-z0-9_]{76,}'''
+
+[[rules]]
+# Generic JWT Token
+id = "jwt-token"
+description = "Generic JWT Token"
+regex = '''eyJ[A-Za-z0-9_=-]+\.eyJ[A-Za-z0-9_=-]+(\.[A-Za-z0-9_=-]+)?'''
+
+[[rules]]
+# PostgreSQL Connection String
+id = "postgresql-connection-string"
+description = "PostgreSQL Connection String"
+regex = '''(?i)postgres(ql)?://[^:]+:[^@]+@[^\s]+'''
+
+[[rules]]
+# Connection String
+id = "connection-string"
+description = "Connection String"
+regex = '''(?i)(mysql|postgres|postgresql|mssql|mongodb|redis)://[^:]+:[^@]+@[^\s]+'''
+
+[[rules]]
+# SSH Private Key
+id = "ssh-private-key"
+description = "SSH Private Key"
+regex = '''-----BEGIN (RSA|DSA|EC|OPENSSH|PGP) PRIVATE KEY-----'''
+
+[[rules]]
+# SSH Config
+id = "ssh-config"
+description = "SSH Config"
+regex = '''Host\s+\*\s*\n\s*IdentityFile'''
+
+[[rules]]
+# Generic Secret
+id = "generic-secret"
+description = "Generic Secret"
+regex = '''(?i)(secret|password|passwd|pwd|token|api[_-]?key|apikey)['\"]?\s*[:=]\s*['\"]?[a-zA-Z0-9_!@#$%^&*()-=+\[\]{}|;':".<>]{6,64}['\"]?'''
+
+[[rules]]
+# Private Key
+id = "private-key"
+description = "Private Key"
+regex = '''-----BEGIN PRIVATE KEY-----'''
+
+[[rules]]
+# Google API Key
+id = "google-api-key"
+description = "Google API Key"
+regex = '''AIza[0-9A-Za-z\\-_]{35}'''
+
+[[rules]]
+# Google OAuth Token
+id = "google-oauth-token"
+description = "Google OAuth Access Token"
+regex = '''ya29\.[0-9A-Za-z\-_]+'''
+
+[[rules]]
+# Stripe API Key
+id = "stripe-api-key"
+description = "Stripe API Key"
+regex = '''sk_live_[0-9a-zA-Z]{24,}'''
+
+[[rules]]
+# Stripe Test Key
+id = "stripe-test-key"
+description = "Stripe Test Key"
+regex = '''sk_test_[0-9a-zA-Z]{24,}'''
+
+[[rules]]
+# Twilio API Key
+id = "twilio-api-key"
+description = "Twilio API Key"
+regex = '''SK[0-9a-fA-F]{32}'''
+
+[[rules]]
+# Twilio Auth Token
+id = "twilio-auth-token"
+description = "Twilio Auth Token"
+regex = '''(?i)twilio(.{0,20})?[0-9a-fA-F]{32}'''
+
+[[rules]]
+# SendGrid API Key
+id = "sendgrid-api-key"
+description = "SendGrid API Key"
+regex = '''SG\.[0-9A-Za-z\-_]{22}\.[0-9A-Za-z\-_]{43}'''
+
+[[rules]]
+# Slack Token
+id = "slack-token"
+description = "Slack Token"
+regex = '''xox[baprs]-[0-9]{10,13}-[0-9]{10,13}[a-zA-Z0-9-]*'''
+
+[[rules]]
+# .env file
+id = "env-file"
+description = ".env file with secrets"
+path = '''\.env$'''
+
+[allowlist]
+description = "Allowlisted paths and patterns"
+paths = [
+  "node_modules",
+  ".git",
+  ".github",
+  ".*\\.min\\.js",
+  ".*\\.map",
+  "dist",
+  "build",
+  "^test/",
+  "^tests/",
+  "^spec/",
+  ".*fixture.*",
+  ".*mock.*"
+]
+regexes = [
+  "CHANGE_ME",
+  "YOUR_",
+  "_HERE",
+  "PLACEHOLDER",
+  "TODO",
+  "xxx"
+]
