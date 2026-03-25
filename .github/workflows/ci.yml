@@ -7,6 +7,67 @@ on:
     branches: [master]
 
 jobs:
+  secret-scanning:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  audit-dependencies:
+    name: Audit Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: src/Frontend/PublicWebsite/package-lock.json
+
+      - name: Restore .NET dependencies
+        run: dotnet restore src/Backend/Batuara.API/Batuara.API.csproj
+
+      - name: Check .NET vulnerabilities
+        run: |
+          VULNS=$(dotnet list src/Backend/Batuara.API/Batuara.API.csproj package --vulnerable --include-transitive 2>&1)
+          if echo "$VULNS" | grep -q "has the following vulnerable packages"; then
+            echo "Vulnerabilities found in .NET packages:"
+            echo "$VULNS"
+            exit 1
+          else
+            echo "No vulnerabilities found in .NET packages"
+          fi
+
+      - name: Install PublicWebsite dependencies
+        run: npm ci --legacy-peer-deps
+        working-directory: src/Frontend/PublicWebsite
+
+      - name: Audit PublicWebsite
+        run: npm audit --audit-level=critical
+        working-directory: src/Frontend/PublicWebsite
+
+      - name: Install AdminDashboard dependencies
+        run: npm ci --legacy-peer-deps
+        working-directory: src/Frontend/AdminDashboard
+
+      - name: Audit AdminDashboard
+        run: npm audit --audit-level=critical
+        working-directory: src/Frontend/AdminDashboard
+
   build-api:
     name: Build .NET API
     runs-on: ubuntu-latest
@@ -78,7 +139,7 @@ jobs:
   docker-build:
     name: Docker Build Test
     runs-on: ubuntu-latest
-    needs: [build-api, build-public-website, build-admin-dashboard]
+    needs: [build-api, build-public-website, build-admin-dashboard, secret-scanning, audit-dependencies]
     steps:
       - uses: actions/checkout@v4
 

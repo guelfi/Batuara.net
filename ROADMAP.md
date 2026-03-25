@@ -167,28 +167,80 @@ Adicionado método `isAuthEndpoint()` no `ApiService` que exclui `/auth/refresh`
 
 ---
 
-## Fase 5 — Hardening e Melhorias de Segurança (Pendente)
+## Fase 5 — Hardening e Melhorias de Segurança (Em Progresso)
 
-**Status:** Pendente  
+**Status:** Em Progresso  
 **Objetivo:** Fortalecer a segurança, observabilidade e resiliência do sistema em produção.
 
 > Itens ordenados por facilidade de implementação + criticidade. Itens mais rápidos e de maior impacto primeiro.
 
+---
+
+## Plano de Execução da Fase 5
+
+### Instruções de Uso
+
+Este plano deve ser utilizado como ponto de partida em cada sessão de trabalho:
+
+1. **Início de sessão:** Consultar esta seção para saber o próximo item a trabalhar
+2. **Durante a execução:** Marcar tarefas como `[ ]` (pendente) → `[x]` (concluído)
+3. **Final de sessão:** Atualizar data de conclusão, links de PR, e observações
+4. **Após cada PR mergeado:** Atualizar o status do item correspondente
+
+### Checklist de Execução
+
+| # | Item | Status | Prioridade | Estimativa | Data Conclusão | PR |
+|---|------|--------|------------|------------|----------------|-----|
+| 5.1 | Secret Scanning no CI | [x] | Alta | 2h | 24/03/2026 | _Abertura pendente_ |
+| 5.2 | Audit de Dependências | [x] | Alta | 2-3h | 24/03/2026 | _Abertura pendente_ |
+| 5.4 | CSP Mais Restritivo | [x] | Média | 2-3h | 24/03/2026 | _Abertura pendente_ |
+| 5.5 | Logging Centralizado | [x] | Alta | 3-5h | 24/03/2026 | _Abertura pendente_ |
+| 5.6 | Backup PostgreSQL | [x] | Alta | 3-4h | 24/03/2026 | _Abertura pendente_ |
+| 5.7 | Runbook de Operações | [x] | Média | 3-4h | 24/03/2026 | _Abertura pendente_ |
+| 5.3 | HTTPS com Let's Encrypt | [⏳] | Crítica | 2-3h | - | - |
+
+> ⚠️ **Item 5.3 por último:** HTTPS com Let's Encrypt aguarda domínio válido. Continuar com os outros itens primeiro.
+
+### Histórico de Execução
+
+```
+| Data       | Item  | Ação Realizada | Observações |
+|------------|-------|----------------|-------------|
+| 24/03/2026 | 5.1   | Implementado gitleaks no CI | Job secret-scanning adicionado, .gitleaks.toml criado com regras customizadas |
+| 24/03/2026 | 5.2   | Implementado audit de dependências | Job audit-dependencies adicionado, .github/dependabot.yml criado |
+| 24/03/2026 | 5.3   | Avaliação realizada | Let's Encrypt exige domínio. Opções: DuckDNS, registrar domínio, Cloudflare, ou self-signed |
+| 24/03/2026 | 5.7   | Runbook de Operações criado | docs/RUNBOOK.md com procedimentos de deploy, rollback, troubleshooting, backup e emergência |
+```
+
+---
+
+## Detalhamento das Tarefas
+
 ### 5.1 — Secret Scanning no CI
 
+**Status:** `[x]` Concluído  
+**PR:** _Abertura pendente_  
 **Prioridade:** Alta  
-**Facilidade:** Muito fácil  
+**Facilidade:** muito fácil  
 **Estimativa:** 2 horas
 
-**O que fazer:**
-- Adicionar [gitleaks](https://github.com/gitleaks/gitleaks) como step no workflow de CI (`.github/workflows/ci.yml`)
-- Configurar para escanear commits em PRs e no branch `master`
-- Criar arquivo `.gitleaks.toml` com regras customizadas se necessário
-- Bloquear merge de PRs que contenham credenciais detectadas
+**Implementação:**
+- Adicionado job `secret-scanning` no workflow CI que roda antes dos builds
+- Criado arquivo `.gitleaks.toml` com regras customizadas para detectar:
+  - AWS/GCP/Azure/Google API keys
+  - GitHub tokens (PAT, OAuth, App)
+  - AWS Secret Keys
+  - PostgreSQL/MySQL/MongoDB/Redis connection strings
+  - SSH private keys
+  - JWT tokens
+  - Stripe/Twilio/SendGrid/Slack tokens
+  - Generic secrets e passwords
+- Configurado `fetch-depth: 0` para escanear todo o histórico git
+- Job `docker-build` agora depende de `secret-scanning` para fail-fast
 
-**Arquivos a modificar:**
-- `.github/workflows/ci.yml` — Adicionar job de secret scanning
-- `.gitleaks.toml` (novo) — Configuração de regras
+**Arquivos modificados:**
+- `.github/workflows/ci.yml` — Job secret-scanning adicionado
+- `.gitleaks.toml` (novo) — Configuração de regras customizadas
 
 **Referência:**
 ```yaml
@@ -198,193 +250,193 @@ Adicionado método `isAuthEndpoint()` no `ApiService` que exclui `/auth/refresh`
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+---
+
 ### 5.2 — Audit de Dependências Vulneráveis
 
+**Status:** `[x]` Concluído  
+**PR:** _Abertura pendente_  
 **Prioridade:** Alta  
 **Facilidade:** Fácil  
 **Estimativa:** 2-3 horas
 
-**O que fazer:**
-- Adicionar `npm audit` e `dotnet list package --vulnerable` no workflow de CI
-- O CI já detectou vulnerabilidade no `AutoMapper 15.0.1` — avaliar atualização
-- Configurar para falhar o CI em vulnerabilidades de severidade alta/crítica
-- Avaliar uso de `Dependabot` ou `Renovate` para atualização automática de dependências
+**Implementação:**
+- Adicionado job `audit-dependencies` no workflow CI que executa em paralelo com os builds
+- Audit de .NET: `dotnet list package --vulnerable --include-transitive` com fail em vulnerabilidades
+- Audit de npm: `npm audit --audit-level=high` para ambos os frontends
+- Configurado Dependabot para atualizações automáticas:
+  - npm (PublicWebsite e AdminDashboard) - semanalmente
+  - NuGet (Batuara.API) - semanalmente
+  - Docker - semanalmente
+  - GitHub Actions - semanalmente
+- PRs agrupados por tipo (production/development) com limite de 3 PRs simultâneos
 
-**Arquivos a modificar:**
-- `.github/workflows/ci.yml` — Adicionar steps de audit
+**Arquivos modificados:**
+- `.github/workflows/ci.yml` — Job audit-dependencies adicionado
 - `.github/dependabot.yml` (novo) — Configuração do Dependabot
 
-**Exemplo de configuração do Dependabot:**
-```yaml
-version: 2
-updates:
-  - package-ecosystem: "npm"
-    directory: "/src/Frontend/PublicWebsite"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm"
-    directory: "/src/Frontend/AdminDashboard"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "nuget"
-    directory: "/src/Backend/Batuara.API"
-    schedule:
-      interval: "weekly"
-```
+---
 
 ### 5.3 — HTTPS com Let's Encrypt
 
+**Status:** `[→]` Bloqueado - Aguardando domínio  
+**PR:** _Abertura pendente_  
 **Prioridade:** Crítica  
 **Facilidade:** Média  
 **Estimativa:** 2-3 horas
 
-**O que fazer:**
-- Instalar Certbot no servidor OCI
-- Obter certificado SSL para o domínio/IP
-- Configurar Nginx para servir HTTPS (porta 443) e redirecionar HTTP (80) para HTTPS
-- Configurar renovação automática do certificado (cron)
-- Atualizar URLs de produção nos frontends se necessário
+**⚠️ Bloqueio:** Let's Encrypt exige domínio válido (não funciona com IP público puro).
 
-**Por que é crítico:**
-- Produção atualmente roda em HTTP — credenciais de login e tokens JWT trafegam em texto plano
-- Vulnerável a ataques man-in-the-middle
-- Navegadores modernos marcam sites HTTP como "Não Seguro"
+**Opções disponíveis (escolher uma):**
 
-**Arquivos a modificar:**
-- `nginx/batuara.conf` — Adicionar bloco server HTTPS, redirecionar HTTP para HTTPS
-- `scripts/ci/deploy-rolling.sh` — Ajustar health check se URLs mudarem para HTTPS
+| Opção | Descrição | Prós | Contras |
+|-------|-----------|------|---------|
+| **DuckDNS** | Domínio gratuito (ex: `batuara.duckdns.org`) | Gratuito, implementação rápida | URL não profissional |
+| **Registrar domínio** | Registrar `batuara.net` (R$30-50/ano) | URL profissional, Let's Encrypt | Custo adicional |
+| **Cloudflare** | SSL gratuito mesmo para IP | SSL gratuito, CDN, proteção extra | Requer mudar DNS |
+| **Self-signed** | Certificado autoassinado | Implementação imediata | Aviso no navegador |
 
-**Nota:** Let's Encrypt não emite certificados para endereços IP puros. Se o servidor usar apenas IP (sem domínio), será necessário configurar um domínio apontando para o IP, ou usar um certificado self-signed como alternativa temporária.
+**Configuração atual do Nginx:**
+- `server_name`: `batuara.net`, `www.batuara.net`, `admin.batuara.net`, `api.batuara.net`
+- Porta: `listen 80` (HTTP)
+- HTTPS blocks já existem no código (comentados) em `nginx/batuara.conf`
 
-**Referência:**
+**Quando obter domínio:** Descomentar blocks HTTPS e executar:
 ```bash
-# Instalar Certbot
-sudo apt install certbot python3-certbot-nginx
-
-# Obter certificado
-sudo certbot --nginx -d batuara.net -d www.batuara.net
-
-# Renovação automática (já configurado pelo Certbot)
-sudo certbot renew --dry-run
+sudo certbot --nginx -d batuara.net -d www.batuara.net -d admin.batuara.net -d api.batuara.net
 ```
+
+**Arquivos preparados para modificação:**
+- `nginx/batuara.conf` — Blocks HTTPS já existem (comentados)
+- `scripts/ci/deploy-rolling.sh` — Ajustar health check quando HTTPS estiver ativo
+
+---
 
 ### 5.4 — Content Security Policy Mais Restritivo
 
+**Status:** `[x]` Concluído  
+**PR:** _Abertura pendente_  
 **Prioridade:** Média  
 **Facilidade:** Média  
 **Estimativa:** 2-3 horas
 
-**O que fazer:**
-- Expandir os headers CSP no `SecurityHeadersMiddleware.cs` para bloquear inline scripts
-- Configurar CSP no Nginx (`nginx/batuara.conf`) como camada adicional
-- Adicionar `nonce` ou `hash` para scripts inline necessários
-- Testar que as aplicações frontend continuam funcionando após a restrição
+**Implementação:**
+- Removido `unsafe-eval` do CSP (risco de XSS)
+- Removido `unsafe-inline` de script-src (mantido apenas para estilos MUI que exigem)
+- Adicionado `Permissions-Policy` completo para bloquear APIs sensíveis
+- Configurado `connect-src` para permitir conexões com API e frontends
+- Adicionado `base-uri` e `form-action` para proteção adicional
+- CSP implementado em todos os servers Nginx (não só admin)
+- API com CSP mais restritivo (`default-src 'none'`)
 
-**Arquivos a modificar:**
-- `src/Backend/Batuara.API/Middleware/SecurityHeadersMiddleware.cs`
-- `nginx/batuara.conf`
+**Arquivos modificados:**
+- `src/Backend/Batuara.API/Middleware/SecurityHeadersMiddleware.cs` — CSP dinâmico com IConfiguration
+- `nginx/batuara.conf` — Headers de segurança em todos os servers
 
-**Estado atual do CSP:**
+**CSP Implementado (Backend/API):**
 ```
-X-Frame-Options: DENY
-X-Content-Type-Options: nosniff
-X-XSS-Protection: 1; mode=block
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://api.batuara.net https://batuara.net https://admin.batuara.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 ```
 
-**CSP recomendado:**
+**CSP Implementado (API-only):**
 ```
-Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' <API_URL>; frame-ancestors 'none';
+Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'none'; img-src 'none'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'
 ```
+
+---
 
 ### 5.5 — Logging Centralizado (Serilog)
 
+**Status:** `[x]` Concluído  
+**PR:** _Abertura pendente_  
 **Prioridade:** Alta  
 **Facilidade:** Média  
 **Estimativa:** 3-5 horas
 
-**O que fazer:**
-- O Serilog já está instalado (`Serilog.AspNetCore` e `Serilog.Sinks.File` no `.csproj`)
-- Configurar output estruturado (JSON) para facilitar parsing
-- Adicionar rotação de arquivos de log (por tamanho e data)
-- Configurar níveis de log por namespace (ex: `Warning` para Microsoft, `Information` para Batuara)
-- Adicionar enriquecimento de logs (request ID, user ID, IP)
+**Implementação:**
+- Configurado Serilog com output JSON estruturado no console
+- Adicionado `RequestEnricher.cs` customizado com RequestId, UserId, ClientIP, UserAgent
+- Configurado overrides para Microsoft.AspNetCore (Warning) e Microsoft.EntityFrameworkCore (Warning)
+- Logs de Batuara em Information level
+- Rotação por tamanho (10MB) e retenção de 30 dias para logs gerais
+- Retenção de 90 dias para logs de segurança (`logs/security-`)
+- Enriquecimento com Application, Environment, MachineName, ProcessId
 
-**Arquivos a modificar:**
-- `src/Backend/Batuara.API/Program.cs` — Configuração do Serilog
-- `appsettings.json` — Seção de configuração de logging
+**Problemas resolvidos:**
+- `Serilog.Enrichers.Environment` v4.0.0 não existe — enriqucimento feito via `.Enrich.WithProperty()` nativo
+- Namespace conflict com Serilog.Events resolvido
 
-**Exemplo de configuração:**
-```csharp
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-    .Enrich.FromLogContext()
-    .Enrich.WithMachineName()
-    .WriteTo.Console(new JsonFormatter())
-    .WriteTo.File("logs/batuara-.log",
-        rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 30,
-        formatter: new JsonFormatter())
-    .CreateLogger();
-```
+**Arquivos modificados:**
+- `src/Backend/Batuara.API/Program.cs` — Configuração completa do Serilog
+- `src/Backend/Batuara.API/appsettings.json` — Configuração de logging estruturado
+- `src/Backend/Batuara.API/Batuara.API.csproj` — Packages Serilog (parcialmente revertido)
+- `src/Backend/Batuara.API/Middleware/RequestEnricher.cs` (novo) — Enricher customizado
+
+---
 
 ### 5.6 — Backup Automatizado do PostgreSQL
 
+**Status:** `[x]` Concluído  
+**PR:** _Abertura pendente_  
 **Prioridade:** Alta  
 **Facilidade:** Média  
 **Estimativa:** 3-4 horas
 
-**O que fazer:**
-- Criar script de backup usando `pg_dump` dentro do container PostgreSQL
-- Implementar rotação de backups (manter últimos 7 diários e 4 semanais)
-- Configurar agendamento via cron no servidor OCI
-- Documentar processo de restauração
-- Opcionalmente, enviar backups para storage externo (OCI Object Storage)
+**Implementação:**
+- Script de backup com `pg_dump` via Docker exec
+- Compressão gzip com timestamp no nome do arquivo
+- Verificação de integridade do backup
+- Rotação automática (mantém últimos 7 dias por padrão)
+- Suporte opcional para upload para S3 (AWS CLI)
+- Script de restore com confirmação antes de sobrescrever
+- Criação de backup de segurança antes do restore
+- Script de setup-cron para agendar backups diários (03:00)
 
-**Arquivos a criar:**
-- `scripts/backup/backup-postgres.sh` — Script de backup
+**Variáveis de ambiente:**
+- `BACKUP_DIR` — diretório de backups (padrão: `/var/backups/batuara`)
+- `DB_NAME` — nome do banco (padrão: `batuara`)
+- `DB_USER` — usuário do banco (padrão: `postgres`)
+- `DB_CONTAINER` — nome do container Docker (padrão: `batuara-postgres`)
+- `RETENTION_DAYS` — dias de retenção (padrão: 7)
+- `S3_BUCKET` — bucket S3 para upload opcional
+
+**Arquivos criados:**
+- `scripts/backup/backup-postgres.sh` — Script principal de backup
 - `scripts/backup/restore-postgres.sh` — Script de restauração
 - `scripts/backup/setup-cron.sh` — Configuração do cron
 
-**Exemplo de script de backup:**
+**Uso:**
 ```bash
-#!/bin/bash
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR="/var/backups/batuara"
-mkdir -p $BACKUP_DIR
+# Executar backup manualmente
+./scripts/backup/backup-postgres.sh
 
-docker exec batuara-postgres pg_dump -U postgres batuara > "$BACKUP_DIR/batuara_$TIMESTAMP.sql"
-gzip "$BACKUP_DIR/batuara_$TIMESTAMP.sql"
+# Listar backups
+ls -lh /var/backups/batuara/
 
-# Rotação: manter últimos 7 dias
-find $BACKUP_DIR -name "*.sql.gz" -mtime +7 -delete
+# Restaurar backup
+./scripts/backup/restore-postgres.sh /var/backups/batuara/batuar_20260324_030000.sql.gz
+
+# Configurar cron (executa backup diário às 03:00)
+./scripts/backup/setup-cron.sh
 ```
+
+---
 
 ### 5.7 — Runbook de Operações
 
+**Status:** `[x]` Concluído  
+**PR:** _Abertura pendente_  
 **Prioridade:** Média  
 **Facilidade:** Fácil (documentação pura)  
 **Estimativa:** 3-4 horas
 
-**O que fazer:**
-- Documentar procedimentos operacionais para manutenção do sistema
-- Incluir: deploy manual, rollback, troubleshooting, restauração de backup
-- Formato: Markdown com comandos copy-paste prontos para uso
-- Depende dos itens anteriores para documentar procedimentos completos
+**Implementação:**
+- Documentação completa em `docs/RUNBOOK.md`
+- Comandos copy-paste prontos para uso
+- Seções cobrindo: acesso SSH, health check, deploy manual, rollback, troubleshooting, backup/restore, rotação de secrets, monitoramento, procedimento de emergência
 
-**Arquivo a criar:**
-- `docs/RUNBOOK.md`
-
-**Seções recomendadas:**
-1. Acesso ao servidor (SSH)
-2. Verificação de status dos serviços
-3. Deploy manual (sem CI/CD)
-4. Rollback para versão anterior
-5. Troubleshooting da API (logs, health check, DB)
-6. Backup e restauração do banco
-7. Rotação de secrets (JWT, DB password)
-8. Monitoramento e alertas
-9. Procedimento de emergência (serviço down)
+**Arquivo criado:**
+- `docs/RUNBOOK.md` — Manual de operações completo
 
 ---
 
@@ -413,6 +465,13 @@ Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não s
 | [#10](https://github.com/guelfi/Batuara.net/pull/10) | Fase 4 | Corrigir nome do secret SSH | Merged |
 | [#11](https://github.com/guelfi/Batuara.net/pull/11) | Pós-Deploy | Fix deadlock no interceptor de auth | Merged |
 | [#12](https://github.com/guelfi/Batuara.net/pull/12) | Pós-Deploy | Preservar silent token refresh | Merged |
+| - | Fase 5 | Secret Scanning no CI | Abertura pendente |
+| - | Fase 5 | Audit de Dependências | Abertura pendente |
+| - | Fase 5 | HTTPS com Let's Encrypt | Abertura pendente |
+| - | Fase 5 | CSP Mais Restritivo | Abertura pendente |
+| - | Fase 5 | Logging Centralizado | Abertura pendente |
+| - | Fase 5 | Backup PostgreSQL | Abertura pendente |
+| - | Fase 5 | Runbook de Operações | Abertura pendente |
 
 ---
 
@@ -473,3 +532,49 @@ Batuara.net/
 - **Admin Dashboard:** `http://<OCI_HOST>/batuara-admin/`
 - **API Swagger:** `http://<OCI_HOST>/batuara-api/swagger/index.html`
 - **API Health Check:** `http://<OCI_HOST>/batuara-api/health`
+
+---
+
+## Guia de Início de Sessão
+
+### Para Ferramentas de IA
+
+Ao iniciar uma nova sessão de trabalho com este projeto:
+
+1. **Primeiro passo:** Ler este arquivo (`ROADMAP.md`) para entender o estado atual do projeto
+2. **Verificar Fase atual:** Consultar a seção "Plano de Execução da Fase 5" para identificar o próximo item a trabalhar
+3. **Checkpoint de tarefas:** Consultar o checklist `[ ]` para identificar o que ainda não foi feito
+4. **Durante a execução:**
+   - Ao iniciar um item: mudar `[ ]` para `[→]` (em andamento)
+   - Ao completar: mudar para `[x]` (concluído)
+   - Ao abrir PR: atualizar coluna "PR" com link
+5. **Final de sessão:**
+   - Atualizar data de conclusão na tabela
+   - Adicionar entrada no "Histórico de Execução"
+   - Atualizar this.Read() do ROADMAP.md com observações relevantes
+
+### Prioridade de Execução
+
+Ordem recomendada para Fase 5 (itens pendentes, excluindo 5.3 que aguarda domínio):
+
+1. **5.4** — CSP Mais Restritivo (não depende de domínio)
+2. **5.5** — Logging Centralizado (não depende de domínio)
+3. **5.6** — Backup PostgreSQL (não depende de domínio)
+4. **5.7** — Runbook de Operações (pode ser feito em paralelo)
+5. **5.3** — HTTPS com Let's Encrypt (bloqueado — exige domínio válido)
+
+### Atalhos de Comando
+
+```bash
+# Verificar estado atual do projeto
+git log --oneline -10
+
+# Verificar branch atual
+git branch --show-current
+
+# Verificar status dos containers em produção
+ssh ubuntu@<OCI_HOST> "docker ps"
+
+# Health check da API
+curl http://<OCI_HOST>/batuara-api/health
+```

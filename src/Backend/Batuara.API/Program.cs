@@ -13,6 +13,9 @@ using Batuara.Infrastructure.Auth.Services;
 using Batuara.Infrastructure.Data;
 using Batuara.Infrastructure.Data.Repositories;
 using Serilog;
+using Serilog.Events;
+using Serilog.Formatting.Json;
+
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using System.Text.Json.Serialization;
@@ -21,12 +24,24 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog
+// Configure Serilog with structured logging
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .Enrich.WithProperty("Application", "Batuara.API")
+    .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName)
+    .Enrich.WithProperty("MachineName", Environment.MachineName)
+    .Enrich.WithProperty("ProcessId", Environment.ProcessId)
+    .WriteTo.Console(new JsonFormatter(renderMessage: true))
     .CreateLogger();
 
 builder.Host.UseSerilog();
+
+// Add HttpContextAccessor for request enrichment
+builder.Services.AddHttpContextAccessor();
 
 // Add services to the container
 builder.Services.AddControllers()
@@ -246,7 +261,24 @@ app.UseSwaggerUI(c =>
 app.UseMiddleware<SecurityHeadersMiddleware>();
 
 app.UseHttpsRedirection();
-app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate = "HTTP {HttpMethod} {Endpoint} responded {StatusCode} in {Elapsed:0.0000} ms";
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+        diagnosticContext.Set("UserAgent", httpContext.Request.Headers.UserAgent.ToString());
+        diagnosticContext.Set("ClientIP", httpContext.Connection.RemoteIpAddress?.ToString());
+        diagnosticContext.Set("Scheme", httpContext.Request.Scheme);
+        
+        if (httpContext.User.Identity?.IsAuthenticated == true)
+        {
+            var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                         ?? httpContext.User.FindFirst("sub")?.Value;
+            diagnosticContext.Set("AuthenticatedUserId", userId);
+        }
+    };
+});
 
 app.UseCors("AllowProxy");
 
