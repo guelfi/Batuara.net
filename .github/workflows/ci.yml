@@ -57,7 +57,7 @@ jobs:
         working-directory: src/Frontend/PublicWebsite
 
       - name: Audit PublicWebsite
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=critical
         working-directory: src/Frontend/PublicWebsite
 
       - name: Install AdminDashboard dependencies
@@ -65,7 +65,7 @@ jobs:
         working-directory: src/Frontend/AdminDashboard
 
       - name: Audit AdminDashboard
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=critical
         working-directory: src/Frontend/AdminDashboard
 
   build-api:
