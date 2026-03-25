@@ -15,7 +15,7 @@ using Batuara.Infrastructure.Data.Repositories;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Json;
-using Serilog.Enrichers;
+
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using System.Text.Json.Serialization;

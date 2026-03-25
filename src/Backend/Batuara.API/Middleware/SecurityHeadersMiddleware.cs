@@ -14,7 +14,7 @@ namespace Batuara.API.Middleware
         public async Task InvokeAsync(HttpContext context)
         {
             var allowedOrigins = _configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
-            var apiUrl = _configuration["ApiUrl"] ?? "https://api.batuara.net";
+            var apiUrl = _configuration["ApiUrl"] ?? "http://api.batuara.net";
 
             context.Response.Headers["X-Frame-Options"] = "DENY";
             context.Response.Headers["X-Content-Type-Options"] = "nosniff";
