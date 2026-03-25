@@ -83,7 +83,7 @@ docker-compose -f docker-compose.production.yml up -d
 docker-compose -f docker-compose.production.yml ps
 
 # Verificar health
-curl http://localhost:8080/batuar_/_health
+curl http://localhost:8080/batuara-api/health
 ```
 
 ### Deploy Rolling (Zero-Downtime)
@@ -147,7 +147,7 @@ docker exec batuara-api env | grep -E "ConnectionStrings|JWT|Database"
 
 4. Verificar conexão com banco:
 ```bash
-docker exec batuara-api dotnet /app/Batuara.API.dll exec-api-command check-db
+docker exec batuara-api curl -s http://localhost:8080/health
 ```
 
 ### Frontend carrega em branco
@@ -186,7 +186,7 @@ docker logs batuara-postgres --tail 100
 
 4. Testar conexão da API:
 ```bash
-docker exec batuara-api dotnet /app/Batuara.API.dll exec-api-command check-db
+docker exec batuara-api curl -s http://localhost:8080/health
 ```
 
 ---
@@ -205,7 +205,7 @@ ls -lh /var/backups/batuara/
 
 ### Restaurar Backup
 ```bash
-/opt/batuara/scripts/backup/restore-postgres.sh /var/backups/batuara/batuar_YYYYMMDD_HHMMSS.sql.gz
+/opt/batuara/scripts/backup/restore-postgres.sh /var/backups/batuara/CasaBatuara_YYYYMMDD_HHMMSS.sql.gz
 ```
 
 ### Verificar Logs de Backup

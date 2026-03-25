@@ -8,7 +8,7 @@ set -euo pipefail
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/batuara}"
-DB_NAME="${DB_NAME:-batuara}"
+DB_NAME="${DB_NAME:-CasaBatuara}"
 DB_USER="${DB_USER:-postgres}"
 DB_CONTAINER="${DB_CONTAINER:-batuara-postgres}"
 RETENTION_DAYS="${RETENTION_DAYS:-7}"
