@@ -13,8 +13,8 @@
 
 - Edge/Proxy: Nginx com TLS 1.3, gzip/br, cache estático, headers de segurança (CSP, HSTS, XFO, XCTO) e reverse proxy.
 - Batuara.API (.NET 8): PathBase “/batuara-api”; Serilog estruturado; RateLimiter; EF Core (PostgreSQL).
-- PublicWebsite (React + MUI): SPA estática servida via Nginx.
-- AdminDashboard (React + MUI): SPA estática servida via Nginx, consome `/batuara-api/api/...`.
+- PublicWebsite (React 19 + MUI 7): SPA estática servida via Nginx.
+- AdminDashboard (React 19 + MUI 7): SPA estática servida via Nginx, consome `/batuara-api/api/...`.
 - Banco de Dados: PostgreSQL (OCI/Container), criptografia em repouso, usuários e privilégios mínimos.
 - Observabilidade/SIEM: Serilog JSON + correlação; envio para SIEM (OCI Logging/Splunk/ELK).
 - WAF (OCI): Regras para SQLi/XSS/bots; integração com LB público.
