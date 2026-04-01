@@ -1,7 +1,7 @@
 # Batuara.net - Registro de Correções, Melhorias e Roadmap
 
 > Documento de referência para desenvolvedores e ferramentas de assistência por IA (Devin, Codex, Claude, Gemini, Warp Terminal, Opencode, Antigravity, Trae, Qoder e outras).
-> Última atualização: Março/2026
+> Última atualização: Abril/2026
 
 ---
 
@@ -202,13 +202,13 @@ Este plano deve ser utilizado como ponto de partida em cada sessão de trabalho:
 
 | # | Item | Status | Prioridade | Estimativa | Data Conclusão | PR |
 |---|------|--------|------------|------------|----------------|-----|
-| 5.1 | Secret Scanning no CI | [x] | Alta | 2h | 24/03/2026 | _Abertura pendente_ |
-| 5.2 | Audit de Dependências | [x] | Alta | 2-3h | 24/03/2026 | _Abertura pendente_ |
-| 5.4 | CSP Mais Restritivo | [x] | Média | 2-3h | 24/03/2026 | _Abertura pendente_ |
-| 5.5 | Logging Centralizado | [x] | Alta | 3-5h | 24/03/2026 | _Abertura pendente_ |
-| 5.6 | Backup PostgreSQL | [x] | Alta | 3-4h | 24/03/2026 | _Abertura pendente_ |
-| 5.7 | Runbook de Operações | [x] | Média | 3-4h | 24/03/2026 | _Abertura pendente_ |
-| 5.3 | HTTPS com Let's Encrypt | [⏳] | Crítica | 2-3h | - | - |
+| 5.1 | Secret Scanning no CI | [x] | Alta | 2h | 24/03/2026 | [#17](https://github.com/guelfi/Batuara.net/pull/17) |
+| 5.2 | Audit de Dependências | [x] | Alta | 2-3h | 24/03/2026 | [#17](https://github.com/guelfi/Batuara.net/pull/17) |
+| 5.4 | CSP Mais Restritivo | [x] | Média | 2-3h | 24/03/2026 | [#17](https://github.com/guelfi/Batuara.net/pull/17) |
+| 5.5 | Logging Centralizado | [x] | Alta | 3-5h | 24/03/2026 | [#17](https://github.com/guelfi/Batuara.net/pull/17) |
+| 5.6 | Backup PostgreSQL | [x] | Alta | 3-4h | 24/03/2026 | [#17](https://github.com/guelfi/Batuara.net/pull/17) |
+| 5.7 | Runbook de Operações | [x] | Média | 3-4h | 24/03/2026 | [#17](https://github.com/guelfi/Batuara.net/pull/17) |
+| 5.3 | HTTPS com Let's Encrypt | [⏳] | Crítica | 2-3h | - | Bloqueado — aguardando domínio |
 
 > ⚠️ **Item 5.3 por último:** HTTPS com Let's Encrypt aguarda domínio válido. Continuar com os outros itens primeiro.
 
@@ -230,7 +230,7 @@ Este plano deve ser utilizado como ponto de partida em cada sessão de trabalho:
 ### 5.1 — Secret Scanning no CI
 
 **Status:** `[x]` Concluído  
-**PR:** _Abertura pendente_  
+**PR:** [#17](https://github.com/guelfi/Batuara.net/pull/17)  
 **Prioridade:** Alta  
 **Facilidade:** muito fácil  
 **Estimativa:** 2 horas
@@ -266,7 +266,7 @@ Este plano deve ser utilizado como ponto de partida em cada sessão de trabalho:
 ### 5.2 — Audit de Dependências Vulneráveis
 
 **Status:** `[x]` Concluído  
-**PR:** _Abertura pendente_  
+**PR:** [#17](https://github.com/guelfi/Batuara.net/pull/17)  
 **Prioridade:** Alta  
 **Facilidade:** Fácil  
 **Estimativa:** 2-3 horas
@@ -290,8 +290,8 @@ Este plano deve ser utilizado como ponto de partida em cada sessão de trabalho:
 
 ### 5.3 — HTTPS com Let's Encrypt
 
-**Status:** `[→]` Bloqueado - Aguardando domínio  
-**PR:** _Abertura pendente_  
+**Status:** `[⏳]` Bloqueado - Aguardando domínio  
+**PR:** —  
 **Prioridade:** Crítica  
 **Facilidade:** Média  
 **Estimativa:** 2-3 horas
@@ -326,7 +326,7 @@ sudo certbot --nginx -d batuara.net -d www.batuara.net -d admin.batuara.net -d a
 ### 5.4 — Content Security Policy Mais Restritivo
 
 **Status:** `[x]` Concluído  
-**PR:** _Abertura pendente_  
+**PR:** [#17](https://github.com/guelfi/Batuara.net/pull/17)  
 **Prioridade:** Média  
 **Facilidade:** Média  
 **Estimativa:** 2-3 horas
@@ -359,7 +359,7 @@ Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'none'
 ### 5.5 — Logging Centralizado (Serilog)
 
 **Status:** `[x]` Concluído  
-**PR:** _Abertura pendente_  
+**PR:** [#17](https://github.com/guelfi/Batuara.net/pull/17)  
 **Prioridade:** Alta  
 **Facilidade:** Média  
 **Estimativa:** 3-5 horas
@@ -388,7 +388,7 @@ Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'none'
 ### 5.6 — Backup Automatizado do PostgreSQL
 
 **Status:** `[x]` Concluído  
-**PR:** _Abertura pendente_  
+**PR:** [#17](https://github.com/guelfi/Batuara.net/pull/17)  
 **Prioridade:** Alta  
 **Facilidade:** Média  
 **Estimativa:** 3-4 horas
@@ -436,7 +436,7 @@ ls -lh /var/backups/batuara/
 ### 5.7 — Runbook de Operações
 
 **Status:** `[x]` Concluído  
-**PR:** _Abertura pendente_  
+**PR:** [#17](https://github.com/guelfi/Batuara.net/pull/17)  
 **Prioridade:** Média  
 **Facilidade:** Fácil (documentação pura)  
 **Estimativa:** 3-4 horas
@@ -602,18 +602,25 @@ Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não s
 - Compatível com o path base `/batuara-api`
 - Logs estruturados e métricas mínimas disponíveis
 
-### Próxima Ordem Recomendada de Execução
+### Ordem Recomendada de Execução (por facilidade + criticidade)
 
-1. Fundação técnica e contratos da Fase 6.0
-2. EP-Events
-3. EP-Calendar
-4. EP-SiteSettings
-5. EP-Contact
-6. EP-Orixas
-7. EP-UmbandaLines
-8. EP-SpiritualContents
-9. EP-Dashboard / auditoria
-10. MFA, WAF/SIEM e fechamento do HTTPS
+> Ordem otimizada considerando dependências técnicas, complexidade de implementação e valor entregue por ciclo.
+> Cada item deve gerar um PR independente para facilitar review e reduzir risco.
+
+| # | Item | Bloco | Pontos | Justificativa da ordem |
+|---|------|-------|--------|------------------------|
+| 1 | Fundação técnica e contratos | 6.0 | — | Pré-requisito de tudo: DTOs, envelopes, OpenAPI, rate limiting, Swagger restrito |
+| 2 | EP-SiteSettings (público + admin) | 6.1 | 5 | Mais simples dos CRUDs; valida a fundação técnica end-to-end sem regras de domínio complexas |
+| 3 | EP-Events (público + admin) | 6.1 | 5+8+5 | CRUD com regras de domínio (conflito, datas), filtros e paginação — valida padrões de listagem |
+| 4 | EP-Contact (público) | 6.1 | — | Endpoint único (POST) com validação, rate limit e anti-spam — rápido de implementar |
+| 5 | EP-Orixas (público + admin) | 6.2 | 3+8 | CRUD com ordenação e arrays (cores, elementos) — reutiliza padrões do EP-Events |
+| 6 | EP-UmbandaLines (público + admin) | 6.2 | 8 | Mesma estrutura de EP-Orixas, com entities e workingDays |
+| 7 | EP-SpiritualContents (público + admin) | 6.2 | 8 | CRUD com busca textual, categorização e sanitização XSS |
+| 8 | EP-Calendar (público + admin + inscrições) | 6.1 | 5+13 | Mais complexo: concorrência, capacidade, idempotência, transações atômicas |
+| 9 | EP-Dashboard + Auditoria | 6.3 | 8 | Depende de todos os domínios anteriores para ter dados reais e logs acumulados |
+| 10 | MFA, RBAC granular, WAF/SIEM, HTTPS | 6.4 | 13+ | Hardening avançado — executável após toda a API estar funcional |
+
+**Nota sobre EP-Calendar:** Movido para posição 8 (antes era 3) porque a H-011 (inscrição com controle de capacidade e idempotência) é a história mais complexa do backlog (13 pontos). É melhor validar os padrões em domínios mais simples antes.
 
 ---
 
@@ -633,13 +640,14 @@ Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não s
 | [#10](https://github.com/guelfi/Batuara.net/pull/10) | Fase 4 | Corrigir nome do secret SSH | Merged |
 | [#11](https://github.com/guelfi/Batuara.net/pull/11) | Pós-Deploy | Fix deadlock no interceptor de auth | Merged |
 | [#12](https://github.com/guelfi/Batuara.net/pull/12) | Pós-Deploy | Preservar silent token refresh | Merged |
-| - | Fase 5 | Secret Scanning no CI | Abertura pendente |
-| - | Fase 5 | Audit de Dependências | Abertura pendente |
-| - | Fase 5 | HTTPS com Let's Encrypt | Abertura pendente |
-| - | Fase 5 | CSP Mais Restritivo | Abertura pendente |
-| - | Fase 5 | Logging Centralizado | Abertura pendente |
-| - | Fase 5 | Backup PostgreSQL | Abertura pendente |
-| - | Fase 5 | Runbook de Operações | Abertura pendente |
+| [#14](https://github.com/guelfi/Batuara.net/pull/14) | Docs | Criar Correcoes.md e atualizar README.md | Merged |
+| [#15](https://github.com/guelfi/Batuara.net/pull/15) | Docs | Remover PROJETO.md/STATUS.md, criar ROADMAP.md | Merged |
+| [#16](https://github.com/guelfi/Batuara.net/pull/16) | Docs | Reorganizar Fase 5 por facilidade+criticidade | Merged |
+| [#17](https://github.com/guelfi/Batuara.net/pull/17) | Fase 5 | Hardening: secret scanning, audit, CSP, logging, backup, runbook | Merged |
+| [#18](https://github.com/guelfi/Batuara.net/pull/18) | Fase 5 | Correções de CI/build da Fase 5 | Merged |
+| #19–#31 | Dependabot | Atualizações automáticas de dependências (React 19, MUI 7, .NET packages) | Merged |
+| [#32](https://github.com/guelfi/Batuara.net/pull/32) | Fix | Downgrade Swashbuckle, fix MUI Grid v7, web-vitals v4, React 19 compat, Dockerfiles | Merged |
+| [#33](https://github.com/guelfi/Batuara.net/pull/33) | Fix | Corrigir Docker Build Test (npm ci + remover App.test.tsx boilerplate) | Merged |
 
 ---
 
@@ -657,8 +665,8 @@ Batuara.net/
 │   │   ├── Batuara.Infrastructure/ # Infraestrutura (EF Core, DbContext, serviços)
 │   │   └── Batuara.Auth/           # [DEPRECADO] Migrado para Batuara.API
 │   └── Frontend/
-│       ├── PublicWebsite/          # Website público (React 18 + TypeScript + MUI)
-│       └── AdminDashboard/         # Dashboard admin (React 18 + TypeScript + MUI)
+│       ├── PublicWebsite/          # Website público (React 19 + TypeScript + MUI 7)
+│       └── AdminDashboard/         # Dashboard admin (React 19 + TypeScript + MUI 7)
 ├── .github/workflows/
 │   ├── ci.yml                      # CI: build .NET, frontends, Docker
 │   └── deploy-oci.yml              # CD: deploy rolling na OCI
@@ -676,7 +684,7 @@ Batuara.net/
 ### Stack Tecnológica
 
 - **Backend:** .NET 8 / ASP.NET Core / Entity Framework Core / PostgreSQL
-- **Frontend:** React 18 / TypeScript / Material-UI (MUI) / React Router v6
+- **Frontend:** React 19 / TypeScript / Material-UI (MUI 7) / React Router v6
 - **Infraestrutura:** Docker / Docker Compose / Nginx / GitHub Actions
 - **Servidor:** Oracle Cloud Infrastructure (OCI) — Ubuntu
 
@@ -726,17 +734,17 @@ Ao iniciar uma nova sessão de trabalho com este projeto:
 
 ### Prioridade de Execução
 
-Ordem recomendada a partir do estado atual do projeto:
+Ordem recomendada a partir do estado atual do projeto (otimizada por facilidade + criticidade):
 
-1. **Fase 6.0** — Fundação técnica e contratos
-2. **Fase 6.1 / EP-Events**
-3. **Fase 6.1 / EP-Calendar**
-4. **Fase 6.1 / EP-SiteSettings**
-5. **Fase 6.1 / EP-Contact**
-6. **Fase 6.2 / EP-Orixas**
-7. **Fase 6.2 / EP-UmbandaLines**
-8. **Fase 6.2 / EP-SpiritualContents**
-9. **Fase 6.3 / Dashboard + Audit**
+1. **Fase 6.0** — Fundação técnica e contratos (pré-requisito de tudo)
+2. **Fase 6.1 / EP-SiteSettings** — CRUD mais simples, valida a fundação end-to-end
+3. **Fase 6.1 / EP-Events** — CRUD com regras de domínio, filtros e paginação
+4. **Fase 6.1 / EP-Contact** — Endpoint único, rápido de implementar
+5. **Fase 6.2 / EP-Orixas** — Reutiliza padrões do EP-Events
+6. **Fase 6.2 / EP-UmbandaLines** — Mesma estrutura de EP-Orixas
+7. **Fase 6.2 / EP-SpiritualContents** — CRUD com busca e sanitização XSS
+8. **Fase 6.1 / EP-Calendar** — Mais complexo (concorrência, capacidade, idempotência)
+9. **Fase 6.3 / Dashboard + Audit** — Depende dos domínios anteriores
 10. **Fase 6.4** — MFA, WAF/SIEM e fechamento do HTTPS (item 5.3 continua dependente de domínio válido)
 
 ### Atalhos de Comando
