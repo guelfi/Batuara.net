@@ -25,7 +25,7 @@ jobs:
     environment: production
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.10.0
