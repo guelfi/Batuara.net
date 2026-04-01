@@ -9,6 +9,8 @@
 - EP-SpiritualContents — `/batuara-api/api/spiritual-contents` e `/batuara-api/api/public/spiritual-contents`
 - EP-Dashboard — `/batuara-api/api/dashboard/...`
 - EP-SiteSettings — `/batuara-api/api/site-settings` e `/batuara-api/api/public/site-settings`
+- EP-Contact — `/batuara-api/api/public/contact-messages`
+- EP-Audit — trilha de auditoria, correlação e retenção operacional
 - EP-Segurança — MFA, RBAC, rate limiting, WAF, SIEM, Swagger protegido
 - EP-Documentação — OpenAPI/Swagger e guias operacionais
 
@@ -116,6 +118,17 @@ Como Visitante, quero ver conteúdo institucional (hero, sobre, contato, doaçõ
 - Pontos: 5.
 - Dependências: armazenamento de settings e invalidadores de cache.
 
+### H-055 (EP-Contact, Público)
+Como Visitante, quero enviar uma mensagem de contato para receber orientação ou esclarecimentos.
+
+- Critérios
+  - POST `/batuara-api/api/public/contact-messages` valida `name`, `email`, `subject` e `message`, com limites de tamanho e sanitização.
+  - Retorna `202 Accepted` quando a mensagem é aceita para processamento.
+  - Aplica rate limiting por IP, proteção anti-spam e não expõe detalhes internos de processamento.
+  - Gera trilha mínima de auditoria com `traceId`, `ip`, `userAgent` e sem dados sensíveis em logs.
+- Pontos: 5.
+- Dependências: validators, policies de rate limit, mecanismo de persistência/filas e padronização de logs.
+
 ### H-060 (EP-Dashboard, Admin)
 Como Administrador, quero métricas e trilha de auditoria.
 
@@ -124,6 +137,17 @@ Como Administrador, quero métricas e trilha de auditoria.
   - Logs estruturados; filtros por período/usuário/entidade.
 - Pontos: 8.
 - Dependências: pipeline de auditoria, índices por timestamp.
+
+### H-061 (EP-Audit, Admin)
+Como Administrador, quero consultar trilhas de auditoria por usuário, entidade e ação para investigar alterações e incidentes.
+
+- Critérios
+  - Eventos de criação, atualização, exclusão lógica, autenticação e ações sensíveis geram registros de auditoria consistentes.
+  - Cada registro contém ao menos `timestamp`, `action`, `entityType`, `entityId`, `userId`, `traceId`, `ip` e `userAgent`.
+  - Consulta administrativa suporta filtros por período, usuário, entidade e tipo de ação.
+  - Política de retenção e estratégia de indexação ficam documentadas e alinhadas ao ambiente OCI/SIEM.
+- Pontos: 8.
+- Dependências: Serilog estruturado, storage/indexação de logs, correlação com dashboard e políticas de retenção.
 
 ### H-070 (EP-Segurança)
 Como Administrador, quero MFA TOTP com fallback SMS e RBAC granular por endpoint.
@@ -161,5 +185,59 @@ Como Stakeholder, quero documentação OpenAPI 3.0 completa e versionada.
 
 - Fase 1 (núcleo): Events, Calendar, Contact, SiteSettings + OpenAPI.
 - Fase 2: Orixás, UmbandaLines, SpiritualContents.
-- Fase 3: Dashboard (stats/activity-logs), Segurança avançada e hardening contínuo.
+- Fase 3: Dashboard (stats/activity-logs), Audit trail, Segurança avançada e hardening contínuo.
+
+## Matriz Única de Execução
+
+### Legenda de Status Inicial
+
+- Planejado: item ainda não iniciado
+- Preparação: depende de contrato, modelagem ou infraestrutura base
+- Bloqueado: depende de fator externo ou conclusão de pré-requisito
+
+| Ordem | Fase | Bloco | Épico | História | Persona | Objetivo resumido | Endpoints principais | Prioridade | Pontos | Dependências-chave | Status inicial |
+|------|------|-------|--------|----------|---------|-------------------|----------------------|------------|--------|--------------------|----------------|
+| 1 | Fundação | 6.0 | EP-Documentação | H-080 | Stakeholder | Consolidar OpenAPI 3.0 e versionamento | `/batuara-api/api/**`, `/batuara-api/swagger` | P0 | 3 | DTOs, rotas, componentes reutilizados, regra de exposição do Swagger | Preparação |
+| 2 | Núcleo | 6.1 | EP-SiteSettings | H-050 | Visitante / Editor | Publicar e gerenciar conteúdo institucional | `/batuara-api/api/public/site-settings`, `/batuara-api/api/site-settings` | P0 | 5 | storage de settings, invalidação de cache, validações de URL/e-mail | Planejado |
+| 3 | Núcleo | 6.1 | EP-Events | H-001 | Visitante | Listar eventos futuros com filtros e paginação | `/batuara-api/api/public/events` | P0 | 5 | índices date/type, DTO card, AutoMapper, ETag | Planejado |
+| 4 | Núcleo | 6.1 | EP-Events | H-002 | Editor | Criar evento com validações e regras de domínio | `/batuara-api/api/events` | P0 | 8 | EventDomainService, validators, transações, auditoria | Planejado |
+| 5 | Núcleo | 6.1 | EP-Events | H-003 | Editor | Editar detalhes e status de evento | `/batuara-api/api/events/{id}` | P0 | 5 | DTOs de update, validators, trilha de alterações | Planejado |
+| 6 | Núcleo | 6.1 | EP-Contact | H-055 | Visitante | Enviar mensagem de contato com proteção anti-spam | `/batuara-api/api/public/contact-messages` | P0 | 5 | validators, rate limit, persistência/fila, logs padronizados | Planejado |
+| 7 | Conteúdo | 6.2 | EP-Orixas | H-020 | Visitante | Consultar catálogo e detalhes de Orixás | `/batuara-api/api/public/orixas`, `/batuara-api/api/public/orixas/{id}` | P1 | 3 | seeds/migrações, DTOs, ordenação, ETag | Planejado |
+| 8 | Conteúdo | 6.2 | EP-Orixas | H-021 | Editor | Cadastrar e editar Orixás | `/batuara-api/api/orixas`, `/batuara-api/api/orixas/{id}` | P1 | 8 | validators, AutoMapper, repositórios, auditoria | Planejado |
+| 9 | Conteúdo | 6.2 | EP-UmbandaLines | H-030 | Visitante / Editor | Consultar e gerenciar Linhas da Umbanda | `/batuara-api/api/public/umbanda-lines`, `/batuara-api/api/umbanda-lines` | P1 | 8 | entidades consolidadas, migrações, validators, auditoria | Planejado |
+| 10 | Conteúdo | 6.2 | EP-SpiritualContents | H-040 | Visitante / Editor | Buscar e gerenciar orações e ensinamentos | `/batuara-api/api/public/spiritual-contents`, `/batuara-api/api/spiritual-contents` | P1 | 8 | sanitização XSS, busca textual, categorização, índices | Planejado |
+| 11 | Núcleo avançado | 6.1 | EP-Calendar | H-010 | Visitante | Consultar atendimentos do calendário | `/batuara-api/api/public/calendar/attendances` | P1 | 5 | índices por data/tipo, paginação, ETag | Planejado |
+| 12 | Núcleo avançado | 6.1 | EP-Calendar | H-011 | Devoto | Inscrever-se em atendimento com controle de vagas | `/batuara-api/api/public/calendar/attendances/{id}/registrations` | P1 | 13 | transações atômicas, locks/idempotência, rate limit dedicado | Planejado |
+| 13 | Governança | 6.3 | EP-Dashboard | H-060 | Administrador | Consultar métricas e atividade administrativa | `/batuara-api/api/dashboard/stats`, `/batuara-api/api/dashboard/activity-logs` | P1 | 8 | pipeline de auditoria, índices por timestamp, dados dos domínios anteriores | Planejado |
+| 14 | Governança | 6.3 | EP-Audit | H-061 | Administrador | Consultar trilhas de auditoria por usuário, ação e entidade | trilha transversal + consulta administrativa | P1 | 8 | Serilog estruturado, storage/indexação de logs, retenção, correlação com SIEM | Planejado |
+| 15 | Segurança | 6.4 | EP-Segurança | H-070 | Administrador | Habilitar MFA, RBAC granular e limites por perfil | `/batuara-api/api/auth/**`, `/batuara-api/api/**` | P1 | 13 | provider SMS, Vault, policies, WAF, SIEM, domínio válido para HTTPS final | Bloqueado |
+
+### Visão por Dependência de Execução
+
+| Grupo de dependência | Itens impactados | Observação operacional |
+|----------------------|------------------|------------------------|
+| Contratos/DTOs/OpenAPI | H-080, H-050, H-001, H-002, H-003, H-010 | Deve ser resolvido primeiro para evitar retrabalho entre frontend e backend |
+| Cache/ETag | H-050, H-001, H-020, H-030, H-040, H-010 | Importante para atingir os SLAs de leitura pública |
+| Auditoria estruturada | H-002, H-003, H-021, H-030, H-040, H-055, H-060, H-061 | Convém padronizar cedo para não gerar lacunas históricas |
+| Concorrência/Transação | H-011 | Exige desenho cuidadoso por capacidade, idempotência e race condition |
+| Segurança avançada | H-070 | Parte pode avançar sem HTTPS final, mas WAF/SIEM/MFA dependem de preparação infra |
+
+### Sequência Executável Recomendada
+
+1. H-080
+2. H-050
+3. H-001
+4. H-002
+5. H-003
+6. H-055
+7. H-020
+8. H-021
+9. H-030
+10. H-040
+11. H-010
+12. H-011
+13. H-060
+14. H-061
+15. H-070
 
