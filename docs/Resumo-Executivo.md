@@ -34,13 +34,15 @@
 
 ## Cronograma Macro (10 dias úteis, revisões a cada 3 dias)
 
-- D0–D2: Contratos e segurança base (MFA, RBAC, rate limit), WAF/headers.
+- D0–D2: Contratos, OpenAPI, DTOs, rate limiting básico, políticas de acesso e revisão do Swagger em produção.
 - D3: Revisão 1 com stakeholders; ajustes.
-- D4–D6: Núcleo — Events, Calendar, Contact, SiteSettings + OpenAPI (v1).
+- D4–D6: Núcleo — SiteSettings, Events, Contact + Calendar (P1).
 - D6: Revisão 2; smoke tests de SLA/segurança em staging.
-- D7–D9: Orixás, UmbandaLines, SpiritualContents; auditoria/dashboard.
+- D7–D9: Orixás, UmbandaLines, SpiritualContents; Dashboard/Auditoria.
 - D9: Revisão 3; testes de desempenho e segurança.
-- D10: Aprovação final e go/no-go.
+- D10: MFA/RBAC granular, WAF/SIEM, hardening avançado; aprovação final e go/no-go.
+
+> **Nota:** Segurança avançada (MFA, RBAC granular, WAF/SIEM) foi realocada para o final (Bloco 6.4) conforme ROADMAP.md. A fundação técnica (D0–D2) inclui rate limiting básico e políticas de acesso.
 
 ## Gates de Decisão
 
