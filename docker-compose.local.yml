@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-batuara-net-local}-db
+    environment:
+      - POSTGRES_DB=${DB_NAME:-batuara_db}
+      - POSTGRES_USER=${PROJECT_NAME:-batuara}_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - batuara-db-data:/var/lib/postgresql/data
+    networks:
+      - batuara-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${PROJECT_NAME:-batuara}_user -d ${DB_NAME:-batuara_db}" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: ${COMPOSE_PROJECT_NAME:-batuara-net-local}-api
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=${DB_NAME:-batuara_db};Username=${PROJECT_NAME:-batuara}_user;Password=${DB_PASSWORD:-postgres}
+      - JwtSettings__Secret=${JWT_SECRET:-CHANGE_ME_CHANGE_ME_CHANGE_ME_CHANGE_ME}
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Development}
+    networks:
+      - batuara-network
+    depends_on:
+      - db
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  publicwebsite:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL_PUBLIC:-/batuara-api}
+        - APP_PATH=src/Frontend/PublicWebsite
+        - WEB_BASE_PATH=/batuara-public
+    container_name: ${COMPOSE_PROJECT_NAME:-batuara-net-local}-public-website
+    networks:
+      - batuara-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:80/batuara-public/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  admindashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL_ADMIN:-/batuara-api/api}
+        - APP_PATH=src/Frontend/AdminDashboard
+        - WEB_BASE_PATH=/batuara-admin
+    container_name: ${COMPOSE_PROJECT_NAME:-batuara-net-local}-admin-dashboard
+    networks:
+      - batuara-network
+    depends_on:
+      - api
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:80/batuara-admin/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-batuara-net-local}-nginx
+    ports:
+      - "${NGINX_PORT_HTTP:-80}:80"
+    volumes:
+      - ./nginx/batuara.local.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - publicwebsite
+      - admindashboard
+      - api
+    networks:
+      - batuara-network
+    restart: unless-stopped
+
+networks:
+  batuara-network:
+    driver: bridge
+
+volumes:
+  batuara-db-data:
+    name: ${VOLUME_PREFIX:-batuara}-db-data
+

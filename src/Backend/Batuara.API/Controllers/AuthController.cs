@@ -110,7 +110,18 @@ namespace Batuara.API.Controllers
                 if (!string.IsNullOrEmpty(refreshToken))
                 {
                     var ipAddress = GetIpAddress();
-                    await _authService.RevokeTokenAsync(refreshToken, ipAddress);
+                    try
+                    {
+                        await _authService.RevokeTokenAsync(refreshToken, ipAddress);
+                    }
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        _logger.LogWarning(ex, "Logout requested with invalid refresh token");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error revoking refresh token during logout");
+                    }
                 }
 
                 // Clear refresh token cookie
