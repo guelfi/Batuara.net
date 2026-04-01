@@ -519,15 +519,16 @@ Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não s
 | Epic | Rotas | Prioridade | Dependências |
 |------|-------|------------|--------------|
 | EP-Events | `/api/events`, `/api/public/events` | P0 | Fundação técnica, DTOs, regras de domínio |
-| EP-Calendar | `/api/calendar/attendances`, `/api/public/calendar/attendances` | P0 | Fundação técnica, capacidade/transações |
+| EP-Calendar | `/api/calendar/attendances`, `/api/public/calendar/attendances` | P1 | Fundação técnica, capacidade/transações (movido para posição 8 na execução por alta complexidade — 13 pts) |
 | EP-SiteSettings | `/api/site-settings`, `/api/public/site-settings` | P0 | modelagem de conteúdo institucional |
 | EP-Contact | `/api/public/contact-messages` | P0 | validação, anti-spam, auditoria |
 
 #### Resultados esperados
 
-- PublicWebsite deixa de depender de mocks para eventos, calendário, contato, doações/localização institucionais
-- AdminDashboard passa a operar CRUD real para agenda e eventos
+- PublicWebsite deixa de depender de mocks para eventos, contato e doações/localização institucionais
+- AdminDashboard passa a operar CRUD real para eventos e site settings
 - Contato público com processamento controlado, auditável e protegido por rate limiting
+- Calendar (P1) será implementado após validar padrões nos domínios mais simples
 
 ### 6.2 — Conteúdo Institucional e Espiritual
 
@@ -613,14 +614,15 @@ Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não s
 |---|------|-------|--------|------------------------|
 | 1 | Fundação técnica e contratos | 6.0 | — | Pré-requisito de tudo: DTOs, envelopes, OpenAPI, rate limiting, Swagger restrito |
 | 2 | EP-SiteSettings (público + admin) | 6.1 | 5 | Mais simples dos CRUDs; valida a fundação técnica end-to-end sem regras de domínio complexas |
-| 3 | EP-Events (público + admin) | 6.1 | 5+8+5 | CRUD com regras de domínio (conflito, datas), filtros e paginação — valida padrões de listagem |
-| 4 | EP-Contact (público) | 6.1 | — | Endpoint único (POST) com validação, rate limit e anti-spam — rápido de implementar |
+| 3 | EP-Events (público + admin) | 6.1 | 5+8+5+3+3 | CRUD completo com regras de domínio (conflito, datas), filtros, paginação, soft delete e listagem admin |
+| 4 | EP-Contact (público) | 6.1 | 5 | Endpoint único (POST) com validação, rate limit e anti-spam — rápido de implementar |
 | 5 | EP-Orixas (público + admin) | 6.2 | 3+8 | CRUD com ordenação e arrays (cores, elementos) — reutiliza padrões do EP-Events |
 | 6 | EP-UmbandaLines (público + admin) | 6.2 | 8 | Mesma estrutura de EP-Orixas, com entities e workingDays |
 | 7 | EP-SpiritualContents (público + admin) | 6.2 | 8 | CRUD com busca textual, categorização e sanitização XSS |
-| 8 | EP-Calendar (público + admin + inscrições) | 6.1 | 5+13 | Mais complexo: concorrência, capacidade, idempotência, transações atômicas |
-| 9 | EP-Dashboard + Auditoria | 6.3 | 8 | Depende de todos os domínios anteriores para ter dados reais e logs acumulados |
-| 10 | MFA, RBAC granular, WAF/SIEM, HTTPS | 6.4 | 13+ | Hardening avançado — executável após toda a API estar funcional |
+| 8 | EP-Calendar (público + admin + inscrições) | 6.1 | 5+13+8+8 | Mais complexo: concorrência, capacidade, idempotência, transações atômicas + CRUD admin completo |
+| 9 | EP-Dashboard (H-060) | 6.3 | 8 | Depende de todos os domínios anteriores para ter dados reais e logs acumulados |
+| 10 | EP-Audit (H-061) | 6.3 | 8 | Trilha de auditoria transversal — retenção, indexação e correlação com SIEM |
+| 11 | MFA, RBAC granular, WAF/SIEM, HTTPS | 6.4 | 13+ | Hardening avançado — executável após toda a API estar funcional |
 
 **Nota sobre EP-Calendar:** Movido para posição 8 (antes era 3) porque a H-011 (inscrição com controle de capacidade e idempotência) é a história mais complexa do backlog (13 pontos). É melhor validar os padrões em domínios mais simples antes.
 
@@ -739,15 +741,18 @@ Ao iniciar uma nova sessão de trabalho com este projeto:
 Ordem recomendada a partir do estado atual do projeto (otimizada por facilidade + criticidade):
 
 1. **Fase 6.0** — Fundação técnica e contratos (pré-requisito de tudo)
-2. **Fase 6.1 / EP-SiteSettings** — CRUD mais simples, valida a fundação end-to-end
-3. **Fase 6.1 / EP-Events** — CRUD com regras de domínio, filtros e paginação
-4. **Fase 6.1 / EP-Contact** — Endpoint único, rápido de implementar
-5. **Fase 6.2 / EP-Orixas** — Reutiliza padrões do EP-Events
-6. **Fase 6.2 / EP-UmbandaLines** — Mesma estrutura de EP-Orixas
-7. **Fase 6.2 / EP-SpiritualContents** — CRUD com busca e sanitização XSS
-8. **Fase 6.1 / EP-Calendar** — Mais complexo (concorrência, capacidade, idempotência)
-9. **Fase 6.3 / Dashboard + Audit** — Depende dos domínios anteriores
-10. **Fase 6.4** — MFA, WAF/SIEM e fechamento do HTTPS (item 5.3 continua dependente de domínio válido)
+2. **Fase 6.1 / EP-SiteSettings** — CRUD mais simples, valida a fundação end-to-end (5 pts)
+3. **Fase 6.1 / EP-Events** — CRUD completo: listar, criar, editar, excluir, listagem admin (5+8+5+3+3 = 24 pts)
+4. **Fase 6.1 / EP-Contact** — Endpoint único, rápido de implementar (5 pts)
+5. **Fase 6.2 / EP-Orixas** — Reutiliza padrões do EP-Events (3+8 = 11 pts)
+6. **Fase 6.2 / EP-UmbandaLines** — Mesma estrutura de EP-Orixas (8 pts)
+7. **Fase 6.2 / EP-SpiritualContents** — CRUD com busca e sanitização XSS (8 pts)
+8. **Fase 6.1 / EP-Calendar** — Mais complexo: público, inscrições e CRUD admin (5+13+8+8 = 34 pts)
+9. **Fase 6.3 / EP-Dashboard** — Métricas e atividade administrativa (8 pts)
+10. **Fase 6.3 / EP-Audit** — Trilha de auditoria transversal (8 pts)
+11. **Fase 6.4** — MFA, WAF/SIEM e fechamento do HTTPS (13+ pts; item 5.3 continua dependente de domínio válido)
+
+> **Total estimado:** 124 story points (19 histórias)
 
 ### Atalhos de Comando
 
