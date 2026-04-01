@@ -53,7 +53,7 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
   const [isVisible, setIsVisible] = useState(false);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [isOverFooter, setIsOverFooter] = useState(false);
-  const throttledHandleScroll = useRef<Function>();
+  const throttledHandleScroll = useRef<Function | undefined>(undefined);
 
   const handleScroll = useCallback(() => {
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;

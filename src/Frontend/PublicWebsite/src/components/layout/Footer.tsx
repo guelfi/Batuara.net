@@ -29,7 +29,7 @@ const Footer: React.FC = () => {
       <Container maxWidth="lg">
         <Grid container spacing={2}>
           {/* Informações da Casa */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               Casa de Caridade Caboclo Batuara
             </Typography>
@@ -42,7 +42,7 @@ const Footer: React.FC = () => {
           </Grid>
 
           {/* Contato */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               Contato
             </Typography>
@@ -67,7 +67,7 @@ const Footer: React.FC = () => {
           </Grid>
 
           {/* Redes Sociais */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               Redes Sociais
             </Typography>

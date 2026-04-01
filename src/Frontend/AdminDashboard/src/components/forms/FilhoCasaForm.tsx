@@ -168,7 +168,7 @@ const FilhoCasaForm: React.FC<FilhoCasaFormProps> = ({
         )}
 
         <Grid container spacing={3} sx={{ mt: 1 }}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="Nome Completo"
@@ -182,7 +182,7 @@ const FilhoCasaForm: React.FC<FilhoCasaFormProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="Email"
@@ -196,7 +196,7 @@ const FilhoCasaForm: React.FC<FilhoCasaFormProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="Telefone"
@@ -210,7 +210,7 @@ const FilhoCasaForm: React.FC<FilhoCasaFormProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="Data de Entrada"
@@ -228,7 +228,7 @@ const FilhoCasaForm: React.FC<FilhoCasaFormProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <FormControl fullWidth variant="outlined">
               <InputLabel>Status</InputLabel>
               <Select
@@ -244,7 +244,7 @@ const FilhoCasaForm: React.FC<FilhoCasaFormProps> = ({
             </FormControl>
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid size={12}>
             <TextField
               fullWidth
               label="Observações"

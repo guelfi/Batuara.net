@@ -134,7 +134,7 @@ const LocalizacaoContent: React.FC = () => {
               </Typography>
               
               <Grid container spacing={3}>
-                <Grid item xs={12} md={8}>
+                <Grid size={{ xs: 12, md: 8 }}>
                   <TextField
                     fullWidth
                     label="Endereço"
@@ -143,7 +143,7 @@ const LocalizacaoContent: React.FC = () => {
                     margin="normal"
                   />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
                     label="Bairro"
@@ -153,7 +153,7 @@ const LocalizacaoContent: React.FC = () => {
                   />
                 </Grid>
                 
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Cidade"
@@ -162,7 +162,7 @@ const LocalizacaoContent: React.FC = () => {
                     margin="normal"
                   />
                 </Grid>
-                <Grid item xs={12} md={3}>
+                <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
                     fullWidth
                     label="Estado"
@@ -171,7 +171,7 @@ const LocalizacaoContent: React.FC = () => {
                     margin="normal"
                   />
                 </Grid>
-                <Grid item xs={12} md={3}>
+                <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
                     fullWidth
                     label="CEP"
@@ -181,7 +181,7 @@ const LocalizacaoContent: React.FC = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Telefone"
@@ -190,7 +190,7 @@ const LocalizacaoContent: React.FC = () => {
                     margin="normal"
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Email"
@@ -200,7 +200,7 @@ const LocalizacaoContent: React.FC = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <TextField
                     fullWidth
                     label="Horários de Funcionamento"
@@ -213,7 +213,7 @@ const LocalizacaoContent: React.FC = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <TextField
                     fullWidth
                     label="Informações Adicionais"
@@ -234,7 +234,7 @@ const LocalizacaoContent: React.FC = () => {
               </Typography>
               
               <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Paper sx={{ p: 2, height: '100%' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       <LocationIcon sx={{ mr: 1, color: 'primary.main' }} />
@@ -252,7 +252,7 @@ const LocalizacaoContent: React.FC = () => {
                   </Paper>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Paper sx={{ p: 2, height: '100%' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       <PhoneIcon sx={{ mr: 1, color: 'primary.main' }} />
@@ -267,7 +267,7 @@ const LocalizacaoContent: React.FC = () => {
                   </Paper>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Paper sx={{ p: 2, height: '100%' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       <ScheduleIcon sx={{ mr: 1, color: 'primary.main' }} />
@@ -282,7 +282,7 @@ const LocalizacaoContent: React.FC = () => {
                   </Paper>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Paper sx={{ p: 2, height: '100%' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       <EmailIcon sx={{ mr: 1, color: 'primary.main' }} />
