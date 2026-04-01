@@ -268,14 +268,17 @@ app.UseSerilogRequestLogging(options =>
     {
         diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
         diagnosticContext.Set("UserAgent", httpContext.Request.Headers.UserAgent.ToString());
-        diagnosticContext.Set("ClientIP", httpContext.Connection.RemoteIpAddress?.ToString());
+        diagnosticContext.Set("ClientIP", httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
         diagnosticContext.Set("Scheme", httpContext.Request.Scheme);
         
         if (httpContext.User.Identity?.IsAuthenticated == true)
         {
             var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                          ?? httpContext.User.FindFirst("sub")?.Value;
-            diagnosticContext.Set("AuthenticatedUserId", userId);
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                diagnosticContext.Set("AuthenticatedUserId", userId);
+            }
         }
     };
 });
