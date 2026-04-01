@@ -114,7 +114,7 @@ const SpiritualDetailModal: React.FC<SpiritualDetailModalProps> = ({
     value, 
     leftCol = false 
   }) => (
-    <Grid item xs={leftCol ? 6 : 12} sm={leftCol ? 6 : 12}>
+    <Grid size={{ xs: leftCol ? 6 : 12, sm: leftCol ? 6 : 12 }}>
       <Box sx={{ mb: 1.5 }}>
         <Box
           sx={{
@@ -247,7 +247,7 @@ const SpiritualDetailModal: React.FC<SpiritualDetailModalProps> = ({
             <InfoRow label="Bebida" value={data.bebida} leftCol />
 
             {/* Atuação na Casa Batuara - Texto completo */}
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Box sx={{ mt: 2, mb: 4 }}>
                 <Box
                   sx={{

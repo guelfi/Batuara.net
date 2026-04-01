@@ -309,7 +309,7 @@ const OrixasSection: React.FC = () => {
 
                   {/* Layout em duas colunas: Habitat | Dia da Semana */}
                   <Grid container spacing={1} sx={{ mb: 0.5 }}>
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                       <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
                         Habitat:
                       </Typography>
@@ -317,7 +317,7 @@ const OrixasSection: React.FC = () => {
                         {orixa.habitat}
                       </Typography>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                       <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
                         Dia da Semana:
                       </Typography>
@@ -329,7 +329,7 @@ const OrixasSection: React.FC = () => {
 
                   {/* Layout em duas colunas: Cor | Fruta */}
                   <Grid container spacing={1} sx={{ mb: 0 }}>
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                       <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
                         Cor:
                       </Typography>
@@ -348,7 +348,7 @@ const OrixasSection: React.FC = () => {
                         </Typography>
                       </Box>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={6}>
                       <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
                         Fruta:
                       </Typography>

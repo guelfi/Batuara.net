@@ -141,7 +141,7 @@ const DashboardContent: React.FC = () => {
           const TrendIcon = metric.trend?.isPositive ? TrendingUpIcon : TrendingDownIcon;
 
           return (
-            <Grid item xs={isMobile ? 6 : 12} sm={6} md={3} key={index}>
+            <Grid size={{ xs: isMobile ? 6 : 12, sm: 6, md: 3 }} key={index}>
               <Card
                 sx={{
                   height: isMobile ? 120 : '100%',
@@ -216,7 +216,7 @@ const DashboardContent: React.FC = () => {
       {/* Cards Adicionais */}
       <Grid container spacing={isMobile ? 2 : 3}>
         {/* Atividades Recentes */}
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Card sx={{
             height: '100%',
             maxHeight: isMobile ? 300 : 'none',
@@ -280,7 +280,7 @@ const DashboardContent: React.FC = () => {
         </Grid>
 
         {/* Resumo Rápido */}
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: isMobile ? 2 : 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: isMobile ? 1 : 2 }}>
@@ -293,7 +293,7 @@ const DashboardContent: React.FC = () => {
               {isMobile ? (
                 // Layout compacto para mobile (grid 2x2)
                 <Grid container spacing={1}>
-                  <Grid item xs={6}>
+                  <Grid size={6}>
                     <Typography variant="caption" color="text.secondary">
                       Mensagens Pendentes
                     </Typography>
@@ -301,7 +301,7 @@ const DashboardContent: React.FC = () => {
                       7
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={6}>
                     <Typography variant="caption" color="text.secondary">
                       Próxima Gira
                     </Typography>
@@ -309,7 +309,7 @@ const DashboardContent: React.FC = () => {
                       Sexta, 20:00
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={6}>
                     <Typography variant="caption" color="text.secondary">
                       Filhos Ativos
                     </Typography>
@@ -317,7 +317,7 @@ const DashboardContent: React.FC = () => {
                       {filhosCasaStats.ativos}
                     </Typography>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={6}>
                     <Typography variant="caption" color="text.secondary">
                       Doações do Mês
                     </Typography>

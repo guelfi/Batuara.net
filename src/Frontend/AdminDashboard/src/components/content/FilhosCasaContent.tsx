@@ -297,7 +297,7 @@ const FilhosCasaContent: React.FC = () => {
               disableRowSelectionOnClick
               onRowClick={isMobile ? (params) => handleView(params.id as string) : undefined}
               onRowSelectionModelChange={(newSelection) => {
-                setSelectedRows(newSelection as string[]);
+                setSelectedRows(Array.from(newSelection.ids) as string[]);
               }}
               sx={{
                 '& .MuiDataGrid-row:hover': {

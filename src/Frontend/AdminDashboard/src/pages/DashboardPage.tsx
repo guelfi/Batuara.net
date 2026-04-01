@@ -160,7 +160,7 @@ const DashboardPage: React.FC = () => {
 
       {/* Cards de estatísticas */}
       <Grid container spacing={3} sx={{ mb: 4, justifyContent: 'flex-start', maxWidth: '100%' }}>
-        <Grid item xs={12} sm={6} md={6} lg={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -179,7 +179,7 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={6} lg={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -198,7 +198,7 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={6} lg={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -217,7 +217,7 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={6} lg={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -239,7 +239,7 @@ const DashboardPage: React.FC = () => {
 
       {/* Atividade recente */}
       <Grid container spacing={3}>
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
               Atividade Recente
@@ -291,7 +291,7 @@ const DashboardPage: React.FC = () => {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
               Resumo Rápido

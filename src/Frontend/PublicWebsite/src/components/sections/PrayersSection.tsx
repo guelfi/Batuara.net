@@ -278,7 +278,7 @@ const PrayersSection: React.FC = () => {
         ) : (
           <Grid container spacing={0.8}>
             {filteredPrayers.map((prayer) => (
-              <Grid item xs={12} key={prayer.id}>
+              <Grid size={12} key={prayer.id}>
                 <Accordion
                   expanded={expandedPrayer === prayer.id}
                   onChange={handleAccordionChange(prayer.id)}

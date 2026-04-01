@@ -154,7 +154,7 @@ const DoacoesContent: React.FC = () => {
               
               <Grid container spacing={3}>
                 {/* Upload de QR Code */}
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Paper sx={{ p: 2, border: '2px dashed', borderColor: 'primary.main' }}>
                     <Box sx={{ textAlign: 'center' }}>
                       <UploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
@@ -183,7 +183,7 @@ const DoacoesContent: React.FC = () => {
                 </Grid>
 
                 {/* Informações PIX */}
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Chave PIX"
@@ -192,7 +192,7 @@ const DoacoesContent: React.FC = () => {
                     margin="normal"
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Tipo da Chave PIX"
@@ -204,7 +204,7 @@ const DoacoesContent: React.FC = () => {
                 </Grid>
 
                 {/* Informações Bancárias */}
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Nome do Banco"
@@ -213,7 +213,7 @@ const DoacoesContent: React.FC = () => {
                     margin="normal"
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Tipo de Conta"
@@ -224,7 +224,7 @@ const DoacoesContent: React.FC = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
                     label="Agência"
@@ -233,7 +233,7 @@ const DoacoesContent: React.FC = () => {
                     margin="normal"
                   />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
                     label="Conta"
@@ -242,7 +242,7 @@ const DoacoesContent: React.FC = () => {
                     margin="normal"
                   />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
                     label="Titular da Conta"
@@ -253,7 +253,7 @@ const DoacoesContent: React.FC = () => {
                 </Grid>
 
                 {/* Instruções */}
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <TextField
                     fullWidth
                     label="Instruções para Doação"
@@ -275,7 +275,7 @@ const DoacoesContent: React.FC = () => {
               
               <Grid container spacing={3}>
                 {/* QR Code */}
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Paper sx={{ p: 2, textAlign: 'center', height: '100%' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
                       <QrCodeIcon sx={{ mr: 1, color: 'primary.main' }} />
@@ -300,7 +300,7 @@ const DoacoesContent: React.FC = () => {
                 </Grid>
 
                 {/* Informações PIX */}
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Paper sx={{ p: 2, height: '100%' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       <PixIcon sx={{ mr: 1, color: 'primary.main' }} />
@@ -319,7 +319,7 @@ const DoacoesContent: React.FC = () => {
                 </Grid>
 
                 {/* Informações Bancárias */}
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Paper sx={{ p: 2, height: '100%' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       <BankIcon sx={{ mr: 1, color: 'primary.main' }} />
@@ -344,7 +344,7 @@ const DoacoesContent: React.FC = () => {
                 </Grid>
 
                 {/* Instruções */}
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Paper sx={{ p: 2 }}>
                     <Typography variant="h6" gutterBottom>
                       Instruções para Doadores

@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Drawer,
   List,
-  ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   Divider,
@@ -100,8 +100,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent' 
         {/* Menu Principal */}
         <List>
           {menuItems.map((item) => (
-            <ListItem
-              button
+            <ListItemButton
               key={item.text}
               onClick={() => handleItemClick(item.path)}
               selected={location.pathname === item.path}
@@ -129,7 +128,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent' 
                   },
                 }}
               />
-            </ListItem>
+            </ListItemButton>
           ))}
         </List>
 
@@ -137,8 +136,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent' 
 
         {/* Configurações e Perfil */}
         <List>
-          <ListItem
-            button
+          <ListItemButton
             onClick={() => handleItemClick('/profile')}
             selected={location.pathname === '/profile'}
             sx={{
@@ -165,7 +163,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent' 
                 },
               }}
             />
-          </ListItem>
+          </ListItemButton>
         </List>
       </Box>
     </Drawer>
