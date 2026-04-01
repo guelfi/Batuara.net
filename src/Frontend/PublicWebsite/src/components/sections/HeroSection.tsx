@@ -152,7 +152,7 @@ const HeroSection: React.FC = () => {
         }}
       >
         <Grid container spacing={{ xs: 2, md: 4 }} alignItems="flex-start"> {/* Spacing menor no mobile */}
-          <Grid item xs={12} md={8}>
+          <Grid size={{ xs: 12, md: 8 }}>
             {/* Conteúdo centralizado no espaço disponível */}
             <Box
               sx={{
@@ -265,7 +265,7 @@ const HeroSection: React.FC = () => {
             </Box>
           </Grid >
 
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             {/* Desktop: Cards lado a lado */}
             <Box
               sx={{

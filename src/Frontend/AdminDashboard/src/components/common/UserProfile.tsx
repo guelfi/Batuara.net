@@ -7,7 +7,7 @@ import {
   Avatar,
   Divider,
   List,
-  ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   IconButton,
@@ -136,8 +136,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
 
             {/* Menu de Opções */}
             <List dense sx={{ py: 0 }}>
-              <ListItem 
-                button 
+              <ListItemButton 
                 onClick={handleProfile}
                 sx={{ 
                   borderRadius: 1,
@@ -153,10 +152,9 @@ const UserProfile: React.FC<UserProfileProps> = ({
                   primary="Meu Perfil" 
                   primaryTypographyProps={{ variant: 'body2' }}
                 />
-              </ListItem>
+              </ListItemButton>
 
-              <ListItem 
-                button 
+              <ListItemButton 
                 onClick={handleClose}
                 sx={{ 
                   borderRadius: 1,
@@ -172,12 +170,11 @@ const UserProfile: React.FC<UserProfileProps> = ({
                   primary="Configurações" 
                   primaryTypographyProps={{ variant: 'body2' }}
                 />
-              </ListItem>
+              </ListItemButton>
 
               <Divider sx={{ my: 1 }} />
 
-              <ListItem 
-                button 
+              <ListItemButton 
                 onClick={handleLogout}
                 sx={{ 
                   borderRadius: 1,
@@ -199,7 +196,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
                   primary="Sair" 
                   primaryTypographyProps={{ variant: 'body2' }}
                 />
-              </ListItem>
+              </ListItemButton>
             </List>
 
             {/* Footer */}
