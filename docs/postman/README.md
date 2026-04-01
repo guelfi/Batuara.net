@@ -6,13 +6,13 @@ Esta pasta contém a collection completa e atualizada do Postman para testar tod
 - **API**: ✅ 100% Funcional
 - **Autenticação**: ✅ Corrigida e testada
 - **Collection**: ✅ Atualizada em 23/07/2025
-- **Credenciais**: ✅ Validadas e funcionais
+- **Credenciais**: ✅ Defina localmente no Postman
 - **Login**: ✅ Testado com sucesso
 
 ## 📁 Arquivos
 
 - **`Batuara-API-Collection.json`** - Collection principal com todos os endpoints (✅ TESTADA)
-- **`Batuara-API-Environment.json`** - Variáveis de ambiente (✅ CREDENCIAIS VÁLIDAS)
+- **`Batuara-API-Environment.json`** - Variáveis de ambiente (defina email e senha localmente)
 - **`create-admin-user.sql`** - Script SQL para criar usuário admin
 - **`fix-user-data.sql`** - Script SQL para corrigir dados inconsistentes
 - **`test-api.sh`** - Script bash para testes rápidos
@@ -33,10 +33,10 @@ Esta pasta contém a collection completa e atualizada do Postman para testar tod
 ### 2. Configurar Environment
 
 1. No canto superior direito, selecione o environment **"Batuara API - Environment"**
-2. As variáveis já estão configuradas corretamente:
+2. Defina as variáveis localmente conforme seu ambiente:
    - `base_url`: http://localhost:3003
-   - `admin_email`: admin@batuara.org ✅
-   - `admin_password`: Admin@123 ✅
+  - `admin_email`: admin@example.com
+  - `admin_password`: <defina no Postman>
 
 ### 3. Iniciar a API
 
@@ -85,21 +85,16 @@ Execute os requests na seguinte ordem:
 | POST | `/api/auth/refresh` | Renovar token | ✅ |
 | POST | `/api/auth/logout` | Logout | ✅ |
 
-## 🔑 Credenciais de Teste (VALIDADAS)
-
-### Usuário Administrador ✅ FUNCIONANDO
-- **Email:** `admin@batuara.org`
-- **Senha:** `Admin@123`
-- **Role:** Admin
-- **Status:** ✅ TESTADO E APROVADO
+## 🔑 Credenciais de Teste
+Defina as credenciais do administrador localmente no Postman (não incluídas neste repositório).
 
 ## 🎯 Variáveis de Ambiente
 
 | Variável | Descrição | Valor |
 |----------|-----------|-------|
 | `base_url` | URL base da API | `http://localhost:3003` |
-| `admin_email` | Email do admin | `admin@batuara.org` ✅ |
-| `admin_password` | Senha do admin | `Admin@123` ✅ |
+| `admin_email` | Email do admin | `admin@example.com` |
+| `admin_password` | Senha do admin | `<defina no Postman>` |
 | `access_token` | Token JWT (auto) | Preenchido após login |
 | `refresh_token` | Token refresh (auto) | Preenchido após login |
 | `user_id` | ID do usuário (auto) | Preenchido após login |
@@ -115,15 +110,15 @@ Cada request inclui testes que verificam:
 
 ## 🎉 Resultado dos Testes
 
-### Login Bem-sucedido:
+### Login Bem-sucedido (exemplo):
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "SiJEDhzIKv3OKomuytVFB8bMV2TPrDM8O6y23Uz+QRA=",
+  "accessToken": "<JWT_TOKEN>",
+  "refreshToken": "<REFRESH_TOKEN>",
   "tokenExpiration": "2025-07-24T00:38:35Z",
   "user": {
     "id": 5,
-    "email": "admin@batuara.org",
+    "email": "admin@example.com",
     "name": "Administrador Batuara",
     "role": "Admin",
     "isActive": true

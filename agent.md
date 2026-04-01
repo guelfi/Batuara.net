@@ -120,8 +120,8 @@ Batuara.net/
 - **API Swagger**: http://localhost:3003/swagger
 
 ### 4. Credenciais Padrão (Dev)
-- **Email**: admin@casabatuara.org.br
-- **Senha**: admin123
+- **Email**: `<email-admin>`
+- **Senha**: `<senha-admin>`
 
 ## 📚 Documentação Adicional
 - **Status do Projeto**: `/docs/STATUS-PROJETO.md`

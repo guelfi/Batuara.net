@@ -21,17 +21,25 @@ namespace Batuara.Infrastructure.Data.SeedData
                 var logger = services.GetRequiredService<ILogger<BatuaraDbContext>>();
 
                 // Check if admin user exists
-                var adminUser = await userRepository.GetByEmailAsync("admin@batuara.org.br");
+                var adminEmail = "admin@example.com";
+                var adminUser = await userRepository.GetByEmailAsync(adminEmail);
                 
                 if (adminUser == null)
                 {
                     logger.LogInformation("Creating default admin user");
-                    
-                    // Create admin user
-                    var passwordHash = passwordService.HashPassword("admin123");
-                    var user = new User("admin@batuara.org.br", passwordHash, "Administrador", UserRole.Admin)
+
+                    var seedPassword = Environment.GetEnvironmentVariable("SEED_ADMIN_PASSWORD");
+                    if (string.IsNullOrWhiteSpace(seedPassword) || seedPassword.Length < 8)
                     {
-                        Email = "admin@batuara.org.br",
+                        logger.LogWarning("SEED_ADMIN_PASSWORD not set or too short. Skipping admin user creation.");
+                        return;
+                    }
+
+                    // Create admin user with provided seed password
+                    var passwordHash = passwordService.HashPassword(seedPassword);
+                    var user = new User(adminEmail, passwordHash, "Administrador", UserRole.Admin)
+                    {
+                        Email = adminEmail,
                         PasswordHash = passwordHash,
                         Name = "Administrador"
                     };

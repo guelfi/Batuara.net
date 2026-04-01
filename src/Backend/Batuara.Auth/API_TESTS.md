@@ -55,25 +55,25 @@ A collection do Postman fornece uma interface gráfica para testar todos os endp
 ```bash
 curl -X POST http://localhost:3003/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@casabatuara.org.br","password":"admin123"}'
+  -d '{"email":"<email-admin>","password":"<senha-admin>"}'
 ```
 
 #### Verificar Token
 ```bash
 curl -X GET http://localhost:3003/api/auth/verify \
-  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+  -H "Authorization: Bearer <TOKEN>"
 ```
 
 #### Obter Usuário Atual
 ```bash
 curl -X GET http://localhost:3003/api/auth/me \
-  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+  -H "Authorization: Bearer <TOKEN>"
 ```
 
 #### Listar Usuários
 ```bash
 curl -X GET http://localhost:3003/api/users \
-  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+  -H "Authorization: Bearer <TOKEN>"
 ```
 
 #### Renovar Token
@@ -86,9 +86,9 @@ curl -X POST http://localhost:3003/api/auth/refresh \
 #### Revogar Token
 ```bash
 curl -X POST http://localhost:3003/api/auth/revoke \
-  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -H "Authorization: Bearer <TOKEN>" \
   -H "Content-Type: application/json" \
-  -d '{"refreshToken":"SEU_REFRESH_TOKEN_AQUI"}'
+  -d '{"refreshToken":"<REFRESH_TOKEN>"}'
 ```
 
 ## Validação dos Testes

@@ -37,7 +37,7 @@
 									"",
 									"pm.test(\"Response has user data\", function () {",
 									"    pm.expect(jsonData.data.user).to.not.be.null;",
-									"    pm.expect(jsonData.data.user.email).to.eql(\"admin@casabatuara.org.br\");",
+									"    pm.expect(jsonData.data.user.email).to.eql(\"admin@example.com\");",
 									"});",
 									"",
 									"// Salvar token para uso em outras requisições",
@@ -64,7 +64,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"admin@casabatuara.org.br\",\n    \"password\": \"admin123\"\n}"
+							"raw": "{\n    \"email\": \"{{admin_email}}\",\n    \"password\": \"{{admin_password}}\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/auth/login",
@@ -112,7 +112,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"admin@casabatuara.org.br\",\n    \"password\": \"senha_errada\"\n}"
+							"raw": "{\n    \"email\": \"{{admin_email}}\",\n    \"password\": \"senha_errada\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/auth/login",
@@ -682,7 +682,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"admin@casabatuara.org.br\",\n    \"password\": \"Senha@123\",\n    \"name\": \"Usuário Duplicado\",\n    \"role\": 2,\n    \"isActive\": true\n}"
+							"raw": "{\n    \"email\": \"{{admin_email}}\",\n    \"password\": \"Senha@123\",\n    \"name\": \"Usuário Duplicado\",\n    \"role\": 2,\n    \"isActive\": true\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/users",

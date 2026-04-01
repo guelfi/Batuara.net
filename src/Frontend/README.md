@@ -56,8 +56,8 @@ Acesse: http://localhost:3001
 ## 🔐 Autenticação (Dashboard)
 
 Para acessar o dashboard administrativo, use as credenciais:
-- **Email**: admin@casabatuara.org.br
-- **Senha**: admin123
+- **Email**: `<email-admin>`
+- **Senha**: `<senha-admin>`
 
 *Nota: Estas são credenciais de desenvolvimento. Em produção, use credenciais seguras.*
 
@@ -132,8 +132,8 @@ Os projetos estão preparados para integração com a API backend:
 Atualmente, o Dashboard Admin está configurado para funcionar sem o backend, usando dados mockados para desenvolvimento. Isso permite visualizar e testar a interface sem depender da API.
 
 ### Credenciais de Desenvolvimento
-- Email: admin@casabatuara.org.br
-- Senha: admin123
+- Email: `<email-admin>`
+- Senha: `<senha-admin>`
 
 ## 🧪 Testes
 

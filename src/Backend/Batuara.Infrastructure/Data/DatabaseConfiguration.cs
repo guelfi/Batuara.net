@@ -10,8 +10,13 @@ namespace Batuara.Infrastructure.Data
     {
         public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
         {
-            var connectionString = configuration.GetConnectionString("DefaultConnection") 
-                ?? "Host=localhost;Database=batuara_dev;Username=postgres;Password=postgres";
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD")
+                    ?? throw new InvalidOperationException("DB_PASSWORD environment variable not set");
+                connectionString = $"Host=localhost;Database=batuara_dev;Username=postgres;Password={dbPassword}";
+            }
 
             services.AddDbContext<BatuaraDbContext>(options =>
             {
@@ -36,7 +41,7 @@ namespace Batuara.Infrastructure.Data
                     // Log all SQL commands in development
                     options.LogTo(
                         message => Log.Debug("[EF Core - SQL] {Message}", message),
-                        new[] { DbLoggerCategory.Database.Command.Name },
+                        [DbLoggerCategory.Database.Command.Name],
                         LogLevel.Information);
                 }
                 else
@@ -44,20 +49,20 @@ namespace Batuara.Infrastructure.Data
                     // In production, only log slow queries and errors
                     options.LogTo(
                         message => Log.Warning("[EF Core - Performance] {Message}", message),
-                        new[] { DbLoggerCategory.Database.Command.Name },
+                        [DbLoggerCategory.Database.Command.Name],
                         LogLevel.Warning);
                 }
 
                 // Always log connection events
                 options.LogTo(
                     message => Log.Information("[EF Core - Connection] {Message}", message),
-                    new[] { DbLoggerCategory.Database.Connection.Name },
+                    [DbLoggerCategory.Database.Connection.Name],
                     LogLevel.Information);
 
                 // Log migration events
                 options.LogTo(
                     message => Log.Information("[EF Core - Migration] {Message}", message),
-                    new[] { DbLoggerCategory.Migrations.Name },
+                    [DbLoggerCategory.Migrations.Name],
                     LogLevel.Information);
             });
 

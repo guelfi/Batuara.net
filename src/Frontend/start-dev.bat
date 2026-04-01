@@ -77,7 +77,7 @@ if "%choice%"=="1" (
 if "%choice%"=="2" (
     echo 🔧 Iniciando Dashboard Admin...
     echo 🔧 Acesse: http://localhost:3001
-    echo 💡 Credenciais: admin@casabatuara.org.br / admin123
+    echo 💡 Credenciais: ^<email-admin^> / ^<senha-admin^>
     cd AdminDashboard
     set PORT=3001
     call npm start
@@ -91,8 +91,8 @@ if "%choice%"=="3" (
     echo 🔧 Dashboard Admin: http://localhost:3001
     echo.
     echo 💡 Credenciais do Dashboard:
-    echo    Email: admin@casabatuara.org.br
-    echo    Senha: admin123
+    echo    Email: ^<email-admin^>
+    echo    Senha: ^<senha-admin^>
     echo.
     echo 🔄 Use Ctrl+C para parar ambos os servidores
     echo.

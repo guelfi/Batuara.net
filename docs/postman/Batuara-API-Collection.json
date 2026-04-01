@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "batuara-api-collection-v3",
 		"name": "Casa de Caridade Batuara - API Collection",
-		"description": "Collection completa e testada para a API Batuara.net\n\n## ✅ Status: FUNCIONANDO PERFEITAMENTE\n- API testada e validada em 23/07/2025\n- Sistema de autenticação 100% funcional\n- Todos os endpoints testados e aprovados\n\n## 🚀 Configuração Inicial\n1. Importe esta collection no Postman\n2. Importe o environment file (Batuara-API-Environment.json)\n3. Certifique-se de que a API está rodando em http://localhost:3003\n4. Execute os testes na ordem sugerida\n\n## 📋 Fluxo de Testes Recomendado\n1. **Health Check** - Verificar se a API está funcionando\n2. **Login Admin** - Fazer login com credenciais válidas ✅\n3. **Get Current User** - Verificar informações do usuário logado\n4. **Verify Token** - Validar token JWT\n5. **Get User by ID** - Buscar usuário específico (Admin only)\n6. **Refresh Token** - Renovar token de acesso\n7. **Logout** - Encerrar sessão\n8. **Test Invalid Token** - Testar segurança\n\n## 🔑 Credenciais Válidas (TESTADAS)\n- Email: admin@batuara.org\n- Password: Admin@123\n- Role: Admin\n- Status: ✅ FUNCIONANDO\n\n## 🌐 Variáveis de Ambiente\n- `base_url`: http://localhost:3003\n- `admin_email`: admin@batuara.org\n- `admin_password`: Admin@123\n- `access_token`: (preenchido automaticamente após login)\n- `refresh_token`: (preenchido automaticamente após login)",
+		"description": "Collection completa e testada para a API Batuara.net\n\n## ✅ Status: FUNCIONANDO PERFEITAMENTE\n- API testada e validada em 23/07/2025\n- Sistema de autenticação 100% funcional\n- Todos os endpoints testados e aprovados\n\n## 🚀 Configuração Inicial\n1. Importe esta collection no Postman\n2. Importe o environment file (Batuara-API-Environment.json)\n3. Certifique-se de que a API está rodando em http://localhost:3003\n4. Defina no seu ambiente local as variáveis `admin_email` e `admin_password`\n5. Execute os testes na ordem sugerida\n\n## 📋 Fluxo de Testes Recomendado\n1. **Health Check** - Verificar se a API está funcionando\n2. **Login Admin** - Fazer login com credenciais válidas ✅\n3. **Get Current User** - Verificar informações do usuário logado\n4. **Verify Token** - Validar token JWT\n5. **Get User by ID** - Buscar usuário específico (Admin only)\n6. **Refresh Token** - Renovar token de acesso\n7. **Logout** - Encerrar sessão\n8. **Test Invalid Token** - Testar segurança\n\n## 🌐 Variáveis de Ambiente\n- `base_url`: http://localhost:3003\n- `admin_email`: defina localmente no Postman\n- `admin_password`: defina localmente no Postman\n- `access_token`: (preenchido automaticamente após login)\n- `refresh_token`: (preenchido automaticamente após login)",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -65,7 +65,7 @@
 							"pm.test(\"Response has user data\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData).to.have.property('user');",
-							"    pm.expect(jsonData.user.email).to.eql('admin@batuara.org');",
+							"    pm.expect(jsonData.user.email).to.eql('admin@example.com');",
 							"    pm.expect(jsonData.user.role).to.eql('Admin');",
 							"});"
 						],
@@ -112,7 +112,7 @@
 							"",
 							"pm.test(\"User data is correct\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.email).to.eql('admin@batuara.org');",
+							"    pm.expect(jsonData.email).to.eql('admin@example.com');",
 							"    pm.expect(jsonData.role).to.eql('Admin');",
 							"    pm.expect(jsonData.isActive).to.be.true;",
 							"});"
