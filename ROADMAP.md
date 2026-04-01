@@ -7,7 +7,18 @@
 
 ## Visão Geral
 
-Este documento registra todas as correções e melhorias aplicadas ao projeto Batuara.net, organizadas por fases de execução. Também descreve o que ainda precisa ser implementado na Fase 5 (Hardening), servindo como guia para continuidade do trabalho.
+Este documento registra as correções e melhorias já aplicadas ao projeto Batuara.net, organizadas por fases de execução. A partir de Março/2026 ele também passa a funcionar como roadmap principal de produto e plataforma, consolidando:
+
+- histórico de entregas já concluídas
+- hardening e infraestrutura ainda pendentes
+- evolução funcional da API RESTful e do CMS administrativo
+- referência cruzada com os documentos de planejamento detalhado
+
+### Documentos Complementares
+
+- `docs/EFT-especificacao-funcional-tecnica.md` — arquitetura, contratos, SLAs, segurança e governança
+- `docs/Resumo-Executivo.md` — objetivos, escopo, riscos, cronograma macro e benefícios
+- `docs/Backlog-Executavel.md` — épicos, histórias, dependências e priorização por rota/domínio
 
 **Repositório:** [github.com/guelfi/Batuara.net](https://github.com/guelfi/Batuara.net)
 **Branch principal:** `master`
@@ -449,6 +460,163 @@ Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não s
 
 ---
 
+## Fase 6 — Plataforma de APIs RESTful e CMS Operacional
+
+**Status:** Planejada  
+**Objetivo:** Transformar o Batuara.net em uma plataforma orientada a APIs, com PublicWebsite consumindo dados dinâmicos e AdminDashboard operando como painel completo de gestão de conteúdo, agenda, segurança e observabilidade.
+
+### Referências Obrigatórias da Fase 6
+
+- `docs/EFT-especificacao-funcional-tecnica.md`
+- `docs/Resumo-Executivo.md`
+- `docs/Backlog-Executavel.md`
+- `prompt-security.md`
+
+### Diretrizes da Fase 6
+
+- Todas as APIs devem permanecer sob o prefixo `/batuara-api`
+- Separação clara entre rotas públicas (`/api/public/...`) e administrativas (`/api/...`)
+- CRUD completo somente no AdminDashboard
+- PublicWebsite com leitura e ações públicas específicas e controladas
+- Segurança em profundidade em todas as camadas, sem confiar no frontend
+- Observabilidade e auditoria como parte do entregável, não como pós-processo
+
+### Estrutura Macro de Execução
+
+| Bloco | Status | Foco | Saídas principais |
+|------|--------|------|-------------------|
+| 6.0 | Planejado | Fundação técnica | contratos, DTOs, validações, políticas, OpenAPI, revisão Swagger em produção |
+| 6.1 | Planejado | Núcleo operacional | Events, Calendar, ContactMessages, SiteSettings |
+| 6.2 | Planejado | Conteúdo institucional e espiritual | Orixas, UmbandaLines, SpiritualContents |
+| 6.3 | Planejado | Operação e governança | Dashboard stats, activity logs, trilha de auditoria |
+| 6.4 | Planejado | Hardening avançado | MFA, RBAC granular, WAF, SIEM, pentests contínuos |
+
+### 6.0 — Fundação Técnica e Contratos
+
+**Objetivo:** preparar a base para implementação sem divergência entre frontend, backend e infraestrutura.
+
+#### Entregas
+
+- Consolidar contratos OpenAPI 3.0 por domínio
+- Padronizar envelopes JSON, paginação, filtros e ordenação
+- Garantir serialização consistente de enums como string
+- Definir DTOs de listagem e detalhe por domínio
+- Revisar exposição do Swagger em produção e restringir acesso administrativo
+- Configurar políticas de rate limiting distintas para público, admin e auth
+
+#### Critérios de saída
+
+- Contratos revisados contra `docs/Backlog-Executavel.md`
+- Sem dependência de dados mockados para os domínios prioritários da Fase 6.1
+- OpenAPI apto para uso pelo AdminDashboard e pelo PublicWebsite
+
+### 6.1 — Núcleo Operacional
+
+**Objetivo:** substituir os principais dados mockados do PublicWebsite e habilitar operação real pelo AdminDashboard.
+
+#### Épicos priorizados
+
+| Epic | Rotas | Prioridade | Dependências |
+|------|-------|------------|--------------|
+| EP-Events | `/api/events`, `/api/public/events` | P0 | Fundação técnica, DTOs, regras de domínio |
+| EP-Calendar | `/api/calendar/attendances`, `/api/public/calendar/attendances` | P0 | Fundação técnica, capacidade/transações |
+| EP-SiteSettings | `/api/site-settings`, `/api/public/site-settings` | P0 | modelagem de conteúdo institucional |
+| EP-Contact | `/api/public/contact-messages` | P0 | validação, anti-spam, auditoria |
+
+#### Resultados esperados
+
+- PublicWebsite deixa de depender de mocks para eventos, calendário, contato, doações/localização institucionais
+- AdminDashboard passa a operar CRUD real para agenda e eventos
+- Contato público com processamento controlado, auditável e protegido por rate limiting
+
+### 6.2 — Conteúdo Institucional e Espiritual
+
+**Objetivo:** tornar dinâmicas as seções educativas e institucionais do site público.
+
+#### Épicos priorizados
+
+| Epic | Rotas | Prioridade | Dependências |
+|------|-------|------------|--------------|
+| EP-Orixas | `/api/orixas`, `/api/public/orixas` | P1 | fundação técnica, DTOs, ordenação |
+| EP-UmbandaLines | `/api/umbanda-lines`, `/api/public/umbanda-lines` | P1 | fundação técnica |
+| EP-SpiritualContents | `/api/spiritual-contents`, `/api/public/spiritual-contents` | P1 | sanitização, busca, categorização |
+
+#### Resultados esperados
+
+- Orixás, Linhas da Umbanda e Orações passam a ser gerenciados via AdminDashboard
+- PublicWebsite consome conteúdo versionado, auditável e com cache adequado
+
+### 6.3 — Operação, Dashboard e Auditoria
+
+**Objetivo:** dar visibilidade operacional e governança ao painel administrativo.
+
+#### Épicos priorizados
+
+| Epic | Rotas | Prioridade | Dependências |
+|------|-------|------------|--------------|
+| EP-Dashboard | `/api/dashboard/stats`, `/api/dashboard/activity-logs` | P1 | logs estruturados, auditoria persistente |
+| EP-Audit | transversal | P1 | Serilog, storage/indexação de logs |
+
+#### Resultados esperados
+
+- Métricas administrativas reais
+- Trilhas de auditoria por usuário, entidade e ação
+- Base para relatórios futuros e troubleshooting rápido
+
+### 6.4 — Segurança Avançada e Hardening Contínuo
+
+**Objetivo:** fechar lacunas remanescentes da Fase 5 e elevar o nível de segurança para operação contínua em produção.
+
+#### Itens principais
+
+- MFA para Admin (TOTP com fallback SMS e suporte futuro a WebAuthn/biometria)
+- RBAC granular por endpoint e operação
+- Rate limiting por IP e por token conforme diretrizes do planejamento
+- Validações alinhadas a OWASP Top 10, com sanitização e encoding
+- Integração WAF + SIEM + alertas
+- Pentest automatizado no pipeline CI/CD
+- Conclusão do HTTPS com domínio válido e certificados gerenciados
+
+#### Relação com a Fase 5
+
+- A Fase 5 continua sendo o registro histórico do hardening já executado
+- A Fase 6.4 absorve a continuidade operacional e os novos requisitos de segurança exigidos pela API pública e pelo CMS
+
+### Cronograma Consolidado da Fase 6
+
+| Janela | Marco | Gate |
+|--------|-------|------|
+| D0–D2 | Contratos, segurança base, OpenAPI, políticas de acesso | Gate 1: contratos e segurança aprovados |
+| D3 | Revisão parcial com stakeholders e pares | Seguimento autorizado |
+| D4–D6 | Events, Calendar, ContactMessages, SiteSettings | Gate 2: núcleo operacional aprovado |
+| D6 | Smoke tests de SLA e segurança em staging | Seguimento autorizado |
+| D7–D9 | Orixas, UmbandaLines, SpiritualContents, Dashboard/Audit | Gate 3: conteúdo e governança aprovados |
+| D10 | Revisão final, readiness operacional e go/no-go | Aprovação final |
+
+### Critérios de Pronto da Fase 6
+
+- Endpoint implementado com validação, autenticação/autorização e auditoria quando aplicável
+- Documentado em OpenAPI e refletido no `docs/Backlog-Executavel.md`
+- Testes unitários e de integração adicionados conforme criticidade
+- Sem mocks remanescentes nos domínios já migrados
+- Compatível com o path base `/batuara-api`
+- Logs estruturados e métricas mínimas disponíveis
+
+### Próxima Ordem Recomendada de Execução
+
+1. Fundação técnica e contratos da Fase 6.0
+2. EP-Events
+3. EP-Calendar
+4. EP-SiteSettings
+5. EP-Contact
+6. EP-Orixas
+7. EP-UmbandaLines
+8. EP-SpiritualContents
+9. EP-Dashboard / auditoria
+10. MFA, WAF/SIEM e fechamento do HTTPS
+
+---
+
 ## Resumo de PRs
 
 | PR | Fase | Descrição | Status |
@@ -541,27 +709,35 @@ Batuara.net/
 
 Ao iniciar uma nova sessão de trabalho com este projeto:
 
-1. **Primeiro passo:** Ler este arquivo (`ROADMAP.md`) para entender o estado atual do projeto
-2. **Verificar Fase atual:** Consultar a seção "Plano de Execução da Fase 5" para identificar o próximo item a trabalhar
-3. **Checkpoint de tarefas:** Consultar o checklist `[ ]` para identificar o que ainda não foi feito
-4. **Durante a execução:**
+1. **Primeiro passo:** Ler este arquivo (`ROADMAP.md`) para entender o histórico e a fase ativa
+2. **Segundo passo:** Ler `docs/EFT-especificacao-funcional-tecnica.md` para arquitetura, segurança e contratos
+3. **Terceiro passo:** Ler `docs/Backlog-Executavel.md` para prioridade, dependências e histórias
+4. **Verificar fase ativa:**
+   - Se o tema for hardening/infra, usar a Fase 5
+   - Se o tema for API/CMS/rotas do AdminDashboard/PublicWebsite, usar a Fase 6
+5. **Durante a execução:**
    - Ao iniciar um item: mudar `[ ]` para `[→]` (em andamento)
    - Ao completar: mudar para `[x]` (concluído)
    - Ao abrir PR: atualizar coluna "PR" com link
-5. **Final de sessão:**
+6. **Final de sessão:**
    - Atualizar data de conclusão na tabela
    - Adicionar entrada no "Histórico de Execução"
-   - Atualizar this.Read() do ROADMAP.md com observações relevantes
+   - Atualizar o `ROADMAP.md` e, se necessário, os documentos em `docs/`
 
 ### Prioridade de Execução
 
-Ordem recomendada para Fase 5 (itens pendentes, excluindo 5.3 que aguarda domínio):
+Ordem recomendada a partir do estado atual do projeto:
 
-1. **5.4** — CSP Mais Restritivo (não depende de domínio)
-2. **5.5** — Logging Centralizado (não depende de domínio)
-3. **5.6** — Backup PostgreSQL (não depende de domínio)
-4. **5.7** — Runbook de Operações (pode ser feito em paralelo)
-5. **5.3** — HTTPS com Let's Encrypt (bloqueado — exige domínio válido)
+1. **Fase 6.0** — Fundação técnica e contratos
+2. **Fase 6.1 / EP-Events**
+3. **Fase 6.1 / EP-Calendar**
+4. **Fase 6.1 / EP-SiteSettings**
+5. **Fase 6.1 / EP-Contact**
+6. **Fase 6.2 / EP-Orixas**
+7. **Fase 6.2 / EP-UmbandaLines**
+8. **Fase 6.2 / EP-SpiritualContents**
+9. **Fase 6.3 / Dashboard + Audit**
+10. **Fase 6.4** — MFA, WAF/SIEM e fechamento do HTTPS (item 5.3 continua dependente de domínio válido)
 
 ### Atalhos de Comando
 
