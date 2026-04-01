@@ -291,9 +291,9 @@ paths:
 
 - D0–D2: Contratos, OpenAPI, DTOs, rate limiting básico, políticas de acesso e revisão do Swagger em produção.
 - D3: Revisão 1 e ajustes.
-- D4–D6: Domínios núcleo (SiteSettings, Events, Contact) + Calendar (P1).
+- D4–D6: Domínios núcleo (SiteSettings, Events, Contact).
 - D6: Revisão 2; smoke tests staging (SLA/segurança).
-- D7–D9: Orixás, UmbandaLines, SpiritualContents + Dashboard/Auditoria.
+- D7–D9: Orixás, UmbandaLines, SpiritualContents + Calendar (P1) + Dashboard/Auditoria.
 - D9: Revisão 3; testes de desempenho/segurança.
 - D10: MFA/RBAC granular, WAF/SIEM, hardening avançado; aprovação final e go/no-go.
 
