@@ -475,7 +475,7 @@ Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não s
 ### Diretrizes da Fase 6
 
 - Todas as APIs devem permanecer sob o prefixo `/batuara-api`
-- Separação clara entre rotas públicas (`/api/public/...`) e administrativas (`/api/...`)
+- Separação clara entre rotas públicas (`/batuara-api/api/public/...`) e administrativas (`/batuara-api/api/...`)
 - CRUD completo somente no AdminDashboard
 - PublicWebsite com leitura e ações públicas específicas e controladas
 - Segurança em profundidade em todas as camadas, sem confiar no frontend
@@ -518,10 +518,10 @@ Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não s
 
 | Epic | Rotas | Prioridade | Dependências |
 |------|-------|------------|--------------|
-| EP-Events | `/api/events`, `/api/public/events` | P0 | Fundação técnica, DTOs, regras de domínio |
-| EP-Calendar | `/api/calendar/attendances`, `/api/public/calendar/attendances` | P1 | Fundação técnica, capacidade/transações (movido para posição 8 na execução por alta complexidade — 13 pts) |
-| EP-SiteSettings | `/api/site-settings`, `/api/public/site-settings` | P0 | modelagem de conteúdo institucional |
-| EP-Contact | `/api/public/contact-messages` | P0 | validação, anti-spam, auditoria |
+| EP-Events | `/batuara-api/api/events`, `/batuara-api/api/public/events` | P0 | Fundação técnica, DTOs, regras de domínio |
+| EP-Calendar | `/batuara-api/api/calendar/attendances`, `/batuara-api/api/public/calendar/attendances` | P1 | Fundação técnica, capacidade/transações (movido para posição 8 na execução por alta complexidade — 13 pts) |
+| EP-SiteSettings | `/batuara-api/api/site-settings`, `/batuara-api/api/public/site-settings` | P0 | modelagem de conteúdo institucional |
+| EP-Contact | `/batuara-api/api/public/contact-messages` | P0 | validação, anti-spam, auditoria |
 
 #### Resultados esperados
 
@@ -538,9 +538,9 @@ Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não s
 
 | Epic | Rotas | Prioridade | Dependências |
 |------|-------|------------|--------------|
-| EP-Orixas | `/api/orixas`, `/api/public/orixas` | P1 | fundação técnica, DTOs, ordenação |
-| EP-UmbandaLines | `/api/umbanda-lines`, `/api/public/umbanda-lines` | P1 | fundação técnica |
-| EP-SpiritualContents | `/api/spiritual-contents`, `/api/public/spiritual-contents` | P1 | sanitização, busca, categorização |
+| EP-Orixas | `/batuara-api/api/orixas`, `/batuara-api/api/public/orixas` | P1 | fundação técnica, DTOs, ordenação |
+| EP-UmbandaLines | `/batuara-api/api/umbanda-lines`, `/batuara-api/api/public/umbanda-lines` | P1 | fundação técnica |
+| EP-SpiritualContents | `/batuara-api/api/spiritual-contents`, `/batuara-api/api/public/spiritual-contents` | P1 | sanitização, busca, categorização |
 
 #### Resultados esperados
 
@@ -555,7 +555,7 @@ Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não s
 
 | Epic | Rotas | Prioridade | Dependências |
 |------|-------|------------|--------------|
-| EP-Dashboard | `/api/dashboard/stats`, `/api/dashboard/activity-logs` | P1 | logs estruturados, auditoria persistente |
+| EP-Dashboard | `/batuara-api/api/dashboard/stats`, `/batuara-api/api/dashboard/activity-logs` | P1 | logs estruturados, auditoria persistente |
 | EP-Audit | transversal | P1 | Serilog, storage/indexação de logs, retenção e correlação com SIEM |
 
 #### Resultados esperados
@@ -590,9 +590,9 @@ Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não s
 |--------|-------|------|
 | D0–D2 | Contratos, segurança base, OpenAPI, políticas de acesso | Gate 1: contratos e segurança aprovados |
 | D3 | Revisão parcial com stakeholders e pares | Seguimento autorizado |
-| D4–D6 | Events, Calendar, ContactMessages, SiteSettings | Gate 2: núcleo operacional aprovado |
+| D4–D6 | SiteSettings, Events, Contact | Gate 2: núcleo operacional aprovado |
 | D6 | Smoke tests de SLA e segurança em staging | Seguimento autorizado |
-| D7–D9 | Orixas, UmbandaLines, SpiritualContents, Dashboard/Audit | Gate 3: conteúdo e governança aprovados |
+| D7–D9 | Orixas, UmbandaLines, SpiritualContents, Calendar (P1), Dashboard/Audit | Gate 3: conteúdo, calendário e governança aprovados |
 | D10 | Revisão final, readiness operacional e go/no-go | Aprovação final |
 
 ### Critérios de Pronto da Fase 6

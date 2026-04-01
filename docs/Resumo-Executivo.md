@@ -36,9 +36,9 @@
 
 - D0–D2: Contratos, OpenAPI, DTOs, rate limiting básico, políticas de acesso e revisão do Swagger em produção.
 - D3: Revisão 1 com stakeholders; ajustes.
-- D4–D6: Núcleo — SiteSettings, Events, Contact + Calendar (P1).
+- D4–D6: Núcleo — SiteSettings, Events, Contact.
 - D6: Revisão 2; smoke tests de SLA/segurança em staging.
-- D7–D9: Orixás, UmbandaLines, SpiritualContents; Dashboard/Auditoria.
+- D7–D9: Orixás, UmbandaLines, SpiritualContents; Calendar (P1); Dashboard/Auditoria.
 - D9: Revisão 3; testes de desempenho e segurança.
 - D10: MFA/RBAC granular, WAF/SIEM, hardening avançado; aprovação final e go/no-go.
 
@@ -47,7 +47,7 @@
 ## Gates de Decisão
 
 - Gate 1 (D3): Aprovação de contratos e segurança base.
-- Gate 2 (D6): Aprovação do núcleo funcional (público + admin).
+- Gate 2 (D6): Aprovação do núcleo funcional (SiteSettings, Events, Contact).
 - Gate Final (D10): Aprovação operacional (SLA, segurança, pentest).
 
 ## Alinhamentos Técnicos Obrigatórios
