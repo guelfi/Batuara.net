@@ -8,18 +8,18 @@
 			"description": "Base URL da API Batuara",
 			"enabled": true
 		},
-		{
-			"key": "admin_email",
-			"value": "admin@batuara.org",
-			"description": "Email do usuário administrador (TESTADO E FUNCIONANDO)",
-			"enabled": true
-		},
-		{
-			"key": "admin_password",
-			"value": "Admin@123",
-			"description": "Senha do usuário administrador (TESTADO E FUNCIONANDO)",
-			"enabled": true
-		},
+        {
+            "key": "admin_email",
+            "value": "admin@example.com",
+            "description": "Email do usuário administrador (defina localmente no Postman)",
+            "enabled": true
+        },
+        {
+            "key": "admin_password",
+            "value": "",
+            "description": "Senha do usuário administrador (defina localmente no Postman)",
+            "enabled": true
+        },
 		{
 			"key": "access_token",
 			"value": "",

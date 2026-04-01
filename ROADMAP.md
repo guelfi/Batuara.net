@@ -523,8 +523,8 @@ Batuara.net/
 
 ### Credenciais de Desenvolvimento
 
-- Login do Admin Dashboard: `admin@casabatuara.org.br` / `admin123`
-- Essas credenciais são apenas para ambiente de desenvolvimento
+- Login do Admin Dashboard: `<email-admin>` / `<senha-admin>`
+- Defina as credenciais localmente (não inclua senhas reais no repositório)
 
 ### URLs de Produção
 

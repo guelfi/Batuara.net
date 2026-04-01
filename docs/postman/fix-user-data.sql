@@ -52,7 +52,7 @@ SELECT
     LENGTH(password_hash) as hash_length,
     SUBSTRING(password_hash, 1, 10) || '...' as hash_preview
 FROM users 
-WHERE email IN ('admin@batuara.org', 'admin@casabatuara.org.br')
+WHERE email IN ('admin@example.com')
 ORDER BY email;
 
 -- 5. INFORMAÇÕES: Mostrar estrutura de roles padronizada

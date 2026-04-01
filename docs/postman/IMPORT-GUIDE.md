@@ -7,12 +7,12 @@
 - ✅ Testada e funcionando
 - ✅ 9 endpoints configurados
 - ✅ Testes automatizados incluídos
-- ✅ Credenciais validadas
+- ✅ Variáveis de credenciais definidas localmente
 
 ### 2. Environment
 **Arquivo:** `Batuara-API-Environment.json`
 - ✅ Variáveis pré-configuradas
-- ✅ Credenciais funcionais
+- ✅ Variáveis para email e senha (defina localmente)
 - ✅ URLs corretas
 
 ## 📥 Como Importar
@@ -41,20 +41,17 @@
 ### Resultado Esperado:
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "...",
+  "accessToken": "<JWT_TOKEN>",
+  "refreshToken": "<REFRESH_TOKEN>",
   "user": {
-    "email": "admin@batuara.org",
+    "email": "admin@example.com",
     "role": "Admin"
   }
 }
 ```
 
-## 🔑 Credenciais (Já Configuradas)
-
-- **Email:** admin@batuara.org
-- **Senha:** Admin@123
-- **Status:** ✅ FUNCIONANDO
+## 🔑 Credenciais
+Defina as credenciais do administrador localmente no Postman (não incluídas neste repositório).
 
 ## ⚡ Execução Rápida
 

@@ -133,8 +133,8 @@ Após o deploy bem-sucedido, acesse:
 
 - **🌐 Site Público**: http://SEU-IP-OCI:3000
 - **🔧 Dashboard Admin**: http://SEU-IP-OCI:3001
-  - Email: admin@casabatuara.org.br
-  - Senha: admin123
+  - Email: <email-admin>
+  - Senha: <senha-admin>
 - **🚀 API**: http://SEU-IP-OCI:8080
 - **📋 Swagger**: http://SEU-IP-OCI:8080/swagger
 

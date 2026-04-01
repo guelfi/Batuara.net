@@ -12,7 +12,7 @@ Batuara.net is a .NET 8 API + React frontend system deployed on OCI via Docker. 
 - Admin Dashboard: `http://129.153.86.168/batuara-admin/`
 - API Swagger: `http://129.153.86.168/batuara-api/swagger/index.html`
 - API Health: `http://129.153.86.168/batuara-api/health`
-- Default admin credentials: `admin@casabatuara.org.br / admin123`
+- Default admin credentials: `<email-admin> / <senha-admin>`
 
 ## Local Testing Setup
 
@@ -38,8 +38,8 @@ sleep 3 && docker exec batuara-db pg_isready -U postgres -d CasaBatuara
 3. Start the API:
 ```bash
 docker run -d --name batuara-api-test --network host \
-  -e "ConnectionStrings__DefaultConnection=Host=localhost;Database=CasaBatuara;Username=postgres;Password=testpass123" \
-  -e "JwtSettings__Secret=test-secret-key-that-is-at-least-32-characters-long-for-jwt-validation" \
+  -e "ConnectionStrings__DefaultConnection=Host=localhost;Database=CasaBatuara;Username=postgres;Password=<db_password>" \
+  -e "JwtSettings__Secret=<jwt_secret_min_32_chars>" \
   -e "ASPNETCORE_ENVIRONMENT=Development" \
   batuara-api-test
 ```

@@ -4,8 +4,6 @@
 -- Conectar ao banco de dados CasaBatuara
 \c CasaBatuara;
 
--- Inserir usuário administrador
--- Senha: Admin@123 (hash BCrypt)
 INSERT INTO users (
     email,
     password_hash, 
@@ -15,8 +13,8 @@ INSERT INTO users (
     created_at,
     updated_at
 ) VALUES (
-    'admin@batuara.org',
-    '$2a$11$8K1p/a0dclsgJddgsJUjdOCyGjRH4CyDdHrWrNVH.fOUO1yQquwuW', -- Admin@123
+    'admin@example.com',
+    '-- REPLACE_WITH_BCRYPT_HASH --', -- defina o hash da senha gerado localmente
     'Administrador Batuara',
     1, -- Admin role
     true,
@@ -27,7 +25,7 @@ INSERT INTO users (
 -- Verificar se o usuário foi criado
 SELECT id, email, name, role, is_active, created_at 
 FROM users 
-WHERE email = 'admin@batuara.org';
+WHERE email = 'admin@example.com';
 
 -- Informações sobre roles:
 -- 1 = Admin

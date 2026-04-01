@@ -60,8 +60,8 @@ cd Batuara.net/postman
 curl -X POST http://localhost:3003/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "admin@batuara.org",
-    "password": "Admin@123",
+    "email": "<seu-email-admin>",
+    "password": "<sua-senha-admin>",
     "rememberMe": true
   }' \
   -v

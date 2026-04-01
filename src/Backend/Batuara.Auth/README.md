@@ -52,7 +52,7 @@ Configure as seguintes variáveis no arquivo `appsettings.json` ou como variáve
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Database=batuara_auth;Username=postgres;Password=postgres"
+    "DefaultConnection": "Host=localhost;Database=batuara_auth;Username=postgres;Password=CHANGE_ME_USE_ENV_VAR"
   },
   "JwtSettings": {
     "Secret": "your-256-bit-secret-key-here-at-least-32-characters",
@@ -84,7 +84,7 @@ dotnet test
 # Login
 curl -X POST https://localhost:5001/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@casabatuara.org.br","password":"admin123"}'
+  -d '{"email":"admin@example.com","password":"<sua-senha-admin>"}'
 
 # Verificar token
 curl -X GET https://localhost:5001/api/auth/verify \

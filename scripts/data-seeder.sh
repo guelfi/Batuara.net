@@ -124,9 +124,17 @@ seed_general_data() {
 # Criar usuário administrador padrão
 create_admin_user() {
     log_info "👤 Criando usuário administrador padrão..."
+
+    local admin_email="${SEED_ADMIN_EMAIL:-admin@example.com}"
+    local admin_password="${SEED_ADMIN_PASSWORD:-}"
     
     # Verificar se usuário admin já existe
-    if check_existing_data "Users" "SELECT COUNT(*) FROM \"Users\" WHERE \"Email\" = 'admin@casabatuara.org.br';"; then
+    if check_existing_data "Users" "SELECT COUNT(*) FROM \"Users\" WHERE \"Email\" = '$admin_email';"; then
+        return 0
+    fi
+
+    if [ -z "$admin_password" ]; then
+        log_warning "SEED_ADMIN_PASSWORD não definida. Pulando criação do usuário admin."
         return 0
     fi
     
@@ -136,8 +144,8 @@ create_admin_user() {
     VALUES (
         gen_random_uuid(),
         'Administrador',
-        'admin@casabatuara.org.br',
-        '\$2a\$11\$rQZrHzXKqZZqZqZqZqZqZeJ1J1J1J1J1J1J1J1J1J1J1J1J1J1J1J1',
+        '$admin_email',
+        crypt('$admin_password', gen_salt('bf')),
         'Admin',
         true,
         NOW(),

@@ -7,7 +7,7 @@ services:
     environment:
       - POSTGRES_DB=${DB_NAME:-batuara_db}
       - POSTGRES_USER=${PROJECT_NAME:-batuara}_user
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     volumes:
       - batuara-db-data:/var/lib/postgresql/data
@@ -27,8 +27,8 @@ services:
       dockerfile: Dockerfile.api
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net-local}-api
     environment:
-      - ConnectionStrings__DefaultConnection=Host=db;Database=${DB_NAME:-batuara_db};Username=${PROJECT_NAME:-batuara}_user;Password=${DB_PASSWORD:-postgres}
-      - JwtSettings__Secret=${JWT_SECRET:-CHANGE_ME_CHANGE_ME_CHANGE_ME_CHANGE_ME}
+      - ConnectionStrings__DefaultConnection=Host=db;Database=${DB_NAME:-batuara_db};Username=${PROJECT_NAME:-batuara}_user;Password=${DB_PASSWORD}
+      - JwtSettings__Secret=${JWT_SECRET}
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Development}
     networks:

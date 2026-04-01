@@ -11,8 +11,8 @@
 - 🔧 **Dashboard Admin**: http://localhost:3001
 
 ## Credenciais do Dashboard
-- 📧 **Email**: admin@casabatuara.org.br
-- 🔑 **Senha**: admin123
+- 📧 **Email**: `<email-admin>`
+- 🔑 **Senha**: `<senha-admin>`
 
 ## Iniciar Projetos Separadamente
 
