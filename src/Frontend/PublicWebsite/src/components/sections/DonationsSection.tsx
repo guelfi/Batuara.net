@@ -250,7 +250,7 @@ const DonationsSection: React.FC = () => {
         {/* Desktop: Grid normal */}
         {!isMobile && (
           <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Card
                 sx={{
                   height: '100%',
@@ -280,7 +280,7 @@ const DonationsSection: React.FC = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Card
                 sx={{
                   height: '100%',
@@ -310,7 +310,7 @@ const DonationsSection: React.FC = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Card
                 sx={{
                   height: '100%',
@@ -749,7 +749,7 @@ const DonationsSection: React.FC = () => {
               </Typography>
               <Grid container spacing={0.5}>
                 {donationItems.map((item, index) => (
-                  <Grid item xs={6} sm={6} key={index}>
+                  <Grid size={{ xs: 6, sm: 6 }} key={index}>
                     <Chip
                       label={item}
                       variant="outlined"

@@ -171,7 +171,7 @@ const CalendarSection: React.FC = () => {
         ) : (
           <Grid container spacing={3}>
             {currentData.map((attendance) => (
-              <Grid item xs={12} md={6} lg={4} key={attendance.id}>
+              <Grid size={{ xs: 12, md: 6, lg: 4 }} key={attendance.id}>
                 <Card
                   sx={{
                     height: '100%',

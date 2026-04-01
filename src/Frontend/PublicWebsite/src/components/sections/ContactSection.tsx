@@ -142,7 +142,7 @@ const ContactSection: React.FC = () => {
         >
           <Box component="form" onSubmit={handleSubmit}>
             <Grid container spacing={2.5}>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="Nome completo"
@@ -157,7 +157,7 @@ const ContactSection: React.FC = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="Telefone"
@@ -171,7 +171,7 @@ const ContactSection: React.FC = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   fullWidth
                   label="E-mail"
@@ -187,7 +187,7 @@ const ContactSection: React.FC = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   fullWidth
                   label="Assunto"
@@ -202,7 +202,7 @@ const ContactSection: React.FC = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   fullWidth
                   label="Mensagem"
@@ -219,7 +219,7 @@ const ContactSection: React.FC = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Button
                   type="submit"
                   variant="contained"

@@ -339,7 +339,7 @@ const AboutSection: React.FC = () => {
           </Box>
         ) : (
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6} md={6} lg={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
               <Card
                 sx={{
                   height: '100%',
@@ -372,7 +372,7 @@ const AboutSection: React.FC = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={6} lg={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
               <Card
                 sx={{
                   height: '100%',
@@ -406,7 +406,7 @@ const AboutSection: React.FC = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={6} lg={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
               <Card
                 sx={{
                   height: '100%',
@@ -440,7 +440,7 @@ const AboutSection: React.FC = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={6} lg={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 6, lg: 3 }}>
               <Card
                 sx={{
                   height: '100%',
