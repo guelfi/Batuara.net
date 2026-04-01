@@ -289,11 +289,13 @@ paths:
 
 ## 8. Cronograma de Alto Nível (10 dias úteis)
 
-- D0–D2: Contratos, segurança base (MFA/RBAC/rate-limit), WAF/headers.
+- D0–D2: Contratos, OpenAPI, DTOs, rate limiting básico, políticas de acesso e revisão do Swagger em produção.
 - D3: Revisão 1 e ajustes.
-- D4–D6: Domínios núcleo (Events, Calendar, Contact, SiteSettings) + OpenAPI.
+- D4–D6: Domínios núcleo (SiteSettings, Events, Contact) + Calendar (P1).
 - D6: Revisão 2; smoke tests staging (SLA/segurança).
-- D7–D9: Orixás, UmbandaLines, SpiritualContents + auditoria/dashboard.
+- D7–D9: Orixás, UmbandaLines, SpiritualContents + Dashboard/Auditoria.
 - D9: Revisão 3; testes de desempenho/segurança.
-- D10: Aprovação final e go/no-go.
+- D10: MFA/RBAC granular, WAF/SIEM, hardening avançado; aprovação final e go/no-go.
+
+> **Nota:** Segurança avançada (MFA TOTP, RBAC granular, WAF/SIEM) foi movida para o final (Bloco 6.4) conforme ordem de execução otimizada no ROADMAP.md. A fundação técnica (D0–D2) inclui rate limiting básico e políticas de acesso, mas não MFA/RBAC granular.
 
