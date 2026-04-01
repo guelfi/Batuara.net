@@ -555,13 +555,14 @@ Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não s
 | Epic | Rotas | Prioridade | Dependências |
 |------|-------|------------|--------------|
 | EP-Dashboard | `/api/dashboard/stats`, `/api/dashboard/activity-logs` | P1 | logs estruturados, auditoria persistente |
-| EP-Audit | transversal | P1 | Serilog, storage/indexação de logs |
+| EP-Audit | transversal | P1 | Serilog, storage/indexação de logs, retenção e correlação com SIEM |
 
 #### Resultados esperados
 
 - Métricas administrativas reais
 - Trilhas de auditoria por usuário, entidade e ação
 - Base para relatórios futuros e troubleshooting rápido
+- Cobertura explícita da trilha de auditoria no backlog e no dashboard administrativo
 
 ### 6.4 — Segurança Avançada e Hardening Contínuo
 
@@ -601,6 +602,7 @@ Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não s
 - Sem mocks remanescentes nos domínios já migrados
 - Compatível com o path base `/batuara-api`
 - Logs estruturados e métricas mínimas disponíveis
+- Épicos transversais de contato, auditoria e documentação devidamente rastreados entre roadmap e backlog
 
 ### Ordem Recomendada de Execução (por facilidade + criticidade)
 
