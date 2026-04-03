@@ -159,7 +159,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      throw new Error(error.response?.data?.message || 'Invalid credentials');
+      const status = error.response?.status;
+      const apiMessage = error.response?.data?.message;
+
+      if (status === 401) {
+        throw new Error(apiMessage || 'Credenciais inválidas');
+      }
+
+      if (status === 404) {
+        throw new Error('Endpoint de login não encontrado. Verifique a URL da API.');
+      }
+
+      if (status === 503) {
+        throw new Error(apiMessage || 'Banco de dados indisponível');
+      }
+
+      if (status === 500) {
+        throw new Error(apiMessage || 'Erro interno na API');
+      }
+
+      if (apiMessage) {
+        throw new Error(apiMessage);
+      }
+
+      throw new Error('Erro ao fazer login');
     } finally {
       setIsLoading(false);
     }

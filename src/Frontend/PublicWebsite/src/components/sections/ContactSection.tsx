@@ -9,10 +9,11 @@ import {
   Button,
   Alert,
   Snackbar,
-  useTheme,
+  CircularProgress,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import publicApi from '../../services/api';
 
 interface ContactForm {
   name: string;
@@ -23,7 +24,6 @@ interface ContactForm {
 }
 
 const ContactSection: React.FC = () => {
-  const theme = useTheme();
   const [formData, setFormData] = useState<ContactForm>({
     name: '',
     email: '',
@@ -32,6 +32,8 @@ const ContactSection: React.FC = () => {
     message: '',
   });
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleInputChange = (field: keyof ContactForm) => (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -42,18 +44,25 @@ const ContactSection: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    // Aqui seria implementada a lógica de envio do formulário
-    console.log('Formulário enviado:', formData);
-    setShowSuccessAlert(true);
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      subject: '',
-      message: '',
-    });
+    setSubmitting(true);
+    setErrorMessage('');
+    try {
+      await publicApi.createContactMessage(formData);
+      setShowSuccessAlert(true);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: '',
+      });
+    } catch (error: any) {
+      setErrorMessage(error?.response?.data?.message || 'Não foi possível enviar sua mensagem agora.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -132,116 +141,39 @@ const ContactSection: React.FC = () => {
           </Typography>
         </Box>
 
-        <Card
-          sx={{
-            p: { xs: 2, md: 2.5 },
-            borderRadius: 2,
-            boxShadow: theme.shadows[6],
-            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.grey[50]} 100%)`,
-          }}
-        >
+        <Card sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 3, boxShadow: 4 }}>
           <Box component="form" onSubmit={handleSubmit}>
             <Grid container spacing={2.5}>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  fullWidth
-                  label="Nome completo"
-                  value={formData.name}
-                  onChange={handleInputChange('name')}
-                  required
-                  variant="outlined"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    },
-                  }}
-                />
+                <TextField fullWidth label="Nome completo" value={formData.name} onChange={handleInputChange('name')} required />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  fullWidth
-                  label="Telefone"
-                  value={formData.phone}
-                  onChange={handleInputChange('phone')}
-                  variant="outlined"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    },
-                  }}
-                />
+                <TextField fullWidth label="Telefone" value={formData.phone} onChange={handleInputChange('phone')} />
               </Grid>
               <Grid size={12}>
-                <TextField
-                  fullWidth
-                  label="E-mail"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange('email')}
-                  required
-                  variant="outlined"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    },
-                  }}
-                />
+                <TextField fullWidth label="E-mail" type="email" value={formData.email} onChange={handleInputChange('email')} required />
               </Grid>
               <Grid size={12}>
-                <TextField
-                  fullWidth
-                  label="Assunto"
-                  value={formData.subject}
-                  onChange={handleInputChange('subject')}
-                  required
-                  variant="outlined"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    },
-                  }}
-                />
+                <TextField fullWidth label="Assunto" value={formData.subject} onChange={handleInputChange('subject')} required />
               </Grid>
               <Grid size={12}>
-                <TextField
-                  fullWidth
-                  label="Mensagem"
-                  multiline
-                  rows={3}
-                  value={formData.message}
-                  onChange={handleInputChange('message')}
-                  required
-                  variant="outlined"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    },
-                  }}
-                />
+                <TextField fullWidth label="Mensagem" multiline rows={4} value={formData.message} onChange={handleInputChange('message')} required />
               </Grid>
+              {!!errorMessage && (
+                <Grid size={12}>
+                  <Alert severity="error">{errorMessage}</Alert>
+                </Grid>
+              )}
               <Grid size={12}>
                 <Button
                   type="submit"
                   variant="contained"
                   fullWidth
-                  size="medium"
-                  startIcon={<SendIcon />}
-                  sx={{
-                    py: 1,
-                    borderRadius: 2,
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                    '&:hover': {
-                      background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
-                      transform: 'translateY(-2px)',
-                      boxShadow: theme.shadows[8],
-                    },
-                    transition: 'all 0.3s ease',
-                  }}
+                  startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : <SendIcon />}
+                  disabled={submitting}
+                  sx={{ py: 1.1, borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
                 >
-                  Enviar Mensagem
+                  {submitting ? 'Enviando...' : 'Enviar Mensagem'}
                 </Button>
               </Grid>
             </Grid>

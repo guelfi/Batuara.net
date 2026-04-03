@@ -7,15 +7,16 @@ export interface Event {
   date: string;
   startTime?: string;
   endTime?: string;
-  type: EventType;
+  type: EventType | keyof typeof EventType | string;
   imageUrl?: string;
   location?: string;
-  isActive: boolean;
+  isActive?: boolean;
 }
 
 export enum EventType {
   Festa = 1,
   Evento = 2,
+  Celebracao = 3,
   Bazar = 4,
   Palestra = 5,
 }
@@ -70,8 +71,8 @@ export interface SpiritualContent {
   id: number;
   title: string;
   content: string;
-  type: SpiritualContentType;
-  category: SpiritualCategory;
+  type: SpiritualContentType | keyof typeof SpiritualContentType | string;
+  category: SpiritualCategory | keyof typeof SpiritualCategory | string;
   source: string;
   displayOrder: number;
   isFeatured: boolean;
@@ -123,10 +124,73 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
+export interface SiteSettingsDto {
+  address: string;
+  email: string;
+  phone: string;
+  instagram: string;
+  historyTitle: string;
+  historySubtitle?: string;
+  historyHtml?: string;
+  historyMissionText?: string;
+  institutionalEmail: string;
+  primaryPhone: string;
+  secondaryPhone?: string;
+  whatsappNumber?: string;
+  serviceHours?: string;
+  street: string;
+  number: string;
+  complement?: string;
+  district: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  referenceNotes?: string;
+  mapEmbedUrl?: string;
+  facebookUrl?: string;
+  instagramUrl?: string;
+  youtubeUrl?: string;
+  whatsappUrl?: string;
+  pixKey?: string;
+  pixPayload?: string;
+  pixRecipientName?: string;
+  pixCity?: string;
+  bankName?: string;
+  bankAgency?: string;
+  bankAccount?: string;
+  bankAccountType?: string;
+  companyDocument?: string;
+  aboutText: string;
+}
+
+export interface CreateContactMessageRequest {
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+}
+
+export interface Guide {
+  id: number;
+  name: string;
+  description: string;
+  photoUrl?: string;
+  specialties: string[];
+  entryDate: string;
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
-  total: number;
-  page: number;
+  totalCount: number;
+  pageNumber: number;
   pageSize: number;
   totalPages: number;
 }

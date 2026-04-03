@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
+  CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Typography,
   Card,
   CardContent,
@@ -8,49 +12,46 @@ import {
   IconButton,
   useTheme,
   useMediaQuery,
+  Alert,
 } from '@mui/material';
 import { 
   ArrowBackIos as ArrowBackIcon,
   ArrowForwardIos as ArrowForwardIcon
 } from '@mui/icons-material';
-import { linhasUmbandaData, LinhaUmbanda } from '../../data/linhasUmbandaData';
-import { convertLinhaToModalData, getColorFromAttribute } from '../../utils/spiritualDataDetail';
+import { useQuery } from '@tanstack/react-query';
 import NavigationDots from '../common/NavigationDots';
-import SpiritualDetailModal from '../common/SpiritualDetailModal';
+import publicApi from '../../services/api';
+import { UmbandaLine } from '../../types';
 
 const UmbandaSection: React.FC = () => {
-  const [selectedLinha, setSelectedLinha] = useState<LinhaUmbanda | null>(null);
+  const [selectedLinha, setSelectedLinha] = useState<UmbandaLine | null>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [maxScroll, setMaxScroll] = useState(0);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
-  const formatLinhaName = (name: string): string => {
-    // Remove "Linha de " e "Linha da " do início
-    return name.replace(/^Linha de |^Linha da /, '');
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['public-umbanda-lines'],
+    queryFn: () => publicApi.getUmbandaLines({ pageNumber: 1, pageSize: 50, sort: 'displayOrder:asc' }),
+  });
+
+  const linhas = data?.data ?? [];
+
+  const getLinhaColor = (index: number): string => {
+    const palette = [
+      theme.palette.primary.main,
+      theme.palette.secondary.main,
+      theme.palette.success.main,
+      theme.palette.info.main,
+      theme.palette.warning.main,
+      '#7B1FA2',
+      '#455A64',
+    ];
+    return palette[index % palette.length];
   };
 
-  // Usar a função unificada baseada no atributo 'cor'
-  const getLinhaColor = (linha: LinhaUmbanda): string => {
-    return getColorFromAttribute(linha.cor);
-  };
-
-  const getChipTextColor = (cor: string): string => {
-    // Para cores claras, usar texto escuro
-    const lightColors = ['Branco', 'Amarelo', 'Azul-claro'];
-    return lightColors.includes(cor) ? '#333333' : 'white';
-  };
-
-  const getBorderColor = (linha: LinhaUmbanda): string => {
-    // Para branco, usar uma borda mais visível
-    if (linha.cor === 'Branco') {
-      return '#e0e0e0';
-    }
-    return getLinhaColor(linha);
-  };
-
-  const handleCardClick = (linha: LinhaUmbanda) => {
+  const handleCardClick = (linha: UmbandaLine) => {
     setSelectedLinha(linha);
   };
 
@@ -220,7 +221,7 @@ const UmbandaSection: React.FC = () => {
               },
             }}
           >
-          {linhasUmbandaData.map((linha) => (
+          {linhas.map((linha, index) => (
             <Card
               key={linha.id}
               onClick={() => handleCardClick(linha)}
@@ -232,7 +233,7 @@ const UmbandaSection: React.FC = () => {
                   transform: 'translateY(-8px)',
                   boxShadow: 6,
                 },
-                borderTop: `4px solid ${getBorderColor(linha)}`,
+                borderTop: `4px solid ${getLinhaColor(index)}`,
               }}
             >
               <CardContent sx={{ p: 3 }}>
@@ -245,7 +246,7 @@ const UmbandaSection: React.FC = () => {
                     fontSize: '1.1rem',
                   }}
                 >
-                  {formatLinhaName(linha.name)}
+                  {linha.name}
                 </Typography>
 
                 <Box sx={{ mb: 2 }}>
@@ -257,15 +258,15 @@ const UmbandaSection: React.FC = () => {
                       mb: 1,
                     }}
                   >
-                    Regida por: {linha.regidaPor}
+                    Entidade em destaque: {linha.entities[0] || 'Casa Batuara'}
                   </Typography>
                   
                   <Chip
-                    label={linha.cor}
+                    label={linha.workingDays[0] || 'Atuação contínua'}
                     size="small"
                     sx={{
-                      backgroundColor: getLinhaColor(linha),
-                      color: getChipTextColor(linha.cor),
+                      backgroundColor: getLinhaColor(index),
+                      color: 'white',
                       fontWeight: 500,
                       mb: 2,
                     }}
@@ -277,22 +278,22 @@ const UmbandaSection: React.FC = () => {
                     Entidades:
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                    {linha.entidades.slice(0, 2).map((entidade: string, index: number) => (
+                    {linha.entities.slice(0, 2).map((entidade: string, chipIndex: number) => (
                       <Chip
-                        key={index}
+                        key={chipIndex}
                         label={entidade}
                         size="small"
                         sx={{
-                          backgroundColor: getLinhaColor(linha),
-                          color: getChipTextColor(linha.cor),
+                          backgroundColor: getLinhaColor(index),
+                          color: 'white',
                           fontSize: '0.75rem',
                           fontWeight: 500,
                         }}
                       />
                     ))}
-                    {linha.entidades.length > 2 && (
+                    {linha.entities.length > 2 && (
                       <Chip
-                        label={`+${linha.entidades.length - 2}`}
+                        label={`+${linha.entities.length - 2}`}
                         size="small"
                         variant="outlined"
                         sx={{ fontSize: '0.75rem' }}
@@ -313,7 +314,7 @@ const UmbandaSection: React.FC = () => {
                       lineHeight: 1.4,
                     }}
                   >
-                    {linha.atuacao}
+                    {linha.characteristics}
                   </Typography>
                 </Box>
               </CardContent>
@@ -352,15 +353,14 @@ const UmbandaSection: React.FC = () => {
           
           {/* Indicadores de navegação */}
           <NavigationDots
-            totalItems={linhasUmbandaData.length}
+            totalItems={linhas.length}
             currentIndex={(() => {
               const itemWidth = isMobile ? 320 : 320;
               const gap = 24;
               const itemsPerView = 1;
               const itemWithGap = itemWidth + gap;
-              const totalDots = Math.ceil(linhasUmbandaData.length / itemsPerView);
+              const totalDots = Math.ceil(linhas.length / itemsPerView);
               
-              // Se chegamos próximo do final (90% do scroll máximo), mostrar último dot
               if (scrollPosition >= maxScroll * 0.9) {
                 return totalDots - 1;
               }
@@ -373,13 +373,64 @@ const UmbandaSection: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Modal com informações detalhadas */}
-      <SpiritualDetailModal
-        open={!!selectedLinha}
-        onClose={handleCloseDialog}
-        data={selectedLinha ? convertLinhaToModalData(selectedLinha) : {} as any}
-        tipo="linha"
-      />
+      {isLoading && (
+        <Box sx={{ textAlign: 'center', mt: 4 }}>
+          <CircularProgress color="primary" />
+        </Box>
+      )}
+
+      {isError && (
+        <Alert severity="warning" sx={{ maxWidth: 680, mx: 'auto', mt: 4 }}>
+          Não foi possível carregar as linhas de Umbanda neste momento.
+        </Alert>
+      )}
+
+      <Dialog open={!!selectedLinha} onClose={handleCloseDialog} fullWidth maxWidth="md">
+        <DialogTitle>{selectedLinha?.name}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'grid', gap: 2, py: 1 }}>
+            <Typography variant="body1" color="text.secondary">
+              {selectedLinha?.description}
+            </Typography>
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
+                Características
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {selectedLinha?.characteristics}
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
+                Interpretação Batuara
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {selectedLinha?.batuaraInterpretation}
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
+                Entidades
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {selectedLinha?.entities.map((entity) => (
+                  <Chip key={entity} label={entity} size="small" />
+                ))}
+              </Box>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
+                Dias de trabalho
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {(selectedLinha?.workingDays.length ? selectedLinha.workingDays : ['Atuação contínua']).map((day) => (
+                  <Chip key={day} label={day} size="small" variant="outlined" />
+                ))}
+              </Box>
+            </Box>
+          </Box>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

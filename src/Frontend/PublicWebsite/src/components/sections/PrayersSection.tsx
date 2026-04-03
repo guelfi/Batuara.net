@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
+  Alert,
   Box,
+  CircularProgress,
   Container,
   Typography,
   Grid,
@@ -18,172 +20,140 @@ import SearchIcon from '@mui/icons-material/Search';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-
-interface Prayer {
-  id: string;
-  title: string;
-  content: string;
-  category: 'umbanda' | 'espirita' | 'geral';
-  tags: string[];
-}
-
-const prayers: Prayer[] = [
-  {
-    id: '1',
-    title: 'Pai Nosso da Umbanda',
-    content: `Pai nosso que estais no infinito,
-Santificado seja o vosso reino de amor e caridade,
-Venha a nós a vossa luz,
-Seja feita a vossa vontade assim na Terra como no infinito.
-
-O pão nosso espiritual de cada dia nos dai hoje,
-Perdoai as nossas dívidas assim como nós perdoamos aos nossos devedores,
-E não nos deixeis cair em tentação,
-Mas livrai-nos de todo mal.
-
-Porque vosso é o reino, o poder e a glória,
-Para todo o sempre.
-Saravá!`,
-    category: 'umbanda',
-    tags: ['oração', 'fundamental', 'pai nosso']
-  },
-  {
-    id: '2',
-    title: 'Oração de Caritas',
-    content: `Deus, nosso Pai, que sois todo poder e bondade,
-Dai força àquele que passa pela provação,
-Dai luz àquele que procura a verdade,
-Ponde no coração do homem a compaixão e a caridade.
-
-Deus! Dai ao viajor a estrela guia,
-Ao aflito a consolação,
-Ao doente o repouso.
-
-Pai! Dai ao culpado o arrependimento,
-Ao espírito a verdade,
-À criança o guia,
-Ao órfão o pai.
-
-Senhor! Que a vossa bondade se estenda sobre tudo o que criastes.
-Piedade, Senhor, para aqueles que vos não conhecem,
-Esperança para aqueles que sofrem.
-
-Que a vossa bondade permita aos espíritos consoladores
-Derramarem por toda parte a paz, a esperança e a fé.
-
-Deus! Um raio, uma faísca do vosso amor pode abrasar a Terra;
-Deixai-nos beber nas fontes dessa bondade fecunda e infinita,
-E todas as lágrimas secarão, todas as dores se acalmarão.
-
-Um só coração, um só pensamento subirá até vós,
-Como um grito de reconhecimento e de amor.
-
-Como Moisés sobre a montanha, nós vos esperamos de braços abertos,
-Ó Poder! Ó Bondade! Ó Beleza! Ó Perfeição!
-E queremos de alguma sorte merecer a vossa misericórdia.
-
-Deus! Dai-nos a força de ajudar o progresso,
-A fim de subirmos até vós;
-Dai-nos a caridade pura,
-Dai-nos a fé e a razão;
-Dai-nos a simplicidade que fará de nossas almas
-O espelho onde se refletirá a vossa santa imagem.
-
-Assim seja, Senhor!`,
-    category: 'espirita',
-    tags: ['caritas', 'allan kardec', 'oração']
-  },
-  {
-    id: '3',
-    title: 'Oração a Oxalá',
-    content: `Salve Oxalá, Pai de todos os Orixás,
-Senhor da paz e da harmonia,
-Que vossa luz ilumine nossos caminhos,
-E vossa sabedoria guie nossos passos.
-
-Oxalá, Pai da criação,
-Dai-nos força para vencer as dificuldades,
-Paciência para suportar as provações,
-E amor para perdoar as ofensas.
-
-Que vossa benção esteja sempre conosco,
-Protegendo nossa família e nossos irmãos,
-Iluminando nossa mente e nosso coração,
-Para que possamos servir com humildade e caridade.
-
-Salve Oxalá!
-Epa Babá!`,
-    category: 'umbanda',
-    tags: ['oxalá', 'orixá', 'proteção']
-  },
-  {
-    id: '4',
-    title: 'Oração do Médium',
-    content: `Senhor Jesus, que sois o caminho, a verdade e a vida,
-Iluminai-me para que eu possa ser um instrumento de vossa paz.
-
-Que os espíritos de luz me assistam nesta tarefa sagrada,
-E que eu possa transmitir apenas palavras de consolação,
-Esperança e amor aos corações aflitos.
-
-Afastai de mim toda vaidade e orgulho,
-Para que eu seja apenas um canal humilde
-De vossa infinita misericórdia.
-
-Protegei-me, Senhor, de toda influência negativa,
-E fazei com que apenas espíritos elevados
-Se aproximem para o trabalho de caridade.
-
-Que eu possa servir com humildade e dedicação,
-Sempre lembrando que sem vós nada posso fazer.
-
-Assim seja, Senhor!`,
-    category: 'espirita',
-    tags: ['médium', 'trabalho espiritual', 'proteção']
-  }
-];
+import { useQuery } from '@tanstack/react-query';
+import publicApi from '../../services/api';
+import { SpiritualCategory, SpiritualContentType } from '../../types';
+import { mockSpiritualContent } from '../../data/mockData';
 
 const PrayersSection: React.FC = () => {
   const theme = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [expandedPrayer, setExpandedPrayer] = useState<string | false>(false);
+  const [selectedCategory, setSelectedCategory] = useState<SpiritualCategory | null>(null);
+  const [expandedPrayer, setExpandedPrayer] = useState<number | false>(false);
 
-  const getCategoryLabel = (category: string): string => {
-    switch (category) {
-      case 'umbanda':
-        return 'Umbanda';
-      case 'espirita':
-        return 'Espírita';
-      case 'geral':
-        return 'Geral';
-      default:
-        return category;
-    }
-  };
-
-  const getCategoryColor = (category: string): string => {
-    switch (category) {
-      case 'umbanda':
-        return theme.palette.secondary.main;
-      case 'espirita':
-        return theme.palette.primary.main;
-      case 'geral':
-        return theme.palette.info.main;
-      default:
-        return theme.palette.primary.main;
-    }
-  };
-
-  const filteredPrayers = prayers.filter((prayer) => {
-    const matchesSearch = prayer.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      prayer.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      prayer.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = selectedCategory === null || prayer.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['public-spiritual-contents'],
+    queryFn: () => publicApi.getSpiritualContents({ pageNumber: 1, pageSize: 100, sort: 'displayOrder:asc' }),
   });
 
-  const handleAccordionChange = (prayerId: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
+  const normalizeType = (type: SpiritualContentType | string): SpiritualContentType => {
+    if (typeof type === 'number') {
+      return type;
+    }
+
+    switch (type.trim().toLowerCase()) {
+      case 'prayer':
+      case 'oração':
+      case 'oracao':
+        return SpiritualContentType.Prayer;
+      case 'teaching':
+      case 'ensinamento':
+        return SpiritualContentType.Teaching;
+      case 'doctrine':
+      case 'doutrina':
+        return SpiritualContentType.Doctrine;
+      case 'hymn':
+      case 'ponto cantado':
+        return SpiritualContentType.Hymn;
+      case 'ritual':
+        return SpiritualContentType.Ritual;
+      default:
+        return SpiritualContentType.Prayer;
+    }
+  };
+
+  const normalizeCategory = (category: SpiritualCategory | string): SpiritualCategory => {
+    if (typeof category === 'number') {
+      return category;
+    }
+
+    switch (category.trim().toLowerCase()) {
+      case 'umbanda':
+        return SpiritualCategory.Umbanda;
+      case 'kardecismo':
+      case 'espírita':
+      case 'espirita':
+        return SpiritualCategory.Kardecismo;
+      case 'general':
+      case 'geral':
+        return SpiritualCategory.General;
+      case 'orixás':
+      case 'orixas':
+        return SpiritualCategory.Orixas;
+      default:
+        return SpiritualCategory.General;
+    }
+  };
+
+  const getCategoryLabel = (category: SpiritualCategory): string => {
+    switch (category) {
+      case SpiritualCategory.Umbanda:
+        return 'Umbanda';
+      case SpiritualCategory.Kardecismo:
+        return 'Espírita';
+      case SpiritualCategory.General:
+        return 'Geral';
+      case SpiritualCategory.Orixas:
+        return 'Orixás';
+      default:
+        return 'Geral';
+    }
+  };
+
+  const getCategoryColor = (category: SpiritualCategory): string => {
+    switch (category) {
+      case SpiritualCategory.Umbanda:
+        return theme.palette.secondary.main;
+      case SpiritualCategory.Kardecismo:
+        return theme.palette.primary.main;
+      case SpiritualCategory.General:
+        return theme.palette.info.main;
+      case SpiritualCategory.Orixas:
+        return theme.palette.warning.main;
+      default:
+        return theme.palette.primary.main;
+    }
+  };
+
+  const getTypeLabel = (type: SpiritualContentType): string => {
+    switch (type) {
+      case SpiritualContentType.Prayer:
+        return 'Oração';
+      case SpiritualContentType.Teaching:
+        return 'Ensinamento';
+      case SpiritualContentType.Doctrine:
+        return 'Doutrina';
+      case SpiritualContentType.Hymn:
+        return 'Ponto Cantado';
+      case SpiritualContentType.Ritual:
+        return 'Ritual';
+      default:
+        return 'Conteúdo';
+    }
+  };
+
+  const allContents = (data?.data?.length ?? 0) > 0 ? data!.data : mockSpiritualContent;
+  const visibleContents = allContents.filter((item) =>
+    item.isActive &&
+    [SpiritualContentType.Prayer, SpiritualContentType.Teaching, SpiritualContentType.Doctrine, SpiritualContentType.Hymn]
+      .includes(normalizeType(item.type))
+  );
+
+  const filteredPrayers = useMemo(
+    () =>
+      visibleContents.filter((prayer) => {
+        const term = searchTerm.toLowerCase();
+        const matchesSearch =
+          prayer.title.toLowerCase().includes(term) ||
+          prayer.content.toLowerCase().includes(term) ||
+          prayer.source.toLowerCase().includes(term);
+        const matchesCategory = selectedCategory === null || normalizeCategory(prayer.category) === selectedCategory;
+        return matchesSearch && matchesCategory;
+      }),
+    [searchTerm, selectedCategory, visibleContents]
+  );
+
+  const handleAccordionChange = (prayerId: number) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpandedPrayer(isExpanded ? prayerId : false);
   };
 
@@ -245,27 +215,38 @@ const PrayersSection: React.FC = () => {
               />
               <Chip
                 label="Umbanda"
-                onClick={() => setSelectedCategory('umbanda')}
-                color={selectedCategory === 'umbanda' ? 'secondary' : 'default'}
-                variant={selectedCategory === 'umbanda' ? 'filled' : 'outlined'}
+                onClick={() => setSelectedCategory(SpiritualCategory.Umbanda)}
+                color={selectedCategory === SpiritualCategory.Umbanda ? 'secondary' : 'default'}
+                variant={selectedCategory === SpiritualCategory.Umbanda ? 'filled' : 'outlined'}
               />
               <Chip
                 label="Espírita"
-                onClick={() => setSelectedCategory('espirita')}
-                color={selectedCategory === 'espirita' ? 'primary' : 'default'}
-                variant={selectedCategory === 'espirita' ? 'filled' : 'outlined'}
+                onClick={() => setSelectedCategory(SpiritualCategory.Kardecismo)}
+                color={selectedCategory === SpiritualCategory.Kardecismo ? 'primary' : 'default'}
+                variant={selectedCategory === SpiritualCategory.Kardecismo ? 'filled' : 'outlined'}
               />
               <Chip
                 label="Geral"
-                onClick={() => setSelectedCategory('geral')}
-                color={selectedCategory === 'geral' ? 'info' : 'default'}
-                variant={selectedCategory === 'geral' ? 'filled' : 'outlined'}
+                onClick={() => setSelectedCategory(SpiritualCategory.General)}
+                color={selectedCategory === SpiritualCategory.General ? 'info' : 'default'}
+                variant={selectedCategory === SpiritualCategory.General ? 'filled' : 'outlined'}
               />
             </Box>
           </Box>
         </Box>
 
-        {filteredPrayers.length === 0 ? (
+        {isLoading ? (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <CircularProgress color="primary" />
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              Carregando conteúdos espirituais...
+            </Typography>
+          </Box>
+        ) : isError ? (
+          <Alert severity="warning">
+            Não foi possível carregar os conteúdos espirituais neste momento.
+          </Alert>
+        ) : filteredPrayers.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <MenuBookIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -304,18 +285,18 @@ const PrayersSection: React.FC = () => {
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {prayer.category === 'umbanda' && <AutoAwesomeIcon />}
-                        {prayer.category === 'espirita' && <MenuBookIcon />}
-                        {prayer.category === 'geral' && <FavoriteIcon />}
+                        {normalizeCategory(prayer.category) === SpiritualCategory.Umbanda && <AutoAwesomeIcon />}
+                        {normalizeCategory(prayer.category) === SpiritualCategory.Kardecismo && <MenuBookIcon />}
+                        {(normalizeCategory(prayer.category) === SpiritualCategory.General || normalizeCategory(prayer.category) === SpiritualCategory.Orixas) && <FavoriteIcon />}
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
                           {prayer.title}
                         </Typography>
                       </Box>
                       <Chip
-                        label={getCategoryLabel(prayer.category)}
+                        label={getCategoryLabel(normalizeCategory(prayer.category))}
                         size="small"
                         sx={{
-                          backgroundColor: getCategoryColor(prayer.category),
+                          backgroundColor: getCategoryColor(normalizeCategory(prayer.category)),
                           color: 'white',
                           fontWeight: 500,
                         }}
@@ -337,15 +318,9 @@ const PrayersSection: React.FC = () => {
                       {prayer.content}
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 1, mt: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
-                      {prayer.tags.map((tag) => (
-                        <Chip
-                          key={tag}
-                          label={tag}
-                          size="small"
-                          variant="outlined"
-                          sx={{ textTransform: 'capitalize' }}
-                        />
-                      ))}
+                      <Chip label={prayer.source} size="small" variant="outlined" />
+                      {prayer.isFeatured && <Chip label="Destaque" size="small" color="warning" />}
+                      <Chip label={getTypeLabel(normalizeType(prayer.type))} size="small" variant="outlined" />
                     </Box>
                   </AccordionDetails>
                 </Accordion>

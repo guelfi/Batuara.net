@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
+  Alert,
   Box,
+  CircularProgress,
   Container,
   Typography,
   Grid,
@@ -22,27 +24,54 @@ import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import { mockEvents } from '../../data/mockData';
+import { useQuery } from '@tanstack/react-query';
+import publicApi from '../../services/api';
 import { EventType } from '../../types';
-import { format, parseISO } from 'date-fns';
+import { endOfMonth, format, parseISO, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import NavigationDots from '../common/NavigationDots';
 
 const EventsSection: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const currentMonthStart = startOfMonth(new Date());
+  const currentMonthEnd = endOfMonth(new Date());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<EventType | null>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [maxScroll, setMaxScroll] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const getEventTypeLabel = (type: EventType): string => {
-    switch (type) {
+  const normalizeEventType = (type: EventType | string): EventType => {
+    if (typeof type === 'number') {
+      return type;
+    }
+
+    switch (type.trim().toLowerCase()) {
+      case 'festa':
+        return EventType.Festa;
+      case 'evento':
+        return EventType.Evento;
+      case 'celebração':
+      case 'celebracao':
+        return EventType.Celebracao;
+      case 'bazar':
+        return EventType.Bazar;
+      case 'palestra':
+        return EventType.Palestra;
+      default:
+        return EventType.Evento;
+    }
+  };
+
+  const getEventTypeLabel = (type: EventType | string): string => {
+    switch (normalizeEventType(type)) {
       case EventType.Festa:
         return 'Festa';
       case EventType.Evento:
         return 'Evento';
+      case EventType.Celebracao:
+        return 'Celebração';
       case EventType.Bazar:
         return 'Bazar';
       case EventType.Palestra:
@@ -52,12 +81,14 @@ const EventsSection: React.FC = () => {
     }
   };
 
-  const getEventTypeColor = (type: EventType): string => {
-    switch (type) {
+  const getEventTypeColor = (type: EventType | string): string => {
+    switch (normalizeEventType(type)) {
       case EventType.Festa:
         return theme.palette.secondary.main;
       case EventType.Evento:
         return theme.palette.primary.main;
+      case EventType.Celebracao:
+        return theme.palette.warning.main;
       case EventType.Palestra:
         return theme.palette.info.main;
       case EventType.Bazar:
@@ -67,11 +98,25 @@ const EventsSection: React.FC = () => {
     }
   };
 
-  const filteredEvents = mockEvents.filter((event) => {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['public-events', currentMonthStart.toISOString()],
+    queryFn: () =>
+      publicApi.getEvents({
+        pageNumber: 1,
+        pageSize: 100,
+        sort: 'date:asc',
+        fromDate: currentMonthStart.toISOString(),
+        toDate: currentMonthEnd.toISOString(),
+      }),
+  });
+
+  const events = data?.data ?? [];
+
+  const filteredEvents = events.filter((event) => {
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          event.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === null || event.type === selectedType;
-    return matchesSearch && matchesType && event.isActive;
+    const matchesType = selectedType === null || normalizeEventType(event.type) === selectedType;
+    return matchesSearch && matchesType && event.isActive !== false;
   });
 
   const formatEventDate = (dateString: string): string => {
@@ -148,7 +193,7 @@ const EventsSection: React.FC = () => {
               color: 'primary.main',
             }}
           >
-            Eventos e Atividades
+            Eventos do Mês
           </Typography>
           <Typography
             variant="h5"
@@ -160,7 +205,7 @@ const EventsSection: React.FC = () => {
               mb: 4,
             }}
           >
-            Participe de nossas celebrações, palestras e atividades espirituais
+            Acompanhe somente as festas, celebrações e atividades programadas para o mês corrente
           </Typography>
 
           {/* Filtros */}
@@ -199,7 +244,15 @@ const EventsSection: React.FC = () => {
           </Box>
         </Box>
 
-        {filteredEvents.length === 0 ? (
+        {isLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress color="primary" />
+          </Box>
+        ) : isError ? (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            Não foi possível carregar os eventos atualizados da API.
+          </Alert>
+        ) : filteredEvents.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <EventIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
