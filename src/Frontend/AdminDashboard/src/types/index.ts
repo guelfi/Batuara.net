@@ -34,8 +34,59 @@ export interface ApiResponse<T> {
   errors?: string[];
 }
 
+export interface SiteSettingsDto {
+  address: string;
+  email: string;
+  phone: string;
+  instagram: string;
+  historyTitle: string;
+  historySubtitle?: string;
+  historyHtml?: string;
+  historyMissionText?: string;
+  institutionalEmail: string;
+  primaryPhone: string;
+  secondaryPhone?: string;
+  whatsappNumber?: string;
+  serviceHours?: string;
+  street: string;
+  number: string;
+  complement?: string;
+  district: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  referenceNotes?: string;
+  mapEmbedUrl?: string;
+  facebookUrl?: string;
+  instagramUrl?: string;
+  youtubeUrl?: string;
+  whatsappUrl?: string;
+  pixKey?: string;
+  pixPayload?: string;
+  pixRecipientName?: string;
+  pixCity?: string;
+  bankName?: string;
+  bankAgency?: string;
+  bankAccount?: string;
+  bankAccountType?: string;
+  companyDocument?: string;
+  aboutText: string;
+}
+
+export enum ContactMessageStatus {
+  New = 1,
+  InProgress = 2,
+  Resolved = 3,
+  Archived = 4,
+}
+
+export enum ContributionPaymentStatus {
+  Pending = 1,
+  Paid = 2,
+}
+
 export interface Event {
-  id: string;
+  id: number;
   title: string;
   description: string;
   date: string;
@@ -43,24 +94,25 @@ export interface Event {
   endTime?: string;
   location?: string;
   type: EventType;
+  imageUrl?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export enum EventType {
-  Festa = 0,
-  Evento = 1,
-  Celebracao = 2,
-  Bazar = 3,
-  Palestra = 4,
+  Festa = 1,
+  Evento = 2,
+  Celebracao = 3,
+  Bazar = 4,
+  Palestra = 5,
 }
 
 export interface CalendarAttendance {
-  id: string;
+  id: number;
   date: string;
-  startTime: string;
-  endTime: string;
+  startTime?: string;
+  endTime?: string;
   type: AttendanceType;
   description?: string;
   maxCapacity?: number;
@@ -72,14 +124,14 @@ export interface CalendarAttendance {
 }
 
 export enum AttendanceType {
-  Kardecismo = 0,
-  Umbanda = 1,
-  Palestra = 2,
-  Curso = 3,
+  Kardecismo = 1,
+  Umbanda = 2,
+  Palestra = 3,
+  Curso = 4,
 }
 
 export interface Orixa {
-  id: string;
+  id: number;
   name: string;
   description: string;
   origin: string;
@@ -87,41 +139,120 @@ export interface Orixa {
   elements: string[];
   characteristics: string[];
   batuaraTeaching: string;
+  imageUrl?: string;
+  displayOrder: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
+export interface Guide {
+  id: number;
+  name: string;
+  description: string;
+  photoUrl?: string;
+  specialties: string[];
+  entryDate: string;
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HouseMemberContribution {
+  id: number;
+  referenceMonth: string;
+  dueDate: string;
+  amount: number;
+  status: ContributionPaymentStatus;
+  paidAt?: string;
+  notes?: string;
+}
+
+export interface HouseMember {
+  id: number;
+  fullName: string;
+  birthDate: string;
+  entryDate: string;
+  headOrixaFront: string;
+  headOrixaBack: string;
+  headOrixaRonda: string;
+  email: string;
+  mobilePhone: string;
+  zipCode: string;
+  street: string;
+  number: string;
+  complement?: string;
+  district: string;
+  city: string;
+  state: string;
+  currentMonthContributionStatus?: ContributionPaymentStatus;
+  currentMonthDueDate?: string;
+  currentMonthPaidAt?: string;
+  contributions: HouseMemberContribution[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContactMessage {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+  status: ContactMessageStatus;
+  adminNotes?: string;
+  receivedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UmbandaLine {
-  id: string;
+  id: number;
   name: string;
   description: string;
   characteristics: string;
   entities: string[];
   workingDays: string[];
   batuaraInterpretation: string;
+  displayOrder: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface SpiritualContent {
-  id: string;
+  id: number;
   title: string;
   content: string;
   type: SpiritualContentType;
-  category: string;
-  tags: string[];
+  category: SpiritualCategory;
+  source: string;
+  displayOrder: number;
+  isFeatured: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export enum SpiritualContentType {
-  Prayer = 0,
-  Teaching = 1,
-  Study = 2,
-  Meditation = 3,
+  Prayer = 1,
+  Teaching = 2,
+  Doctrine = 3,
+  Hymn = 4,
+  Ritual = 5,
+}
+
+export enum SpiritualCategory {
+  Umbanda = 1,
+  Kardecismo = 2,
+  General = 3,
+  Orixas = 4,
 }
 
 export interface RevokeTokenRequest {

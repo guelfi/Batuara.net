@@ -14,26 +14,12 @@ namespace Batuara.Infrastructure.Data.SeedData
             {
                 logger.LogInformation("Iniciando seed data da Casa de Caridade Batuara...");
 
-                // Verificar se já existem dados
-                if (await context.Orixas.AnyAsync() || 
-                    await context.UmbandaLines.AnyAsync() || 
-                    await context.SpiritualContents.AnyAsync())
-                {
-                    logger.LogInformation("Dados já existem no banco. Seed data cancelado.");
-                    return;
-                }
-
-                // Seed dos Orixás
                 await SeedOrixasAsync(context, logger);
-
-                // Seed das Linhas da Umbanda
                 await SeedUmbandaLinesAsync(context, logger);
-
-                // Seed dos Conteúdos Espirituais
                 await SeedSpiritualContentAsync(context, logger);
-
-                // Salvar todas as mudanças
-                await context.SaveChangesAsync();
+                await SeedEventsAsync(context, logger);
+                await SeedCalendarAttendancesAsync(context, logger);
+                await SeedSiteSettingsAsync(context, logger);
 
                 logger.LogInformation("Seed data da Casa de Caridade Batuara concluído com sucesso!");
             }
@@ -46,6 +32,12 @@ namespace Batuara.Infrastructure.Data.SeedData
 
         private static async Task SeedOrixasAsync(BatuaraDbContext context, ILogger logger)
         {
+            if (await context.Orixas.AnyAsync())
+            {
+                logger.LogInformation("Orixás já existem no banco. Seed desta entidade ignorado.");
+                return;
+            }
+
             logger.LogInformation("Inserindo dados dos Orixás...");
 
             var orixas = new[]
@@ -96,11 +88,18 @@ namespace Batuara.Infrastructure.Data.SeedData
             };
 
             await context.Orixas.AddRangeAsync(orixas);
+            await context.SaveChangesAsync();
             logger.LogInformation($"Inseridos {orixas.Length} Orixás");
         }
 
         private static async Task SeedUmbandaLinesAsync(BatuaraDbContext context, ILogger logger)
         {
+            if (await context.UmbandaLines.AnyAsync())
+            {
+                logger.LogInformation("Linhas da Umbanda já existem no banco. Seed desta entidade ignorado.");
+                return;
+            }
+
             logger.LogInformation("Inserindo dados das Linhas da Umbanda...");
 
             var umbandaLines = new[]
@@ -137,11 +136,18 @@ namespace Batuara.Infrastructure.Data.SeedData
             };
 
             await context.UmbandaLines.AddRangeAsync(umbandaLines);
+            await context.SaveChangesAsync();
             logger.LogInformation($"Inseridas {umbandaLines.Length} Linhas da Umbanda");
         }
 
         private static async Task SeedSpiritualContentAsync(BatuaraDbContext context, ILogger logger)
         {
+            if (await context.SpiritualContents.AnyAsync())
+            {
+                logger.LogInformation("Conteúdos espirituais já existem no banco. Seed desta entidade ignorado.");
+                return;
+            }
+
             logger.LogInformation("Inserindo conteúdos espirituais...");
 
             var spiritualContents = new[]
@@ -209,11 +215,199 @@ Cada Orixá tem seus ensinamentos específicos, mas todos nos conduzem ao mesmo 
                     "Apostila Batuara 2024",
                     3,
                     true
+                ),
+
+                new SpiritualContent(
+                    "Oração de Caritas",
+                    @"Deus, nosso Pai, que sois todo poder e bondade,
+Dai força àquele que passa pela provação,
+Dai luz àquele que procura a verdade,
+Ponde no coração do homem a compaixão e a caridade.
+
+Deus! Dai ao viajor a estrela guia,
+Ao aflito a consolação,
+Ao doente o repouso.
+
+Pai! Dai ao culpado o arrependimento,
+Ao espírito a verdade,
+À criança o guia,
+Ao órfão o pai.
+
+Senhor! Que a vossa bondade se estenda sobre tudo o que criastes.
+Piedade, Senhor, para aqueles que vos não conhecem,
+Esperança para aqueles que sofrem.
+
+Que a vossa bondade permita aos espíritos consoladores
+Derramarem por toda parte a paz, a esperança e a fé.",
+                    SpiritualContentType.Prayer,
+                    SpiritualCategory.Kardecismo,
+                    "Apostila Batuara 2024",
+                    3,
+                    true
+                ),
+
+                new SpiritualContent(
+                    "Oração a Oxalá",
+                    @"Salve Oxalá, Pai de todos os Orixás,
+Senhor da paz e da harmonia,
+Que vossa luz ilumine nossos caminhos,
+E vossa sabedoria guie nossos passos.
+
+Oxalá, Pai da criação,
+Dai-nos força para vencer as dificuldades,
+Paciência para suportar as provações,
+E amor para perdoar as ofensas.
+
+Que vossa benção esteja sempre conosco,
+Protegendo nossa família e nossos irmãos.",
+                    SpiritualContentType.Prayer,
+                    SpiritualCategory.Orixas,
+                    "Apostila Batuara 2024",
+                    4,
+                    true
+                ),
+
+                new SpiritualContent(
+                    "Oração do Médium",
+                    @"Senhor Jesus, que sois o caminho, a verdade e a vida,
+Iluminai-me para que eu possa ser um instrumento de vossa paz.
+
+Que os espíritos de luz me assistam nesta tarefa sagrada,
+E que eu possa transmitir apenas palavras de consolação,
+Esperança e amor aos corações aflitos.
+
+Afastai de mim toda vaidade e orgulho,
+Para que eu seja apenas um canal humilde
+De vossa infinita misericórdia.",
+                    SpiritualContentType.Prayer,
+                    SpiritualCategory.Kardecismo,
+                    "Apostila Batuara 2024",
+                    5,
+                    false
                 )
             };
 
             await context.SpiritualContents.AddRangeAsync(spiritualContents);
+            await context.SaveChangesAsync();
             logger.LogInformation($"Inseridos {spiritualContents.Length} conteúdos espirituais");
+        }
+
+        private static async Task SeedEventsAsync(BatuaraDbContext context, ILogger logger)
+        {
+            if (await context.Events.AnyAsync())
+            {
+                logger.LogInformation("Eventos já existem no banco. Seed desta entidade ignorado.");
+                return;
+            }
+
+            logger.LogInformation("Inserindo eventos iniciais...");
+
+            var referenceDate = DateTime.UtcNow.Date;
+            var events = new[]
+            {
+                new Event(
+                    "Festa de Yemanjá",
+                    "Celebração em honra à nossa querida Mãe Yemanjá, com gira especial e oferendas ao mar.",
+                    new EventDate(GetUpcomingDate(referenceDate, 15), TimeSpan.FromHours(19), TimeSpan.FromHours(22)),
+                    EventType.Festa,
+                    "Casa de Caridade Batuara"),
+                new Event(
+                    "Palestra: Os Orixás na Umbanda",
+                    "Palestra educativa sobre os Orixás e seus ensinamentos na tradição umbandista.",
+                    new EventDate(GetUpcomingDate(referenceDate, 8), TimeSpan.FromHours(19.5), TimeSpan.FromHours(21)),
+                    EventType.Palestra,
+                    "Casa de Caridade Batuara"),
+                new Event(
+                    "Bazar Beneficente",
+                    "Bazar com roupas, livros e artesanatos para arrecadar fundos para as obras da casa.",
+                    new EventDate(GetUpcomingDate(referenceDate, 12), TimeSpan.FromHours(14), TimeSpan.FromHours(18)),
+                    EventType.Bazar,
+                    "Casa de Caridade Batuara")
+            };
+
+            await context.Events.AddRangeAsync(events);
+            await context.SaveChangesAsync();
+            logger.LogInformation($"Inseridos {events.Length} eventos");
+        }
+
+        private static async Task SeedCalendarAttendancesAsync(BatuaraDbContext context, ILogger logger)
+        {
+            if (await context.CalendarAttendances.AnyAsync())
+            {
+                logger.LogInformation("Atendimentos de calendário já existem no banco. Seed desta entidade ignorado.");
+                return;
+            }
+
+            logger.LogInformation("Inserindo atendimentos iniciais do calendário...");
+
+            var referenceDate = DateTime.UtcNow.Date;
+            var attendances = new[]
+            {
+                new CalendarAttendance(
+                    new EventDate(GetNextDayOfWeek(referenceDate, DayOfWeek.Tuesday), TimeSpan.FromHours(19), TimeSpan.FromHours(21)),
+                    AttendanceType.Kardecismo,
+                    "Atendimento Kardecista",
+                    "Trazer água",
+                    false),
+                new CalendarAttendance(
+                    new EventDate(GetNextDayOfWeek(referenceDate, DayOfWeek.Friday), TimeSpan.FromHours(20), TimeSpan.FromHours(22)),
+                    AttendanceType.Umbanda,
+                    "Gira de Umbanda",
+                    "Usar roupas brancas",
+                    false),
+                new CalendarAttendance(
+                    new EventDate(GetNextDayOfWeek(referenceDate, DayOfWeek.Sunday), TimeSpan.FromHours(14), TimeSpan.FromHours(17)),
+                    AttendanceType.Curso,
+                    "Curso de Desenvolvimento Mediúnico",
+                    null,
+                    true,
+                    30)
+            };
+
+            await context.CalendarAttendances.AddRangeAsync(attendances);
+            await context.SaveChangesAsync();
+            logger.LogInformation($"Inseridos {attendances.Length} atendimentos de calendário");
+        }
+
+        private static async Task SeedSiteSettingsAsync(BatuaraDbContext context, ILogger logger)
+        {
+            if (await context.SiteSettings.AnyAsync())
+            {
+                logger.LogInformation("Configurações do site já existem no banco. Seed desta entidade ignorado.");
+                return;
+            }
+
+            logger.LogInformation("Inserindo configurações iniciais do site...");
+
+            var siteSettings = new Batuara.Domain.Entities.SiteSettings(
+                new ContactInfo(
+                    "Av.Brigadeiro Faria Lima, 2750 - Jardim Cocaia, Guarulhos - SP, 07130-000",
+                    "contato@casabatuara.org.br",
+                    "(11) 1234-5678",
+                    "casadecaridade.batuara"),
+                "A Casa de Caridade Batuara nasceu do desejo de servir a Espiritualidade através da caridade e do amor ao próximo. Trabalhamos com a Umbanda e a Doutrina Espírita, unindo acolhimento, orientação e assistência espiritual gratuita para todos que buscam a luz, a paz e a elevação da alma.",
+                "https://www.instagram.com/casadecaridade.batuara?igsh=ejU1dWozbTZlYXM4",
+                "contato@casabatuara.org.br");
+
+            await context.SiteSettings.AddAsync(siteSettings);
+            await context.SaveChangesAsync();
+            logger.LogInformation("Configurações iniciais do site inseridas");
+        }
+
+        private static DateTime GetUpcomingDate(DateTime referenceDate, int daysToAdd)
+        {
+            return DateTime.SpecifyKind(referenceDate.Date.AddDays(daysToAdd), DateTimeKind.Utc);
+        }
+
+        private static DateTime GetNextDayOfWeek(DateTime referenceDate, DayOfWeek targetDay)
+        {
+            var date = referenceDate.Date.AddDays(1);
+            while (date.DayOfWeek != targetDay)
+            {
+                date = date.AddDays(1);
+            }
+
+            return DateTime.SpecifyKind(date, DateTimeKind.Utc);
         }
     }
 }

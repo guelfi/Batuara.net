@@ -1,23 +1,51 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
+  Alert,
   Box,
-  Container,
-  Typography,
   Card,
   CardContent,
   Chip,
-  IconButton,
+  CircularProgress,
+  Container,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Grid,
-  useTheme,
+  IconButton,
+  Stack,
+  Typography,
   useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import { orixasData, Orixa } from '../../data/orixasData';
+import { useQuery } from '@tanstack/react-query';
 import NavigationDots from '../common/NavigationDots';
-import SpiritualDetailModal from '../common/SpiritualDetailModal';
-import { convertOrixaToModalData, getColorFromAttribute } from '../../utils/spiritualDataDetail';
+import publicApi from '../../services/api';
+import { Orixa } from '../../types';
+
+const colorMap: Record<string, string> = {
+  branco: '#e8eaf6',
+  azul: '#1976d2',
+  'azul claro': '#42a5f5',
+  'azul marinho': '#1a237e',
+  prata: '#90a4ae',
+  lilás: '#9c27b0',
+  roxo: '#7b1fa2',
+  dourado: '#f9a825',
+  amarelo: '#fbc02d',
+  vermelho: '#d32f2f',
+  verde: '#388e3c',
+  'verde escuro': '#2e7d32',
+  marrom: '#795548',
+  preto: '#212121',
+  rosa: '#e91e63',
+  coral: '#ff7043',
+  laranja: '#f57c00',
+  arcoíris: '#673ab7',
+  'arco-íris': '#673ab7',
+};
 
 const OrixasSection: React.FC = () => {
   const theme = useTheme();
@@ -26,6 +54,13 @@ const OrixasSection: React.FC = () => {
   const [scrollPosition, setScrollPosition] = useState(0);
   const [maxScroll, setMaxScroll] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['public-orixas'],
+    queryFn: () => publicApi.getOrixas(),
+  });
+
+  const orixas = [...(data ?? [])].sort((a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name));
 
   const handleOpenDialog = (orixa: Orixa) => {
     setSelectedOrixa(orixa);
@@ -37,29 +72,27 @@ const OrixasSection: React.FC = () => {
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
-      const scrollAmount = isMobile ? 280 : 320;
+      const scrollAmount = isMobile ? 284 : 324;
       const currentScroll = scrollContainerRef.current.scrollLeft;
-      const targetScroll = direction === 'left' 
-        ? currentScroll - scrollAmount 
-        : currentScroll + scrollAmount;
-      
+      const targetScroll = direction === 'left' ? currentScroll - scrollAmount : currentScroll + scrollAmount;
+
       scrollContainerRef.current.scrollTo({
         left: targetScroll,
-        behavior: 'smooth'
+        behavior: 'smooth',
       });
     }
   };
 
   const handleDotClick = (dotIndex: number) => {
     if (scrollContainerRef.current) {
-      const itemWidth = isMobile ? 280 : 320;
+      const itemWidth = isMobile ? 260 : 300;
       const gap = 24;
       const itemWithGap = itemWidth + gap;
       const targetScroll = dotIndex * itemWithGap;
 
       scrollContainerRef.current.scrollTo({
         left: targetScroll,
-        behavior: 'smooth'
+        behavior: 'smooth',
       });
     }
   };
@@ -76,36 +109,24 @@ const OrixasSection: React.FC = () => {
   const canScrollRight = scrollPosition < maxScroll;
 
   useEffect(() => {
-    // Inicializar estado do scroll
     if (scrollContainerRef.current) {
       handleScroll();
     }
-  }, []);
+  }, [orixas.length]);
 
-  // Usar a função unificada baseada no atributo 'cor'
   const getOrixaColor = (orixa: Orixa): string => {
-    return getColorFromAttribute(orixa.cor);
+    const primaryColor = orixa.colors[0]?.toLowerCase();
+
+    if (primaryColor && colorMap[primaryColor]) {
+      return colorMap[primaryColor];
+    }
+
+    return theme.palette.primary.main;
   };
 
-  const getOrixaNameColor = (orixa: Orixa): string => {
-    // Para Oxalá, usar uma cor mais escura para contraste com fundo branco
-    if (orixa.cor === 'Branco') return '#1a237e'; // Azul escuro para contraste
-    // Para outros Orixás, usar suas cores próprias
-    return getOrixaColor(orixa);
+  const getIconColor = (backgroundColor: string): string => {
+    return ['#e8eaf6', '#fbc02d', '#90a4ae'].includes(backgroundColor) ? '#1a237e' : '#ffffff';
   };
-
-  const getOrixaIconColor = (orixa: Orixa): string => {
-    // Para Oxalá, usar texto escuro para contraste no ícone
-    if (orixa.cor === 'Branco') return '#1a237e';
-    // Para Exu, usar texto branco no ícone
-    if (orixa.cor === 'Preto') return '#ffffff';
-    // Para outros Orixás com cores claras, usar texto escuro no ícone
-    if (['Amarelo'].includes(orixa.cor)) return '#333333';
-    // Para o resto, usar branco no ícone
-    return '#ffffff';
-  };
-
-
 
   return (
     <Box id="orixas" sx={{ py: 8, backgroundColor: 'background.paper' }}>
@@ -132,7 +153,7 @@ const OrixasSection: React.FC = () => {
               mb: 2,
             }}
           >
-            Forças da Natureza que regem nossa Casa e orientam nossos trabalhos
+            Forças da Natureza que regem nossa Casa e orientam nossos trabalhos.
           </Typography>
           <Typography
             variant="body1"
@@ -144,282 +165,289 @@ const OrixasSection: React.FC = () => {
               fontStyle: 'italic',
             }}
           >
-            Cada Orixá possui seu habitat natural, elemento e campo de força específico, 
-            atuando diretamente em nossas vidas através de seus ensinamentos ancestrais.
+            Conheça os ensinamentos, cores, elementos e fundamentos espirituais cultivados pela Casa Batuara.
           </Typography>
         </Box>
 
-        {/* Controles do Carrossel */}
-        <Box sx={{ position: 'relative', mb: 4 }}>
-          {canScrollLeft && (
-            <IconButton
-              onClick={() => scroll('left')}
-              sx={{
-                position: 'absolute',
-                left: -20,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                zIndex: 2,
-                backgroundColor: 'background.paper',
-                boxShadow: theme.shadows[4],
-                '&:hover': {
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                },
-              }}
-            >
-              <ArrowBackIosIcon />
-            </IconButton>
-          )}
+        {isLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress color="primary" />
+          </Box>
+        ) : isError ? (
+          <Alert severity="error">Não foi possível carregar os Orixás atualizados da API.</Alert>
+        ) : orixas.length === 0 ? (
+          <Alert severity="info">Nenhum Orixá ativo foi encontrado para exibição pública.</Alert>
+        ) : (
+          <>
+            <Box sx={{ position: 'relative', mb: 4 }}>
+              {canScrollLeft && (
+                <IconButton
+                  onClick={() => scroll('left')}
+                  sx={{
+                    position: 'absolute',
+                    left: -20,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    zIndex: 2,
+                    backgroundColor: 'background.paper',
+                    boxShadow: theme.shadows[4],
+                    '&:hover': {
+                      backgroundColor: 'primary.main',
+                      color: 'white',
+                    },
+                  }}
+                >
+                  <ArrowBackIosIcon />
+                </IconButton>
+              )}
 
-          {canScrollRight && (
-            <IconButton
-              onClick={() => scroll('right')}
-              sx={{
-                position: 'absolute',
-                right: -20,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                zIndex: 2,
-                backgroundColor: 'background.paper',
-                boxShadow: theme.shadows[4],
-                '&:hover': {
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                },
-              }}
-            >
-              <ArrowForwardIosIcon />
-            </IconButton>
-          )}
+              {canScrollRight && (
+                <IconButton
+                  onClick={() => scroll('right')}
+                  sx={{
+                    position: 'absolute',
+                    right: -20,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    zIndex: 2,
+                    backgroundColor: 'background.paper',
+                    boxShadow: theme.shadows[4],
+                    '&:hover': {
+                      backgroundColor: 'primary.main',
+                      color: 'white',
+                    },
+                  }}
+                >
+                  <ArrowForwardIosIcon />
+                </IconButton>
+              )}
 
-          {/* Container do Carrossel */}
-          <Box
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
-            sx={{
-              display: 'flex',
-              gap: 3,
-              overflowX: 'auto',
-              scrollBehavior: 'smooth',
-              pb: 2,
-              '&::-webkit-scrollbar': {
-                display: 'none',
-              },
-              scrollbarWidth: 'none',
-            }}
-          >
-
-            {orixasData.map((orixa) => (
-              <Card
-                key={orixa.id}
-                onClick={() => handleOpenDialog(orixa)}
+              <Box
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
                 sx={{
-                  minWidth: isMobile ? 260 : 300,
-                  maxWidth: isMobile ? 260 : 300,
-                  height: 310,
                   display: 'flex',
-                  flexDirection: 'column',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  boxShadow: theme.shadows[6], // Sombra padrão mais visível
-                  transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: theme.shadows[16], // Sombra ainda mais forte no hover
+                  gap: 3,
+                  overflowX: 'auto',
+                  scrollBehavior: 'smooth',
+                  pb: 2,
+                  '&::-webkit-scrollbar': {
+                    display: 'none',
                   },
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    backgroundColor: getOrixaColor(orixa),
-                  },
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    backgroundColor: getOrixaColor(orixa),
-                  },
+                  scrollbarWidth: 'none',
                 }}
               >
-                <CardContent sx={{ flexGrow: 1, pt: 1.2, px: 1.2, pb: 0.4, '&:last-child': { pb: 0.4 } }}>
-                  <Box sx={{ textAlign: 'center', mb: 1.5 }}>
-                    <Box
-                      sx={{
-                        width: 80,
-                        height: 80,
-                        borderRadius: '50%',
-                        backgroundColor: getOrixaColor(orixa),
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mx: 'auto',
-                        mb: 1,
-                        boxShadow: theme.shadows[4],
-                      }}
-                    >
-                      <AutoAwesomeIcon sx={{ fontSize: 40, color: getOrixaIconColor(orixa) }} />
-                    </Box>
-                    <Typography
-                      variant="h5"
-                      sx={{
-                        fontWeight: 600,
-                        color: getOrixaNameColor(orixa),
-                        mb: 0.5,
-                      }}
-                    >
-                      {orixa.name}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: 'text.secondary',
-                        fontWeight: 500,
-                      }}
-                    >
-                      {orixa.element} • {orixa.atuacao}
-                    </Typography>
-                  </Box>
+                {orixas.map((orixa) => {
+                  const accentColor = getOrixaColor(orixa);
 
-                  <Box sx={{ mb: 0.8, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                      Saudação:
-                    </Typography>
-                    <Chip
-                      label={orixa.saudacao}
-                      size="small"
+                  return (
+                    <Card
+                      key={orixa.id}
+                      onClick={() => handleOpenDialog(orixa)}
                       sx={{
-                        backgroundColor: getOrixaColor(orixa),
-                        color: getOrixaIconColor(orixa),
-                        fontSize: '0.7rem',
-                        fontWeight: 500,
-                        height: '20px',
-                        '& .MuiChip-label': {
-                          color: getOrixaIconColor(orixa),
+                        minWidth: isMobile ? 260 : 300,
+                        maxWidth: isMobile ? 260 : 300,
+                        height: 340,
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease-in-out',
+                        border: '2px solid transparent',
+                        '&:hover': {
+                          transform: 'translateY(-8px)',
+                          boxShadow: theme.shadows[8],
+                          borderColor: accentColor,
                         },
                       }}
-                    />
-                  </Box>
-
-                  {/* Layout em duas colunas: Habitat | Dia da Semana */}
-                  <Grid container spacing={1} sx={{ mb: 0.5 }}>
-                    <Grid size={6}>
-                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
-                        Habitat:
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                        {orixa.habitat}
-                      </Typography>
-                    </Grid>
-                    <Grid size={6}>
-                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
-                        Dia da Semana:
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                        {orixa.diaSemana}
-                      </Typography>
-                    </Grid>
-                  </Grid>
-
-                  {/* Layout em duas colunas: Cor | Fruta */}
-                  <Grid container spacing={1} sx={{ mb: 0 }}>
-                    <Grid size={6}>
-                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
-                        Cor:
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    >
+                      <CardContent
+                        sx={{
+                          p: 3,
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          textAlign: 'center',
+                        }}
+                      >
                         <Box
                           sx={{
-                            width: 16,
-                            height: 16,
+                            width: 80,
+                            height: 80,
                             borderRadius: '50%',
-                            backgroundColor: getOrixaColor(orixa),
-                          border: orixa.cor === 'Branco' ? '1px solid #ccc' : 'none',
-                        }}
-                      />
-                        <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                          {orixa.cor}
+                            backgroundColor: accentColor,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            mx: 'auto',
+                            mb: 2,
+                            boxShadow: theme.shadows[4],
+                          }}
+                        >
+                          <AutoAwesomeIcon sx={{ fontSize: 40, color: getIconColor(accentColor) }} />
+                        </Box>
+                        <Typography
+                          variant="h5"
+                          sx={{
+                            fontWeight: 700,
+                            mb: 1,
+                            color: accentColor === '#e8eaf6' ? '#1a237e' : accentColor,
+                          }}
+                        >
+                          {orixa.name}
                         </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid size={6}>
-                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
-                        Fruta:
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                        {orixa.fruta}
-                      </Typography>
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            ))}
-          </Box>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: 'text.secondary',
+                            mb: 2,
+                            minHeight: 40,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {orixa.description}
+                        </Typography>
+                        <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" sx={{ mb: 2 }}>
+                          {orixa.colors.slice(0, 2).map((color) => (
+                            <Chip
+                              key={color}
+                              label={color}
+                              size="small"
+                              sx={{
+                                backgroundColor: `${accentColor}20`,
+                                color: accentColor === '#e8eaf6' ? '#1a237e' : accentColor,
+                                border: `1px solid ${accentColor}50`,
+                              }}
+                            />
+                          ))}
+                        </Stack>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: 'text.secondary',
+                            lineHeight: 1.6,
+                            flexGrow: 1,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 4,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {orixa.batuaraTeaching}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </Box>
 
-          {/* Dicas de interação */}
-          <Box sx={{ textAlign: 'center', mt: 2 }}>
-            <Typography
-              variant="body2"
-              sx={{
-                color: 'text.secondary',
-                fontSize: '0.85rem',
-                fontStyle: 'italic',
-                mb: isMobile ? 1 : 0,
-              }}
-            >
-              👆 Clique no cartão para saber mais
-            </Typography>
-            {isMobile && (
-              <Typography
-                variant="body2"
-                sx={{
-                  color: 'text.secondary',
-                  fontSize: '0.85rem',
-                  fontStyle: 'italic',
-                }}
-              >
-                👈 Deslize para ver mais orixás
-              </Typography>
-            )}
-            
-            {/* Indicadores de navegação */}
-            <NavigationDots
-              totalItems={orixasData.length}
-              currentIndex={(() => {
-                const itemWidth = isMobile ? 280 : 320;
-                const gap = 24;
-                const itemsPerView = 1;
-                const itemWithGap = itemWidth + gap;
-                const totalDots = Math.ceil(orixasData.length / itemsPerView);
-                
-                // Se chegamos próximo do final (90% do scroll máximo), mostrar último dot
-                if (scrollPosition >= maxScroll * 0.9) {
-                  return totalDots - 1;
-                }
-                
-                return Math.floor(scrollPosition / itemWithGap / itemsPerView);
-              })()}
-              itemsPerView={1}
-              onDotClick={handleDotClick}
-            />
-          </Box>
-        </Box>
+              <Box sx={{ textAlign: 'center', mt: 2 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: '0.85rem',
+                    fontStyle: 'italic',
+                    mb: isMobile ? 1 : 0,
+                  }}
+                >
+                  👆 Clique no cartão para saber mais
+                </Typography>
+                {isMobile && (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: 'text.secondary',
+                      fontSize: '0.85rem',
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    👈 Deslize para ver mais orixás
+                  </Typography>
+                )}
+                <NavigationDots
+                  totalItems={orixas.length}
+                  currentIndex={(() => {
+                    const itemWidth = isMobile ? 260 : 300;
+                    const gap = 24;
+                    const itemWithGap = itemWidth + gap;
+                    const totalDots = orixas.length;
 
-        {/* Modal fullscreen com detalhes do Orixá */}
-        {selectedOrixa && (
-          <SpiritualDetailModal
-            open={!!selectedOrixa}
-            onClose={handleCloseDialog}
-            data={convertOrixaToModalData(selectedOrixa)}
-            tipo="orixa"
-          />
+                    if (scrollPosition >= maxScroll * 0.9) {
+                      return totalDots - 1;
+                    }
+
+                    return Math.floor(scrollPosition / itemWithGap);
+                  })()}
+                  itemsPerView={1}
+                  onDotClick={handleDotClick}
+                />
+              </Box>
+            </Box>
+
+          </>
         )}
+
+        <Dialog open={Boolean(selectedOrixa)} onClose={handleCloseDialog} fullWidth maxWidth="md">
+          <DialogTitle>{selectedOrixa?.name}</DialogTitle>
+          <DialogContent>
+            {selectedOrixa && (
+              <Stack spacing={3} sx={{ mt: 1 }}>
+                <Typography variant="body1" color="text.secondary">
+                  {selectedOrixa.description}
+                </Typography>
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
+                    Origem e fundamento
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {selectedOrixa.origin}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
+                    Ensinamento na Casa Batuara
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
+                    {selectedOrixa.batuaraTeaching}
+                  </Typography>
+                </Box>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                      Características
+                    </Typography>
+                    <Stack direction="row" spacing={1} flexWrap="wrap">
+                      {selectedOrixa.characteristics.map((item) => (
+                        <Chip key={item} label={item} size="small" sx={{ mb: 1 }} />
+                      ))}
+                    </Stack>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                      Cores
+                    </Typography>
+                    <Stack direction="row" spacing={1} flexWrap="wrap">
+                      {selectedOrixa.colors.map((item) => (
+                        <Chip key={item} label={item} size="small" sx={{ mb: 1 }} />
+                      ))}
+                    </Stack>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                      Elementos
+                    </Typography>
+                    <Stack direction="row" spacing={1} flexWrap="wrap">
+                      {selectedOrixa.elements.map((item) => (
+                        <Chip key={item} label={item} size="small" sx={{ mb: 1 }} />
+                      ))}
+                    </Stack>
+                  </Grid>
+                </Grid>
+              </Stack>
+            )}
+          </DialogContent>
+        </Dialog>
       </Container>
     </Box>
   );

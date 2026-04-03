@@ -81,6 +81,27 @@ namespace Batuara.Domain.Entities
             UpdateTimestamp();
         }
 
+        public void UpdateType(AttendanceType type)
+        {
+            if (!Enum.IsDefined(typeof(AttendanceType), type))
+                throw new ArgumentException("Invalid attendance type", nameof(type));
+
+            Type = type;
+            UpdateTimestamp();
+        }
+
+        public void Deactivate()
+        {
+            IsActive = false;
+            UpdateTimestamp();
+        }
+
+        public void Activate()
+        {
+            IsActive = true;
+            UpdateTimestamp();
+        }
+
         public bool IsToday()
         {
             return AttendanceDate.Date.Date == DateTime.Today;

@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://batuara.net/schemas/dados-calendario-2026.schema.json",
+  "type": "object",
+  "required": [
+    "meta",
+    "eventos",
+    "calendarioMensal"
+  ],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "datasetVersion",
+        "year",
+        "timezone",
+        "source",
+        "sourceDocuments",
+        "createdAt",
+        "updatedAt",
+        "totalEventos"
+      ],
+      "properties": {
+        "schemaVersion": { "type": "string", "minLength": 1 },
+        "datasetVersion": { "type": "string", "minLength": 1 },
+        "year": { "type": "integer", "const": 2026 },
+        "timezone": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "minLength": 1 },
+        "sourceDocuments": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "totalEventos": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": true
+    },
+    "eventos": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/evento" }
+    },
+    "calendarioMensal": {
+      "type": "array",
+      "minItems": 12,
+      "items": { "$ref": "#/$defs/mes" }
+    },
+    "observacoes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "atendimentosRecorrentes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/recorrencia" }
+    }
+  },
+  "$defs": {
+    "evento": {
+      "type": "object",
+      "required": [
+        "id",
+        "slug",
+        "title",
+        "date",
+        "dayOfWeek",
+        "startTime",
+        "endTime",
+        "timezone",
+        "description",
+        "eventType",
+        "location",
+        "participants",
+        "expectedParticipants",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "slug": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "date": { "type": "string", "format": "date" },
+        "dayOfWeek": { "type": "string", "minLength": 1 },
+        "startTime": {
+          "oneOf": [
+            { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+            { "type": "null" }
+          ]
+        },
+        "endTime": {
+          "oneOf": [
+            { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+            { "type": "null" }
+          ]
+        },
+        "timezone": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "eventType": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "location": { "type": "string", "minLength": 1 },
+        "participants": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "expectedParticipants": { "type": "integer", "minimum": 0 },
+        "status": {
+          "type": "string",
+          "enum": [
+            "scheduled",
+            "cancelled"
+          ]
+        },
+        "holidayType": { "type": [ "string", "null" ] },
+        "recurrence": {
+          "type": [ "object", "null" ],
+          "properties": {
+            "frequency": { "type": "string" },
+            "interval": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": true
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": true
+    },
+    "mes": {
+      "type": "object",
+      "required": [
+        "month",
+        "monthName",
+        "entries"
+      ],
+      "properties": {
+        "month": { "type": "integer", "minimum": 1, "maximum": 12 },
+        "monthName": { "type": "string", "minLength": 1 },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/entry" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "entry": {
+      "type": "object",
+      "required": [
+        "date",
+        "dayOfWeek",
+        "label",
+        "status",
+        "startTime",
+        "endTime",
+        "timezone",
+        "location"
+      ],
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "dayOfWeek": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "status": {
+          "type": "string",
+          "enum": [
+            "scheduled",
+            "cancelled"
+          ]
+        },
+        "startTime": {
+          "oneOf": [
+            { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+            { "type": "null" }
+          ]
+        },
+        "endTime": {
+          "oneOf": [
+            { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+            { "type": "null" }
+          ]
+        },
+        "timezone": { "type": "string", "minLength": 1 },
+        "location": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "minLength": 1 },
+        "holidayType": { "type": [ "string", "null" ] },
+        "notes": { "type": [ "string", "null" ] }
+      },
+      "additionalProperties": true
+    },
+    "recorrencia": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "description",
+        "frequency",
+        "interval",
+        "weekday",
+        "startDate",
+        "endDate",
+        "startTime",
+        "endTime",
+        "timezone",
+        "location",
+        "attendanceType"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "frequency": { "type": "string", "enum": ["weekly"] },
+        "interval": { "type": "integer", "minimum": 1 },
+        "weekday": { "type": "integer", "minimum": 0, "maximum": 6 },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "startTime": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+        "endTime": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+        "timezone": { "type": "string", "minLength": 1 },
+        "location": { "type": "string", "minLength": 1 },
+        "attendanceType": { "type": "integer", "minimum": 1, "maximum": 4 },
+        "requiresRegistration": { "type": "boolean" },
+        "maxCapacity": { "type": ["integer", "null"], "minimum": 1 },
+        "observations": { "type": "string" },
+        "exclusions": {
+          "type": "array",
+          "items": { "type": "string", "format": "date" }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

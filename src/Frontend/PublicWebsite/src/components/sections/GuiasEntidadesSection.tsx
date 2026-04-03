@@ -1,90 +1,95 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
+  Alert,
   Box,
+  Button,
   Container,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Link,
+  Stack,
   Typography,
   Card,
   CardContent,
   Chip,
-  IconButton,
-  useTheme,
-  useMediaQuery,
-  Grid,
+  CircularProgress,
 } from '@mui/material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import PeopleIcon from '@mui/icons-material/People';
-import { guiasEntidadesData, GuiaEntidade } from '../../data/guiasEntidadesData';
-import { convertGuiaToModalData, getColorFromAttribute } from '../../utils/spiritualDataDetail';
-import NavigationDots from '../common/NavigationDots';
-import SpiritualDetailModal from '../common/SpiritualDetailModal';
+import { useQuery } from '@tanstack/react-query';
+import publicApi from '../../services/api';
+import { Guide } from '../../types';
+import { GuiaEntidade, guiasEntidadesData } from '../../data/guiasEntidadesData';
+
+type DisplayGuide = {
+  id: string | number;
+  name: string;
+  description: string;
+  highlight: string;
+  metadata: Array<{ label: string; value: string }>;
+  tags: string[];
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+  photoUrl?: string;
+};
 
 const GuiasEntidadesSection: React.FC = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [selectedGuia, setSelectedGuia] = useState<GuiaEntidade | null>(null);
-  const [scrollPosition, setScrollPosition] = useState(0);
-  const [maxScroll, setMaxScroll] = useState(0);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [selectedGuia, setSelectedGuia] = useState<DisplayGuide | null>(null);
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['public-guides'],
+    queryFn: () => publicApi.getGuides(),
+  });
 
-  const handleOpenDialog = (guia: GuiaEntidade) => {
+  const guides = useMemo<DisplayGuide[]>(() => {
+    const apiGuides = [...(data ?? [])]
+      .filter((item) => item.isActive)
+      .sort((a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name))
+      .map((item: Guide) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        highlight: item.entryDate ? `Desde ${new Date(item.entryDate).toLocaleDateString('pt-BR')}` : 'Guia da Casa Batuara',
+        metadata: [
+          { label: 'Especialidades', value: item.specialties.join(' • ') || 'Não informado' },
+          { label: 'Contato', value: item.whatsapp || item.phone || item.email || 'Não informado' },
+        ],
+        tags: item.specialties,
+        email: item.email,
+        phone: item.phone,
+        whatsapp: item.whatsapp,
+        photoUrl: item.photoUrl,
+      }));
+
+    if (apiGuides.length > 0) {
+      return apiGuides;
+    }
+
+    return guiasEntidadesData.map((item: GuiaEntidade) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      highlight: `Comemoração: ${item.comemoracao}`,
+      metadata: [
+        { label: 'Saudação', value: item.saudacao },
+        { label: 'Habitat', value: item.habitat },
+        { label: 'Cor', value: item.cor },
+        { label: 'Dia da Semana', value: item.diaSemana },
+        { label: 'Fruta', value: item.fruta },
+      ],
+      tags: item.caracteristicas,
+    }));
+  }, [data]);
+
+  const handleOpenDialog = (guia: DisplayGuide) => {
     setSelectedGuia(guia);
   };
 
   const handleCloseDialog = () => {
     setSelectedGuia(null);
-  };
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = isMobile ? 370 : 400;
-      const currentScroll = scrollContainerRef.current.scrollLeft;
-      const targetScroll = direction === 'left'
-        ? currentScroll - scrollAmount
-        : currentScroll + scrollAmount;
-
-      scrollContainerRef.current.scrollTo({
-        left: targetScroll,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  const handleScroll = () => {
-    if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      setScrollPosition(container.scrollLeft);
-      setMaxScroll(container.scrollWidth - container.clientWidth);
-    }
-  };
-
-  const canScrollLeft = scrollPosition > 0;
-  const canScrollRight = scrollPosition < maxScroll;
-
-  const handleDotClick = (dotIndex: number) => {
-    if (scrollContainerRef.current) {
-      const itemWidth = isMobile ? 370 : 400;
-      const gap = 24;
-      const itemWithGap = itemWidth + gap;
-      const targetScroll = dotIndex * itemWithGap;
-
-      scrollContainerRef.current.scrollTo({
-        left: targetScroll,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  useEffect(() => {
-    // Inicializar estado do scroll
-    if (scrollContainerRef.current) {
-      handleScroll();
-    }
-  }, []);
-
-  // Usar a função unificada baseada no atributo 'cor'
-  const getGuiaColor = (guia: GuiaEntidade): string => {
-    return getColorFromAttribute(guia.cor);
   };
 
   return (
@@ -112,7 +117,7 @@ const GuiasEntidadesSection: React.FC = () => {
               mb: 2,
             }}
           >
-            Espíritos que nos orientam e protegem em nossa jornada espiritual
+            Conheça os guias e entidades cadastrados pela administração da Casa Batuara
           </Typography>
           <Typography
             variant="body1"
@@ -124,293 +129,213 @@ const GuiasEntidadesSection: React.FC = () => {
               fontStyle: 'italic',
             }}
           >
-            Cada Guia e Entidade traz seus ensinamentos únicos, trabalhando conosco
-            para nossa evolução e proteção espiritual na Casa de Caridade Caboclo Batuara.
+            Os dados abaixo são sincronizados automaticamente com o painel administrativo e exibem somente registros ativos.
           </Typography>
         </Box>
 
-        {/* Controles do Carrossel */}
-        <Box sx={{ position: 'relative', mb: 4 }}>
-          {canScrollLeft && (
-            <IconButton
-              onClick={() => scroll('left')}
-              sx={{
-                position: 'absolute',
-                left: -20,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                zIndex: 2,
-                backgroundColor: 'background.paper',
-                boxShadow: theme.shadows[4],
-                '&:hover': {
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                },
-              }}
-            >
-              <ArrowBackIosIcon />
-            </IconButton>
-          )}
-
-          {canScrollRight && (
-            <IconButton
-              onClick={() => scroll('right')}
-              sx={{
-                position: 'absolute',
-                right: -20,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                zIndex: 2,
-                backgroundColor: 'background.paper',
-                boxShadow: theme.shadows[4],
-                '&:hover': {
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                },
-              }}
-            >
-              <ArrowForwardIosIcon />
-            </IconButton>
-          )}
-
-          {/* Container do Carrossel */}
-          <Box
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
-            sx={{
-              display: 'flex',
-              gap: 3,
-              overflowX: 'auto',
-              scrollBehavior: 'smooth',
-              pb: 2,
-              '&::-webkit-scrollbar': {
-                display: 'none',
-              },
-              scrollbarWidth: 'none',
-            }}
-          >
-            {guiasEntidadesData.map((guia) => (
-              <Card
-                key={guia.id}
-                onClick={() => handleOpenDialog(guia)}
+        {isLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress />
+          </Box>
+        ) : isError ? (
+          <Alert severity="warning">Não foi possível carregar os guias e entidades neste momento.</Alert>
+        ) : guides.length === 0 ? (
+          <Alert severity="info">Nenhum guia ou entidade ativo foi cadastrado até o momento.</Alert>
+        ) : (
+          <>
+            <Box sx={{ position: 'relative' }}>
+              <IconButton
+                onClick={() => {
+                  const container = document.getElementById('guides-carousel');
+                  container?.scrollBy({ left: -340, behavior: 'smooth' });
+                }}
                 sx={{
-                  minWidth: isMobile ? 370 : 400,
-                  maxWidth: isMobile ? 370 : 400,
-                  height: 370,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: theme.shadows[12],
-                  },
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    backgroundColor: getGuiaColor(guia),
-                  },
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    backgroundColor: getGuiaColor(guia),
-                  },
+                  position: 'absolute',
+                  left: -18,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 2,
+                  backgroundColor: 'background.paper',
+                  boxShadow: 3,
+                  display: { xs: 'none', md: 'flex' },
                 }}
               >
-                <CardContent sx={{ flexGrow: 1, pt: 1.2, px: 1.2, pb: 0.4, '&:last-child': { pb: 0.4 } }}>
-                  <Box sx={{ textAlign: 'center', mb: 1.5 }}>
-                    <Box
-                      sx={{
-                        width: 80,
-                        height: 80,
-                        borderRadius: '50%',
-                        backgroundColor: getGuiaColor(guia),
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mx: 'auto',
-                        mb: 2,
-                        boxShadow: theme.shadows[4],
-                      }}
-                    >
-                      <PeopleIcon sx={{ fontSize: 40, color: 'white' }} />
-                    </Box>
-                    <Typography
-                      variant="h5"
-                      sx={{
-                        fontWeight: 600,
-                        color: getGuiaColor(guia),
-                        mb: 1,
-                      }}
-                    >
-                      {guia.name}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: 'text.secondary',
-                        fontWeight: 500,
-                      }}
-                    >
-                      Comemoração: {guia.comemoracao}
-                    </Typography>
-                  </Box>
+                <ArrowBackIosIcon />
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  const container = document.getElementById('guides-carousel');
+                  container?.scrollBy({ left: 340, behavior: 'smooth' });
+                }}
+                sx={{
+                  position: 'absolute',
+                  right: -18,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 2,
+                  backgroundColor: 'background.paper',
+                  boxShadow: 3,
+                  display: { xs: 'none', md: 'flex' },
+                }}
+              >
+                <ArrowForwardIosIcon />
+              </IconButton>
 
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
+              <Box
+                id="guides-carousel"
+                sx={{
+                  display: 'flex',
+                  gap: 3,
+                  overflowX: 'auto',
+                  scrollBehavior: 'smooth',
+                  pb: 2,
+                  '&::-webkit-scrollbar': { display: 'none' },
+                  scrollbarWidth: 'none',
+                }}
+              >
+                {guides.map((guia) => (
+                  <Card
+                    key={guia.id}
+                    onClick={() => handleOpenDialog(guia)}
                     sx={{
-                      mb: 2,
-                      lineHeight: 1.6,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 5,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      fontSize: '0.9rem',
+                      minWidth: { xs: 300, md: 340 },
+                      maxWidth: { xs: 300, md: 340 },
+                      cursor: 'pointer',
+                      borderTop: '3px solid',
+                      borderColor: 'primary.main',
+                      boxShadow: 3,
                     }}
                   >
-                    {guia.description}
-                  </Typography>
-
-                  <Box sx={{ mb: 0.8, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                      Saudação:
-                    </Typography>
-                    <Chip
-                      label={guia.saudacao}
-                      size="small"
-                      sx={{
-                        backgroundColor: getGuiaColor(guia),
-                        color: 'white',
-                        fontSize: '0.7rem',
-                        fontWeight: 500,
-                        height: '20px',
-                        '& .MuiChip-label': {
-                          color: 'white',
-                        },
-                      }}
-                    />
-                  </Box>
-
-                  {/* Layout em duas colunas: Habitat | Dia da Semana */}
-                  <Grid container spacing={1} sx={{ mb: 0.5 }}>
-                    <Grid size={6}>
-                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
-                        Habitat:
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                        {guia.habitat}
-                      </Typography>
-                    </Grid>
-                    <Grid size={6}>
-                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
-                        Dia da Semana:
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                        {guia.diaSemana}
-                      </Typography>
-                    </Grid>
-                  </Grid>
-
-                  {/* Layout em duas colunas: Cor | Fruta */}
-                  <Grid container spacing={1} sx={{ mb: 0 }}>
-                    <Grid size={6}>
-                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
-                        Cor:
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CardContent>
+                      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
                         <Box
                           sx={{
-                            width: 16,
-                            height: 16,
+                            width: 64,
+                            height: 64,
                             borderRadius: '50%',
-                            backgroundColor: getGuiaColor(guia),
+                            backgroundColor: 'primary.main',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            overflow: 'hidden',
+                            flexShrink: 0,
                           }}
-                        />
-                        <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                          {guia.cor}
-                        </Typography>
+                        >
+                          {guia.photoUrl ? (
+                            <Box component="img" src={guia.photoUrl} alt={guia.name} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <PeopleIcon sx={{ fontSize: 34, color: 'white' }} />
+                          )}
+                        </Box>
+                        <Box>
+                          <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                            {guia.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {guia.highlight}
+                          </Typography>
+                        </Box>
+                      </Stack>
+
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          lineHeight: 1.7,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 4,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          mb: 2,
+                        }}
+                      >
+                        {guia.description}
+                      </Typography>
+
+                      <Stack spacing={1.2} sx={{ mb: 2 }}>
+                        {guia.metadata.slice(0, 4).map((item) => (
+                          <Typography key={`${guia.id}-${item.label}`} variant="body2" color="text.secondary">
+                            <strong>{item.label}:</strong> {item.value}
+                          </Typography>
+                        ))}
+                      </Stack>
+
+                      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
+                        {guia.tags.slice(0, 3).map((tag) => (
+                          <Chip key={tag} label={tag} size="small" color="primary" variant="outlined" />
+                        ))}
+                      </Stack>
+
+                      <Box sx={{ mt: 2 }}>
+                        <Button variant="text" sx={{ px: 0 }}>
+                          Ver detalhes
+                        </Button>
                       </Box>
-                    </Grid>
-                    <Grid size={6}>
-                      <Typography variant="subtitle2" sx={{ mb: 0.25, fontWeight: 600, fontSize: '0.75rem' }}>
-                        Fruta:
+                    </CardContent>
+                  </Card>
+                ))}
+              </Box>
+            </Box>
+
+            <Dialog open={!!selectedGuia} onClose={handleCloseDialog} fullWidth maxWidth="sm">
+              <DialogTitle>{selectedGuia?.name}</DialogTitle>
+              <DialogContent>
+                {selectedGuia && (
+                  <Stack spacing={2}>
+                    {!!selectedGuia.photoUrl && (
+                      <Box
+                        component="img"
+                        src={selectedGuia.photoUrl}
+                        alt={selectedGuia.name}
+                        sx={{ width: '100%', maxHeight: 280, objectFit: 'cover', borderRadius: 3 }}
+                      />
+                    )}
+                    <Typography variant="body1" sx={{ lineHeight: 1.8 }}>
+                      {selectedGuia.description}
+                    </Typography>
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                        Detalhes
                       </Typography>
-                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                        {guia.fruta}
+                      <Stack spacing={1}>
+                        {selectedGuia.metadata.map((item) => (
+                          <Typography key={`${selectedGuia.id}-${item.label}`} variant="body2" color="text.secondary">
+                            <strong>{item.label}:</strong> {item.value}
+                          </Typography>
+                        ))}
+                      </Stack>
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                        Características
                       </Typography>
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            ))}
-          </Box>
-
-          {/* Dicas de interação */}
-          <Box sx={{ textAlign: 'center', mt: 2 }}>
-            <Typography
-              variant="body2"
-              sx={{
-                color: 'text.secondary',
-                fontSize: '0.85rem',
-                fontStyle: 'italic',
-                mb: isMobile ? 1 : 0,
-              }}
-            >
-              👆 Clique no cartão para saber mais
-            </Typography>
-            {isMobile && (
-              <Typography
-                variant="body2"
-                sx={{
-                  color: 'text.secondary',
-                  fontSize: '0.85rem',
-                  fontStyle: 'italic',
-                }}
-              >
-                👈 Deslize para ver mais guias
-              </Typography>
-            )}
-
-            {/* Indicadores de navegação */}
-            <NavigationDots
-              totalItems={guiasEntidadesData.length}
-              currentIndex={(() => {
-                const itemWidth = isMobile ? 370 : 400;
-                const gap = 24;
-                const itemsPerView = 1;
-                const itemWithGap = itemWidth + gap;
-                const totalDots = Math.ceil(guiasEntidadesData.length / itemsPerView);
-
-                // Se chegamos próximo do final (90% do scroll máximo), mostrar último dot
-                if (scrollPosition >= maxScroll * 0.9) {
-                  return totalDots - 1;
-                }
-
-                return Math.floor(scrollPosition / itemWithGap / itemsPerView);
-              })()}
-              itemsPerView={1}
-              onDotClick={handleDotClick}
-            />
-          </Box>
-        </Box>
-
-        {/* Modal com detalhes da Guia/Entidade */}
-        <SpiritualDetailModal
-          open={!!selectedGuia}
-          onClose={handleCloseDialog}
-          data={selectedGuia ? convertGuiaToModalData(selectedGuia) : {} as any}
-          tipo="guia"
-        />
+                      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
+                        {selectedGuia.tags.map((specialty) => (
+                          <Chip key={specialty} label={specialty} size="small" color="primary" />
+                        ))}
+                      </Stack>
+                    </Box>
+                    {!!selectedGuia.email && (
+                      <Typography variant="body2" color="text.secondary">
+                        E-mail: <Link href={`mailto:${selectedGuia.email}`}>{selectedGuia.email}</Link>
+                      </Typography>
+                    )}
+                    {!!selectedGuia.phone && (
+                      <Typography variant="body2" color="text.secondary">
+                        Telefone: {selectedGuia.phone}
+                      </Typography>
+                    )}
+                    {!!selectedGuia.whatsapp && (
+                      <Typography variant="body2" color="text.secondary">
+                        WhatsApp: {selectedGuia.whatsapp}
+                      </Typography>
+                    )}
+                  </Stack>
+                )}
+              </DialogContent>
+            </Dialog>
+          </>
+        )}
       </Container>
     </Box>
   );
