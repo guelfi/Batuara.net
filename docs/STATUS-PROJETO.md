@@ -1,145 +1,155 @@
 # 📊 STATUS ATUAL DO PROJETO BATUARA.NET
 
-**Última Atualização:** 08/03/2025  
-**Fase Atual:** Fase 0.1 - Melhorias UX (✅ CONCLUÍDA - PRONTA PARA DEPLOY)  
-**Fase Anterior:** Fase 0 - Melhorias de Interface (✅ CONCLUÍDA E DEPLOYADA)
+**Última atualização:** 03/04/2026  
+**Versão de referência documental:** 2026.04.03  
+**Fase atual:** Plataforma funcional com módulos administrativos e públicos integrados  
+**Ambiente local:** Docker Compose com Nginx, API, PublicWebsite, AdminDashboard e PostgreSQL
 
----
+## 🎯 Resumo Executivo
 
-## 🎯 RESUMO EXECUTIVO
+O projeto saiu do estágio de “interfaces aguardando API” e hoje opera com backend .NET 8 funcional, banco PostgreSQL, autenticação JWT e módulos CMS reais consumidos pelos dois frontends.
 
-### ✅ **CONCLUÍDO - FASE 0** (Deployada no Oracle)
-- **PublicWebsite:** Header atualizado com nova ordem de menu
-- **AdminDashboard:** Interface completa remodelada
-- **Deploy:** Funcionando em produção no servidor Oracle
+### ✅ Entregas Confirmadas
 
-### ✅ **CONCLUÍDA - FASE 0.1** (Melhorias UX - Pronta para Deploy)
-- **Responsividade Inteligente:** ✅ Chips ocultos apenas em mobile + produção
-- **Reorganização Sidebar:** ✅ Filhos da Casa após Sobre, Contato → Mensagens
-- **Navegação Simplificada:** ✅ Remoção de breadcrumbs, logo clicável
-- **Perfil de Usuário:** ✅ Card similar ao PublicWebsite
-- **Filhos da Casa:** ✅ CRUD completo + integração com Dashboard
-- **Dashboard Mobile:** ✅ Layout 2x2 otimizado para mobile
-- **Contraste Visual:** ✅ Melhor legibilidade no Sidebar
+- **Autenticação:** login, refresh, logout, verificação de token, perfil e alteração de senha
+- **PublicWebsite:** calendário, eventos, Orixás, linhas, conteúdos, localização, rodapé e conteúdo institucional via API
+- **AdminDashboard:** gestão de história, localização, calendário, eventos, Orixás, guias, linhas, conteúdos e Filhos da Casa
+- **Infra local:** deploy via `docker-compose.local.yml`, health checks e Swagger operacionais
+- **Banco de dados:** migrations ativas para `SiteSettings`, `ContactMessages`, `Guides`, `HouseMembers` e módulos relacionados
 
-### 🔄 **STATUS REAL DAS FUNCIONALIDADES**
+## 🧩 Status por Módulo
 
-#### ✅ **TOTALMENTE FUNCIONAL**
-- **Dashboard Principal:** Cards de métricas com dados mockados realistas + responsividade mobile
-- **Filhos da Casa:** CRUD completo com formulários, validação e integração com Dashboard
+| Módulo | Status | Detalhes técnicos |
+|---|---|---|
+| Auth | ✅ Implementado | JWT, refresh token, endpoints `/auth/*` |
+| SiteSettings | ✅ Implementado | História, missão, localização, redes, PIX e dados bancários |
+| Nossa História (Admin) | ✅ Implementado | Editor textual em tela cheia, sem preview, sem mídia |
+| Localização | ✅ Implementado | Admin e site público integrados via `site-settings` |
+| Calendário | ✅ Implementado | CRUD admin + leitura pública |
+| Eventos | ✅ Implementado | CRUD admin + catálogo público |
+| Orixás | ✅ Implementado | CRUD admin + catálogo público |
+| Guias e Entidades | ✅ Implementado | CRUD admin + leitura pública |
+| Linhas da Umbanda | ✅ Implementado | CRUD admin + leitura pública |
+| Conteúdos Espirituais | ✅ Implementado | CRUD admin + leitura pública |
+| Filhos da Casa | ✅ Implementado | CRUD administrativo |
+| Contato Público | ✅ Implementado | Recebimento de mensagens públicas |
+| Segurança avançada OCI | 🔄 Parcial | operação local estabilizada; itens avançados dependem do ambiente alvo |
 
-#### 🔄 **INTERFACE IMPLEMENTADA (Funcionalidade em Desenvolvimento)**
-- **Sobre/História:** Interface visual completa, aguardando integração com API
-- **Contatos:** Grid moderno implementado, aguardando integração com API  
-- **Localização:** Formulário completo implementado, aguardando integração com API
-- **Doações:** Interface de upload implementada, aguardando integração com API
+## 🆕 Mudanças Recentes Relevantes
 
-#### 📋 **PLACEHOLDERS PREPARATÓRIOS**
-- **Calendário:** Aguardando API (Fase Fundação)
-- **Festas e Eventos:** Aguardando API (Fase Fundação)
-- **Orixás:** Planejado para Fase Avançada
-- **Guias e Entidades:** Planejado para Fase Avançada
-- **Linhas da Umbanda:** Planejado para Fase Avançada
-- **Orações:** Planejado para Fase Avançada
+### 1. Nossa História
 
----
+- Remoção completa de upload de imagem e vídeo
+- Remoção da interface dividida com preview
+- Conteúdo padrão institucional incorporado ao editor
+- Remoção do botão `Link` na toolbar do editor
+- Correção do fluxo de salvamento para evitar erro `History title cannot be empty`
 
-## 🚀 **PRÓXIMOS PASSOS**
+### 2. SiteSettings e Dados Públicos
 
-### **✅ CONCLUÍDO - Fase 0.1 (Implementado em 1 dia):**
-1. ✅ **Responsividade Mobile** - Chips ocultos apenas em mobile + produção
-2. ✅ **Navegação Simplificada** - Breadcrumbs removidos, logo clicável
-3. ✅ **Perfil de Usuário** - Card completo similar ao PublicWebsite
-4. ✅ **Filhos da Casa** - CRUD completo com grid moderno e formulários
-5. ✅ **Dashboard Mobile** - Layout 2x2 otimizado para dispositivos móveis
-6. ✅ **Contraste Visual** - Melhor legibilidade no Sidebar
+- `SiteSettings` consolidado como núcleo de:
+  - história institucional
+  - contato institucional
+  - endereço estruturado
+  - mapa incorporado
+  - redes sociais
+  - dados de PIX e conta bancária
+- Ajustados fallbacks para localização, e-mail institucional, Instagram e mapa
 
-### **Próximos Passos - Pós Fase 0.1:**
-1. **Testes Locais** - Validação completa em ambiente de desenvolvimento
-2. **Deploy Oracle** - Atualização do servidor com melhorias da Fase 0.1
-3. **Fase Fundação** - API .NET 8 + integração das interfaces existentes
+### 3. PublicWebsite
 
-### **Cronograma Atualizado:**
-- **✅ Hoje:** Fase 0.1 - Melhorias UX (CONCLUÍDA)
-- **Próximos 1-2 dias:** Testes + Deploy Oracle
-- **Próximas 2-3 semanas:** Fase Fundação - API básica
-- **Mês 2:** Recursos avançados de CMS
+- Localização pública ajustada para refletir os dados reais da API
+- Rodapé alinhado com endereço/e-mail/Instagram institucionais
+- Calendário público simplificado visualmente, sem contador numérico por dia
 
----
+### 4. Operação Local
 
-## 📁 **ESTRUTURA LIMPA DO PROJETO**
+- O ambiente local pode apresentar `502 Bad Gateway` quando o `nginx` mantém upstreams antigos após rebuilds
+- Procedimento validado: recriar o `nginx` restaura acesso à API, Swagger, PublicWebsite e autenticação
 
-### **Arquivos Principais:**
-- `README.md` - Documentação principal
-- `FASE0-COMPLETA.md` - Documentação da fase concluída
-- `STATUS-PROJETO.md` - Este arquivo (status atual)
+## 🗄️ Banco de Dados e Schema
 
-### **Código Fonte:**
-- `src/Frontend/PublicWebsite/` - Site público (funcional)
-- `src/Frontend/AdminDashboard/` - Dashboard administrativo (interfaces prontas)
-- `src/Backend/` - API .NET 8 (estrutura básica)
+### Migrations mais relevantes
 
-### **Deploy e Infraestrutura:**
-- `docker-compose.production.yml` - Configuração de produção
-- `scripts/` - Scripts de deploy e manutenção
-- `oracle-deploy-ready.sh` - Script de deploy no Oracle
+- `20260401234426_AddSiteSettings`
+- `20260402235355_ContentManagementModules`
+- `20260403014603_AddHistoryMissionTextToSiteSettings`
+- `20260403043437_RemoveHistoryMediaFromSiteSettings`
 
----
+### Alterações recentes de schema
 
-## 🎯 **CRITÉRIOS DE SUCESSO**
+- inclusão de `HistoryMissionText`
+- remoção de `HistoryImageUrl`
+- remoção de `HistoryVideoUrl`
+- expansão da tabela `SiteSettings` para endereço, redes e doações
+- criação de tabelas para `ContactMessages`, `Guides`, `HouseMembers` e contribuições
 
-### **Fase 0 ✅ CONCLUÍDA**
-- Interface moderna e responsiva
-- Navegação funcional
-- Preparação para integração com API
+## 🌐 Endpoints em Produção Local
 
-### **Fase 0.1 - Melhorias UX**
-- Responsividade mobile otimizada
-- Navegação simplificada e intuitiva
-- Perfil de usuário completo
-- CRUD de Filhos da Casa funcionando
-- Sincronização de dados entre interfaces
+### Verificações principais
 
-### **Próxima Fase - Fundação**
-- API funcional com endpoints básicos
-- Autenticação implementada
-- Integração frontend-backend funcionando
-- Funcionalidades de Calendário e Eventos ativas
+- `GET /batuara-api/health`
+- `GET /batuara-api/swagger`
+- `POST /batuara-api/api/auth/login`
+- `GET /batuara-api/api/site-settings/public`
+- `PUT /batuara-api/api/site-settings`
+- `GET /batuara-api/api/public/calendar/attendances`
 
----
+### Exemplo de validação
 
-## 📋 **MELHORIAS IDENTIFICADAS - FASE 0.1**
+```bash
+curl http://localhost/batuara-api/health
+curl http://localhost/batuara-api/swagger
+curl http://localhost/batuara-public/
+```
 
-### **Feedback de Uso Real:**
-Após o deploy bem-sucedido da Fase 0, identificamos melhorias importantes baseadas no uso real:
+## 🚀 Operação e Deploy
 
-#### **🔧 Problemas Identificados:**
-1. **Mobile UX:** Chips de status ocupam muito espaço em produção mobile
-2. **Organização:** Posicionamento e nomenclatura do Sidebar
-3. **Navegação:** Breadcrumbs desnecessários para estrutura simples
-4. **Header:** Logo e nome não são clicáveis para retorno ao Dashboard
-5. **Perfil:** Falta card de usuário similar ao PublicWebsite
-6. **Funcionalidade:** Ausência de gerenciamento de "Filhos da Casa"
-7. **Dados:** Duplicação de informações de localização
+### Procedimento padrão de deploy local
 
-#### **✅ Soluções Planejadas:**
-1. **Responsividade Inteligente:** Ocultar chips apenas em mobile + produção
-2. **Reorganização Sidebar:** Filhos da Casa após Sobre, Contato → Mensagens  
-3. **Navegação Direta:** Remover breadcrumbs, logo clicável
-4. **UX Consistente:** Perfil similar entre PublicWebsite e AdminDashboard
-5. **CRUD Completo:** Interface para gerenciar Filhos da Casa
-6. **Sincronização:** Dados compartilhados entre interfaces
+```bash
+$env:DB_PASSWORD='...'
+$env:JWT_SECRET='...'
+docker compose -p batuara-net-local -f docker-compose.local.yml up -d --build api publicwebsite admindashboard nginx
+```
 
-### **📊 Especificações Criadas:**
-- **Requirements:** `.kiro/specs/fase0-melhorias-ux/requirements.md`
-- **Design:** `.kiro/specs/fase0-melhorias-ux/design.md`
-- **Tasks:** `.kiro/specs/fase0-melhorias-ux/tasks.md`
+### Procedimento corretivo para 502
 
-### **🎯 Estratégia de Implementação:**
-1. **Desenvolvimento Local:** Implementar todas as melhorias
-2. **Testes Completos:** Validar responsividade e funcionalidades
-3. **Deploy Gradual:** Atualizar Oracle após validação local
+```bash
+$env:DB_PASSWORD='...'
+$env:JWT_SECRET='...'
+docker compose -p batuara-net-local -f docker-compose.local.yml up -d --force-recreate nginx
+```
 
----
+## 📁 Estrutura Atual Relevante
 
-**🎊 FASE 0.1 - MELHORIAS UX CONCLUÍDA COM SUCESSO! PRONTA PARA DEPLOY! 🎊**
+- `src/Backend/Batuara.API/` — controllers, middleware, boot da API
+- `src/Backend/Batuara.Infrastructure/` — EF Core, migrations e serviços
+- `src/Frontend/PublicWebsite/` — SPA pública
+- `src/Frontend/AdminDashboard/` — painel administrativo
+- `docs/` — documentação funcional, operacional e de onboarding
+- `agent.md` — guia de entendimento rápido para IA e novos devs
+
+## 🔄 Próximos Passos Recomendados
+
+1. Consolidar a documentação viva com o estado atual dos módulos
+2. Revisar o backlog restante para itens avançados de segurança e governança
+3. Validar produção OCI com a mesma disciplina operacional aplicada localmente
+4. Manter testes de regressão para `SiteSettings`, autenticação e proxy local
+
+## 📚 Referências Cruzadas
+
+- `docs/EFT-especificacao-funcional-tecnica.md`
+- `docs/Resumo-Executivo.md`
+- `docs/Backlog-Executavel.md`
+- `docs/TASK_HISTORY.md`
+- `agent.md`
+
+## 📝 Change Log
+
+### 03/04/2026
+
+- Documento reescrito para refletir o estado real da implementação
+- Removidas referências desatualizadas à fase “aguardando API”
+- Incluídas as mudanças recentes em `SiteSettings`, Nossa História, localização e deploy local
+- Incluídas instruções operacionais para recuperação de `502` no ambiente local
