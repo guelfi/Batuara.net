@@ -254,16 +254,25 @@ if docker ps --format '{{.Names}}' | grep -q "^${NGINX_CONTAINER}$"; then
         log_info "nginx-proxy already connected to $DOCKER_NETWORK_NAME"
     fi
 
-    # Restart nginx-proxy to pick up new container DNS entries
-    log_info "Restarting nginx-proxy to refresh container name resolution..."
-    docker restart "$NGINX_CONTAINER" > /dev/null 2>&1 || true
-    sleep 5
-
-    # Verify nginx-proxy can resolve the new containers
+    # Graceful reload to re-resolve container DNS without dropping connections
+    # Using nginx -s reload instead of docker restart to avoid:
+    # 1. Downtime for other projects (MobileMed, etc.) sharing nginx-proxy
+    # 2. Risk of losing dynamically-added network connections
+    log_info "Reloading nginx-proxy to refresh container name resolution..."
     if docker exec "$NGINX_CONTAINER" nginx -t > /dev/null 2>&1; then
-        log_success "nginx-proxy configuration is valid"
+        docker exec "$NGINX_CONTAINER" nginx -s reload > /dev/null 2>&1 || true
+        sleep 2
+        log_success "nginx-proxy reloaded successfully"
     else
         log_warning "nginx-proxy configuration test failed - check /var/www/nginx/nginx.conf"
+    fi
+
+    # Verify nginx-proxy is still connected to the application network after reload
+    if docker network inspect "$DOCKER_NETWORK_NAME" --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null | grep -q "$NGINX_CONTAINER"; then
+        log_success "nginx-proxy confirmed on $DOCKER_NETWORK_NAME"
+    else
+        log_warning "nginx-proxy not found on $DOCKER_NETWORK_NAME - attempting reconnect"
+        docker network connect "$DOCKER_NETWORK_NAME" "$NGINX_CONTAINER" 2>/dev/null || true
     fi
 else
     log_warning "nginx-proxy container not found - skipping network connection"
