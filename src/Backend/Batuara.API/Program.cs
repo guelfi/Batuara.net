@@ -6,12 +6,32 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Batuara.Application.Auth.Services;
+using Batuara.Application.Calendar.Services;
 using Batuara.Application.Common.Mappings;
+using Batuara.Application.ContactMessages.Services;
+using Batuara.Application.Events.Services;
+using Batuara.Application.Guides.Services;
+using Batuara.Application.HouseMembers.Services;
+using Batuara.Application.Orixas.Services;
+using Batuara.Application.SiteSettings.Services;
+using Batuara.Application.SpiritualContents.Services;
+using Batuara.Application.UmbandaLines.Services;
 using Batuara.API.Middleware;
 using Batuara.Domain.Repositories;
+using Batuara.Domain.Services;
 using Batuara.Infrastructure.Auth.Services;
+using Batuara.Infrastructure.Calendar.Services;
+using Batuara.Infrastructure.ContactMessages.Services;
 using Batuara.Infrastructure.Data;
 using Batuara.Infrastructure.Data.Repositories;
+using Batuara.Infrastructure.Data.SeedData;
+using Batuara.Infrastructure.Events.Services;
+using Batuara.Infrastructure.Guides.Services;
+using Batuara.Infrastructure.HouseMembers.Services;
+using Batuara.Infrastructure.Orixas.Services;
+using Batuara.Infrastructure.SiteSettings.Services;
+using Batuara.Infrastructure.SpiritualContents.Services;
+using Batuara.Infrastructure.UmbandaLines.Services;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Json;
@@ -55,6 +75,7 @@ builder.Services.AddControllers()
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddValidatorsFromAssemblyContaining<MappingProfile>();
 
 // Configure CORS using allowed origins from configuration
 var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
@@ -190,6 +211,17 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
+builder.Services.AddScoped<IGuideService, GuideService>();
+builder.Services.AddScoped<IHouseMemberService, HouseMemberService>();
+builder.Services.AddScoped<IContactMessageService, ContactMessageService>();
+builder.Services.AddScoped<IEventService, EventService>();
+builder.Services.AddScoped<IEventDomainService, EventDomainService>();
+builder.Services.AddScoped<IOrixaService, OrixaService>();
+builder.Services.AddScoped<ICalendarAttendanceService, CalendarAttendanceService>();
+builder.Services.AddScoped<ICalendarDomainService, CalendarDomainService>();
+builder.Services.AddScoped<IUmbandaLineService, UmbandaLineService>();
+builder.Services.AddScoped<ISpiritualContentService, SpiritualContentService>();
 
 // Configure Rate Limiting
 builder.Services.AddRateLimiter(options =>
@@ -197,30 +229,80 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
     // Login endpoint: 5 requests per minute
-    options.AddFixedWindowLimiter("login", opt =>
+    options.AddPolicy("login", context =>
     {
-        opt.PermitLimit = 5;
-        opt.Window = TimeSpan.FromMinutes(1);
-        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        opt.QueueLimit = 0;
+        var key = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            key,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
     });
 
     // Token refresh: 10 requests per minute
-    options.AddFixedWindowLimiter("refresh", opt =>
+    options.AddPolicy("refresh", context =>
     {
-        opt.PermitLimit = 10;
-        opt.Window = TimeSpan.FromMinutes(1);
-        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        opt.QueueLimit = 0;
+        var key = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            key,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
     });
 
     // General API: 100 requests per minute per IP
-    options.AddFixedWindowLimiter("general", opt =>
+    options.AddPolicy("general", context =>
     {
-        opt.PermitLimit = 100;
-        opt.Window = TimeSpan.FromMinutes(1);
-        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        opt.QueueLimit = 2;
+        var key = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            key,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 2
+            });
+    });
+
+    options.AddPolicy("public", context =>
+    {
+        var key = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            key,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromHours(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+
+    options.AddPolicy("authenticated", context =>
+    {
+        var userKey = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? context.User.FindFirst("sub")?.Value
+            ?? context.Connection.RemoteIpAddress?.ToString()
+            ?? "unknown";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            userKey,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 1000,
+                Window = TimeSpan.FromHours(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
     });
 });
 
@@ -331,6 +413,7 @@ using (var scope = app.Services.CreateScope())
         
         // Seed initial admin user
         await Batuara.Infrastructure.Data.SeedData.SeedData.Initialize(services);
+        await context.SeedBatuaraDataAsync(services.GetRequiredService<ILogger<BatuaraDbContext>>());
     }
     catch (Exception ex)
     {

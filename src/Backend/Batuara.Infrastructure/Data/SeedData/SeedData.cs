@@ -21,7 +21,7 @@ namespace Batuara.Infrastructure.Data.SeedData
                 var logger = services.GetRequiredService<ILogger<BatuaraDbContext>>();
 
                 // Check if admin user exists
-                var adminEmail = "admin@example.com";
+                var adminEmail = "admin@batuara.org.br";
                 var adminUser = await userRepository.GetByEmailAsync(adminEmail);
                 
                 if (adminUser == null)

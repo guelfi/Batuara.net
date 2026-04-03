@@ -90,6 +90,29 @@ jobs:
       - name: Publish API
         run: dotnet publish src/Backend/Batuara.API/Batuara.API.csproj -c Release --no-build -o ./publish
 
+  test-api:
+    name: Test .NET Backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore solution
+        run: dotnet restore Batuara.sln
+
+      - name: Run backend tests with coverage
+        run: dotnet test Batuara.sln -c Release --collect:"XPlat Code Coverage"
+
+      - name: Upload backend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: '**/TestResults/**'
+
   build-public-website:
     name: Build Public Website
     runs-on: ubuntu-latest
@@ -141,7 +164,7 @@ jobs:
   docker-build:
     name: Docker Build Test
     runs-on: ubuntu-latest
-    needs: [build-api, build-public-website, build-admin-dashboard, secret-scanning, audit-dependencies]
+    needs: [build-api, test-api, build-public-website, build-admin-dashboard, secret-scanning, audit-dependencies]
     steps:
       - uses: actions/checkout@v6
 

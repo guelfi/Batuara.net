@@ -90,6 +90,20 @@ namespace Batuara.Domain.Entities
             AddDomainEvent(new EventUpdatedDomainEvent(this, new[] { nameof(ImageUrl) }));
         }
 
+        public void UpdateType(EventType type)
+        {
+            if (!Enum.IsDefined(typeof(EventType), type))
+                throw new ArgumentException("Invalid event type", nameof(type));
+
+            if (Type == type)
+                return;
+
+            Type = type;
+            UpdateTimestamp();
+
+            AddDomainEvent(new EventUpdatedDomainEvent(this, new[] { nameof(Type) }));
+        }
+
         public bool IsUpcoming()
         {
             return EventDate.Date >= DateTime.Today;
@@ -104,6 +118,12 @@ namespace Batuara.Domain.Entities
         public void Deactivate()
         {
             IsActive = false;
+            UpdateTimestamp();
+        }
+
+        public void Activate()
+        {
+            IsActive = true;
             UpdateTimestamp();
         }
     }

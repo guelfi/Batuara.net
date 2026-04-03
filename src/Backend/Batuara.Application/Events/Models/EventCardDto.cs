@@ -1,0 +1,17 @@
+using Batuara.Domain.Entities;
+
+namespace Batuara.Application.Events.Models
+{
+    public class EventCardDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public DateTime Date { get; set; }
+        public TimeSpan? StartTime { get; set; }
+        public TimeSpan? EndTime { get; set; }
+        public EventType Type { get; set; }
+        public string? Location { get; set; }
+        public string? ImageUrl { get; set; }
+    }
+}
