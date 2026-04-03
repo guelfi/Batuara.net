@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Drawer,
   AppBar,
-  Toolbar,
+  Drawer,
   List,
-  Typography,
-  Divider,
-  IconButton,
-  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Avatar,
-  Menu,
-  MenuItem,
+  Toolbar,
+  Typography,
+  IconButton,
+  Divider,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -23,22 +19,21 @@ import {
   Dashboard as DashboardIcon,
   Event as EventIcon,
   CalendarToday as CalendarIcon,
+  People as PeopleIcon,
+  AccountCircle as ProfileIcon,
+  LocationOn as LocationIcon,
   Favorite as FavoriteIcon,
-  Groups as GuidesIcon,
   MenuBook as HistoryIcon,
+  Groups as GuidesIcon,
   Timeline as LinesIcon,
   MusicNote as PrayersIcon,
   VolunteerActivism as DonationIcon,
-  People as PeopleIcon,
-  LocationOn as LocationIcon,
-  AccountCircle as AccountIcon,
   Logout as LogoutIcon,
-  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
-const drawerWidth = 280;
+const drawerWidth = 320;
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -54,12 +49,12 @@ interface NavigationItem {
 const navigationItems: NavigationItem[] = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Nossa História', icon: <HistoryIcon />, path: '/history' },
-  { text: 'Calendário Giras', icon: <CalendarIcon />, path: '/calendar' },
+  { text: 'Calendário Atendimento', icon: <CalendarIcon />, path: '/calendar' },
   { text: 'Eventos e Festas', icon: <EventIcon />, path: '/events' },
   { text: 'Nossos Orixás', icon: <FavoriteIcon />, path: '/orixas' },
   { text: 'Guias e Entidades', icon: <GuidesIcon />, path: '/guides' },
   { text: 'Linhas da Umbanda', icon: <LinesIcon />, path: '/umbanda-lines' },
-  { text: 'Orações e Pontos', icon: <PrayersIcon />, path: '/prayers' },
+  { text: 'Orações e Pontos', icon: <PrayersIcon />, path: '/spiritual-content' },
   { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members' },
   { text: 'Doações e Contato', icon: <DonationIcon />, path: '/donations-contact' },
   { text: 'Localização', icon: <LocationIcon />, path: '/location' },
@@ -67,101 +62,147 @@ const navigationItems: NavigationItem[] = [
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
   const handleLogout = async () => {
-    handleMenuClose();
-    try {
-      await logout();
-    } finally {
-      navigate('/login');
-    }
+    await logout();
+    navigate('/login');
   };
 
   const handleNavigation = (path: string) => {
     navigate(path);
-    if (isMobile) {
+    if (mobileOpen) {
       setMobileOpen(false);
     }
   };
 
+  // Sidebar inicia no topo (top: 0) para alinhar verticalmente com o HEADER em todas as resoluções.
+  // O conteúdo principal mantém o espaçamento do AppBar via <Toolbar /> dentro do <main>.
   const drawer = (
-    <Box>
-      <Toolbar sx={{ backgroundColor: 'primary.main', color: 'white' }}>
-        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 600 }}>
-          Casa Batuara
-        </Typography>
-      </Toolbar>
-      <Divider />
-      <List sx={{ pt: 2 }}>
-        {navigationItems.map((item) => (
-          <React.Fragment key={item.text}>
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={() => handleNavigation(item.path)}
-                selected={location.pathname === item.path}
-                sx={{
-                  mx: 1,
-                  borderRadius: 1,
-                  '&.Mui-selected': {
-                    backgroundColor: 'primary.light',
-                    color: 'primary.contrastText',
-                    '&:hover': {
-                      backgroundColor: 'primary.main',
-                    },
-                  },
-                }}
-              >
-                <ListItemIcon
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }}>
+        <Box
+          sx={(theme) => ({
+            ...theme.mixins.toolbar,
+            px: 2,
+            bgcolor: 'primary.main',
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+          })}
+        >
+          <Typography variant="h6" noWrap sx={{ fontWeight: 700 }}>
+            Admin Dashboard
+          </Typography>
+        </Box>
+
+        <Divider />
+
+        <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+          <List>
+            {navigationItems.map((item) => (
+              <React.Fragment key={item.text}>
+                <ListItemButton
+                  onClick={() => handleNavigation(item.path)}
+                  selected={location.pathname === item.path}
                   sx={{
-                    color: location.pathname === item.path ? 'inherit' : 'text.secondary',
+                    mx: 1,
+                    my: 0.5,
+                    borderRadius: 1.5,
+                    '&.Mui-selected': {
+                      bgcolor: 'primary.light',
+                      borderRadius: 1.5,
+                      '&:hover': {
+                        bgcolor: 'primary.light',
+                      },
+                    },
                   }}
                 >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  primaryTypographyProps={{
-                    fontWeight: location.pathname === item.path ? 600 : 400,
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-            {item.divider && <Divider sx={{ my: 1 }} />}
-          </React.Fragment>
-        ))}
-      </List>
+                  <ListItemIcon
+                    sx={{
+                      color: location.pathname === item.path ? 'primary.main' : 'inherit',
+                    }}
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.text}
+                    primaryTypographyProps={{
+                      sx: {
+                        fontWeight: location.pathname === item.path ? 600 : 400,
+                      },
+                    }}
+                  />
+                </ListItemButton>
+                {item.divider && <Divider sx={{ my: 1 }} />}
+              </React.Fragment>
+            ))}
+          </List>
+        </Box>
+
+        <Divider />
+
+        <List>
+          <ListItemButton
+            onClick={() => handleNavigation('/profile')}
+            selected={location.pathname === '/profile'}
+            sx={{
+              mx: 1,
+              my: 0.5,
+              borderRadius: 1.5,
+              '&.Mui-selected': {
+                bgcolor: 'primary.light',
+                borderRadius: 1.5,
+                '&:hover': {
+                  bgcolor: 'primary.light',
+                },
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: location.pathname === '/profile' ? 'primary.main' : 'inherit' }}>
+              <ProfileIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary="Meu Perfil"
+              primaryTypographyProps={{
+                sx: {
+                  fontWeight: location.pathname === '/profile' ? 600 : 400,
+                },
+              }}
+            />
+          </ListItemButton>
+
+          <ListItemButton onClick={handleLogout}>
+            <ListItemIcon>
+              <LogoutIcon />
+            </ListItemIcon>
+            <ListItemText primary="Sair" />
+          </ListItemButton>
+        </List>
+      </Box>
     </Box>
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       <AppBar
         position="fixed"
         sx={{
           width: { md: `calc(100% - ${drawerWidth}px)` },
           ml: { md: `${drawerWidth}px` },
+          borderRadius: 0,
         }}
       >
-        <Toolbar>
+        <Toolbar sx={{ px: { xs: 1, md: 2 } }}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
@@ -197,76 +238,28 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               alt="Batuara Logo"
               style={{
                 height: isMobile ? '24px' : '32px',
-                marginRight: isMobile ? '8px' : '12px'
+                marginRight: isMobile ? '8px' : '12px',
               }}
             />
             <Typography
-              variant={isMobile ? "subtitle1" : "h6"}
+              variant={isMobile ? 'subtitle1' : 'h6'}
               noWrap
               component="div"
               sx={{
                 fontWeight: 'bold',
-                fontSize: isMobile ? '1rem' : '1.25rem'
+                fontSize: isMobile ? '1rem' : '1.25rem',
               }}
             >
               Casa de Caridade Caboclo Batuara
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
-              {user?.name}
-            </Typography>
-            <IconButton
-              size="large"
-              aria-label="account of current user"
-              aria-controls="menu-appbar"
-              aria-haspopup="true"
-              onClick={handleMenuClick}
-              color="inherit"
-            >
-              <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
-                {user?.name?.charAt(0).toUpperCase()}
-              </Avatar>
-            </IconButton>
-            <Menu
-              id="menu-appbar"
-              anchorEl={anchorEl}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'right',
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
-            >
-              <MenuItem onClick={handleMenuClose}>
-                <ListItemIcon>
-                  <AccountIcon fontSize="small" />
-                </ListItemIcon>
-                Perfil
-              </MenuItem>
-              <MenuItem onClick={handleMenuClose}>
-                <ListItemIcon>
-                  <SettingsIcon fontSize="small" />
-                </ListItemIcon>
-                Configurações
-              </MenuItem>
-              <Divider />
-              <MenuItem onClick={handleLogout}>
-                <ListItemIcon>
-                  <LogoutIcon fontSize="small" />
-                </ListItemIcon>
-                Sair
-              </MenuItem>
-            </Menu>
-          </Box>
+          <Typography variant="body2" sx={{ mr: 1, display: { xs: 'none', sm: 'block' } }}>
+            {user?.name}
+          </Typography>
         </Toolbar>
       </AppBar>
+
       <Box
         component="nav"
         sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
@@ -280,23 +273,45 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             keepMounted: true,
           }}
           sx={{
+            position: 'fixed',
             display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: drawerWidth,
+              top: 0,
+              left: 0,
+              height: '100vh',
+              borderRight: '1px solid',
+              borderColor: 'divider',
+              backgroundColor: 'background.paper',
+            },
           }}
         >
           {drawer}
         </Drawer>
+
         <Drawer
           variant="permanent"
           sx={{
+            position: 'fixed',
             display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: drawerWidth,
+              top: 0,
+              left: 0,
+              height: '100vh',
+              borderRight: '1px solid',
+              borderColor: 'divider',
+              backgroundColor: 'background.paper',
+            },
           }}
           open
         >
           {drawer}
         </Drawer>
       </Box>
+
       <Box
         component="main"
         sx={{

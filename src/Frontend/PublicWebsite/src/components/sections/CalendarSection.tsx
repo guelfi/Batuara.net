@@ -1,30 +1,37 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Container,
   Typography,
   Grid,
-  Card,
-  CardContent,
-  Chip,
-  Tab,
-  Tabs,
   Alert,
   AlertTitle,
-  useTheme,
+  CircularProgress,
+  Paper,
+  Stack,
 } from '@mui/material';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import PeopleIcon from '@mui/icons-material/People';
-import InfoIcon from '@mui/icons-material/Info';
-import { mockCalendarAttendances } from '../../data/mockData';
+import { useQuery } from '@tanstack/react-query';
+import publicApi from '../../services/api';
 import { AttendanceType } from '../../types';
-import { format, parseISO, isToday, isFuture } from 'date-fns';
+import {
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  isSameMonth,
+  isToday,
+  parseISO,
+  startOfMonth,
+  startOfWeek,
+} from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const CalendarSection: React.FC = () => {
-  const theme = useTheme();
-  const [selectedTab, setSelectedTab] = useState(0);
+  const currentMonthStart = startOfMonth(new Date());
+  const currentMonthEnd = endOfMonth(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(currentMonthStart);
 
   const getAttendanceTypeLabel = (type: AttendanceType): string => {
     switch (type) {
@@ -44,66 +51,56 @@ const CalendarSection: React.FC = () => {
   const getAttendanceTypeColor = (type: AttendanceType): string => {
     switch (type) {
       case AttendanceType.Kardecismo:
-        return theme.palette.primary.main;
+        return '#1e88e5';
       case AttendanceType.Umbanda:
-        return theme.palette.secondary.main;
+        return '#8e24aa';
       case AttendanceType.Palestra:
-        return theme.palette.info.main;
+        return '#00acc1';
       case AttendanceType.Curso:
-        return theme.palette.success.main;
+        return '#43a047';
       default:
-        return theme.palette.primary.main;
+        return '#1976d2';
     }
   };
 
-  const formatAttendanceDate = (dateString: string): string => {
-    try {
-      const date = parseISO(dateString);
-      return format(date, "EEEE, dd 'de' MMMM", { locale: ptBR });
-    } catch {
-      return dateString;
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['public-calendar-attendances', currentMonthStart.toISOString()],
+    queryFn: () =>
+      publicApi.getCalendarAttendances({
+        pageNumber: 1,
+        pageSize: 100,
+        sort: 'date:asc',
+        fromDate: currentMonthStart.toISOString(),
+        toDate: currentMonthEnd.toISOString(),
+      }),
+  });
+
+  const currentData = useMemo(() => {
+    return (data?.data ?? [])
+      .filter((attendance) => attendance.isActive)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [data?.data]);
+  const monthDays = useMemo(() => {
+    const intervalStart = startOfWeek(currentMonthStart, { locale: ptBR });
+    const intervalEnd = endOfWeek(currentMonthEnd, { locale: ptBR });
+    return eachDayOfInterval({ start: intervalStart, end: intervalEnd });
+  }, [currentMonthEnd, currentMonthStart]);
+
+  useEffect(() => {
+    if (currentData.length > 0) {
+      setSelectedDate(parseISO(currentData[0].date));
+      return;
     }
-  };
 
-  const isAttendanceToday = (dateString: string): boolean => {
-    try {
-      const date = parseISO(dateString);
-      return isToday(date);
-    } catch {
-      return false;
-    }
-  };
+    setSelectedDate(currentMonthStart);
+  }, [currentData, currentMonthStart]);
 
-  const isAttendanceFuture = (dateString: string): boolean => {
-    try {
-      const date = parseISO(dateString);
-      return isFuture(date);
-    } catch {
-      return false;
-    }
-  };
-
-  const filterAttendancesByType = (type?: AttendanceType) => {
-    return mockCalendarAttendances.filter(attendance => 
-      attendance.isActive && 
-      (type === undefined || attendance.type === type) &&
-      isAttendanceFuture(attendance.date)
-    ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  };
-
-  const allAttendances = filterAttendancesByType();
-  const kardecismoAttendances = filterAttendancesByType(AttendanceType.Kardecismo);
-  const umbandaAttendances = filterAttendancesByType(AttendanceType.Umbanda);
-  const coursesAttendances = filterAttendancesByType(AttendanceType.Curso);
-
-  const tabData = [
-    { label: 'Todos', data: allAttendances },
-    { label: 'Umbanda', data: umbandaAttendances },
-    { label: 'Kardecismo', data: kardecismoAttendances },
-    { label: 'Cursos', data: coursesAttendances },
-  ];
-
-  const currentData = tabData[selectedTab].data;
+  const eventsByDay = useMemo(() => {
+    return monthDays.map((day) => ({
+      day,
+      items: currentData.filter((attendance) => isSameDay(parseISO(attendance.date), day)),
+    }));
+  }, [currentData, monthDays]);
 
   return (
     <Box id="calendar" sx={{ py: 8, backgroundColor: 'background.default' }}>
@@ -118,7 +115,7 @@ const CalendarSection: React.FC = () => {
               color: 'primary.main',
             }}
           >
-            Calendário de Atendimentos
+            Calendário do Mês
           </Typography>
           <Typography
             variant="h5"
@@ -130,7 +127,7 @@ const CalendarSection: React.FC = () => {
               mb: 2,
             }}
           >
-            Confira nossos horários de atendimento espiritual
+            Confira os atendimentos espirituais programados para o mês corrente
           </Typography>
 
           <Alert severity="info" sx={{ maxWidth: 600, mx: 'auto', mb: 4 }}>
@@ -140,25 +137,18 @@ const CalendarSection: React.FC = () => {
           </Alert>
         </Box>
 
-        {/* Tabs para filtrar por tipo */}
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
-          <Tabs
-            value={selectedTab}
-            onChange={(_, newValue) => setSelectedTab(newValue)}
-            variant="scrollable"
-            scrollButtons="auto"
-          >
-            {tabData.map((tab, index) => (
-              <Tab
-                key={index}
-                label={`${tab.label} (${tab.data.length})`}
-                sx={{ fontWeight: 500 }}
-              />
-            ))}
-          </Tabs>
-        </Box>
-
-        {currentData.length === 0 ? (
+        {isLoading ? (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <CircularProgress color="primary" />
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              Carregando próximos atendimentos...
+            </Typography>
+          </Box>
+        ) : isError ? (
+          <Alert severity="warning" sx={{ maxWidth: 640, mx: 'auto' }}>
+            Não foi possível carregar o calendário em tempo real. Tente novamente em instantes.
+          </Alert>
+        ) : currentData.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <CalendarTodayIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -169,108 +159,83 @@ const CalendarSection: React.FC = () => {
             </Typography>
           </Box>
         ) : (
-          <Grid container spacing={3}>
-            {currentData.map((attendance) => (
-              <Grid size={{ xs: 12, md: 6, lg: 4 }} key={attendance.id}>
-                <Card
-                  sx={{
-                    height: '100%',
-                    position: 'relative',
-                    transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: theme.shadows[8],
-                    },
-                    ...(isAttendanceToday(attendance.date) && {
-                      border: `2px solid ${theme.palette.primary.main}`,
-                      boxShadow: theme.shadows[4],
-                    }),
-                  }}
-                >
-                  {isAttendanceToday(attendance.date) && (
-                    <Chip
-                      label="HOJE"
-                      color="primary"
-                      size="small"
+          <Paper sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 3, maxWidth: 980, mx: 'auto' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main' }}>
+              {format(currentMonthStart, "MMMM 'de' yyyy", { locale: ptBR })}
+            </Typography>
+
+            <Grid container spacing={1} sx={{ mb: 1 }}>
+              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((label) => (
+                <Grid key={label} size={{ xs: 12 / 7 }}>
+                  <Box sx={{ textAlign: 'center', py: 1, fontWeight: 700, color: 'text.secondary' }}>{label}</Box>
+                </Grid>
+              ))}
+            </Grid>
+
+            <Grid container spacing={1}>
+              {eventsByDay.map(({ day, items }) => {
+                const isSelected = isSameDay(day, selectedDate);
+                const isCurrentMonth = isSameMonth(day, currentMonthStart);
+                const today = isToday(day);
+
+                return (
+                  <Grid key={day.toISOString()} size={{ xs: 12 / 7 }}>
+                    <Box
+                      onClick={() => setSelectedDate(day)}
                       sx={{
-                        position: 'absolute',
-                        top: 12,
-                        right: 12,
-                        fontWeight: 600,
-                        zIndex: 1,
+                        minHeight: { xs: 84, md: 96 },
+                        borderRadius: 2,
+                        border: 1,
+                        borderColor: isSelected ? 'primary.main' : 'divider',
+                        backgroundColor: isSelected ? 'rgba(25, 118, 210, 0.08)' : 'background.paper',
+                        p: 1,
+                        cursor: 'pointer',
+                        opacity: isCurrentMonth ? 1 : 0.35,
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          transform: 'translateY(-1px)',
+                        },
                       }}
-                    />
-                  )}
-
-                  <CardContent sx={{ p: 3 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                      <Chip
-                        label={getAttendanceTypeLabel(attendance.type)}
-                        sx={{
-                          backgroundColor: getAttendanceTypeColor(attendance.type),
-                          color: 'white',
-                          fontWeight: 500,
-                        }}
-                      />
-                    </Box>
-
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                      {attendance.description || getAttendanceTypeLabel(attendance.type)}
-                    </Typography>
-
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <CalendarTodayIcon fontSize="small" color="primary" />
-                        <Typography variant="body2" sx={{ fontWeight: 500, textTransform: 'capitalize' }}>
-                          {formatAttendanceDate(attendance.date)}
-                        </Typography>
-                      </Box>
-
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <AccessTimeIcon fontSize="small" color="primary" />
-                        <Typography variant="body2">
-                          das {attendance.startTime} às {attendance.endTime}
-                        </Typography>
-                      </Box>
-
-                      {attendance.maxCapacity && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <PeopleIcon fontSize="small" color="primary" />
-                          <Typography variant="body2">
-                            Vagas limitadas: {attendance.maxCapacity} pessoas
-                          </Typography>
-                        </Box>
-                      )}
-
-                      {attendance.requiresRegistration && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <InfoIcon fontSize="small" color="warning" />
-                          <Typography variant="body2" color="warning.main" sx={{ fontWeight: 500 }}>
-                            Inscrição obrigatória
-                          </Typography>
-                        </Box>
-                      )}
-
-                      {attendance.observations && (
-                        <Box
+                    >
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+                        <Typography
+                          variant="body2"
                           sx={{
-                            backgroundColor: 'background.default',
-                            p: 2,
-                            borderRadius: 1,
-                            mt: 1,
+                            fontWeight: today || isSelected ? 700 : 500,
+                            color: today ? 'primary.main' : 'text.primary',
                           }}
                         >
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Observações:</strong> {attendance.observations}
-                          </Typography>
-                        </Box>
-                      )}
+                          {format(day, 'd')}
+                        </Typography>
+                      </Stack>
+                      <Stack spacing={0.5}>
+                        {items.slice(0, 2).map((item) => (
+                          <Box
+                            key={item.id}
+                            sx={{
+                              px: 0.75,
+                              py: 0.35,
+                              borderRadius: 1,
+                              backgroundColor: `${getAttendanceTypeColor(item.type)}20`,
+                              borderLeft: `3px solid ${getAttendanceTypeColor(item.type)}`,
+                            }}
+                          >
+                            <Typography variant="caption" sx={{ display: 'block', fontWeight: 600 }}>
+                              {item.startTime}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              {(item.description || getAttendanceTypeLabel(item.type)).slice(0, 18)}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Stack>
                     </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </Paper>
         )}
 
 

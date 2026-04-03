@@ -7,7 +7,6 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^7.3.9",
-    "@mui/lab": "^6.0.0-dev.20240529-082515-213b5e33ab",
     "@mui/material": "^7.3.9",
     "@tanstack/react-query": "^5.95.2",
     "@testing-library/jest-dom": "^6.1.4",
@@ -24,7 +23,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.72.0",
-    "react-router-dom": "^7.13.2",
+    "react-router-dom": "^6.30.1",
     "react-scripts": "5.0.1",
     "typescript": "^6.0.2",
     "web-vitals": "^5.2.0"
@@ -54,6 +53,7 @@
     ]
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
     "sass": "^1.98.0"
   }
 }

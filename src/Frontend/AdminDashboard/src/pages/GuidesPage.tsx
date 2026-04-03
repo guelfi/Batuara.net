@@ -23,43 +23,44 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import apiService from '../services/api';
-import { Orixa } from '../types';
+import { Guide } from '../types';
 
-type OrixaFormState = {
+type GuideFormState = {
   name: string;
   description: string;
-  origin: string;
-  batuaraTeaching: string;
+  photoUrl: string;
+  specialties: string;
+  entryDate: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
   displayOrder: string;
-  characteristics: string;
-  colors: string;
-  elements: string;
-  imageUrl: string;
   isActive: boolean;
 };
 
-const initialFormState: OrixaFormState = {
+const initialFormState: GuideFormState = {
   name: '',
   description: '',
-  origin: '',
-  batuaraTeaching: '',
+  photoUrl: '',
+  specialties: '',
+  entryDate: '',
+  email: '',
+  phone: '',
+  whatsapp: '',
   displayOrder: '1',
-  characteristics: '',
-  colors: '',
-  elements: '',
-  imageUrl: '',
   isActive: true,
 };
 
 const splitCsv = (value: string) => value.split(',').map((item) => item.trim()).filter(Boolean);
 
-const OrixasPage: React.FC = () => {
-  const [rows, setRows] = useState<Orixa[]>([]);
+const GuidesPage: React.FC = () => {
+  const [rows, setRows] = useState<Guide[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<Orixa | null>(null);
-  const [form, setForm] = useState<OrixaFormState>(initialFormState);
+  const [editingItem, setEditingItem] = useState<Guide | null>(null);
+  const [form, setForm] = useState<GuideFormState>(initialFormState);
   const [query, setQuery] = useState('');
+  const [specialtyFilter, setSpecialtyFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'true' | 'false'>('all');
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [totalCount, setTotalCount] = useState(0);
@@ -69,11 +70,12 @@ const OrixasPage: React.FC = () => {
     severity: 'success',
   });
 
-  const loadOrixas = useCallback(async () => {
+  const loadGuides = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await apiService.getOrixas({
+      const response = await apiService.getGuides({
         q: query || undefined,
+        specialty: specialtyFilter || undefined,
         isActive: statusFilter === 'all' ? undefined : statusFilter === 'true',
         pageNumber: paginationModel.page + 1,
         pageSize: paginationModel.pageSize,
@@ -85,46 +87,41 @@ const OrixasPage: React.FC = () => {
     } catch (error: any) {
       setFeedback({
         open: true,
-        message: error?.response?.data?.message || 'Não foi possível carregar os Orixás.',
+        message: error?.response?.data?.message || 'Não foi possível carregar os guias e entidades.',
         severity: 'error',
       });
     } finally {
       setLoading(false);
     }
-  }, [paginationModel.page, paginationModel.pageSize, query, statusFilter]);
+  }, [paginationModel.page, paginationModel.pageSize, query, specialtyFilter, statusFilter]);
 
   useEffect(() => {
-    loadOrixas();
-  }, [loadOrixas]);
+    loadGuides();
+  }, [loadGuides]);
 
   const columns: GridColDef[] = [
     { field: 'displayOrder', headerName: 'Ordem', width: 90 },
-    { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180 },
+    { field: 'name', headerName: 'Nome', flex: 1, minWidth: 200 },
     {
-      field: 'colors',
-      headerName: 'Cores',
+      field: 'specialties',
+      headerName: 'Especialidades',
       flex: 1,
-      minWidth: 180,
+      minWidth: 220,
       renderCell: (params) => (
         <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
-          {params.row.colors.slice(0, 2).map((color: string) => (
-            <Chip key={color} label={color} size="small" />
+          {params.row.specialties.slice(0, 2).map((item: string) => (
+            <Chip key={item} label={item} size="small" />
           ))}
-          {params.row.colors.length > 2 && <Chip label={`+${params.row.colors.length - 2}`} size="small" variant="outlined" />}
+          {params.row.specialties.length > 2 && <Chip label={`+${params.row.specialties.length - 2}`} size="small" variant="outlined" />}
         </Stack>
       ),
     },
-    {
-      field: 'elements',
-      headerName: 'Elementos',
-      flex: 1,
-      minWidth: 180,
-      renderCell: (params) => params.row.elements.join(', '),
-    },
+    { field: 'entryDate', headerName: 'Entrada', width: 130, valueFormatter: (value) => new Date(value).toLocaleDateString('pt-BR') },
+    { field: 'email', headerName: 'E-mail', flex: 1, minWidth: 200 },
     {
       field: 'isActive',
       headerName: 'Status',
-      width: 110,
+      width: 120,
       renderCell: (params) => <Chip size="small" label={params.row.isActive ? 'Ativo' : 'Inativo'} color={params.row.isActive ? 'success' : 'default'} />,
     },
     {
@@ -138,19 +135,19 @@ const OrixasPage: React.FC = () => {
     },
   ];
 
-  const handleOpenDialog = (item?: Orixa) => {
+  const handleOpenDialog = (item?: Guide) => {
     if (item) {
       setEditingItem(item);
       setForm({
         name: item.name,
         description: item.description,
-        origin: item.origin,
-        batuaraTeaching: item.batuaraTeaching,
+        photoUrl: item.photoUrl || '',
+        specialties: item.specialties.join(', '),
+        entryDate: item.entryDate.slice(0, 10),
+        email: item.email || '',
+        phone: item.phone || '',
+        whatsapp: item.whatsapp || '',
         displayOrder: String(item.displayOrder),
-        characteristics: item.characteristics.join(', '),
-        colors: item.colors.join(', '),
-        elements: item.elements.join(', '),
-        imageUrl: item.imageUrl || '',
         isActive: item.isActive,
       });
     } else {
@@ -171,31 +168,31 @@ const OrixasPage: React.FC = () => {
     const payload = {
       name: form.name,
       description: form.description,
-      origin: form.origin,
-      batuaraTeaching: form.batuaraTeaching,
+      photoUrl: form.photoUrl || undefined,
+      specialties: splitCsv(form.specialties),
+      entryDate: form.entryDate,
+      email: form.email || undefined,
+      phone: form.phone || undefined,
+      whatsapp: form.whatsapp || undefined,
       displayOrder: Math.max(1, Number(form.displayOrder || 1)),
-      characteristics: splitCsv(form.characteristics),
-      colors: splitCsv(form.colors),
-      elements: splitCsv(form.elements),
-      imageUrl: form.imageUrl || undefined,
       isActive: form.isActive,
     };
 
     try {
       if (editingItem) {
-        await apiService.updateOrixa(String(editingItem.id), payload);
-        setFeedback({ open: true, message: 'Orixá atualizado com sucesso.', severity: 'success' });
+        await apiService.updateGuide(String(editingItem.id), payload);
+        setFeedback({ open: true, message: 'Guia ou entidade atualizado com sucesso.', severity: 'success' });
       } else {
-        await apiService.createOrixa(payload);
-        setFeedback({ open: true, message: 'Orixá criado com sucesso.', severity: 'success' });
+        await apiService.createGuide(payload);
+        setFeedback({ open: true, message: 'Guia ou entidade criado com sucesso.', severity: 'success' });
       }
 
       handleCloseDialog();
-      await loadOrixas();
+      await loadGuides();
     } catch (error: any) {
       setFeedback({
         open: true,
-        message: error?.response?.data?.message || 'Não foi possível salvar o Orixá.',
+        message: error?.response?.data?.message || 'Não foi possível salvar o guia ou entidade.',
         severity: 'error',
       });
     }
@@ -203,13 +200,13 @@ const OrixasPage: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await apiService.deleteOrixa(String(id));
-      setFeedback({ open: true, message: 'Orixá removido com sucesso.', severity: 'success' });
-      await loadOrixas();
+      await apiService.deleteGuide(String(id));
+      setFeedback({ open: true, message: 'Registro removido com sucesso.', severity: 'success' });
+      await loadGuides();
     } catch (error: any) {
       setFeedback({
         open: true,
-        message: error?.response?.data?.message || 'Não foi possível remover o Orixá.',
+        message: error?.response?.data?.message || 'Não foi possível remover o registro.',
         severity: 'error',
       });
     }
@@ -220,18 +217,18 @@ const OrixasPage: React.FC = () => {
       <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
-            Orixás
+            Guias e Entidades
           </Typography>
           <Typography color="text.secondary">
-            Administre os textos doutrinários, características, cores, elementos e ordem de exibição dos Orixás.
+            Cadastre, filtre e ordene os guias e entidades exibidos institucionalmente.
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
-          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={loadOrixas}>
+          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={loadGuides}>
             Atualizar
           </Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
-            Novo Orixá
+            Novo cadastro
           </Button>
         </Stack>
       </Stack>
@@ -239,6 +236,7 @@ const OrixasPage: React.FC = () => {
       <Paper sx={{ p: 2, mb: 2 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
           <TextField label="Buscar" value={query} onChange={(e) => setQuery(e.target.value)} fullWidth />
+          <TextField label="Especialidade" value={specialtyFilter} onChange={(e) => setSpecialtyFilter(e.target.value)} fullWidth />
           <FormControl sx={{ minWidth: 160 }}>
             <InputLabel>Status</InputLabel>
             <Select value={statusFilter} label="Status" onChange={(e) => setStatusFilter(e.target.value as 'all' | 'true' | 'false')}>
@@ -267,7 +265,7 @@ const OrixasPage: React.FC = () => {
       </Paper>
 
       <Dialog open={dialogOpen} onClose={handleCloseDialog} fullWidth maxWidth="md">
-        <DialogTitle>{editingItem ? 'Editar Orixá' : 'Novo Orixá'}</DialogTitle>
+        <DialogTitle>{editingItem ? 'Editar guia ou entidade' : 'Novo guia ou entidade'}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
@@ -287,65 +285,51 @@ const OrixasPage: React.FC = () => {
               onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
               fullWidth
               multiline
-              minRows={3}
-            />
-            <TextField
-              label="Origem"
-              value={form.origin}
-              onChange={(e) => setForm((prev) => ({ ...prev, origin: e.target.value }))}
-              fullWidth
-              multiline
-              minRows={3}
-            />
-            <TextField
-              label="Ensinamento Batuara"
-              value={form.batuaraTeaching}
-              onChange={(e) => setForm((prev) => ({ ...prev, batuaraTeaching: e.target.value }))}
-              fullWidth
-              multiline
               minRows={4}
-            />
-            <TextField
-              label="Características (separadas por vírgula)"
-              value={form.characteristics}
-              onChange={(e) => setForm((prev) => ({ ...prev, characteristics: e.target.value }))}
-              fullWidth
             />
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
               <TextField
-                label="Cores (separadas por vírgula)"
-                value={form.colors}
-                onChange={(e) => setForm((prev) => ({ ...prev, colors: e.target.value }))}
+                label="Especialidades"
+                helperText="Separe por vírgula"
+                value={form.specialties}
+                onChange={(e) => setForm((prev) => ({ ...prev, specialties: e.target.value }))}
                 fullWidth
               />
               <TextField
-                label="Elementos (separados por vírgula)"
-                value={form.elements}
-                onChange={(e) => setForm((prev) => ({ ...prev, elements: e.target.value }))}
+                label="Data de entrada"
+                type="date"
+                value={form.entryDate}
+                onChange={(e) => setForm((prev) => ({ ...prev, entryDate: e.target.value }))}
+                InputLabelProps={{ shrink: true }}
                 fullWidth
               />
             </Stack>
             <TextField
-              label="URL da imagem"
-              value={form.imageUrl}
-              onChange={(e) => setForm((prev) => ({ ...prev, imageUrl: e.target.value }))}
+              label="Foto"
+              value={form.photoUrl}
+              onChange={(e) => setForm((prev) => ({ ...prev, photoUrl: e.target.value }))}
               fullWidth
             />
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+              <TextField label="E-mail" value={form.email} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} fullWidth />
+              <TextField label="Telefone" value={form.phone} onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))} fullWidth />
+              <TextField label="WhatsApp" value={form.whatsapp} onChange={(e) => setForm((prev) => ({ ...prev, whatsapp: e.target.value }))} fullWidth />
+            </Stack>
             {editingItem && (
               <FormControlLabel
                 control={<Switch checked={form.isActive} onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))} />}
-                label="Orixá ativo"
+                label="Cadastro ativo"
               />
             )}
             <Alert severity="info">
-              Os textos cadastrados aqui abastecem a seção pública de Orixás, então a consistência editorial impacta diretamente o PublicWebsite.
+              Utilize especialidades consistentes para melhorar a busca e os filtros operacionais do dashboard.
             </Alert>
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancelar</Button>
           <Button variant="contained" onClick={handleSubmit}>
-            {editingItem ? 'Salvar alterações' : 'Criar Orixá'}
+            {editingItem ? 'Salvar alterações' : 'Criar cadastro'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -359,4 +343,4 @@ const OrixasPage: React.FC = () => {
   );
 };
 
-export default OrixasPage;
+export default GuidesPage;
