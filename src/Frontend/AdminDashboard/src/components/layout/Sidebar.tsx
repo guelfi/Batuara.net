@@ -8,8 +8,7 @@ import {
   Divider,
   Box,
   Typography,
-  useTheme,
-  useMediaQuery,
+  Toolbar,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -17,16 +16,14 @@ import {
   CalendarToday as CalendarIcon,
   People as PeopleIcon,
   AccountCircle as ProfileIcon,
-  Info as InfoIcon,
   LocationOn as LocationIcon,
   Favorite as FavoriteIcon,
-  Mail as MailIcon,
-  Settings as SettingsIcon,
   MenuBook as HistoryIcon,
   Groups as GuidesIcon,
   Timeline as LinesIcon,
   MusicNote as PrayersIcon,
   VolunteerActivism as DonationIcon,
+  Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -34,58 +31,69 @@ interface SidebarProps {
   open: boolean;
   onClose: () => void;
   variant?: 'permanent' | 'persistent' | 'temporary';
-  selectedItem?: string;
-  onItemSelect?: (itemId: string) => void;
+  onLogout: () => void;
 }
 
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Nossa História', icon: <HistoryIcon />, path: '/history' },
-  { text: 'Calendário Giras', icon: <CalendarIcon />, path: '/calendar' },
+  { text: 'Calendário Atendimento', icon: <CalendarIcon />, path: '/calendar' },
   { text: 'Eventos e Festas', icon: <EventIcon />, path: '/events' },
   { text: 'Nossos Orixás', icon: <FavoriteIcon />, path: '/orixas' },
   { text: 'Guias e Entidades', icon: <GuidesIcon />, path: '/guides' },
   { text: 'Linhas da Umbanda', icon: <LinesIcon />, path: '/umbanda-lines' },
-  { text: 'Orações e Pontos', icon: <PrayersIcon />, path: '/prayers' },
+  { text: 'Orações e Pontos', icon: <PrayersIcon />, path: '/spiritual-content' },
   { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members' },
   { text: 'Doações e Contato', icon: <DonationIcon />, path: '/donations-contact' },
   { text: 'Localização', icon: <LocationIcon />, path: '/location' },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent' }) => {
+const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent', onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleItemClick = (path: string) => {
     navigate(path);
-    if (isMobile) {
+    if (variant === 'temporary') {
       onClose();
     }
   };
 
+  const handleLogout = () => {
+    onLogout();
+    navigate('/login');
+  };
+
   const drawerWidth = 320;
+  const isTemporary = variant === 'temporary';
+  const appBarHeight = 64;
 
   return (
     <Drawer
       variant={variant}
       open={open}
       onClose={onClose}
+      ModalProps={{
+        keepMounted: true,
+      }}
       sx={{
         width: drawerWidth,
         flexShrink: 0,
+        display: { xs: isTemporary ? 'block' : 'none', md: isTemporary ? 'none' : 'block' },
         [`& .MuiDrawer-paper`]: {
           width: drawerWidth,
           boxSizing: 'border-box',
           borderRight: '1px solid',
           borderColor: 'divider',
           backgroundColor: 'background.paper',
+          top: isTemporary ? 0 : appBarHeight,
+          height: isTemporary ? '100%' : `calc(100% - ${appBarHeight}px)`,
         },
       }}
     >
-      <Box sx={{ overflow: 'auto', pt: isMobile ? 7 : 8 }}>
-        {/* Perfil do Usuário */}
+      <Toolbar />
+
+      <Box sx={{ overflow: 'auto' }}>
         <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
           <Typography variant="h6" noWrap>
             Admin Dashboard
@@ -97,7 +105,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent' 
 
         <Divider />
 
-        {/* Menu Principal */}
         <List>
           {menuItems.map((item) => (
             <ListItemButton
@@ -132,9 +139,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent' 
           ))}
         </List>
 
-        <Divider />
+        <Divider sx={{ mt: 'auto' }} />
 
-        {/* Configurações e Perfil */}
         <List>
           <ListItemButton
             onClick={() => handleItemClick('/profile')}
@@ -163,6 +169,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent' 
                 },
               }}
             />
+          </ListItemButton>
+
+          <ListItemButton onClick={handleLogout}>
+            <ListItemIcon>
+              <LogoutIcon />
+            </ListItemIcon>
+            <ListItemText primary="Sair" />
           </ListItemButton>
         </List>
       </Box>

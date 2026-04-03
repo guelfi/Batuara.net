@@ -11,12 +11,16 @@ import DashboardPage from './pages/DashboardPage';
 import EventsPage from './pages/EventsPage';
 import CalendarPage from './pages/CalendarPage';
 import OrixasPage from './pages/OrixasPage';
+import GuidesPage from './pages/GuidesPage';
+import HistoryPage from './pages/HistoryPage';
+import MembersPage from './pages/MembersPage';
+import DonationsContactPage from './pages/DonationsContactPage';
+import LocationPage from './pages/LocationPage';
 import UmbandaLinesPage from './pages/UmbandaLinesPage';
 import SpiritualContentPage from './pages/SpiritualContentPage';
 import ProfilePage from './pages/ProfilePage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import NotFoundPage from './pages/NotFoundPage';
-import PlaceholderPage from './pages/PlaceholderPage';
 
 // Configuração do React Query
 const queryClient = new QueryClient({
@@ -52,17 +56,17 @@ function App() {
                       <Routes>
                         <Route path="/" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/dashboard" element={<DashboardPage />} />
-                        <Route path="/history" element={<PlaceholderPage title="Nossa História" />} />
+                        <Route path="/history" element={<HistoryPage />} />
                         <Route path="/events" element={<EventsPage />} />
                         <Route path="/calendar" element={<CalendarPage />} />
                         <Route path="/orixas" element={<OrixasPage />} />
-                        <Route path="/guides" element={<PlaceholderPage title="Guias e Entidades" />} />
+                        <Route path="/guides" element={<GuidesPage />} />
                         <Route path="/umbanda-lines" element={<UmbandaLinesPage />} />
-                        <Route path="/prayers" element={<PlaceholderPage title="Orações e Pontos" />} />
+                        <Route path="/prayers" element={<SpiritualContentPage />} />
                         <Route path="/spiritual-content" element={<SpiritualContentPage />} />
-                        <Route path="/members" element={<PlaceholderPage title="Filhos da Casa" />} />
-                        <Route path="/donations-contact" element={<PlaceholderPage title="Doações e Contato" />} />
-                        <Route path="/location" element={<PlaceholderPage title="Localização" />} />
+                        <Route path="/members" element={<MembersPage />} />
+                        <Route path="/donations-contact" element={<DonationsContactPage />} />
+                        <Route path="/location" element={<LocationPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="*" element={<NotFoundPage />} />
                       </Routes>

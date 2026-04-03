@@ -53,6 +53,11 @@ namespace Batuara.API.Controllers
                 _logger.LogWarning(ex, "Login failed: {Message}", ex.Message);
                 return Unauthorized(new { success = false, message = ex.Message });
             }
+            catch (Exception ex) when (IsDatabaseUnavailable(ex))
+            {
+                _logger.LogError(ex, "Database unavailable during login");
+                return StatusCode(503, new { success = false, message = "Banco de dados indisponível" });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during login");
@@ -64,19 +69,24 @@ namespace Batuara.API.Controllers
         [EnableRateLimiting("refresh")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<LoginResponse>> RefreshToken()
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest? request)
         {
             try
             {
-                var refreshToken = Request.Cookies["refreshToken"];
-                if (string.IsNullOrEmpty(refreshToken))
+                var refreshToken = request?.RefreshToken;
+                if (string.IsNullOrWhiteSpace(refreshToken))
+                {
+                    refreshToken = Request.Cookies["refreshToken"];
+                }
+
+                if (string.IsNullOrWhiteSpace(refreshToken))
                 {
                     refreshToken = Request.Headers["X-Refresh-Token"].FirstOrDefault();
                 }
 
-                if (string.IsNullOrEmpty(refreshToken))
+                if (string.IsNullOrWhiteSpace(refreshToken))
                 {
-                    return Unauthorized(new { message = "Refresh token is required" });
+                    return Unauthorized(new { success = false, message = "Refresh token is required" });
                 }
 
                 var ipAddress = GetIpAddress();
@@ -85,18 +95,52 @@ namespace Batuara.API.Controllers
                 // Set new refresh token in cookie
                 SetRefreshTokenCookie(response.RefreshToken);
                 
-                return Ok(response);
+                return Ok(new
+                {
+                    success = true,
+                    data = new
+                    {
+                        token = response.AccessToken,
+                        refreshToken = response.RefreshToken,
+                        expiresAt = response.TokenExpiration,
+                        user = response.User
+                    }
+                });
             }
             catch (UnauthorizedAccessException ex)
             {
                 _logger.LogWarning(ex, "Token refresh failed: {Message}", ex.Message);
-                return Unauthorized(new { message = ex.Message });
+                return Unauthorized(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex) when (IsDatabaseUnavailable(ex))
+            {
+                _logger.LogError(ex, "Database unavailable during token refresh");
+                return StatusCode(503, new { success = false, message = "Banco de dados indisponível" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during token refresh");
-                return StatusCode(500, new { message = "An error occurred during token refresh" });
+                return StatusCode(500, new { success = false, message = "An error occurred during token refresh" });
             }
+        }
+
+        private static bool IsDatabaseUnavailable(Exception ex)
+        {
+            var current = ex;
+            while (current != null)
+            {
+                var typeName = current.GetType().FullName ?? string.Empty;
+                if (typeName.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) ||
+                    typeName.Contains("Postgres", StringComparison.OrdinalIgnoreCase) ||
+                    typeName.Contains("DbUpdateException", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                current = current.InnerException;
+            }
+
+            return false;
         }
 
         [HttpPost("logout")]

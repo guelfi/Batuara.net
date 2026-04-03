@@ -1,14 +1,43 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { ApiResponse, PaginatedResponse } from '../types';
+import {
+  ApiResponse,
+  CalendarAttendance,
+  ContactMessage,
+  Event as BatuaraEvent,
+  Guide,
+  HouseMember,
+  Orixa,
+  PaginatedResponse,
+  SiteSettingsDto,
+  SpiritualContent,
+  UmbandaLine,
+} from '../types';
 
 class ApiService {
   private api: AxiosInstance;
   private isRefreshing = false;
   private failedQueue: any[] = [];
 
+  private resolveBaseUrl(): string {
+    const envUrl = process.env.REACT_APP_API_URL;
+    if (envUrl && envUrl.trim()) {
+      const trimmed = envUrl.trim().replace(/\/+$/, '');
+      if (trimmed.endsWith('/batuara-api')) return `${trimmed}/api`;
+      return trimmed;
+    }
+
+    const isDev = process.env.NODE_ENV === 'development';
+    const isBrowser = typeof window !== 'undefined';
+    const host = isBrowser ? window.location.hostname : '';
+    const isLocalhost = host === 'localhost' || host === '127.0.0.1';
+
+    if (isDev && isLocalhost) return 'http://localhost/batuara-api/api';
+    return '/batuara-api/api';
+  }
+
   constructor() {
     this.api = axios.create({
-      baseURL: process.env.REACT_APP_API_URL || '/batuara-api/api',
+      baseURL: this.resolveBaseUrl(),
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
@@ -70,10 +99,20 @@ class ApiService {
             const refreshToken = this.getRefreshToken();
             if (refreshToken) {
               const response = await this.refreshToken(refreshToken);
-              const newToken = response.data.data.token;
+              const newToken = response.data.token;
+              const newRefreshToken = response.data.refreshToken;
 
               // Atualizar token no localStorage
               localStorage.setItem('authToken', newToken);
+              if (newRefreshToken) {
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                  try {
+                    const user = JSON.parse(userStr);
+                    localStorage.setItem('user', JSON.stringify({ ...user, refreshToken: newRefreshToken }));
+                  } catch (_) { }
+                }
+              }
 
               // Processar requisições pendentes
               this.processQueue(null, newToken);
@@ -116,7 +155,7 @@ class ApiService {
   }
 
   private async refreshToken(refreshToken: string) {
-    return this.post<ApiResponse<any>>('/auth/refresh', { refreshToken });
+    return this.post<any>('/auth/refresh', { refreshToken });
   }
 
   async logout() {
@@ -162,8 +201,8 @@ class ApiService {
   }
 
   async getPaginated<T>(url: string, params?: any): Promise<PaginatedResponse<T>> {
-    const response: AxiosResponse<PaginatedResponse<T>> = await this.api.get(url, { params });
-    return response.data;
+    const response: AxiosResponse<ApiResponse<PaginatedResponse<T>>> = await this.api.get(url, { params });
+    return response.data.data;
   }
 
   // Métodos para autenticação e usuário
@@ -175,9 +214,17 @@ class ApiService {
     return this.put<ApiResponse<any>>('/auth/preferences', data);
   }
 
+  async getSiteSettings() {
+    return this.get<SiteSettingsDto>('/site-settings');
+  }
+
+  async updateSiteSettings(data: Partial<SiteSettingsDto>) {
+    return this.put<SiteSettingsDto>('/site-settings', data);
+  }
+
   // Métodos para eventos
   async getEvents(params?: any) {
-    return this.getPaginated('/events', params);
+    return this.getPaginated<BatuaraEvent>('/events', params);
   }
 
   async getEvent(id: string) {
@@ -198,7 +245,7 @@ class ApiService {
 
   // Métodos para calendário
   async getAttendances(params?: any) {
-    return this.getPaginated('/calendar/attendances', params);
+    return this.getPaginated<CalendarAttendance>('/calendar/attendances', params);
   }
 
   async getAttendance(id: string) {
@@ -219,7 +266,7 @@ class ApiService {
 
   // Métodos para Orixás
   async getOrixas(params?: any) {
-    return this.getPaginated('/orixas', params);
+    return this.getPaginated<Orixa>('/orixas', params);
   }
 
   async getOrixa(id: string) {
@@ -238,9 +285,61 @@ class ApiService {
     return this.delete(`/orixas/${id}`);
   }
 
+  async getGuides(params?: any) {
+    return this.getPaginated<Guide>('/guides', params);
+  }
+
+  async getGuide(id: string) {
+    return this.get<Guide>(`/guides/${id}`);
+  }
+
+  async createGuide(data: any) {
+    return this.post<Guide>('/guides', data);
+  }
+
+  async updateGuide(id: string, data: any) {
+    return this.put<Guide>(`/guides/${id}`, data);
+  }
+
+  async deleteGuide(id: string) {
+    return this.delete(`/guides/${id}`);
+  }
+
+  async getHouseMembers(params?: any) {
+    return this.getPaginated<HouseMember>('/house-members', params);
+  }
+
+  async getHouseMember(id: string) {
+    return this.get<HouseMember>(`/house-members/${id}`);
+  }
+
+  async createHouseMember(data: any) {
+    return this.post<HouseMember>('/house-members', data);
+  }
+
+  async updateHouseMember(id: string, data: any) {
+    return this.put<HouseMember>(`/house-members/${id}`, data);
+  }
+
+  async deleteHouseMember(id: string) {
+    return this.delete(`/house-members/${id}`);
+  }
+
+  async getContactMessages(params?: any) {
+    return this.getPaginated<ContactMessage>('/contact-messages', params);
+  }
+
+  async getContactMessage(id: string) {
+    return this.get<ContactMessage>(`/contact-messages/${id}`);
+  }
+
+  async updateContactMessageStatus(id: string, data: any) {
+    return this.patch<ContactMessage>(`/contact-messages/${id}/status`, data);
+  }
+
   // Métodos para Linhas de Umbanda
   async getUmbandaLines(params?: any) {
-    return this.getPaginated('/umbanda-lines', params);
+    return this.getPaginated<UmbandaLine>('/umbanda-lines', params);
   }
 
   async getUmbandaLine(id: string) {
@@ -261,7 +360,7 @@ class ApiService {
 
   // Métodos para conteúdo espiritual
   async getSpiritualContents(params?: any) {
-    return this.getPaginated('/spiritual-contents', params);
+    return this.getPaginated<SpiritualContent>('/spiritual-contents', params);
   }
 
   async getSpiritualContent(id: string) {
@@ -278,6 +377,11 @@ class ApiService {
 
   async deleteSpiritualContent(id: string) {
     return this.delete(`/spiritual-contents/${id}`);
+  }
+
+  async patch<T>(url: string, data?: any): Promise<ApiResponse<T>> {
+    const response: AxiosResponse<ApiResponse<T>> = await this.api.patch(url, data);
+    return response.data;
   }
 
   // Métodos para dashboard

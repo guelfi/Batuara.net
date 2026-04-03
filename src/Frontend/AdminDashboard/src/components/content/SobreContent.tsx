@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Card,
@@ -17,9 +17,11 @@ import {
   Cancel as CancelIcon,
   Preview as PreviewIcon,
 } from '@mui/icons-material';
+import { apiService } from '../../services/api';
+import { SiteSettingsDto } from '../../types';
 
 // Texto atual da seção Sobre (mockado - na Fundação virá da API)
-const currentAboutText = `A Casa de Caridade Batuara é um espaço sagrado dedicado à prática da Umbanda, 
+const fallbackAboutText = `A Casa de Caridade Batuara é um espaço sagrado dedicado à prática da Umbanda, 
 uma religião genuinamente brasileira que combina elementos das tradições africanas, indígenas e cristãs.
 
 Fundada com o propósito de oferecer auxílio espiritual, orientação e caridade à comunidade, nossa casa 
@@ -32,36 +34,67 @@ Aqui, todos são bem-vindos, independentemente de sua origem, cor ou credo. A Um
 de amor, paz e caridade, e é com esses valores que recebemos a todos que nos procuram.`;
 
 const SobreContent: React.FC = () => {
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedText, setEditedText] = useState(currentAboutText);
+  const [originalText, setOriginalText] = useState(fallbackAboutText);
+  const [editedText, setEditedText] = useState(fallbackAboutText);
   const [showPreview, setShowPreview] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setError(null);
+        const response = await apiService.get<SiteSettingsDto>('/site-settings');
+        if (response.success && response.data?.aboutText) {
+          setOriginalText(response.data.aboutText);
+          setEditedText(response.data.aboutText);
+        }
+      } catch (e: any) {
+        setError(e.response?.data?.message || 'Erro ao carregar o texto da seção Sobre');
+      }
+    };
+    load();
+  }, []);
+
   const handleEdit = () => {
     setIsEditing(true);
-    setEditedText(currentAboutText);
+    setEditedText(originalText);
   };
 
-  const handleSave = () => {
-    // Na Fase 0, apenas simula o salvamento
-    // Na Fundação, aqui será feita a chamada para a API
-    console.log('Salvando texto:', editedText);
-    setIsEditing(false);
-    setHasChanges(false);
-    // Simular sucesso
-    alert('Texto salvo com sucesso! (Simulado - será real na Fundação)');
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      setError(null);
+      const response = await apiService.put<SiteSettingsDto>('/site-settings', { aboutText: editedText });
+      if (response.success && response.data?.aboutText) {
+        setOriginalText(response.data.aboutText);
+        setEditedText(response.data.aboutText);
+      } else {
+        throw new Error(response.message || 'Erro ao salvar texto');
+      }
+      setIsEditing(false);
+      setHasChanges(false);
+      setShowPreview(false);
+      alert('Texto salvo com sucesso!');
+    } catch (e: any) {
+      setError(e.response?.data?.message || e.message || 'Erro ao salvar o texto da seção Sobre');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    setEditedText(currentAboutText);
+    setEditedText(originalText);
     setHasChanges(false);
     setShowPreview(false);
   };
 
   const handleTextChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setEditedText(event.target.value);
-    setHasChanges(event.target.value !== currentAboutText);
+    setHasChanges(event.target.value !== originalText);
   };
 
   const togglePreview = () => {
@@ -99,7 +132,7 @@ const SobreContent: React.FC = () => {
                   variant="contained"
                   startIcon={<SaveIcon />}
                   onClick={handleSave}
-                  disabled={!hasChanges}
+                  disabled={!hasChanges || isSaving}
                   color="success"
                   size="small"
                 >
@@ -123,6 +156,11 @@ const SobreContent: React.FC = () => {
               Na Fase Fundação, as alterações serão salvas na API e refletidas automaticamente no PublicWebsite.
             </Typography>
           </Alert>
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              <Typography variant="body2">{error}</Typography>
+            </Alert>
+          )}
 
           {isEditing && !showPreview ? (
             <Box>
@@ -164,7 +202,7 @@ const SobreContent: React.FC = () => {
                     color: showPreview ? 'success.dark' : 'text.primary'
                   }}
                 >
-                  {showPreview ? editedText : currentAboutText}
+                  {showPreview ? editedText : originalText}
                 </Typography>
               </Paper>
               {showPreview && (

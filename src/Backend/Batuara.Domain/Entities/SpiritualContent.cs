@@ -110,6 +110,18 @@ namespace Batuara.Domain.Entities
             UpdateTimestamp();
         }
 
+        public void Deactivate()
+        {
+            IsActive = false;
+            UpdateTimestamp();
+        }
+
+        public void Activate()
+        {
+            IsActive = true;
+            UpdateTimestamp();
+        }
+
         public string GetTypeDisplayName()
         {
             return Type switch

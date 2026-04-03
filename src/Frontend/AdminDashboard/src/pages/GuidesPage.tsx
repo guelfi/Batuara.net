@@ -1,0 +1,346 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  FormControlLabel,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Snackbar,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
+import apiService from '../services/api';
+import { Guide } from '../types';
+
+type GuideFormState = {
+  name: string;
+  description: string;
+  photoUrl: string;
+  specialties: string;
+  entryDate: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  displayOrder: string;
+  isActive: boolean;
+};
+
+const initialFormState: GuideFormState = {
+  name: '',
+  description: '',
+  photoUrl: '',
+  specialties: '',
+  entryDate: '',
+  email: '',
+  phone: '',
+  whatsapp: '',
+  displayOrder: '1',
+  isActive: true,
+};
+
+const splitCsv = (value: string) => value.split(',').map((item) => item.trim()).filter(Boolean);
+
+const GuidesPage: React.FC = () => {
+  const [rows, setRows] = useState<Guide[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Guide | null>(null);
+  const [form, setForm] = useState<GuideFormState>(initialFormState);
+  const [query, setQuery] = useState('');
+  const [specialtyFilter, setSpecialtyFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'true' | 'false'>('all');
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
+  const [totalCount, setTotalCount] = useState(0);
+  const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  const loadGuides = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await apiService.getGuides({
+        q: query || undefined,
+        specialty: specialtyFilter || undefined,
+        isActive: statusFilter === 'all' ? undefined : statusFilter === 'true',
+        pageNumber: paginationModel.page + 1,
+        pageSize: paginationModel.pageSize,
+        sort: 'displayOrder:asc',
+      });
+
+      setRows(response.data);
+      setTotalCount(response.totalCount);
+    } catch (error: any) {
+      setFeedback({
+        open: true,
+        message: error?.response?.data?.message || 'Não foi possível carregar os guias e entidades.',
+        severity: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [paginationModel.page, paginationModel.pageSize, query, specialtyFilter, statusFilter]);
+
+  useEffect(() => {
+    loadGuides();
+  }, [loadGuides]);
+
+  const columns: GridColDef[] = [
+    { field: 'displayOrder', headerName: 'Ordem', width: 90 },
+    { field: 'name', headerName: 'Nome', flex: 1, minWidth: 200 },
+    {
+      field: 'specialties',
+      headerName: 'Especialidades',
+      flex: 1,
+      minWidth: 220,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
+          {params.row.specialties.slice(0, 2).map((item: string) => (
+            <Chip key={item} label={item} size="small" />
+          ))}
+          {params.row.specialties.length > 2 && <Chip label={`+${params.row.specialties.length - 2}`} size="small" variant="outlined" />}
+        </Stack>
+      ),
+    },
+    { field: 'entryDate', headerName: 'Entrada', width: 130, valueFormatter: (value) => new Date(value).toLocaleDateString('pt-BR') },
+    { field: 'email', headerName: 'E-mail', flex: 1, minWidth: 200 },
+    {
+      field: 'isActive',
+      headerName: 'Status',
+      width: 120,
+      renderCell: (params) => <Chip size="small" label={params.row.isActive ? 'Ativo' : 'Inativo'} color={params.row.isActive ? 'success' : 'default'} />,
+    },
+    {
+      field: 'actions',
+      type: 'actions',
+      width: 110,
+      getActions: (params) => [
+        <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
+        <GridActionsCellItem icon={<DeleteIcon />} label="Excluir" onClick={() => handleDelete(params.row.id)} />,
+      ],
+    },
+  ];
+
+  const handleOpenDialog = (item?: Guide) => {
+    if (item) {
+      setEditingItem(item);
+      setForm({
+        name: item.name,
+        description: item.description,
+        photoUrl: item.photoUrl || '',
+        specialties: item.specialties.join(', '),
+        entryDate: item.entryDate.slice(0, 10),
+        email: item.email || '',
+        phone: item.phone || '',
+        whatsapp: item.whatsapp || '',
+        displayOrder: String(item.displayOrder),
+        isActive: item.isActive,
+      });
+    } else {
+      setEditingItem(null);
+      setForm(initialFormState);
+    }
+
+    setDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setEditingItem(null);
+    setForm(initialFormState);
+  };
+
+  const handleSubmit = async () => {
+    const payload = {
+      name: form.name,
+      description: form.description,
+      photoUrl: form.photoUrl || undefined,
+      specialties: splitCsv(form.specialties),
+      entryDate: form.entryDate,
+      email: form.email || undefined,
+      phone: form.phone || undefined,
+      whatsapp: form.whatsapp || undefined,
+      displayOrder: Math.max(1, Number(form.displayOrder || 1)),
+      isActive: form.isActive,
+    };
+
+    try {
+      if (editingItem) {
+        await apiService.updateGuide(String(editingItem.id), payload);
+        setFeedback({ open: true, message: 'Guia ou entidade atualizado com sucesso.', severity: 'success' });
+      } else {
+        await apiService.createGuide(payload);
+        setFeedback({ open: true, message: 'Guia ou entidade criado com sucesso.', severity: 'success' });
+      }
+
+      handleCloseDialog();
+      await loadGuides();
+    } catch (error: any) {
+      setFeedback({
+        open: true,
+        message: error?.response?.data?.message || 'Não foi possível salvar o guia ou entidade.',
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await apiService.deleteGuide(String(id));
+      setFeedback({ open: true, message: 'Registro removido com sucesso.', severity: 'success' });
+      await loadGuides();
+    } catch (error: any) {
+      setFeedback({
+        open: true,
+        message: error?.response?.data?.message || 'Não foi possível remover o registro.',
+        severity: 'error',
+      });
+    }
+  };
+
+  return (
+    <Box>
+      <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 600 }}>
+            Guias e Entidades
+          </Typography>
+          <Typography color="text.secondary">
+            Cadastre, filtre e ordene os guias e entidades exibidos institucionalmente.
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={1}>
+          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={loadGuides}>
+            Atualizar
+          </Button>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
+            Novo cadastro
+          </Button>
+        </Stack>
+      </Stack>
+
+      <Paper sx={{ p: 2, mb: 2 }}>
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+          <TextField label="Buscar" value={query} onChange={(e) => setQuery(e.target.value)} fullWidth />
+          <TextField label="Especialidade" value={specialtyFilter} onChange={(e) => setSpecialtyFilter(e.target.value)} fullWidth />
+          <FormControl sx={{ minWidth: 160 }}>
+            <InputLabel>Status</InputLabel>
+            <Select value={statusFilter} label="Status" onChange={(e) => setStatusFilter(e.target.value as 'all' | 'true' | 'false')}>
+              <MenuItem value="all">Todos</MenuItem>
+              <MenuItem value="true">Ativos</MenuItem>
+              <MenuItem value="false">Inativos</MenuItem>
+            </Select>
+          </FormControl>
+        </Stack>
+      </Paper>
+
+      <Paper sx={{ p: 1 }}>
+        <DataGrid
+          autoHeight
+          rows={rows}
+          columns={columns}
+          rowCount={totalCount}
+          loading={loading}
+          paginationMode="server"
+          paginationModel={paginationModel}
+          onPaginationModelChange={setPaginationModel}
+          pageSizeOptions={[5, 10, 20]}
+          disableRowSelectionOnClick
+          sx={{ border: 0 }}
+        />
+      </Paper>
+
+      <Dialog open={dialogOpen} onClose={handleCloseDialog} fullWidth maxWidth="md">
+        <DialogTitle>{editingItem ? 'Editar guia ou entidade' : 'Novo guia ou entidade'}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+              <TextField label="Nome" value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} fullWidth />
+              <TextField
+                label="Ordem de exibição"
+                type="number"
+                value={form.displayOrder}
+                onChange={(e) => setForm((prev) => ({ ...prev, displayOrder: e.target.value }))}
+                inputProps={{ min: 1 }}
+                sx={{ minWidth: 160 }}
+              />
+            </Stack>
+            <TextField
+              label="Descrição"
+              value={form.description}
+              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+              fullWidth
+              multiline
+              minRows={4}
+            />
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+              <TextField
+                label="Especialidades"
+                helperText="Separe por vírgula"
+                value={form.specialties}
+                onChange={(e) => setForm((prev) => ({ ...prev, specialties: e.target.value }))}
+                fullWidth
+              />
+              <TextField
+                label="Data de entrada"
+                type="date"
+                value={form.entryDate}
+                onChange={(e) => setForm((prev) => ({ ...prev, entryDate: e.target.value }))}
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+              />
+            </Stack>
+            <TextField
+              label="Foto"
+              value={form.photoUrl}
+              onChange={(e) => setForm((prev) => ({ ...prev, photoUrl: e.target.value }))}
+              fullWidth
+            />
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+              <TextField label="E-mail" value={form.email} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} fullWidth />
+              <TextField label="Telefone" value={form.phone} onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))} fullWidth />
+              <TextField label="WhatsApp" value={form.whatsapp} onChange={(e) => setForm((prev) => ({ ...prev, whatsapp: e.target.value }))} fullWidth />
+            </Stack>
+            {editingItem && (
+              <FormControlLabel
+                control={<Switch checked={form.isActive} onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))} />}
+                label="Cadastro ativo"
+              />
+            )}
+            <Alert severity="info">
+              Utilize especialidades consistentes para melhorar a busca e os filtros operacionais do dashboard.
+            </Alert>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Cancelar</Button>
+          <Button variant="contained" onClick={handleSubmit}>
+            {editingItem ? 'Salvar alterações' : 'Criar cadastro'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={feedback.open} autoHideDuration={4000} onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}>
+        <Alert severity={feedback.severity} variant="filled" onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}>
+          {feedback.message}
+        </Alert>
+      </Snackbar>
+    </Box>
+  );
+};
+
+export default GuidesPage;

@@ -144,6 +144,9 @@ logs/
 *.sqlite
 *.sqlite3
 
+# Local scratch files
+*atualizar especificações, backlog e status do projeto*
+
 # OS generated files
 .DS_Store
 .DS_Store?

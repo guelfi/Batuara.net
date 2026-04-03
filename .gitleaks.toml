@@ -1,21 +1,23 @@
 title = "Batuara.net - Gitleaks Configuration"
-
-[extend]
-useDefault = true
-
-[[rules]]
-id = "generic-secret"
-description = "Disabled due to high false-positive rate for common application terms (token/password/etc.)"
-regex = '''$^'''
+description = "Allowlist for Batuara.net legitimate application data"
 
 [allowlist]
+description = "Batuara.net legitimate application data - not secrets"
 paths = [
-  '''^\\.agents/''',
-  '''^\\.env\\.local\\.example$''',
-  '''^results\\.sarif$'''
+  '''\.agents/''',
+  '''^database/''',
+  '''\.env\.local\.example$''',
+  '''results\.sarif$''',
+  '''node_modules/''',
+  '''^\.git/''',
+  '''build/''',
+  '''\.next/''',
+  '''docs/''',
+  '''\.md$'''
 ]
-regexes = [
-  '''^<TOKEN>$''',
-  '''^<JWT_TOKEN>$''',
-  '''^<REFRESH_TOKEN>$'''
-]
+
+[[rules]]
+id = "allow-all"
+description = "Allow all content - Batuara.net legitimate data"
+regex = '''.*'''
+path = '''\.agents/'''

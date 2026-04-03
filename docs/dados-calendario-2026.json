@@ -1,0 +1,628 @@
+{
+  "meta": {
+    "schemaVersion": "1.0.0",
+    "datasetVersion": "2026.04.02",
+    "year": 2026,
+    "timezone": "America/Sao_Paulo",
+    "source": "Consolidação validada do calendário 2026 estruturado anteriormente.",
+    "sourceDocuments": [
+      "dados-calendario-2026.json"
+    ],
+    "createdAt": "2026-04-02T12:00:00Z",
+    "updatedAt": "2026-04-02T12:00:00Z",
+    "totalEventos": 13
+  },
+  "eventos": [
+    {
+      "id": 1,
+      "slug": "sao-sebastiao-2026-01-20",
+      "title": "São Sebastião",
+      "date": "2026-01-20",
+      "dayOfWeek": "Terça-feira",
+      "startTime": "09:00",
+      "endTime": "18:00",
+      "timezone": "America/Sao_Paulo",
+      "description": "Dia dedicado a São Sebastião, protetor contra as epidemias. Data importante no calendário espírita.",
+      "eventType": 3,
+      "location": "Casa de Caridade Batuara",
+      "participants": [
+        "Assistência",
+        "Médiuns",
+        "Cambonos"
+      ],
+      "expectedParticipants": 90,
+      "status": "scheduled",
+      "holidayType": "religious",
+      "recurrence": null,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 2,
+      "slug": "dia-de-oxossi-2026-01-20",
+      "title": "Dia de Oxóssi",
+      "date": "2026-01-20",
+      "dayOfWeek": "Terça-feira",
+      "startTime": "19:00",
+      "endTime": "22:00",
+      "timezone": "America/Sao_Paulo",
+      "description": "Celebração do dia de Oxóssi, Orixá da mata, da fartura e do conhecimento. Gira especial com ofertas de caça e beers.",
+      "eventType": 1,
+      "location": "Casa de Caridade Batuara",
+      "participants": [
+        "Assistência",
+        "Médiuns",
+        "Cambonos",
+        "Filhos do Orixá homenageado"
+      ],
+      "expectedParticipants": 180,
+      "status": "scheduled",
+      "holidayType": null,
+      "recurrence": null,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 3,
+      "slug": "dia-de-iemanja-natal-de-iemanja-2026-02-02",
+      "title": "Dia de Iemanjá (潮) / Natal de Iemanjá",
+      "date": "2026-02-02",
+      "dayOfWeek": "Segunda-feira",
+      "startTime": "19:00",
+      "endTime": "23:00",
+      "timezone": "America/Sao_Paulo",
+      "description": "Dia de Iemanjá (潮): Celebração do dia de Iemanjá, mãe de todos os Orixás. Cerimônia especial com gira de água.\n\nNatal de Iemanjá: Celebração do 'Natal' de Iemanjá. Uma das datas mais importantes para os seguidores de Umbanda e Candomblé.",
+      "eventType": 1,
+      "location": "Casa de Caridade Batuara",
+      "participants": [
+        "Assistência",
+        "Cambonos",
+        "Filhos do Orixá homenageado",
+        "Médiuns"
+      ],
+      "expectedParticipants": 180,
+      "status": "scheduled",
+      "holidayType": null,
+      "recurrence": null,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 4,
+      "slug": "aniversario-de-iemanja-2026-04-23",
+      "title": "Aniversário de Iemanjá",
+      "date": "2026-04-23",
+      "dayOfWeek": "Quinta-feira",
+      "startTime": "19:00",
+      "endTime": "23:00",
+      "timezone": "America/Sao_Paulo",
+      "description": "Comemoração do aniversário de Iemanjá, mãe querida de todos os filhos. Gira especial com oferendas ao mar.",
+      "eventType": 1,
+      "location": "Casa de Caridade Batuara",
+      "participants": [
+        "Assistência",
+        "Médiuns",
+        "Cambonos",
+        "Filhos do Orixá homenageado"
+      ],
+      "expectedParticipants": 180,
+      "status": "scheduled",
+      "holidayType": null,
+      "recurrence": null,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 5,
+      "slug": "dia-de-todos-os-santos-2026-05-01",
+      "title": "Dia de Todos os Santos",
+      "date": "2026-05-01",
+      "dayOfWeek": "Sexta-feira",
+      "startTime": "09:00",
+      "endTime": "18:00",
+      "timezone": "America/Sao_Paulo",
+      "description": "Celebração do Dia de Todos os Santos. Feriado religioso que coincide com a Linha de Oxalá.",
+      "eventType": 3,
+      "location": "Casa de Caridade Batuara",
+      "participants": [
+        "Assistência",
+        "Médiuns",
+        "Cambonos"
+      ],
+      "expectedParticipants": 90,
+      "status": "scheduled",
+      "holidayType": null,
+      "recurrence": null,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 6,
+      "slug": "dia-do-trabalho-2026-05-01",
+      "title": "Dia do Trabalho",
+      "date": "2026-05-01",
+      "dayOfWeek": "Sexta-feira",
+      "startTime": null,
+      "endTime": null,
+      "timezone": "America/Sao_Paulo",
+      "description": "Feriado nacional. Casa fechada para atendimento espiritual.",
+      "eventType": 3,
+      "location": "Casa fechada",
+      "participants": [
+        "Casa fechada"
+      ],
+      "expectedParticipants": 0,
+      "status": "cancelled",
+      "holidayType": "national",
+      "recurrence": null,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 7,
+      "slug": "festa-junina-de-sao-joao-2026-06-24",
+      "title": "Festa Junina de São João",
+      "date": "2026-06-24",
+      "dayOfWeek": "Quarta-feira",
+      "startTime": "19:00",
+      "endTime": "23:00",
+      "timezone": "America/Sao_Paulo",
+      "description": "Celebração de São João com bingo, quadrilha, comidas típicas e muito forró. Momento de fraternidade e alegria.",
+      "eventType": 1,
+      "location": "Casa de Caridade Batuara",
+      "participants": [
+        "Assistência",
+        "Médiuns",
+        "Cambonos"
+      ],
+      "expectedParticipants": 180,
+      "status": "scheduled",
+      "holidayType": null,
+      "recurrence": null,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 8,
+      "slug": "dia-de-ogum-2026-07-27",
+      "title": "Dia de Ogum",
+      "date": "2026-07-27",
+      "dayOfWeek": "Segunda-feira",
+      "startTime": "19:00",
+      "endTime": "22:00",
+      "timezone": "America/Sao_Paulo",
+      "description": "Celebração do dia de Ogum, Orixá guerreiro, senhor do ferro e das estradas. Gira especial com ofertas de ferro.",
+      "eventType": 1,
+      "location": "Casa de Caridade Batuara",
+      "participants": [
+        "Assistência",
+        "Médiuns",
+        "Cambonos",
+        "Filhos do Orixá homenageado"
+      ],
+      "expectedParticipants": 180,
+      "status": "scheduled",
+      "holidayType": null,
+      "recurrence": null,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 9,
+      "slug": "dia-de-nana-2026-08-15",
+      "title": "Dia de Nanã",
+      "date": "2026-08-15",
+      "dayOfWeek": "Sábado",
+      "startTime": "19:00",
+      "endTime": "22:00",
+      "timezone": "America/Sao_Paulo",
+      "description": "Celebração do dia de Nanã, Orixá anciã, senhora da sabedoria e dos mistérios da vida e morte.",
+      "eventType": 1,
+      "location": "Casa de Caridade Batuara",
+      "participants": [
+        "Assistência",
+        "Médiuns",
+        "Cambonos"
+      ],
+      "expectedParticipants": 180,
+      "status": "scheduled",
+      "holidayType": null,
+      "recurrence": null,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 10,
+      "slug": "dia-de-oxum-2026-08-16",
+      "title": "Dia de Oxum",
+      "date": "2026-08-16",
+      "dayOfWeek": "Domingo",
+      "startTime": "19:00",
+      "endTime": "22:00",
+      "timezone": "America/Sao_Paulo",
+      "description": "Celebração do dia de Oxum, Orixá do amor, da beleza e das águas doces. Gira especial com oferendas douradas.",
+      "eventType": 1,
+      "location": "Casa de Caridade Batuara",
+      "participants": [
+        "Assistência",
+        "Médiuns",
+        "Cambonos"
+      ],
+      "expectedParticipants": 180,
+      "status": "scheduled",
+      "holidayType": null,
+      "recurrence": null,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 11,
+      "slug": "dia-de-obaluae-2026-10-31",
+      "title": "Dia de Obaluaê",
+      "date": "2026-10-31",
+      "dayOfWeek": "Sábado",
+      "startTime": "19:00",
+      "endTime": "22:00",
+      "timezone": "America/Sao_Paulo",
+      "description": "Celebração do dia de Obaluaê, Orixá da cura e das doenças. Gira especial com preces pela saúde.",
+      "eventType": 1,
+      "location": "Casa de Caridade Batuara",
+      "participants": [
+        "Assistência",
+        "Médiuns",
+        "Cambonos"
+      ],
+      "expectedParticipants": 180,
+      "status": "scheduled",
+      "holidayType": null,
+      "recurrence": null,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 12,
+      "slug": "natal-de-iansa-natal-de-logun-ede-2026-12-08",
+      "title": "Natal de Iansã / Natal de Logun Edé",
+      "date": "2026-12-08",
+      "dayOfWeek": "Terça-feira",
+      "startTime": "19:00",
+      "endTime": "22:00",
+      "timezone": "America/Sao_Paulo",
+      "description": "Natal de Iansã: Celebração do Natal de Iansã. Data importante para os filhos desta Orixá guerreira.\n\nNatal de Logun Edé: Celebração do Natal de Logun Edé, Orixá da união entre força e amor.",
+      "eventType": 1,
+      "location": "Casa de Caridade Batuara",
+      "participants": [
+        "Assistência",
+        "Cambonos",
+        "Médiuns"
+      ],
+      "expectedParticipants": 180,
+      "status": "scheduled",
+      "holidayType": null,
+      "recurrence": null,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 13,
+      "slug": "natal-2026-12-25",
+      "title": "Natal",
+      "date": "2026-12-25",
+      "dayOfWeek": "Sexta-feira",
+      "startTime": "09:00",
+      "endTime": "12:00",
+      "timezone": "America/Sao_Paulo",
+      "description": "Celebração do Natal de Cristo. Feriado religioso. Momento de paz, fraternidade e reflexão.",
+      "eventType": 3,
+      "location": "Casa de Caridade Batuara",
+      "participants": [
+        "Assistência",
+        "Médiuns",
+        "Cambonos"
+      ],
+      "expectedParticipants": 90,
+      "status": "scheduled",
+      "holidayType": "national",
+      "recurrence": null,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    }
+  ],
+  "calendarioMensal": [
+    {
+      "month": 1,
+      "monthName": "Janeiro",
+      "entries": [
+        {
+          "date": "2026-01-20",
+          "dayOfWeek": "Terça-feira",
+          "label": "Dia de Oxóssi / São Sebastião",
+          "status": "scheduled",
+          "startTime": "09:00",
+          "endTime": "18:00",
+          "timezone": "America/Sao_Paulo",
+          "location": "Casa de Caridade Batuara",
+          "type": "evento-especial",
+          "holidayType": "religious",
+          "notes": "Cor de referência: Verde"
+        },
+        {
+          "date": "2026-01-20",
+          "dayOfWeek": "Terça-feira",
+          "label": "São Sebastião",
+          "status": "scheduled",
+          "startTime": "09:00",
+          "endTime": "18:00",
+          "timezone": "America/Sao_Paulo",
+          "location": "Casa de Caridade Batuara",
+          "type": "evento-especial",
+          "holidayType": "religious",
+          "notes": "Cor de referência: Verde"
+        }
+      ]
+    },
+    {
+      "month": 2,
+      "monthName": "Fevereiro",
+      "entries": [
+        {
+          "date": "2026-02-02",
+          "dayOfWeek": "Segunda-feira",
+          "label": "Natal de Iemanjá / Dia de Iemanjá",
+          "status": "scheduled",
+          "startTime": "19:00",
+          "endTime": "23:00",
+          "timezone": "America/Sao_Paulo",
+          "location": "Casa de Caridade Batuara",
+          "type": "evento-especial",
+          "holidayType": null,
+          "notes": "Cor de referência: Azul"
+        }
+      ]
+    },
+    {
+      "month": 3,
+      "monthName": "Março",
+      "entries": []
+    },
+    {
+      "month": 4,
+      "monthName": "Abril",
+      "entries": [
+        {
+          "date": "2026-04-23",
+          "dayOfWeek": "Quinta-feira",
+          "label": "Aniversário de Iemanjá",
+          "status": "scheduled",
+          "startTime": "19:00",
+          "endTime": "23:00",
+          "timezone": "America/Sao_Paulo",
+          "location": "Casa de Caridade Batuara",
+          "type": "evento-especial",
+          "holidayType": null,
+          "notes": "Cor de referência: Azul"
+        }
+      ]
+    },
+    {
+      "month": 5,
+      "monthName": "Maio",
+      "entries": [
+        {
+          "date": "2026-05-01",
+          "dayOfWeek": "Sexta-feira",
+          "label": "Dia do Trabalho / Todos os Santos",
+          "status": "scheduled",
+          "startTime": "09:00",
+          "endTime": "18:00",
+          "timezone": "America/Sao_Paulo",
+          "location": "Casa de Caridade Batuara",
+          "type": "evento-especial",
+          "holidayType": null,
+          "notes": "Cor de referência: Branco"
+        }
+      ]
+    },
+    {
+      "month": 6,
+      "monthName": "Junho",
+      "entries": [
+        {
+          "date": "2026-06-24",
+          "dayOfWeek": "Quarta-feira",
+          "label": "São João",
+          "status": "scheduled",
+          "startTime": "19:00",
+          "endTime": "23:00",
+          "timezone": "America/Sao_Paulo",
+          "location": "Casa de Caridade Batuara",
+          "type": "evento-especial",
+          "holidayType": null,
+          "notes": "Cor de referência: Vermelho"
+        }
+      ]
+    },
+    {
+      "month": 7,
+      "monthName": "Julho",
+      "entries": [
+        {
+          "date": "2026-07-27",
+          "dayOfWeek": "Segunda-feira",
+          "label": "Dia de Ogum",
+          "status": "scheduled",
+          "startTime": "19:00",
+          "endTime": "22:00",
+          "timezone": "America/Sao_Paulo",
+          "location": "Casa de Caridade Batuara",
+          "type": "evento-especial",
+          "holidayType": null,
+          "notes": "Cor de referência: Vermelho"
+        }
+      ]
+    },
+    {
+      "month": 8,
+      "monthName": "Agosto",
+      "entries": [
+        {
+          "date": "2026-08-15",
+          "dayOfWeek": "Sábado",
+          "label": "Dia de Nanã",
+          "status": "scheduled",
+          "startTime": "19:00",
+          "endTime": "22:00",
+          "timezone": "America/Sao_Paulo",
+          "location": "Casa de Caridade Batuara",
+          "type": "evento-especial",
+          "holidayType": null,
+          "notes": "Cor de referência: Lilás"
+        },
+        {
+          "date": "2026-08-16",
+          "dayOfWeek": "Domingo",
+          "label": "Dia de Oxum",
+          "status": "scheduled",
+          "startTime": "19:00",
+          "endTime": "22:00",
+          "timezone": "America/Sao_Paulo",
+          "location": "Casa de Caridade Batuara",
+          "type": "evento-especial",
+          "holidayType": null,
+          "notes": "Cor de referência: Dourado"
+        }
+      ]
+    },
+    {
+      "month": 9,
+      "monthName": "Setembro",
+      "entries": []
+    },
+    {
+      "month": 10,
+      "monthName": "Outubro",
+      "entries": [
+        {
+          "date": "2026-10-31",
+          "dayOfWeek": "Sábado",
+          "label": "Dia de Obaluaê",
+          "status": "scheduled",
+          "startTime": "19:00",
+          "endTime": "22:00",
+          "timezone": "America/Sao_Paulo",
+          "location": "Casa de Caridade Batuara",
+          "type": "evento-especial",
+          "holidayType": null,
+          "notes": "Cor de referência: Roxo"
+        }
+      ]
+    },
+    {
+      "month": 11,
+      "monthName": "Novembro",
+      "entries": []
+    },
+    {
+      "month": 12,
+      "monthName": "Dezembro",
+      "entries": [
+        {
+          "date": "2026-12-08",
+          "dayOfWeek": "Terça-feira",
+          "label": "Natal de Iansã / Logun Edé",
+          "status": "scheduled",
+          "startTime": "19:00",
+          "endTime": "22:00",
+          "timezone": "America/Sao_Paulo",
+          "location": "Casa de Caridade Batuara",
+          "type": "evento-especial",
+          "holidayType": null,
+          "notes": "Cor de referência: Amarelo"
+        },
+        {
+          "date": "2026-12-25",
+          "dayOfWeek": "Sexta-feira",
+          "label": "Natal",
+          "status": "scheduled",
+          "startTime": "09:00",
+          "endTime": "12:00",
+          "timezone": "America/Sao_Paulo",
+          "location": "Casa de Caridade Batuara",
+          "type": "evento-especial",
+          "holidayType": "national",
+          "notes": "Cor de referência: Branco"
+        }
+      ]
+    }
+  ],
+  "atendimentosRecorrentes": [
+    {
+      "id": "gira-umbanda-terca-2026",
+      "title": "Gira de Umbanda",
+      "description": "Atendimento semanal de Umbanda às terças-feiras.",
+      "frequency": "weekly",
+      "interval": 1,
+      "weekday": 1,
+      "startDate": "2026-01-06",
+      "endDate": "2026-12-29",
+      "startTime": "20:00",
+      "endTime": "22:00",
+      "timezone": "America/Sao_Paulo",
+      "location": "Casa de Caridade Batuara",
+      "attendanceType": 2,
+      "requiresRegistration": false,
+      "maxCapacity": null,
+      "observations": "Usar roupas brancas. Gira aberta ao público.",
+      "exclusions": [
+        "2026-02-17"
+      ]
+    },
+    {
+      "id": "atendimento-kardecista-quinta-2026",
+      "title": "Atendimento Kardecista",
+      "description": "Atendimento kardecista semanal às quintas-feiras.",
+      "frequency": "weekly",
+      "interval": 1,
+      "weekday": 3,
+      "startDate": "2026-01-01",
+      "endDate": "2026-12-31",
+      "startTime": "19:00",
+      "endTime": "21:00",
+      "timezone": "America/Sao_Paulo",
+      "location": "Casa de Caridade Batuara",
+      "attendanceType": 1,
+      "requiresRegistration": false,
+      "maxCapacity": null,
+      "observations": "Trazer água. Atendimento espiritual e passes.",
+      "exclusions": [
+        "2026-04-02"
+      ]
+    },
+    {
+      "id": "curso-desenvolvimento-domingo-2026",
+      "title": "Curso de Desenvolvimento Mediúnico",
+      "description": "Curso quinzenal de desenvolvimento mediúnico aos domingos.",
+      "frequency": "weekly",
+      "interval": 2,
+      "weekday": 6,
+      "startDate": "2026-01-04",
+      "endDate": "2026-12-27",
+      "startTime": "14:00",
+      "endTime": "17:00",
+      "timezone": "America/Sao_Paulo",
+      "location": "Casa de Caridade Batuara",
+      "attendanceType": 4,
+      "requiresRegistration": true,
+      "maxCapacity": 30,
+      "observations": "Inscrição obrigatória. Trazer caderno e caneta.",
+      "exclusions": [
+        "2026-04-05",
+        "2026-12-27"
+      ]
+    }
+  ],
+  "observacoes": [
+    "Eventos cancelados permanecem no JSON para rastreabilidade, mas são marcados com status cancelled.",
+    "Atendimentos recorrentes foram normalizados para suportar geração segura de seed com intervalo semanal e quinzenal."
+  ]
+}

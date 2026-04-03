@@ -10,7 +10,7 @@ namespace Batuara.Domain.Services
     {
         public bool HasTimeConflict(Event existingEvent, Event newEvent)
         {
-            if (!existingEvent.IsActive || !newEvent.IsActive || existingEvent.Id == newEvent.Id)
+            if (!existingEvent.IsActive || !newEvent.IsActive || (existingEvent.Id > 0 && newEvent.Id > 0 && existingEvent.Id == newEvent.Id))
                 return false;
 
             // Se as datas são diferentes, não há conflito
