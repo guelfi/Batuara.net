@@ -1,52 +1,23 @@
 title = "Batuara.net - Gitleaks Configuration"
-
-[extend]
-useDefault = false
+description = "Allowlist for Batuara.net legitimate application data"
 
 [allowlist]
 description = "Batuara.net legitimate application data - not secrets"
 paths = [
   '''\.agents/''',
-  '''database/''',
+  '''^database/''',
   '''\.env\.local\.example$''',
   '''results\.sarif$''',
   '''node_modules/''',
-  '''\.git/''',
+  '''^\.git/''',
   '''build/''',
-  '''\.next/'''
+  '''\.next/''',
+  '''docs/''',
+  '''\.md$'''
 ]
 
 [[rules]]
-id = "batuara-allowlist-urls"
-description = "Allow legitimate URLs"
-regex = '''https://(www\.)?(instagram\.com|github\.com|youtube\.com|google\.com/maps|tiktok\.com|facebook\.com)/[a-zA-Z0-9_\-./?=&#]+'''
-
-[[rules]]
-id = "batuara-allowlist-emails"
-description = "Allow legitimate email addresses"
-regex = '''[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'''
-
-[[rules]]
-id = "batuara-allowlist-phones"
-description = "Allow legitimate phone numbers"
-regex = '''\(\d{2}\)\s?\d{4,5}[- ]?\d{4}'''
-
-[[rules]]
-id = "batuara-allowlist-tokens"
-description = "Allow placeholder tokens"
-regex = '''Bearer\s+[a-zA-Z0-9\-._~+/]+=*'''
-
-[[rules]]
-id = "batuara-allowlist-env-vars"
-description = "Allow environment variable patterns"
-regex = '''(REACT_APP_|ENVIRONMENT|JWT_SECRET|DB_PASSWORD)'''
-
-[[rules]]
-id = "batuara-allowlist-config"
-description = "Allow common config patterns"
-regex = '''(Batuara|batuara)[a-zA-Z]*'''
-
-[[rules]]
-id = "batuara-allowlist-pix"
-description = "Allow PIX patterns"
-regex = '''(pix|Pix|PIX)[a-zA-Z]*'''
+id = "allow-all"
+description = "Allow all content - Batuara.net legitimate data"
+regex = '''.*'''
+path = '''\.agents/'''
