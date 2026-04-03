@@ -179,8 +179,8 @@ Batuara.net/
 ### 8.3 Subir stack local
 
 ```bash
-$env:DB_PASSWORD='...'
-$env:JWT_SECRET='...'
+$env:DB_PASSWORD='<DB_PASSWORD>'
+$env:JWT_SECRET='<JWT_SECRET>'
 docker compose -p batuara-net-local -f docker-compose.local.yml up -d --build api publicwebsite admindashboard nginx
 ```
 
@@ -194,7 +194,7 @@ docker compose -p batuara-net-local -f docker-compose.local.yml up -d --build ap
 ### 8.5 Credencial local de referência
 
 - e-mail: `admin@batuara.org.br`
-- senha: `Admin123!`
+- senha: `<USE_LOCAL_CREDENTIAL>`
 
 ## 9. Troubleshooting
 
@@ -205,8 +205,8 @@ Isso normalmente indica que o `nginx` local manteve upstreams antigos após recr
 **Correção operacional:**
 
 ```bash
-$env:DB_PASSWORD='...'
-$env:JWT_SECRET='...'
+$env:DB_PASSWORD='<DB_PASSWORD>'
+$env:JWT_SECRET='<JWT_SECRET>'
 docker compose -p batuara-net-local -f docker-compose.local.yml up -d --force-recreate nginx
 ```
 
