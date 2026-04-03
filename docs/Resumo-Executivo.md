@@ -1,63 +1,181 @@
 # Resumo Executivo — Batuara.net
 
-## Objetivos
+**Versão do documento:** 2026.04.03  
+**Status:** Atualizado conforme a implementação corrente  
+**Público-alvo:** stakeholders, liderança técnica, onboarding executivo
 
-- Publicar e estabilizar uma API RESTful sob “/batuara-api” para alimentar PublicWebsite e AdminDashboard.
-- Implementar segurança em profundidade: MFA, RBAC, rate limiting, WAF, SIEM e pentests no pipeline.
-- Cumprir SLAs: p95 ≤ 200ms; p99 ≤ 400ms; throughput alvo ≥ 1000 req/s (edge) com escalabilidade.
+## 1. Visão Geral
 
-## Escopo
+O Batuara.net está operando como uma plataforma web com três pilares:
 
-- Incluídos
-  - Endpoints públicos de leitura: eventos, calendário, orixás, linhas, conteúdos espirituais, site settings e localização.
-  - Ações públicas controladas: contato e inscrição em atendimento (quando habilitado).
-  - CRUD Admin: eventos, calendário, orixás, linhas, conteúdos espirituais, site settings.
-  - Segurança e observabilidade: MFA/RBAC, rate limit, WAF, SIEM, logs estruturados.
-  - Documentação OpenAPI 3.0 (Swagger protegido em produção).
-- Excluídos
-  - Pagamentos/donativos online; notificações push em tempo real.
-  - App mobile nativo; moderação avançada de mídia.
+- **Batuara.API** em .NET 8
+- **PublicWebsite** em React 19 + MUI 7
+- **AdminDashboard** em React 19 + MUI 7
 
-## Benefícios e KPIs
+O projeto já possui autenticação funcional, módulos de conteúdo, calendário, eventos, Orixás, Guias, Linhas da Umbanda, conteúdos espirituais, Filhos da Casa, localização, doações institucionais e mensagens de contato.
 
-- Redução de retrabalho de integração: -30% defeitos por contratos padronizados.
-- Experiência do usuário: p95 ≤ 200ms, maior engajamento nas seções dinâmicas (+20% tempo de permanência).
-- Segurança operacional: redução de superfície de ataque com MFA/RBAC/WAF/rate limit e pentests por commit.
-- Observabilidade: MTTR -40% via logs correlacionados (traceId, userId, IP, userAgent) e SIEM.
+## 2. Resumo do Estado Atual
 
-## Riscos e Mitigações
+### 2.1 Entregas Já Implementadas
 
-- Expansão de escopo (novos domínios): backlog priorizado; gates de decisão.
-- Performance em picos: HPA, cache Nginx/ETag, otimizações DB e DTOs de listagem.
-- Segurança/WAF: hardening contínuo; ZAP baseline, SAST e dependency scanning por commit.
-- Dados legados/migrações: seeds controlados; validações e smoke tests em staging.
+- API REST publicada sob `/batuara-api`
+- Reverse proxy local/produtivo com Nginx
+- CRUD administrativo de:
+  - eventos
+  - calendário
+  - Orixás
+  - Guias e Entidades
+  - Linhas da Umbanda
+  - conteúdos espirituais
+  - Filhos da Casa
+  - configurações institucionais
+- Experiência pública consumindo dados reais da API
+- Swagger e health check operacionais em ambiente local
 
-## Cronograma Macro (10 dias úteis, revisões a cada 3 dias)
+### 2.2 Mudanças Recentes de Maior Impacto
 
-- D0–D2: Contratos, OpenAPI, DTOs, rate limiting básico, políticas de acesso e revisão do Swagger em produção.
-- D3: Revisão 1 com stakeholders; ajustes.
-- D4–D6: Núcleo — SiteSettings, Events, Contact.
-- D6: Revisão 2; smoke tests de SLA/segurança em staging.
-- D7–D9: Orixás, UmbandaLines, SpiritualContents; Calendar (P1); Dashboard/Auditoria.
-- D9: Revisão 3; testes de desempenho e segurança.
-- D10: MFA/RBAC granular, WAF/SIEM, hardening avançado; aprovação final e go/no-go.
+- **Centralização institucional em `SiteSettings`**
+  - história
+  - missão
+  - contato
+  - localização
+  - redes sociais
+  - PIX e dados bancários
+- **Seção “Nossa História” simplificada no AdminDashboard**
+  - editor textual em tela cheia
+  - remoção de preview dividido
+  - remoção de imagem e vídeo
+  - conteúdo padrão institucional atualizado
+- **Ajustes no PublicWebsite**
+  - localização e rodapé alinhados aos dados da API pública
+  - calendário público simplificado, sem badge numérico diário
 
-> **Nota:** Segurança avançada (MFA, RBAC granular, WAF/SIEM) foi realocada para o final (Bloco 6.4) conforme ROADMAP.md. A fundação técnica (D0–D2) inclui rate limiting básico e políticas de acesso.
+## 3. Destaques Técnicos
 
-## Gates de Decisão
+### 3.1 Endpoints Estratégicos
 
-- Gate 1 (D3): Aprovação de contratos e segurança base.
-- Gate 2 (D6): Aprovação do núcleo funcional (SiteSettings, Events, Contact).
-- Gate Final (D10): Aprovação operacional (SLA, segurança, pentest).
+- `GET /batuara-api/health`
+- `GET /batuara-api/swagger`
+- `POST /batuara-api/api/auth/login`
+- `GET /batuara-api/api/site-settings/public`
+- `PUT /batuara-api/api/site-settings`
+- `GET /batuara-api/api/public/calendar/attendances`
+- `GET/POST /batuara-api/api/events`
 
-## Alinhamentos Técnicos Obrigatórios
+### 3.2 Alterações de Banco de Dados
 
-- Prefixo `/batuara-api` em todas as rotas.
-- MFA TOTP (fallback SMS; suporte futuro a biometria/WebAuthn) para Admin.
-- RBAC granular por endpoint; rate limiting por IP (100 req/h) e por token (1000 req/h).
-- Validações robustas contra OWASP Top 10; sanitização/encoding; proteção IDOR; transações atômicas para capacidade.
-- Criptografia: TLS 1.3; AES-256 em repouso quando aplicável; segredos no Vault (sem código).
-- Headers de segurança (CSP/HSTS/XFO/XCTO) e Swagger protegido em produção.
-- SIEM/Logs: Serilog JSON com correlação; alertas no SOC.
-- WAF (OCI) em frente ao LB com regras de SQLi/XSS e bot management.
+As últimas mudanças estruturais relevantes foram:
+
+- criação e expansão de `SiteSettings`
+- criação de `ContactMessages`
+- criação de `Guides`
+- criação de `HouseMembers`
+- criação de `HouseMemberContributions`
+- inclusão de `HistoryMissionText`
+- remoção de `HistoryImageUrl` e `HistoryVideoUrl`
+
+## 4. Arquitetura e Integrações
+
+```mermaid
+flowchart LR
+  User["Usuário"] --> N["Nginx"]
+  N --> W["PublicWebsite"]
+  N --> D["AdminDashboard"]
+  N --> A["Batuara.API"]
+  A --> P[("PostgreSQL")]
+```
+
+### 4.1 Pontos de Integração
+
+- **AdminDashboard ↔ API:** autenticação, CMS e CRUDs
+- **PublicWebsite ↔ API:** conteúdo institucional, agenda e conteúdo espiritual
+- **API ↔ PostgreSQL:** persistência relacional e migrations
+- **Nginx ↔ serviços internos:** roteamento por path base
+
+## 5. Dependências e Configuração
+
+### 5.1 Dependências-Chave
+
+- .NET 8
+- React 19
+- Material UI 7
+- TanStack Query 5
+- PostgreSQL
+- Docker Compose
+- Nginx
+
+### 5.2 Variáveis Críticas
+
+- `DB_PASSWORD`
+- `JWT_SECRET`
+- `REACT_APP_API_URL_PUBLIC`
+- `REACT_APP_API_URL_ADMIN`
+- `ENVIRONMENT`
+
+## 6. Deploy e Operação
+
+### 6.1 Procedimento Local
+
+```bash
+$env:DB_PASSWORD='...'
+$env:JWT_SECRET='...'
+docker compose -p batuara-net-local -f docker-compose.local.yml up -d --build api publicwebsite admindashboard nginx
+```
+
+### 6.2 Observação Operacional
+
+Quando containers são recriados, o `nginx` local pode manter upstreams desatualizados.  
+Nesses casos, o procedimento operacional correto é:
+
+```bash
+$env:DB_PASSWORD='...'
+$env:JWT_SECRET='...'
+docker compose -p batuara-net-local -f docker-compose.local.yml up -d --force-recreate nginx
+```
+
+## 7. Benefícios Atuais
+
+- **Menor retrabalho** entre frontend e backend por contratos centralizados
+- **Melhor governança de conteúdo** via `SiteSettings`
+- **Onboarding técnico mais rápido** com estrutura clara de rotas, docs e deploy
+- **Operação local mais previsível** com stack Docker padronizada
+
+## 8. Riscos e Atenções
+
+- Ainda existe documentação histórica que citava mídia em “Nossa História”; isso exigiu atualização cruzada
+- Mudanças em `SiteSettings` impactam simultaneamente:
+  - DTOs
+  - validators
+  - telas admin
+  - seções públicas
+  - migrations
+- Rebuilds locais podem exigir recriação do `nginx`
+
+## 9. Uso e Referências
+
+### 9.1 Verificação Rápida
+
+```bash
+curl http://localhost/batuara-api/health
+curl http://localhost/batuara-api/swagger
+curl http://localhost/batuara-public/
+curl http://localhost/batuara-admin/
+```
+
+### 9.2 Referências Cruzadas
+
+- `docs/EFT-especificacao-funcional-tecnica.md`
+- `docs/STATUS-PROJETO.md`
+- `docs/Backlog-Executavel.md`
+- `docs/TASK_HISTORY.md`
+- `agent.md`
+
+## 10. Change Log
+
+### 2026.04.03
+
+- Atualizado para refletir a arquitetura real em produção e ambiente local
+- Incluídas mudanças recentes de `SiteSettings` e da seção “Nossa História”
+- Incluídas mudanças de schema e observações operacionais de deploy local
+- Ajustadas integrações, dependências e referências para onboarding executivo
 

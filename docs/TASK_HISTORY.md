@@ -2,6 +2,9 @@
 
 Este arquivo mantém o histórico de tarefas resolvidas e o status de implementação do projeto Batuara.net.
 
+**Última atualização:** 2026.04.03  
+**Escopo:** mudanças implementadas, deploy local, troubleshooting e validações recentes
+
 ## ✅ Tarefas Resolvidas (Sessão Anterior - Autenticação e UI)
 
 ### Análise do Projeto
@@ -50,3 +53,59 @@ Todas as tarefas acima foram verificadas e confirmadas como implementadas confor
 1. **Autenticação**: Login, Logout, Refresh Token, Proteção de Rotas.
 2. **Segurança**: Senhas com Hash, Proteção CSRF, Rate Limiting.
 3. **UI/UX**: Dashboard responsivo, Cards estatísticos ajustados.
+
+## ✅ Tarefas Resolvidas (Sessão Atual - Conteúdo, Localização, Calendário e Admin)
+
+### PublicWebsite — Ajustes de Conteúdo e Layout
+- [x] Calendário: remover contador numérico por dia e simplificar a UI
+- [x] Localização: consolidar exibição do endereço em formato único e corrigir texto introdutório
+- [x] Rodapé: alterar cor de fundo, simplificar redes sociais para Instagram e alinhar endereço/e-mail
+- [x] Orixás: remover cards adicionais inferiores mantendo apenas o carrossel principal
+- [x] Doações: remover bloco de campos “PIX / Banco / CNPJ / Agência / Conta / Tipo” na UI pública
+
+### API / SiteSettings — Ajustes de Contrato e Dados
+- [x] SiteSettings público: adicionar fallbacks para dados institucionais e localização (endereço, Instagram, mapa)
+- [x] Normalização: garantir URL de Instagram sem querystring e extração estável do handle
+- [x] Migrações: remover campos de mídia da história (`HistoryImageUrl`, `HistoryVideoUrl`)
+
+### AdminDashboard — Nossa História
+- [x] Header: remover bordas arredondadas e garantir preenchimento consistente no topo
+- [x] Remover campos: excluir imagem e vídeo do formulário de Nossa História (frontend, backend e banco)
+- [x] Remover preview: eliminar a interface dividida e manter apenas editor textual em tela cheia
+- [x] Conteúdo padrão: definir texto institucional como conteúdo padrão no editor
+- [x] Correção de salvamento: evitar erro de validação quando `historyTitle` vier vazio/whitespace
+- [x] Toolbar do editor: remover o botão Link
+- [x] Troubleshooting de 502: diagnóstico e recriação do Nginx local para restabelecer PublicWebsite/Swagger/Admin
+
+### Operação Local — Deploy e Troubleshooting
+- [x] Deploy local via Docker Compose: rebuild de API, PublicWebsite e AdminDashboard
+- [x] Correção de 502: recriar container do Nginx quando upstreams ficam desatualizados após rebuild
+
+## 📌 Notas de Compatibilidade e Rotas
+
+- Base da API: `/batuara-api` (PathBase), com rotas em `/batuara-api/api/*`
+- PublicWebsite: `/batuara-public/`
+- AdminDashboard: `/batuara-admin/`
+
+## 🔧 Dependências e Procedimentos Validados
+
+- Docker Compose local
+- Nginx como proxy das três superfícies (`public`, `admin`, `api`)
+- PostgreSQL com migrations da solução backend
+- `dotnet test` para regressão de serviços
+- `npm run build` para validação dos frontends
+
+## 🧪 Exemplos de Verificação
+
+```bash
+curl http://localhost/batuara-api/health
+curl http://localhost/batuara-api/swagger
+curl http://localhost/batuara-public/
+```
+
+## 🔗 Referências Cruzadas
+
+- `docs/STATUS-PROJETO.md`
+- `docs/Backlog-Executavel.md`
+- `docs/EFT-especificacao-funcional-tecnica.md`
+- `agent.md`

@@ -1,0 +1,1446 @@
+{
+  "meta": {
+    "schemaVersion": "1.0.0",
+    "datasetVersion": "2026.04.02",
+    "source": "Consolidação validada dos dados estruturados do PublicWebsite.",
+    "sourceDocuments": [
+      "dados-publicwebsite.json"
+    ],
+    "createdAt": "2026-04-02T12:00:00Z",
+    "updatedAt": "2026-04-02T12:00:00Z",
+    "totalOrixas": 15,
+    "totalGuias": 8,
+    "totalLinhas": 7,
+    "totalOracoes": 4
+  },
+  "orixas": [
+    {
+      "id": 1,
+      "slug": "oxala",
+      "name": "Oxalá",
+      "description": "Oxalá tem origem na tradição Yorubá da África, onde é conhecido como Obatalá.",
+      "origin": "Oxalá tem origem na tradição Yorubá da África, onde é conhecido como Obatalá. É considerado o criador da humanidade e o pai de todos os Orixás.",
+      "batuaraTeaching": "Na Casa Batuara, Oxalá é reverenciado como o grande pai, aquele que nos ensina a humildade, a paciência e o amor incondicional. Seus ensinamentos nos mostram que através da paz interior e da pureza de coração podemos alcançar a elevação espiritual.",
+      "displayOrder": 1,
+      "characteristics": [
+        "Paciência",
+        "Sabedoria",
+        "Pureza",
+        "Paz",
+        "Criação",
+        "Paternidade",
+        "Humildade",
+        "Amor incondicional"
+      ],
+      "colors": [
+        "Branco",
+        "Azul claro"
+      ],
+      "elements": [
+        "Ar",
+        "Éter",
+        "Luz"
+      ],
+      "element": "Ar",
+      "habitat": "Campo aberto / planície",
+      "atuacao": "Espiritualidade",
+      "saudacao": "Epa babá",
+      "simbolo": "Pomba Branca",
+      "cor": "Branco",
+      "diaSemana": "Sexta",
+      "fruta": "Uva Branca",
+      "comida": "Canjica",
+      "bebida": "Champagne Branca",
+      "dataComemoracao": "Não especificada",
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "notes": "Registro validado a partir do arquivo estruturado consolidado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 2,
+      "slug": "iemanja",
+      "name": "Iemanjá",
+      "description": "Iemanjá tem origem na tradição Yorubá, onde é conhecida como Yemoja.",
+      "origin": "Iemanjá tem origem na tradição Yorubá, onde é conhecida como Yemoja. É a divindade dos rios e mares, mãe de muitos Orixás e protetora das mulheres e crianças.",
+      "batuaraTeaching": "A Casa Batuara tem especial devoção à Iemanjá, nossa mãe querida. Ela nos ensina o amor incondicional de mãe, a proteção aos necessitados e a importância da família espiritual.",
+      "displayOrder": 2,
+      "characteristics": [
+        "Maternidade",
+        "Proteção",
+        "Fertilidade",
+        "Amor maternal",
+        "Cura",
+        "Acolhimento",
+        "Generosidade",
+        "Compaixão"
+      ],
+      "colors": [
+        "Azul",
+        "Branco",
+        "Azul marinho",
+        "Prata"
+      ],
+      "elements": [
+        "Água",
+        "Mar",
+        "Rios",
+        "Conchas"
+      ],
+      "element": "Água",
+      "habitat": "Mar - Praia",
+      "atuacao": "Família",
+      "saudacao": "Odocya",
+      "simbolo": "Pérola ou estrela do Mar",
+      "cor": "Azul",
+      "diaSemana": "Sábado",
+      "fruta": "Mamão Papaya",
+      "comida": "Peixe",
+      "bebida": "Champagne Branca",
+      "dataComemoracao": "23 de Abril / 02 de Fevereiro",
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "notes": "Registro validado a partir do arquivo estruturado consolidado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 3,
+      "slug": "nana",
+      "name": "Nanã",
+      "description": "Nanã é uma das mais antigas Orixás femininas, conhecida como senhora da sabedoria ancestral e dos mistérios da vida e morte.",
+      "origin": "Nanã é uma das mais antigas Orixás femininas, conhecida como senhora da sabedoria ancestral e dos mistérios da vida e morte.",
+      "batuaraTeaching": "Na Casa Batuara, Nanã é reverenciada como a anciã sábia, aquela que guarda os segredos da vida e da morte, ensinando-nos a respeitar todos os ciclos da existência.",
+      "displayOrder": 3,
+      "characteristics": [
+        "Sabedoria",
+        "Tradição",
+        "Paciência",
+        "Mistério",
+        "Respeito aos antepassados"
+      ],
+      "colors": [
+        "Lilás",
+        "Roxo"
+      ],
+      "elements": [
+        "Água",
+        "Lama",
+        "Terra"
+      ],
+      "element": "Água",
+      "habitat": "Areia molhada da praia (cavar)",
+      "atuacao": "Emoções",
+      "saudacao": "Salupa Nanã",
+      "simbolo": "Vassoura de palha da Costa",
+      "cor": "Lilás",
+      "diaSemana": "Sábado",
+      "fruta": "Romã",
+      "comida": "Água Salgada Casquinha Siri",
+      "bebida": "Champagne Branca",
+      "dataComemoracao": "15 de Agosto",
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "notes": "Registro validado a partir do arquivo estruturado consolidado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 4,
+      "slug": "oxum",
+      "name": "Oxum",
+      "description": "Oxum é a Orixá das águas doces, dos rios e cachoeiras, conhecida como a senhora do ouro e do amor.",
+      "origin": "Oxum é a Orixá das águas doces, dos rios e cachoeiras, conhecida como a senhora do ouro e do amor.",
+      "batuaraTeaching": "Na Casa Batuara, Oxum é muito querida por suas qualidades de amor, beleza e fertilidade. Ela nos ensina a valorizar a doçura da vida e a beleza interior.",
+      "displayOrder": 4,
+      "characteristics": [
+        "Amor",
+        "Beleza",
+        "Fertilidade",
+        "Doçura",
+        "Prosperidade"
+      ],
+      "colors": [
+        "Dourado",
+        "Amarelo"
+      ],
+      "elements": [
+        "Água doce",
+        "Ouro",
+        "Rios"
+      ],
+      "element": "Água",
+      "habitat": "Rio",
+      "atuacao": "Amor – Fertilidade",
+      "saudacao": "Aiê iê ô",
+      "simbolo": "Ouro",
+      "cor": "Dourado",
+      "diaSemana": "Sábado",
+      "fruta": "Melão",
+      "comida": "Peixe água doce",
+      "bebida": "Champagne Branca",
+      "dataComemoracao": "16 de Agosto",
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "notes": "Registro validado a partir do arquivo estruturado consolidado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 5,
+      "slug": "ogum",
+      "name": "Ogum",
+      "description": "Ogum é uma das divindades mais antigas da tradição Yorubá, conhecido como o senhor do ferro e da guerra.",
+      "origin": "Ogum é uma das divindades mais antigas da tradição Yorubá, conhecido como o senhor do ferro e da guerra.",
+      "batuaraTeaching": "A Casa Batuara ensina que Ogum é o grande trabalhador, aquele que nos mostra a importância do esforço e da dedicação para alcançar nossos objetivos.",
+      "displayOrder": 5,
+      "characteristics": [
+        "Trabalho",
+        "Perseverança",
+        "Coragem",
+        "Determinação",
+        "Proteção",
+        "Liderança",
+        "Honestidade",
+        "Força de vontade"
+      ],
+      "colors": [
+        "Azul escuro",
+        "Vermelho",
+        "Verde escuro"
+      ],
+      "elements": [
+        "Ferro",
+        "Metal",
+        "Terra",
+        "Fogo"
+      ],
+      "element": "Fogo",
+      "habitat": "Estrada",
+      "atuacao": "Batalha",
+      "saudacao": "Ogunhê",
+      "simbolo": "Espada de aço",
+      "cor": "Vermelho",
+      "diaSemana": "Quinta",
+      "fruta": "Lima da Pérsia",
+      "comida": "Feijoada",
+      "bebida": "Cerveja",
+      "dataComemoracao": "20 de Janeiro / 27 de Julho",
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "notes": "Registro validado a partir do arquivo estruturado consolidado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 6,
+      "slug": "oxossi",
+      "name": "Oxóssi",
+      "description": "Oxóssi é o Orixá caçador, senhor das matas e da fartura, conhecido por sua sabedoria e conexão com a natureza.",
+      "origin": "Oxóssi é o Orixá caçador, senhor das matas e da fartura, conhecido por sua sabedoria e conexão com a natureza.",
+      "batuaraTeaching": "Na Casa Batuara, Oxóssi é reverenciado como o provedor, aquele que nos ensina a buscar o conhecimento e a viver em harmonia com a natureza.",
+      "displayOrder": 6,
+      "characteristics": [
+        "Sabedoria",
+        "Conhecimento",
+        "Prosperidade",
+        "Caça",
+        "Natureza",
+        "Fartura"
+      ],
+      "colors": [
+        "Verde",
+        "Azul"
+      ],
+      "elements": [
+        "Mata",
+        "Terra",
+        "Arco"
+      ],
+      "element": "Terra",
+      "habitat": "Mata",
+      "atuacao": "Prosperidade/fartura",
+      "saudacao": "Oxossi ê",
+      "simbolo": "Arco e flecha",
+      "cor": "Verde",
+      "diaSemana": "Terça",
+      "fruta": "Goiaba",
+      "comida": "Caça",
+      "bebida": "Cerveja",
+      "dataComemoracao": "20 de Janeiro",
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "notes": "Registro validado a partir do arquivo estruturado consolidado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 7,
+      "slug": "xango",
+      "name": "Xangô",
+      "description": "Xangô é o Orixá da justiça, do fogo e do trovão, conhecido como o rei poderoso que pune os injustos e protege os oprimidos.",
+      "origin": "Xangô é o Orixá da justiça, do fogo e do trovão, conhecido como o rei poderoso que pune os injustos e protege os oprimidos.",
+      "batuaraTeaching": "A Casa Batuara ensina que Xangô é a personificação da justiça divina, nos mostrando que toda ação tem consequências e que a verdade sempre prevalece.",
+      "displayOrder": 7,
+      "characteristics": [
+        "Justiça",
+        "Equilíbrio",
+        "Autoridade",
+        "Fogo",
+        "Trovão",
+        "Determinação"
+      ],
+      "colors": [
+        "Marrom",
+        "Vermelho",
+        "Branco"
+      ],
+      "elements": [
+        "Fogo",
+        "Pedra",
+        "Trovão"
+      ],
+      "element": "Terra",
+      "habitat": "Pedra",
+      "atuacao": "Justiça",
+      "saudacao": "Kao Kabecile",
+      "simbolo": "Machado de pedra",
+      "cor": "Marrom",
+      "diaSemana": "Quarta",
+      "fruta": "Banana da terra",
+      "comida": "Rabada c/ guiabo",
+      "bebida": "Cerveja Preta",
+      "dataComemoracao": "04 de Dezembro",
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "notes": "Registro validado a partir do arquivo estruturado consolidado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 8,
+      "slug": "iansa",
+      "name": "Iansã",
+      "description": "Iansã, conhecida como Oyá na tradição Yorubá, é a divindade dos ventos e tempestades.",
+      "origin": "Iansã, conhecida como Oyá na tradição Yorubá, é a divindade dos ventos e tempestades. É esposa de Xangô e uma das mais respeitadas guerreiras entre os Orixás.",
+      "batuaraTeaching": "Na Casa Batuara, Iansã é reverenciada como a guerreira da luz, aquela que nos ensina a coragem para enfrentar as adversidades da vida.",
+      "displayOrder": 8,
+      "characteristics": [
+        "Coragem",
+        "Justiça",
+        "Determinação",
+        "Liderança",
+        "Proteção",
+        "Transformação",
+        "Força",
+        "Independência"
+      ],
+      "colors": [
+        "Amarelo",
+        "Vermelho",
+        "Coral",
+        "Dourado"
+      ],
+      "elements": [
+        "Vento",
+        "Tempestade",
+        "Raio",
+        "Fogo"
+      ],
+      "element": "Ar",
+      "habitat": "Queda da cachoeira",
+      "atuacao": "Transformação",
+      "saudacao": "Eparrey",
+      "simbolo": "Espada",
+      "cor": "Alaranjado",
+      "diaSemana": "Quarta",
+      "fruta": "Manga",
+      "comida": "Acarajé",
+      "bebida": "Champagne Branca",
+      "dataComemoracao": "08 de Dezembro",
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "notes": "Registro validado a partir do arquivo estruturado consolidado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 9,
+      "slug": "obaluae",
+      "name": "Obaluaê",
+      "description": "Obaluaê é o Orixá da cura e das doenças, também conhecido como Omolu.",
+      "origin": "Obaluaê é o Orixá da cura e das doenças, também conhecido como Omolu. É considerado o médico dos Orixás e senhor da vida e da morte.",
+      "batuaraTeaching": "Na Casa Batuara, Obaluaê é reverenciado como o grande curador, aquele que nos ensina que a saúde é o maior bem e que devemos cuidar do corpo e da alma.",
+      "displayOrder": 9,
+      "characteristics": [
+        "Cura",
+        "Saúde",
+        "Doenças",
+        "Renovação",
+        "Ciclo da vida"
+      ],
+      "colors": [
+        "Roxo",
+        "Preto",
+        "Vermelho"
+      ],
+      "elements": [
+        "Terra",
+        "Lama",
+        "Palha"
+      ],
+      "element": "Terra",
+      "habitat": "Cemitério",
+      "atuacao": "Saúde",
+      "saudacao": "Atoto Obaluaê",
+      "simbolo": "Palha da costa",
+      "cor": "Roxo",
+      "diaSemana": "Segunda",
+      "fruta": "Pinha",
+      "comida": "Carne de porco",
+      "bebida": "Vinho Branco",
+      "dataComemoracao": "31 de Outubro",
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "notes": "Registro validado a partir do arquivo estruturado consolidado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 10,
+      "slug": "exu",
+      "name": "Exu",
+      "description": "Exu é o Orixá mensageiro, guardião dos caminhos e das encruzilhadas.",
+      "origin": "Exu é o Orixá mensageiro, guardião dos caminhos e das encruzilhadas. É o comunicador entre os mundos espiritual e material.",
+      "batuaraTeaching": "Na Casa Batuara, Exu é reverenciado como o mensageiro essencial, aquele que abre os caminhos e permite a comunicação entre o céu e a terra.",
+      "displayOrder": 10,
+      "characteristics": [
+        "Comunicação",
+        "Caminhos",
+        "Encruzilhadas",
+        "Movimento",
+        "Equilíbrio"
+      ],
+      "colors": [
+        "Vermelho",
+        "Preto"
+      ],
+      "elements": [
+        "Terra",
+        "Tridente"
+      ],
+      "element": "Terra",
+      "habitat": "Encruzilhada 4 pontas",
+      "atuacao": "Caminho",
+      "saudacao": "Laroye Exu",
+      "simbolo": "Tridente",
+      "cor": "Vermelho",
+      "diaSemana": "Segunda",
+      "fruta": "Figo da India",
+      "comida": "Figado ou Miudos de Frango",
+      "bebida": "Pinga",
+      "dataComemoracao": "25 de Dezembro",
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "notes": "Registro validado a partir do arquivo estruturado consolidado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 11,
+      "slug": "pomba-gira",
+      "name": "Pomba Gira",
+      "description": "Pomba Gira é uma entidade feminina associada a Exu, senhora das encruzilhadas e dos mistérios femininos.",
+      "origin": "Pomba Gira é uma entidade feminina associada a Exu, senhora das encruzilhadas e dos mistérios femininos.",
+      "batuaraTeaching": "Na Casa Batuara, Pomba Gira é reverenciada como a guardiã dos mistérios femininos, ensinando-nos sobre a dualidade e o poder da energia feminina.",
+      "displayOrder": 11,
+      "characteristics": [
+        "Mistério",
+        "Feminilidade",
+        "Amor",
+        "Encantamento",
+        "Dualidade"
+      ],
+      "colors": [
+        "Preto",
+        "Vermelho",
+        "Rosa"
+      ],
+      "elements": [
+        "Terra",
+        "Tridente"
+      ],
+      "element": "Terra",
+      "habitat": "Encruzilhada 3 pontas ou T",
+      "atuacao": "Caminho",
+      "saudacao": "Laroye Pomba gira",
+      "simbolo": "Tridente c/ 2 pontas",
+      "cor": "Preto",
+      "diaSemana": "Segunda",
+      "fruta": "Figo ou Pera",
+      "comida": "Figado ou Miudos de Frango",
+      "bebida": "Champagne Vermelha",
+      "dataComemoracao": "Não especificada",
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "notes": "Registro validado a partir do arquivo estruturado consolidado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 12,
+      "slug": "ossain",
+      "name": "Ossain",
+      "description": "Ossain é o Orixá das folhas e ervas medicinais, senhor do conhecimento das plantas curativas.",
+      "origin": "Ossain é o Orixá das folhas e ervas medicinais, senhor do conhecimento das plantas curativas.",
+      "batuaraTeaching": "Na Casa Batuara, Ossain é reverenciado como o mestre das ervas, ensinando-nos sobre as propriedades medicinais das plantas e a cura natural.",
+      "displayOrder": 12,
+      "characteristics": [
+        "Cura",
+        "Ervas",
+        "Medicina",
+        "Conhecimento ancestral",
+        "Natureza"
+      ],
+      "colors": [
+        "Verde",
+        "Marrom"
+      ],
+      "elements": [
+        "Ervas",
+        "Terra",
+        "Folhas"
+      ],
+      "element": "Terra",
+      "habitat": "Ervas Rasteiras",
+      "atuacao": "Cura",
+      "saudacao": "Ewê Ossain",
+      "simbolo": "Folhas e ervas",
+      "cor": "Verde",
+      "diaSemana": "Terça",
+      "fruta": "Ervas medicinais",
+      "comida": "Preparados com ervas",
+      "bebida": "Cerveja",
+      "dataComemoracao": "02 de Fevereiro",
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "notes": "Registro validado a partir do arquivo estruturado consolidado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 13,
+      "slug": "oxumare",
+      "name": "Oxumarê",
+      "description": "Oxumarê é o Orixá da transformação, do movimento e da renovação.",
+      "origin": "Oxumarê é o Orixá da transformação, do movimento e da renovação. Representa o arco-íris e a serpente.",
+      "batuaraTeaching": "Na Casa Batuara, Oxumarê é reverenciado como o renovador, aquele que nos ensina que toda situação pode ser transformada e que a esperança sempre retorna.",
+      "displayOrder": 13,
+      "characteristics": [
+        "Renovação",
+        "Transformação",
+        "Movimento",
+        "Esperança",
+        "Equilíbrio"
+      ],
+      "colors": [
+        "Amarelo",
+        "Verde",
+        "Arco-íris"
+      ],
+      "elements": [
+        "Água",
+        "Serpente",
+        "Arco-íris"
+      ],
+      "element": "Água",
+      "habitat": "Encontro do rio com mar",
+      "atuacao": "Conflitos emocionais",
+      "saudacao": "Arroboboi Oxumarê",
+      "simbolo": "Serpente/Arco-íris",
+      "cor": "Amarelo e Verde",
+      "diaSemana": "Terça",
+      "fruta": "Milho",
+      "comida": "Feijão fradinho",
+      "bebida": "Champagne Branca",
+      "dataComemoracao": "30 de Setembro",
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "notes": "Registro validado a partir do arquivo estruturado consolidado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 14,
+      "slug": "logun-ede",
+      "name": "Logun Edé",
+      "description": "Logun Edé é a fusão de Oxóssi e Oxum, representando a harmonia entre os opostos.",
+      "origin": "Logun Edé é a fusão de Oxóssi e Oxum, representando a harmonia entre os opostos. É Orixá da juventude, da sorte e das boas vendas.",
+      "batuaraTeaching": "Na Casa Batuara, Logun Edé é reverenciado como a união perfeita entre força e amor, ensina-nos que a prosperidade vem da harmonia entre os opostos.",
+      "displayOrder": 14,
+      "characteristics": [
+        "União",
+        "Prosperidade",
+        "Juventude",
+        "Sorte",
+        "Harmonia"
+      ],
+      "colors": [
+        "Verde",
+        "Dourado",
+        "Azul"
+      ],
+      "elements": [
+        "Mata",
+        "Rio",
+        "Juventude"
+      ],
+      "element": "Terra/Água",
+      "habitat": "Mata e Rio",
+      "atuacao": "Prosperidade / Sorte",
+      "saudacao": "Orokotô Logun Edé",
+      "simbolo": "Arco e flecha com elementos de Oxum",
+      "cor": "Verde e Dourado",
+      "diaSemana": "Segunda e Sábado",
+      "fruta": "Manga e Frutas doces",
+      "comida": "Cação",
+      "bebida": "Cerveja",
+      "dataComemoracao": "08 de Dezembro",
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "notes": "Registro validado a partir do arquivo estruturado consolidado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 15,
+      "slug": "arnaldo",
+      "name": "Arnaldo",
+      "description": "Arnaldo é um Orixá de menor popularidade, associado à proteção e à resistência.",
+      "origin": "Arnaldo é um Orixá de menor popularidade, associado à proteção e à resistência. Conhecido em algumas tradições como parte da corte de Ogum.",
+      "batuaraTeaching": "Na Casa Batuara, Arnaldo é reverenciado como o protetor silencioso, aquele que trabalha nos bastidores para nos manter seguros.",
+      "displayOrder": 15,
+      "characteristics": [
+        "Proteção",
+        "Resistência",
+        "Silêncio",
+        "Força",
+        "Lealdade"
+      ],
+      "colors": [
+        "Verde",
+        "Branco"
+      ],
+      "elements": [
+        "Terra",
+        "Ferro"
+      ],
+      "element": "Terra",
+      "habitat": "Estradas e caminhos",
+      "atuacao": "Proteção",
+      "saudacao": "Arnaldo ê",
+      "simbolo": "Ferramentas de trabalho",
+      "cor": "Verde e Branco",
+      "diaSemana": "Terça",
+      "fruta": "Limão",
+      "comida": "Carne assada",
+      "bebida": "Cerveja",
+      "dataComemoracao": "Não especificada",
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "notes": "Registro validado a partir do arquivo estruturado consolidado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    }
+  ],
+  "guiasEntidades": [
+    {
+      "id": 1,
+      "slug": "baiano",
+      "name": "Baiano",
+      "comemoracao": "04/08",
+      "saudacao": "Salve Nosso Senhor do Bonfim",
+      "habitat": "Praias e cidades da Bahia",
+      "cor": "Amarelo e Vermelho",
+      "diaSemana": "Quinta-feira",
+      "bebida": "Pinga",
+      "fruta": "Coco / Cajú",
+      "comida": "Farofa",
+      "description": "Entidades alegres e festeiras, vindas da Bahia. Conhecidos por sua sabedoria popular e humor.",
+      "caracteristicas": [
+        "Alegria contagiante",
+        "Sabedoria popular",
+        "Gosto por festas",
+        "Linguagem típica baiana",
+        "Proteção através da alegria"
+      ],
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          4,
+          5
+        ],
+        "notes": "Guia ou entidade validado a partir do arquivo estruturado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 2,
+      "slug": "preto-velho",
+      "name": "Preto Velho",
+      "comemoracao": "13/05",
+      "saudacao": "Adorei as Almas",
+      "habitat": "Senzalas e terreiros antigos",
+      "cor": "Branco e Preto",
+      "diaSemana": "Segunda-feira",
+      "bebida": "Café / Vinho",
+      "fruta": "Caqui",
+      "comida": "Feijão Preto s/ pertences",
+      "description": "Espíritos de anciãos africanos, símbolos de sabedoria, paciência e humildade.",
+      "caracteristicas": [
+        "Sabedoria ancestral",
+        "Paciência infinita",
+        "Humildade profunda",
+        "Conselhos valiosos",
+        "Cura através da fé"
+      ],
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          4,
+          5
+        ],
+        "notes": "Guia ou entidade validado a partir do arquivo estruturado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 3,
+      "slug": "eres",
+      "name": "Erês",
+      "comemoracao": "27/09",
+      "saudacao": "Aminbeijada",
+      "habitat": "Jardins e parques infantis",
+      "cor": "Rosa e Azul",
+      "diaSemana": "Domingo",
+      "bebida": "Refrigerante",
+      "fruta": "Doces",
+      "comida": "Caruru",
+      "description": "Espíritos de crianças, trazem alegria, pureza e inocência. São os mensageiros da esperança.",
+      "caracteristicas": [
+        "Pureza de coração",
+        "Alegria contagiante",
+        "Inocência genuína",
+        "Brincadeiras e risos",
+        "Proteção das crianças"
+      ],
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          4,
+          5
+        ],
+        "notes": "Guia ou entidade validado a partir do arquivo estruturado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 4,
+      "slug": "boiadeiro",
+      "name": "Boiadeiro",
+      "comemoracao": "24/06",
+      "saudacao": "Getruá seu Boiadeiro",
+      "habitat": "Campos e fazendas",
+      "cor": "Marrom e Bege",
+      "diaSemana": "Terça-feira",
+      "bebida": "Pinga/Cerveja",
+      "fruta": "Laranja",
+      "comida": "Arroz Carreteiro",
+      "description": "Espíritos de vaqueiros e trabalhadores rurais, conhecidos por sua força e determinação.",
+      "caracteristicas": [
+        "Força e coragem",
+        "Determinação",
+        "Simplicidade",
+        "Proteção do gado",
+        "Trabalho árduo"
+      ],
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          4,
+          5
+        ],
+        "notes": "Guia ou entidade validado a partir do arquivo estruturado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 5,
+      "slug": "marinheiro",
+      "name": "Marinheiro",
+      "comemoracao": "07/07",
+      "saudacao": "Salve Nossa Senhora dos Navegantes",
+      "habitat": "Portos e navios",
+      "cor": "Azul e Branco",
+      "diaSemana": "Sábado",
+      "bebida": "Rum",
+      "fruta": "Pera",
+      "comida": "Peixe frito",
+      "description": "Espíritos dos mares, navegadores experientes que trazem proteção nas viagens.",
+      "caracteristicas": [
+        "Conhecimento dos mares",
+        "Proteção em viagens",
+        "Aventura e coragem",
+        "Histórias fascinantes",
+        "Ligação com Iemanjá"
+      ],
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          4,
+          5
+        ],
+        "notes": "Guia ou entidade validado a partir do arquivo estruturado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 6,
+      "slug": "cigano",
+      "name": "Cigano",
+      "comemoracao": "24/05",
+      "saudacao": "É de Ouro e Oriente",
+      "habitat": "Estradas e acampamentos",
+      "cor": "Dourado e Roxo",
+      "diaSemana": "Sexta-feira",
+      "bebida": "Vinho",
+      "fruta": "Carambola",
+      "comida": "Pernil",
+      "description": "Espíritos nômades, conhecedores dos mistérios, da magia e da leitura do destino.",
+      "caracteristicas": [
+        "Conhecimento místico",
+        "Leitura do destino",
+        "Liberdade de espírito",
+        "Magia e encantamentos",
+        "Proteção em viagens"
+      ],
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          4,
+          5
+        ],
+        "notes": "Guia ou entidade validado a partir do arquivo estruturado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 7,
+      "slug": "malandro",
+      "name": "Malandro",
+      "comemoracao": "18/03",
+      "saudacao": "Salve a Malandragem",
+      "habitat": "Ruas e esquinas da cidade",
+      "cor": "Preto e Branco",
+      "diaSemana": "Quarta-feira",
+      "bebida": "Cerveja",
+      "fruta": "Maçã Abacaxi",
+      "comida": "Buteco",
+      "description": "Espíritos urbanos, conhecedores da vida nas ruas, trazem proteção e esperteza.",
+      "caracteristicas": [
+        "Esperteza urbana",
+        "Proteção nas ruas",
+        "Jogo de cintura",
+        "Conhecimento da vida",
+        "Humor e malandragem"
+      ],
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          4,
+          5
+        ],
+        "notes": "Guia ou entidade validado a partir do arquivo estruturado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 8,
+      "slug": "indio",
+      "name": "Índio",
+      "comemoracao": "15/10",
+      "saudacao": "Salve o Índio",
+      "habitat": "Matas e florestas",
+      "cor": "Verde e Marrom",
+      "diaSemana": "Terça-feira",
+      "bebida": "Cachaça",
+      "fruta": "Frutas do cerrado",
+      "comida": "Cacimba",
+      "description": "Espíritos de indígenas, guardiões da natureza e mestres das ervas medicinais.",
+      "caracteristicas": [
+        "Conexão com a natureza",
+        "Sabedoria ancestral",
+        "Conexão espiritual",
+        "Medicina natural",
+        "Proteção ambiental"
+      ],
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          4,
+          5
+        ],
+        "notes": "Guia ou entidade validado a partir do arquivo estruturado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    }
+  ],
+  "linhasUmbanda": [
+    {
+      "id": 1,
+      "slug": "linha-de-oxala-linha-da-fe",
+      "name": "Linha de Oxalá (Linha da Fé)",
+      "regidaPor": "Oxalá",
+      "entidades": [
+        "Cristos",
+        "Anjos",
+        "Espíritos elevados",
+        "Guias da luz"
+      ],
+      "relatedGuides": [],
+      "atuacao": "Iluminação, fé, equilíbrio, paz, caridade",
+      "cor": "Branco",
+      "description": "Regida por Oxalá, o Pai maior e luz divina. Esta linha trabalha com a iluminação espiritual, fortalecimento da fé e promoção da paz interior através da caridade.",
+      "displayOrder": 1,
+      "workingDays": [
+        "Domingo",
+        "Sexta-feira"
+      ],
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          5,
+          6
+        ],
+        "notes": "Linha de Umbanda validada a partir do arquivo estruturado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 2,
+      "slug": "linha-de-ogum-linha-da-lei-e-da-ordem",
+      "name": "Linha de Ogum (Linha da Lei e da Ordem)",
+      "regidaPor": "Ogum",
+      "entidades": [
+        "Caboclos guerreiros",
+        "Soldados espirituais"
+      ],
+      "relatedGuides": [],
+      "atuacao": "Quebra de demandas, justiça, força, desobsessão",
+      "cor": "Vermelho",
+      "description": "Linha regida por Ogum, focada na manutenção da lei e ordem espiritual. Atua na quebra de demandas negativas e proteção através da força e justiça.",
+      "displayOrder": 2,
+      "workingDays": [
+        "Segunda-feira",
+        "Quinta-feira"
+      ],
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          5,
+          6
+        ],
+        "notes": "Linha de Umbanda validada a partir do arquivo estruturado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 3,
+      "slug": "linha-de-oxossi-linha-do-conhecimento",
+      "name": "Linha de Oxóssi (Linha do Conhecimento)",
+      "regidaPor": "Oxóssi",
+      "entidades": [
+        "Caboclos caçadores",
+        "Mestres do conhecimento"
+      ],
+      "relatedGuides": [],
+      "atuacao": "Sabedoria, cura, abertura de caminhos, natureza",
+      "cor": "Verde",
+      "description": "Regida por Oxóssi, esta linha trabalha com a sabedoria ancestral, cura através da natureza e abertura de caminhos para o conhecimento espiritual.",
+      "displayOrder": 3,
+      "workingDays": [
+        "Terça-feira",
+        "Quinta-feira"
+      ],
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          5,
+          6
+        ],
+        "notes": "Linha de Umbanda validada a partir do arquivo estruturado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 4,
+      "slug": "linha-de-xango-linha-da-justica",
+      "name": "Linha de Xangô (Linha da Justiça)",
+      "regidaPor": "Xangô",
+      "entidades": [
+        "Pretos-Velhos juristas",
+        "Juízes espirituais"
+      ],
+      "relatedGuides": [],
+      "atuacao": "Justiça, equilíbrio, sabedoria ancestral",
+      "cor": "Marrom",
+      "description": "Linha regida por Xangô, focada na aplicação da justiça divina e equilíbrio espiritual através da sabedoria ancestral dos Pretos-Velhos juristas.",
+      "displayOrder": 4,
+      "workingDays": [
+        "Segunda-feira",
+        "Quarta-feira"
+      ],
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          5,
+          6
+        ],
+        "notes": "Linha de Umbanda validada a partir do arquivo estruturado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 5,
+      "slug": "linha-de-iemanja-linha-do-amor-e-da-geracao",
+      "name": "Linha de Iemanjá (Linha do Amor e da Geração)",
+      "regidaPor": "Iemanjá",
+      "entidades": [
+        "Marinheiros",
+        "Iabás",
+        "Mães espirituais"
+      ],
+      "relatedGuides": [
+        "Marinheiro"
+      ],
+      "atuacao": "Emoções, família, gestação, acolhimento",
+      "cor": "Azul-claro",
+      "description": "Regida por Iemanjá, mãe de todos os Orixás. Esta linha trabalha com as emoções, proteção familiar, gestação e acolhimento maternal.",
+      "displayOrder": 5,
+      "workingDays": [
+        "Sábado",
+        "Segunda-feira"
+      ],
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          5,
+          6
+        ],
+        "notes": "Linha de Umbanda validada a partir do arquivo estruturado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 6,
+      "slug": "linha-de-iansa-linha-das-almas-e-espiritos",
+      "name": "Linha de Iansã (Linha das Almas e Espíritos)",
+      "regidaPor": "Iansã",
+      "entidades": [
+        "Eguns",
+        "Espíritos em trânsito",
+        "Mensageiros"
+      ],
+      "relatedGuides": [],
+      "atuacao": "Desencarne, passagem, purificação energética",
+      "cor": "Amarelo",
+      "description": "Linha regida por Iansã, senhora dos ventos e das almas. Trabalha com espíritos em trânsito, auxiliando no desencarne e purificação energética.",
+      "displayOrder": 6,
+      "workingDays": [
+        "Quarta-feira",
+        "Domingo"
+      ],
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          5,
+          6
+        ],
+        "notes": "Linha de Umbanda validada a partir do arquivo estruturado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 7,
+      "slug": "linha-de-exu-linha-da-comunicacao-e-movimento",
+      "name": "Linha de Exu (Linha da Comunicação e Movimento)",
+      "regidaPor": "Exu e Pomba Gira",
+      "entidades": [
+        "Exus",
+        "Pombas Giras",
+        "Guardiões"
+      ],
+      "relatedGuides": [],
+      "atuacao": "Comunicação entre mundos, abertura de caminhos, proteção",
+      "cor": "Preto e vermelho",
+      "description": "Regida por Exu e Pomba Gira, esta linha trabalha como comunicadora entre os mundos espiritual e material, abrindo caminhos e oferecendo proteção.",
+      "displayOrder": 7,
+      "workingDays": [
+        "Segunda-feira",
+        "Quarta-feira"
+      ],
+      "isActive": true,
+      "source": {
+        "status": "validated",
+        "primarySource": "dados-publicwebsite.json",
+        "pages": [
+          5,
+          6
+        ],
+        "notes": "Linha de Umbanda validada a partir do arquivo estruturado do portal.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    }
+  ],
+  "forcasNatureza": {
+    "title": "ORIXÁS - FORÇAS NATURAIS",
+    "description": "Para maior percepção de nossos estudos, identificamos cada ORIXÁ com uma força ou elemento da natureza.",
+    "elementos": {
+      "ar": {
+        "name": "AR",
+        "orixas": [
+          "Oxalá",
+          "Iansã"
+        ],
+        "description": "Elemento da espiritualidade e transformação"
+      },
+      "agua": {
+        "name": "ÁGUA",
+        "orixas": [
+          "Iemanjá",
+          "Oxum",
+          "Nanã"
+        ],
+        "description": "Elemento das emoções e da vida"
+      },
+      "fogo": {
+        "name": "FOGO",
+        "orixas": [
+          "Ogum"
+        ],
+        "description": "Elemento da força e da batalha"
+      },
+      "mata": {
+        "name": "MATA",
+        "orixas": [
+          "Oxóssi"
+        ],
+        "description": "Elemento da prosperidade e fartura"
+      },
+      "rocha": {
+        "name": "ROCHA",
+        "orixas": [
+          "Xangô"
+        ],
+        "description": "Elemento da justiça e firmeza"
+      },
+      "terra": {
+        "name": "TERRA",
+        "orixas": [
+          "Obaluaê",
+          "Exu",
+          "Pomba Gira"
+        ],
+        "description": "Elemento da cura e dos caminhos"
+      }
+    }
+  },
+  "oracoes": [
+    {
+      "id": 1,
+      "slug": "pai-nosso-da-umbanda",
+      "title": "Pai Nosso da Umbanda",
+      "content": "Pai nosso que estais no infinito,\nSantificado seja o vosso reino de luz.\nVenha a nós a vossa paz,\nSeja feita a vossa vontade,\nAssim na Terra como no infinito.\n\nO pão nosso de cada dia nos dai hoje,\nPerdoai as nossas dívidas,\nAssim como nós perdoamos aos nossos devedores.\nNão nos deixeis cair em tentação,\nMas livrai-nos de todo mal.\n\nPorque vosso é o reino,\nO poder e a glória,\nPara todo o sempre.\nSaravá!",
+      "type": 1,
+      "category": 1,
+      "source": {
+        "status": "validated",
+        "primarySource": "Apostila Batuara 2024",
+        "pages": [
+          8,
+          9
+        ],
+        "notes": "Conteúdo espiritual validado para publicação e carga inicial.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "displayOrder": 1,
+      "isFeatured": true,
+      "isActive": true,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 2,
+      "slug": "a-caridade-segundo-os-ensinamentos-da-casa-batuara",
+      "title": "A Caridade Segundo os Ensinamentos da Casa Batuara",
+      "content": "A caridade é o fundamento de toda a nossa doutrina. Não se trata apenas de dar esmolas ou ajudar materialmente, mas sim de amar verdadeiramente ao próximo como a nós mesmos.\n\nA verdadeira caridade começa no coração. É preciso ter compaixão, compreensão e amor por todos os seres, independentemente de sua condição social, raça ou religião.\n\nNa Casa Batuara, praticamos a caridade de várias formas:\n- Através da assistência espiritual gratuita\n- Do atendimento aos necessitados\n- Da orientação e consolação aos aflitos\n- Do ensino da doutrina espírita e umbandista\n- Da promoção da fraternidade entre todos\n\nLembrem-se sempre: \"Fora da caridade não há salvação\".",
+      "type": 2,
+      "category": 3,
+      "source": {
+        "status": "validated",
+        "primarySource": "Apostila Batuara 2024",
+        "pages": [
+          8,
+          9
+        ],
+        "notes": "Conteúdo espiritual validado para publicação e carga inicial.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "displayOrder": 2,
+      "isFeatured": true,
+      "isActive": true,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 3,
+      "slug": "pai-nosso-de-oxala",
+      "title": "Pai Nosso de Oxalá",
+      "content": "Pai nosso que estais no infinito,\nTodo poder é vosso,\nSantificado seja o vosso nome,\nVenha a nós a vossa paz,\nPois só na paz podemos encontrar a luz.\n\nEu sou vosso filho (a) e busco vossa orientação,\nConcedei-me a sabedoria para seguir pelo caminho do bem,\nA paciência para aceitar o que não posso mudar,\nE a coragem para mudar o que posso.\n\nGuiai-me pela estrada da caridade,\nPara que eu possa servir aos meus irmãos,\nE assim encontrar a verdadeira paz,\nQue só vossa luz pode proporcionar.\n\nEpa babá! Oxalá!",
+      "type": 1,
+      "category": 4,
+      "source": {
+        "status": "validated",
+        "primarySource": "Apostila Batuara 2024",
+        "pages": [
+          8,
+          9
+        ],
+        "notes": "Conteúdo espiritual validado para publicação e carga inicial.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "displayOrder": 3,
+      "isFeatured": false,
+      "isActive": true,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    },
+    {
+      "id": 4,
+      "slug": "canto-a-iemanja",
+      "title": "Canto a Iemanjá",
+      "content": "Iemanjá, mãe querida,\nRainha do mar e das águas,\nAcolhei-me em vossos braços,\nComo uma criança que volta para casa.\n\nÓ doce mãe, dai-me vossa bênção,\nPara viver com amor e esperança,\nQue vossa luz me guie,\nNas horas de escuridão.\n\nOdocya, Odocya, Odocya!\nMãe Iemanjá, abraça-me!\nEu sou seu filho (a),\nE volto para os seus braços!\n\nSalve Iemanjá!",
+      "type": 4,
+      "category": 1,
+      "source": {
+        "status": "validated",
+        "primarySource": "Apostila Batuara 2024",
+        "pages": [
+          8,
+          9
+        ],
+        "notes": "Conteúdo espiritual validado para publicação e carga inicial.",
+        "updatedAt": "2026-04-02T12:00:00Z"
+      },
+      "displayOrder": 4,
+      "isFeatured": true,
+      "isActive": true,
+      "createdAt": "2026-04-02T12:00:00Z",
+      "updatedAt": "2026-04-02T12:00:00Z"
+    }
+  ]
+}
