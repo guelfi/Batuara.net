@@ -13,7 +13,7 @@ namespace Batuara.API.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            var allowedOrigins = _configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+            var allowedOrigins = _configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
             var apiUrl = _configuration["ApiUrl"] ?? "http://api.batuara.net";
 
             context.Response.Headers["X-Frame-Options"] = "DENY";
@@ -30,7 +30,7 @@ namespace Batuara.API.Middleware
                 "style-src 'self' 'unsafe-inline'",
                 "img-src 'self' data: https: blob:",
                 "font-src 'self' data:",
-                $"connect-src 'self' {apiUrl} https://batuara.net https://admin.batuara.net",
+                $"connect-src 'self' {apiUrl} {string.Join(" ", allowedOrigins)} https://batuara.net https://admin.batuara.net",
                 "frame-ancestors 'none'",
                 "base-uri 'self'",
                 "form-action 'self'"

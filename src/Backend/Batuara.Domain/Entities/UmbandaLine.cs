@@ -126,6 +126,18 @@ namespace Batuara.Domain.Entities
             UpdateTimestamp();
         }
 
+        public void Deactivate()
+        {
+            IsActive = false;
+            UpdateTimestamp();
+        }
+
+        public void Activate()
+        {
+            IsActive = true;
+            UpdateTimestamp();
+        }
+
         public bool WorksOnDay(DayOfWeek dayOfWeek)
         {
             if (!_workingDays.Any())
