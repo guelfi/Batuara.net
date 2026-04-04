@@ -9,7 +9,8 @@ set -euo pipefail
 # 2. Rebuilds and restarts containers ONE AT A TIME
 # 3. Validates health after each container restart
 # 4. NEVER touches the PostgreSQL database container
-# 5. Rolls back on failure
+# 5. Connects nginx-proxy to the application Docker network
+# 6. Rolls back on failure
 #
 # Required env vars: DB_PASSWORD, JWT_SECRET
 # Optional env vars: GITHUB_SHA (for tagging)
@@ -238,9 +239,49 @@ if ! wait_for_healthy "$ADMIN_CONTAINER" "http://localhost:3001" 90; then
     log_warning "Admin Dashboard health check uncertain - container may still be starting"
 fi
 
-# --- Step 7: Final verification ---
+# --- Step 7: Connect nginx-proxy to application network ---
+DEPLOY_STATE="nginx"
+log_info "Step 7: Connecting nginx-proxy to application network..."
+
+DOCKER_NETWORK_NAME="${COMPOSE_PROJECT_NAME:-batuara-net}_${DOCKER_NETWORK:-batuara-network}"
+NGINX_CONTAINER="nginx-proxy"
+
+if docker ps --format '{{.Names}}' | grep -q "^${NGINX_CONTAINER}$"; then
+    # Connect nginx-proxy to the application network (ignore error if already connected)
+    if docker network connect "$DOCKER_NETWORK_NAME" "$NGINX_CONTAINER" 2>/dev/null; then
+        log_success "nginx-proxy connected to $DOCKER_NETWORK_NAME"
+    else
+        log_info "nginx-proxy already connected to $DOCKER_NETWORK_NAME"
+    fi
+
+    # Graceful reload to re-resolve container DNS without dropping connections
+    # Using nginx -s reload instead of docker restart to avoid:
+    # 1. Downtime for other projects (MobileMed, etc.) sharing nginx-proxy
+    # 2. Risk of losing dynamically-added network connections
+    log_info "Reloading nginx-proxy to refresh container name resolution..."
+    if docker exec "$NGINX_CONTAINER" nginx -t > /dev/null 2>&1; then
+        docker exec "$NGINX_CONTAINER" nginx -s reload > /dev/null 2>&1 || true
+        sleep 2
+        log_success "nginx-proxy reloaded successfully"
+    else
+        log_warning "nginx-proxy configuration test failed - check /var/www/nginx/nginx.conf"
+    fi
+
+    # Verify nginx-proxy is still connected to the application network after reload
+    if docker network inspect "$DOCKER_NETWORK_NAME" --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null | grep -q "$NGINX_CONTAINER"; then
+        log_success "nginx-proxy confirmed on $DOCKER_NETWORK_NAME"
+    else
+        log_warning "nginx-proxy not found on $DOCKER_NETWORK_NAME - attempting reconnect"
+        docker network connect "$DOCKER_NETWORK_NAME" "$NGINX_CONTAINER" 2>/dev/null || true
+    fi
+else
+    log_warning "nginx-proxy container not found - skipping network connection"
+    log_warning "If using nginx-proxy, connect it manually: docker network connect $DOCKER_NETWORK_NAME $NGINX_CONTAINER"
+fi
+
+# --- Step 8: Final verification ---
 DEPLOY_STATE="verify"
-log_info "Step 7: Final verification..."
+log_info "Step 8: Final verification..."
 
 echo ""
 echo "=== Container Status ==="
@@ -260,6 +301,15 @@ check_endpoint() {
 check_endpoint "http://localhost:${API_PORT:-3003}/health" "API"
 check_endpoint "http://localhost:${PUBLIC_WEBSITE_PORT:-3000}" "PublicWebsite"
 check_endpoint "http://localhost:${ADMIN_DASHBOARD_PORT:-3001}" "AdminDashboard"
+
+# Check nginx-proxy routes if nginx-proxy is running
+if docker ps --format '{{.Names}}' | grep -q "^${NGINX_CONTAINER}$"; then
+    echo ""
+    echo "=== Nginx Proxy Routes ==="
+    check_endpoint "http://localhost/batuara-api/health" "Nginx → API"
+    check_endpoint "http://localhost/batuara-public/" "Nginx → PublicWebsite"
+    check_endpoint "http://localhost/batuara-admin/" "Nginx → AdminDashboard"
+fi
 
 # --- Cleanup ---
 log_info "Cleaning up old Docker images..."
