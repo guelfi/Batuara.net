@@ -29,6 +29,7 @@ namespace Batuara.Infrastructure.Data
                     maxRetryCount: 3,
                     maxRetryDelay: TimeSpan.FromSeconds(5),
                     errorCodesToAdd: null);
+                options.MigrationsHistoryTable("__EFMigrationsHistory", "batuara");
             });
 
             // Enable detailed errors for design-time
