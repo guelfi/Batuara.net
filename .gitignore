@@ -180,6 +180,10 @@ TestResults/
 *.bak
 *.backup
 *.tmp
+*.sql.gz
+*.sql.bak
+batuara_backup_*.sql
+batuara_backup_*.sql.gz
 
 # Security - Private keys and certificates
 *.key
