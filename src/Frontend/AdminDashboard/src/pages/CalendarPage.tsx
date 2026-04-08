@@ -54,6 +54,7 @@ const attendanceLabels: Record<AttendanceType, string> = {
   [AttendanceType.Umbanda]: 'Umbanda',
   [AttendanceType.Palestra]: 'Palestra',
   [AttendanceType.Curso]: 'Curso',
+  [AttendanceType.Festa]: 'Festa',
 };
 
 const CalendarPage: React.FC = () => {
