@@ -100,7 +100,7 @@ services:
 
   # Database (opcional - descomente quando necessário)
   db:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-db
     environment:
       - POSTGRES_DB=${DB_NAME:-batuara_db}
@@ -145,7 +145,7 @@ networks:
 volumes:
   # Volumes com prefixo para isolamento
   batuara-db-data:
-
+    name: ${VOLUME_PREFIX:-batuara}-db-data-pg16
     labels:
       - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
       - "project.name=${PROJECT_NAME:-batuara}"
