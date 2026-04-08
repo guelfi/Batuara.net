@@ -124,6 +124,7 @@ namespace Batuara.Domain.Entities
                 AttendanceType.Umbanda => "Gira de Umbanda",
                 AttendanceType.Palestra => "Palestra",
                 AttendanceType.Curso => "Curso",
+                AttendanceType.Festa => "Festa",
                 _ => Type.ToString()
             };
         }
@@ -134,6 +135,7 @@ namespace Batuara.Domain.Entities
         Kardecismo = 1,
         Umbanda = 2,
         Palestra = 3,
-        Curso = 4
+        Curso = 4,
+        Festa = 5
     }
 }

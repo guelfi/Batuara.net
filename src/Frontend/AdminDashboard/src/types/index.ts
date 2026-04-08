@@ -128,6 +128,7 @@ export enum AttendanceType {
   Umbanda = 2,
   Palestra = 3,
   Curso = 4,
+  Festa = 5,
 }
 
 export interface Orixa {
