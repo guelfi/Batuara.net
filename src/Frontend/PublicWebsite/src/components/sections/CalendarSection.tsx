@@ -38,11 +38,13 @@ const CalendarSection: React.FC = () => {
       case AttendanceType.Kardecismo:
         return 'Kardecismo';
       case AttendanceType.Umbanda:
-        return 'Umbanda';
+        return 'Gira de Umbanda';
       case AttendanceType.Palestra:
         return 'Palestra';
       case AttendanceType.Curso:
         return 'Curso';
+      case AttendanceType.Festa:
+        return 'Festa';
       default:
         return 'Atendimento';
     }
@@ -58,6 +60,8 @@ const CalendarSection: React.FC = () => {
         return '#00acc1';
       case AttendanceType.Curso:
         return '#43a047';
+      case AttendanceType.Festa:
+        return '#e65100';
       default:
         return '#1976d2';
     }
