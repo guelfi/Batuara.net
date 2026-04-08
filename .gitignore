@@ -182,8 +182,11 @@ TestResults/
 *.tmp
 *.sql.gz
 *.sql.bak
+*.dump
+*.pg_dump
 batuara_backup_*.sql
 batuara_backup_*.sql.gz
+check_all_tables.sql
 
 # Security - Private keys and certificates
 *.key

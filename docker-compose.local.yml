@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net-local}-db
     environment:
       - POSTGRES_DB=${DB_NAME:-batuara_db}
@@ -12,7 +12,7 @@ services:
     ports:
       - "${DB_PORT_HOST:-5434}:5432"
     volumes:
-      - batuara-db-data:/var/lib/postgresql/data
+      - batuara-db-data-pg16:/var/lib/postgresql/data
     networks:
       - batuara-network
     restart: unless-stopped
@@ -105,6 +105,12 @@ networks:
     driver: bridge
 
 volumes:
+  batuara-db-data-pg16:
+    name: ${VOLUME_PREFIX:-batuara}-db-data-pg16
   batuara-db-data:
     name: ${VOLUME_PREFIX:-batuara}-db-data
+    external: true
+  batuara-db-data-pg15-backup:
+    name: batuara-db-data-pg15-backup
+    external: true
 
