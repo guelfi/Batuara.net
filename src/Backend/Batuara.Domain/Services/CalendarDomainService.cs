@@ -44,12 +44,12 @@ namespace Batuara.Domain.Services
             return true;
         }
 
-        public (bool IsValid, string[] Errors) ValidateAttendanceBusinessRules(CalendarAttendance attendance)
+        public (bool IsValid, string[] Errors) ValidateAttendanceBusinessRules(CalendarAttendance attendance, bool isUpdate = false)
         {
             var errors = new List<string>();
 
             // Regra: Atendimentos não podem ser no passado
-            if (attendance.AttendanceDate.Date < DateTime.Today)
+            if (!isUpdate && attendance.AttendanceDate.Date < DateTime.Today)
             {
                 errors.Add("Atendimentos não podem ser agendados no passado");
             }

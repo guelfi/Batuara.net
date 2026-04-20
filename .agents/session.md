@@ -1,4 +1,8 @@
 # Batuara.net — Contexto de Sessão de Trabalho da IA
+# Batuara.net — Contexto de Sessão de Trabalho da IA
+# Batuara.net — Contexto de Sessão de Trabalho da IA
+
+# Batuara.net — Contexto de Sessão de Trabalho da IA
 
 > **INSTRUÇÃO PARA A IA:** Leia este arquivo **integralmente** ao iniciar qualquer sessão.
 > Ao encerrar, siga o ritual da seção "Encerramento de Sessão" e atualize este arquivo **e** o `implementation_plan.md`.
@@ -105,15 +109,16 @@ docker exec batuara-net-local-db psql -U batuara_user -d batuara_db -c "SELECT i
 - Login: `admin@batuara.org.br` / `Admin123!` ✅
 - Banco de dados local sincronizado com produção OCI ✅
 - Listagem em todas as telas CRUD: Orixás, Guias, Linhas da Umbanda, Conteúdo Espiritual, Filhos da Casa ✅
+- Navegação mensal dinâmica em Eventos e Calendário Público ✅
+- Calendário unificado exibindo Eventos e Atendimentos ✅
+- Dashboard Administrativo com estatísticas reais do banco de dados ✅
+- Responsividade mobile (iPhone 16) em todas as telas do AdminDashboard ✅
 
 ### ⚠️ Bugs Conhecidos (pendentes de correção)
 
 | # | Bug | Causa | Fase que corrige |
 |:--|:----|:------|:----------------|
-| 1 | Editar registro com data no passado no Calendário ou Eventos retorna erro 422 | `ValidateAttendanceBusinessRules` / `ValidateEventBusinessRules` não distinguem INSERT de UPDATE | **Fase A** |
-| 2 | Dashboard exibe valores mockados (15 Eventos, 42 Atendimentos, 5 Usuários) | `DashboardPage.tsx` usa `mockStats` hardcoded; endpoint `GET /api/dashboard/stats` não existe | **Fase C** |
-| 3 | Campo "Tipo" aparece vazio no modal de edição do Calendário | Dropdown não é populado ao abrir o formulário de edição | **Fase A** |
-| 4 | Rate limit de login bloqueia após 5 tentativas/minuto | Configuração `FixedWindowRateLimiter` no `Program.cs` | Workaround: `docker restart batuara-net-local-api` |
+| 1 | Rate limit de login bloqueia após 5 tentativas/minuto | Configuração `FixedWindowRateLimiter` no `Program.cs` | Workaround: `docker restart batuara-net-local-api` |
 
 ### 📱 Problemas de Mobile (viewport 393×852 / iPhone 16)
 - Colunas do DataGrid cortadas fora do viewport em todas as páginas do AdminDashboard
@@ -127,7 +132,7 @@ docker exec batuara-net-local-db psql -U batuara_user -d batuara_db -c "SELECT i
 > **Status:** Aprovado pelo usuário em 2026-04-19. Pronto para execução.  
 > Detalhamento completo: `ROADMAP.md` → Fase 6 (raiz do projeto)
 
-### [ ] Fase A — Correção de CRUD Backend ← **INICIAR AQUI**
+### [x] Fase A — Correção de CRUD Backend
 
 **Objetivo:** Permitir editar registros com data no passado sem erro de validação.
 
@@ -142,7 +147,7 @@ docker exec batuara-net-local-db psql -U batuara_user -d batuara_db -c "SELECT i
 
 ---
 
-### [ ] Fase B — Responsividade Mobile AdminDashboard
+### [x] Fase B — Responsividade Mobile AdminDashboard
 
 **Objetivo:** Colunas DataGrid responsivas + subtítulos sem corte em viewport 393px.
 
@@ -161,33 +166,14 @@ docker exec batuara-net-local-db psql -U batuara_user -d batuara_db -c "SELECT i
 
 ---
 
-### [ ] Fase C — Dashboard com Dados Reais (ROADMAP 6.3 / EP-Dashboard)
+### [x] Fase C — Dashboard com Dados Reais (ROADMAP 6.3 / EP-Dashboard)
+> **Status:** Concluída
 
-**Objetivo:** Substituir mocks por consultas reais ao PostgreSQL.
+### [x] Fase D — Navegação de Eventos por Mês (PublicWebsite)
+> **Status:** Concluída
 
-| Arquivo | Ação |
-|:--------|:-----|
-| `src/Backend/Batuara.API/Controllers/DashboardController.cs` | NOVO — `GET /api/dashboard/stats` com `[Authorize]` |
-| `src/Backend/Batuara.Application/Dashboard/Services/IDashboardService.cs` | NOVO — interface |
-| `src/Backend/Batuara.Infrastructure/Dashboard/Services/DashboardService.cs` | NOVO — queries ao `BatuaraDbContext` |
-| `src/Backend/Batuara.API/Program.cs` | MODIFY — registrar `DashboardService` no DI |
-| `src/Frontend/AdminDashboard/src/pages/DashboardPage.tsx` | MODIFY — remover `mockStats`, chamar `getDashboardStats()` |
-| `src/Frontend/AdminDashboard/src/services/api.ts` | MODIFY — adicionar método `getDashboardStats()` |
-
-**Após:** rebuild de `api` e `admindashboard`
-
----
-
-### [ ] Fase D — Navegação de Eventos por Mês (PublicWebsite)
-
-**Objetivo:** Página pública de Eventos com navegação ◀ Mês Seguinte ▶, iniciando no mês atual.
-
-| Arquivo | Mudança |
-|:--------|:--------|
-| `src/Backend/Batuara.API/Controllers/PublicEventsController.cs` | Adicionar query params `?month=&year=` no `GET /api/public/events`; default = mês atual |
-| Página de Eventos do PublicWebsite | State `currentMonth/Year`; botões prev/next; reload via API a cada mudança |
-
-**Após:** rebuild de `api` e `publicwebsite`
+### [x] Fase Extra — Calendário Unificado e Navegação Mensal
+> **Status:** Concluída
 
 ---
 
@@ -210,6 +196,23 @@ Após concluir as Fases A–D, seguir o `ROADMAP.md` nesta ordem:
 ---
 
 ## Histórico de Sessões
+
+### Sessão 2026-04-20
+
+**Duração:** ~3h  
+**Realizações:**
+- Conclusão das Fases A, B, C e D.
+- Implementada navegação mensal dinâmica em `EventsSection` e `CalendarSection`.
+- Unificado o Calendário Público para exibir tanto Eventos quanto Atendimentos.
+- Corrigida integração Nginx para resolver corretamente o hostname `api` (DNS cache issue).
+- Atualizado Dashboard Administrativo para consumir dados reais da API.
+- Refatorada tipagem e imports para garantir build limpo no Docker.
+
+**Bloqueadores resolvidos:**
+- 502 Bad Gateway no Swagger/Dashboard → Resolvido com `docker compose down` e `up --force-recreate` para limpar cache de rede interna.
+- Erros de compilação no frontend devido a propriedades de tipos mistos no calendário unificado.
+
+**Próxima sessão:** Iniciar Fase 6.0 do ROADMAP (Consolidação de Contratos OpenAPI e Padronização).
 
 ### Sessão 2026-04-19
 

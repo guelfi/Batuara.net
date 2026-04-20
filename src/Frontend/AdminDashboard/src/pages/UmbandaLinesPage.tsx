@@ -19,6 +19,8 @@ import {
   Switch,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
@@ -48,6 +50,8 @@ const initialForm: UmbandaLineForm = {
 };
 
 const UmbandaLinesPage: React.FC = () => {
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [rows, setRows] = useState<UmbandaLine[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -216,7 +220,7 @@ const UmbandaLinesPage: React.FC = () => {
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
             Linhas de Umbanda
           </Typography>
-          <Typography color="text.secondary">
+          <Typography color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
             Organize as linhas, entidades vinculadas, dias de trabalho e interpretação doutrinária da casa.
           </Typography>
         </Box>
@@ -258,6 +262,10 @@ const UmbandaLinesPage: React.FC = () => {
           onPaginationModelChange={setPaginationModel}
           pageSizeOptions={[5, 10, 20]}
           disableRowSelectionOnClick
+          columnVisibilityModel={{
+            displayOrder: !isXs,
+            workingDays: !isXs,
+          }}
           sx={{ border: 0 }}
         />
       </Paper>

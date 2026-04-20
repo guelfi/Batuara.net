@@ -9,12 +9,17 @@ import {
   CircularProgress,
   Paper,
   Stack,
+  IconButton,
 } from '@mui/material';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { useQuery } from '@tanstack/react-query';
 import publicApi from '../../services/api';
-import { AttendanceType } from '../../types';
+import { AttendanceType, CalendarAttendance, Event as BatuaraEvent, EventType } from '../../types';
 import {
+  addMonths,
+  subMonths,
   eachDayOfInterval,
   endOfMonth,
   endOfWeek,
@@ -29,66 +34,113 @@ import {
 import { ptBR } from 'date-fns/locale';
 
 const CalendarSection: React.FC = () => {
-  const currentMonthStart = startOfMonth(new Date());
-  const currentMonthEnd = endOfMonth(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date>(currentMonthStart);
+  // Estado para navegação mensal
+  const [selectedMonthDate, setSelectedMonthDate] = useState(new Date());
+  const monthStart = startOfMonth(selectedMonthDate);
+  const monthEnd = endOfMonth(selectedMonthDate);
 
-  const getAttendanceTypeLabel = (type: AttendanceType): string => {
-    switch (type) {
-      case AttendanceType.Kardecismo:
-        return 'Kardecismo';
-      case AttendanceType.Umbanda:
-        return 'Gira de Umbanda';
-      case AttendanceType.Palestra:
-        return 'Palestra';
-      case AttendanceType.Curso:
-        return 'Curso';
-      case AttendanceType.Festa:
-        return 'Festa';
-      default:
-        return 'Atendimento';
-    }
+  const [selectedDate, setSelectedDate] = useState<Date>(monthStart);
+
+  const handlePrevMonth = () => {
+    setSelectedMonthDate((prev: Date) => subMonths(prev, 1));
   };
 
-  const getAttendanceTypeColor = (type: AttendanceType): string => {
-    switch (type) {
-      case AttendanceType.Kardecismo:
-        return '#1e88e5';
-      case AttendanceType.Umbanda:
-        return '#8e24aa';
-      case AttendanceType.Palestra:
-        return '#00acc1';
-      case AttendanceType.Curso:
-        return '#43a047';
-      case AttendanceType.Festa:
-        return '#e65100';
-      default:
-        return '#1976d2';
-    }
+  const handleNextMonth = () => {
+    setSelectedMonthDate((prev: Date) => addMonths(prev, 1));
   };
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['public-calendar-attendances', currentMonthStart.toISOString()],
+  const getActivityLabel = (type: AttendanceType | EventType | any): string => {
+    // Tenta converter se for string (pode vir da API como nome do enum)
+    const typeValue = typeof type === 'string' ? parseInt(type) : type;
+
+    // Mapeamento para AttendanceType
+    if (typeValue === AttendanceType.Kardecismo) return 'Kardecismo';
+    if (typeValue === AttendanceType.Umbanda) return 'Gira de Umbanda';
+    if (typeValue === AttendanceType.Curso) return 'Curso';
+    
+    // Mapeamento compartilhado ou específico de EventType
+    if (typeValue === EventType.Festa || typeValue === AttendanceType.Festa) return 'Festa';
+    if (typeValue === EventType.Bazar) return 'Bazar';
+    if (typeValue === EventType.Celebracao) return 'Celebração';
+    if (typeValue === EventType.Palestra || typeValue === AttendanceType.Palestra) return 'Palestra';
+    if (typeValue === EventType.Evento) return 'Evento';
+    
+    return 'Atendimento';
+  };
+
+  const getActivityColor = (type: AttendanceType | EventType | any): string => {
+    const typeValue = typeof type === 'string' ? parseInt(type) : type;
+
+    if (typeValue === AttendanceType.Kardecismo) return '#1e88e5'; // Azul
+    if (typeValue === AttendanceType.Umbanda) return '#8e24aa';    // Roxo
+    if (typeValue === EventType.Festa || typeValue === AttendanceType.Festa) return '#e65100'; // Laranja
+    if (typeValue === EventType.Bazar) return '#ef6c00';           // Laranja escuro
+    if (typeValue === EventType.Celebracao) return '#d81b60';      // Rosa/Vinho
+    if (typeValue === EventType.Palestra || typeValue === AttendanceType.Palestra) return '#00acc1'; // Ciano
+    if (typeValue === AttendanceType.Curso) return '#43a047';      // Verde
+    
+    return '#1976d2'; // Padrão
+  };
+
+  // Query para Atendimentos (Giras, Kardec, etc)
+  const { data: attendancesData, isLoading: loadingAttendances, isError: errorAttendances } = useQuery({
+    queryKey: ['public-calendar-attendances', format(selectedMonthDate, 'yyyy-MM')],
     queryFn: () =>
       publicApi.getCalendarAttendances({
         pageNumber: 1,
         pageSize: 100,
         sort: 'date:asc',
-        fromDate: currentMonthStart.toISOString(),
-        toDate: currentMonthEnd.toISOString(),
+        month: selectedMonthDate.getMonth() + 1,
+        year: selectedMonthDate.getFullYear(),
       }),
   });
 
+  // Query para Eventos (Festas, Bazares, etc)
+  const { data: eventsData, isLoading: loadingEvents, isError: errorEvents } = useQuery({
+    queryKey: ['public-calendar-events', format(selectedMonthDate, 'yyyy-MM')],
+    queryFn: () =>
+      publicApi.getEvents({
+        pageNumber: 1,
+        pageSize: 100,
+        sort: 'date:asc',
+        month: selectedMonthDate.getMonth() + 1,
+        year: selectedMonthDate.getFullYear(),
+      }),
+  });
+
+  const isLoading = loadingAttendances || loadingEvents;
+  const isError = errorAttendances || errorEvents;
+
   const currentData = useMemo(() => {
-    return (data?.data ?? [])
-      .filter((attendance) => attendance.isActive)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [data?.data]);
+    const attendances = (attendancesData?.data ?? [])
+      .filter((a: CalendarAttendance) => a.isActive)
+      .map((a: CalendarAttendance) => ({
+        ...a,
+        displayTitle: a.description || getActivityLabel(a.type),
+        isEvent: false
+      }));
+
+    const events = (eventsData?.data ?? [])
+      .filter((e: BatuaraEvent) => e.isActive !== false)
+      .map((e: BatuaraEvent) => ({
+        ...e,
+        displayTitle: e.title,
+        isEvent: true,
+        startTime: e.startTime || '---'
+      }));
+
+    return [...attendances, ...events].sort((a, b) => {
+      const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return (a.startTime || '').localeCompare(b.startTime || '');
+    });
+  }, [attendancesData?.data, eventsData?.data]);
+
   const monthDays = useMemo(() => {
-    const intervalStart = startOfWeek(currentMonthStart, { locale: ptBR });
-    const intervalEnd = endOfWeek(currentMonthEnd, { locale: ptBR });
+    const intervalStart = startOfWeek(monthStart, { locale: ptBR });
+    const intervalEnd = endOfWeek(monthEnd, { locale: ptBR });
     return eachDayOfInterval({ start: intervalStart, end: intervalEnd });
-  }, [currentMonthEnd, currentMonthStart]);
+  }, [monthEnd, monthStart]);
 
   useEffect(() => {
     if (currentData.length > 0) {
@@ -96,8 +148,8 @@ const CalendarSection: React.FC = () => {
       return;
     }
 
-    setSelectedDate(currentMonthStart);
-  }, [currentData, currentMonthStart]);
+    setSelectedDate(monthStart);
+  }, [currentData, monthStart]);
 
   const eventsByDay = useMemo(() => {
     return monthDays.map((day) => ({
@@ -117,9 +169,21 @@ const CalendarSection: React.FC = () => {
               fontWeight: 600,
               mb: 2,
               color: 'primary.main',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2
             }}
           >
-            Calendário do Mês
+            <IconButton onClick={handlePrevMonth} color="primary" size="large">
+              <ArrowBackIosIcon fontSize="inherit" />
+            </IconButton>
+            <Box component="span" sx={{ minWidth: { xs: 200, md: 350 }, textAlign: 'center', textTransform: 'capitalize' }}>
+              {format(selectedMonthDate, "MMMM 'de' yyyy", { locale: ptBR })}
+            </Box>
+            <IconButton onClick={handleNextMonth} color="primary" size="large">
+              <ArrowForwardIosIcon fontSize="inherit" />
+            </IconButton>
           </Typography>
           <Typography
             variant="h5"
@@ -164,10 +228,6 @@ const CalendarSection: React.FC = () => {
           </Box>
         ) : (
           <Paper sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 3, maxWidth: 980, mx: 'auto' }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main' }}>
-              {format(currentMonthStart, "MMMM 'de' yyyy", { locale: ptBR })}
-            </Typography>
-
             <Grid container spacing={1} sx={{ mb: 1 }}>
               {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((label) => (
                 <Grid key={label} size={{ xs: 12 / 7 }}>
@@ -179,7 +239,7 @@ const CalendarSection: React.FC = () => {
             <Grid container spacing={1}>
               {eventsByDay.map(({ day, items }) => {
                 const isSelected = isSameDay(day, selectedDate);
-                const isCurrentMonth = isSameMonth(day, currentMonthStart);
+                const isCurrentMonth = isSameMonth(day, monthStart);
                 const today = isToday(day);
 
                 return (
@@ -221,15 +281,15 @@ const CalendarSection: React.FC = () => {
                               px: 0.75,
                               py: 0.35,
                               borderRadius: 1,
-                              backgroundColor: `${getAttendanceTypeColor(item.type)}20`,
-                              borderLeft: `3px solid ${getAttendanceTypeColor(item.type)}`,
+                              backgroundColor: `${getActivityColor(item.type)}20`,
+                              borderLeft: `3px solid ${getActivityColor(item.type)}`,
                             }}
                           >
                             <Typography variant="caption" sx={{ display: 'block', fontWeight: 600 }}>
                               {item.startTime}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                              {(item.description || getAttendanceTypeLabel(item.type)).slice(0, 18)}
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {(item as any).displayTitle}
                             </Typography>
                           </Box>
                         ))}

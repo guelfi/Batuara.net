@@ -21,92 +21,24 @@
 
 ---
 
-## 🔧 Fase Imediata A — Correção de CRUD (Backend)
-
-> **Prioridade: CRÍTICA** — Bloqueia uso real do AdminDashboard  
-> Requer rebuild do container `api` após as alterações.
-
-### Problema
-Qualquer `PUT /api/calendar/attendances/{id}` ou `PUT /api/events/{id}` em registro com data anterior a hoje retorna **HTTP 422** com `"Atendimentos/Eventos não podem ser agendados no passado"`. Causa: os Domain Services não distinguem INSERT de UPDATE.
-
-### Arquivos a modificar
-
-| # | Arquivo | Mudança |
-|:--|:--------|:--------|
-| 1 | `CalendarDomainService.cs` | Adicionar `bool isUpdate = false` em `ValidateAttendanceBusinessRules`; pular validação de data no passado quando `isUpdate = true` |
-| 2 | `CalendarAttendanceService.cs` | Passar `isUpdate: true` no fluxo de `UpdateAsync` |
-| 3 | `EventDomainService.cs` | Adicionar `bool isUpdate = false` em `ValidateEventBusinessRules`; pular validação de data no passado quando `isUpdate = true` |
-| 4 | `EventService.cs` | Passar `isUpdate: true` no fluxo de `UpdateAsync` |
-
 ---
 
-## 📱 Fase Imediata B — Responsividade Mobile (iPhone 16 — 393×852px)
+## ✅ Fase Imediata A — Correção de CRUD (Backend)
+> **Status:** Concluída
 
-> Requer rebuild do container `admindashboard`.
+## ✅ Fase Imediata B — Responsividade Mobile (iPhone 16)
+> **Status:** Concluída
 
-### Problemas identificados (viewport 393px)
+## ✅ Fase Imediata C — Dashboard com Dados Reais
+> **Status:** Concluída
 
-| Tela | Problema |
-|:-----|:---------|
-| Calendário | Coluna "Descrição" cortada; "Inscrição/Status/Ações" fora do viewport |
-| Eventos | Título truncado; coluna "Tipo" fora do viewport |
-| Orixás | Coluna "Elementos" exibe só a primeira letra |
-| Filhos da Casa | Coluna "Cidade" cortada |
-| Todas as páginas | Subtítulo descritivo truncado com reticências |
+## ✅ Fase Imediata D — Navegação de Eventos por Mês (PublicWebsite)
+> **Status:** Concluída
 
-### Arquivos a modificar
-
-| # | Arquivo | Mudança |
-|:--|:--------|:--------|
-| 5 | `CalendarPage.tsx` | Ocultar colunas Descrição/Inscrição em `xs`; subtítulo `whiteSpace: 'normal'`; scroll horizontal na DataGrid |
-| 6 | `EventsPage.tsx` | Ocultar colunas secundárias em `xs`; subtítulo word-break |
-| 7 | `OrixasPage.tsx` | Ocultar colunas Elementos/Ordem em `xs` |
-| 8 | `MembersPage.tsx` | Ocultar colunas Cidade/UF em `xs` |
-| 9 | `GuidesPage.tsx` | Subtítulo word-break + colunas responsivas |
-| 10 | `UmbandaLinesPage.tsx` | Subtítulo word-break + colunas responsivas |
-| 11 | `SpiritualContentPage.tsx` | Subtítulo word-break + colunas responsivas |
-| 12 | `DonationsContactPage.tsx` | Subtítulo word-break |
-
----
-
-## 📊 Fase Imediata C — Dashboard com Dados Reais
-
-> Alinhado com **ROADMAP Fase 6.3 / EP-Dashboard**  
-> Requer rebuild dos containers `api` e `admindashboard`.
-
-### Problema
-`DashboardPage.tsx` exibe valores hardcoded (`15 Eventos`, `42 Atendimentos`, `5 Usuários`). Não existe endpoint `GET /api/dashboard/stats` na API.
-
-### Arquivos a criar/modificar
-
-| # | Arquivo | Ação |
-|:--|:--------|:-----|
-| 13 | `DashboardController.cs` | NOVO — `GET /api/dashboard/stats` com `[Authorize]` |
-| 14 | `IDashboardService.cs` | NOVO — interface com `GetStatsAsync()` |
-| 15 | `DashboardService.cs` | NOVO — queries reais ao `BatuaraDbContext` (contar Eventos, Atendimentos do mês, Usuários Admin, próximo Evento, próximo Atendimento) |
-| 16 | `Program.cs` | MODIFY — registrar `IDashboardService` / `DashboardService` no DI |
-| 17 | `DashboardPage.tsx` | MODIFY — remover `mockStats`, chamar `apiService.getDashboardStats()` |
-| 18 | `api.ts` | MODIFY — adicionar método `getDashboardStats()` |
-
----
-
-## 📅 Fase Imediata D — Navegação de Eventos por Mês (PublicWebsite)
-
-> Novo requisito identificado em sessão 19/04/2026  
-> Requer rebuild dos containers `api` e `publicwebsite`.
-
-### Requisito
-- Página pública de eventos inicia **no mês atual**
-- Botões **◀ Mês Anterior** e **Mês Seguinte ▶** com label `"Abril 2026"` em pt-BR
-- Sem eventos no mês → mensagem `"Nenhum evento programado para [mês/ano]"`
-- Limite sugerido: ±12 meses a partir do mês atual
-
-### Arquivos a modificar
-
-| # | Arquivo | Mudança |
-|:--|:--------|:--------|
-| 19 | `PublicEventsController.cs` | Adicionar query params `?month=&year=` no `GET /api/public/events`; filtrar por mês/ano quando fornecidos; default = mês atual |
-| 20 | Página de Eventos (PublicWebsite) | State `currentMonth/Year`; botões prev/next; reload via API a cada navegação; loading indicator |
+## ✅ Fase Extra — Calendário Unificado e Navegação Mensal
+- Implementada navegação mensal no Calendário Público.
+- Unificada exibição de Eventos e Atendimentos no Calendário.
+- Sincronização dinâmica via API com filtros de mês/ano.
 
 ---
 

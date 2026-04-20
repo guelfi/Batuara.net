@@ -29,6 +29,8 @@ namespace Batuara.API.Controllers
             [FromQuery] AttendanceType? type,
             [FromQuery] DateTime? fromDate,
             [FromQuery] DateTime? toDate,
+            [FromQuery] int? month,
+            [FromQuery] int? year,
             [FromQuery] bool? requiresRegistration,
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 20,
@@ -36,6 +38,20 @@ namespace Batuara.API.Controllers
         {
             try
             {
+                // Lógica de filtragem por mês/ano se fornecidos
+                if (month.HasValue && year.HasValue)
+                {
+                    fromDate = new DateTime(year.Value, month.Value, 1, 0, 0, 0, DateTimeKind.Utc);
+                    toDate = fromDate.Value.AddMonths(1).AddTicks(-1);
+                }
+                // Default: mês atual se nenhuma data for fornecida
+                else if (!fromDate.HasValue && !toDate.HasValue)
+                {
+                    var now = DateTime.UtcNow;
+                    fromDate = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                    toDate = fromDate.Value.AddMonths(1).AddTicks(-1);
+                }
+
                 var result = await _service.GetPublicAsync(q, type, fromDate, toDate, requiresRegistration, pageNumber, pageSize, sort);
                 return Ok(new { success = true, data = result });
             }
