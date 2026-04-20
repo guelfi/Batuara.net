@@ -25,7 +25,7 @@ namespace Batuara.Domain.Services
         /// <summary>
         /// Valida se um evento está dentro das regras de negócio da casa
         /// </summary>
-        (bool IsValid, string[] Errors) ValidateEventBusinessRules(Event eventEntity);
+        (bool IsValid, string[] Errors) ValidateEventBusinessRules(Event eventEntity, bool isUpdate = false);
 
         /// <summary>
         /// Sugere horários alternativos para um evento em caso de conflito

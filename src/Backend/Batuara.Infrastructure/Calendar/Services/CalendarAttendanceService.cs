@@ -156,7 +156,7 @@ namespace Batuara.Infrastructure.Calendar.Services
                     else entity.Deactivate();
                 }
 
-                var validation = await ValidateBusinessAndConflictsAsync(entity);
+                var validation = await ValidateBusinessAndConflictsAsync(entity, true);
                 if (validation.Errors.Length > 0)
                 {
                     return (null, validation.Errors, validation.Conflict);
@@ -237,9 +237,9 @@ namespace Batuara.Infrastructure.Calendar.Services
             return query;
         }
 
-        private async Task<(string[] Errors, bool Conflict)> ValidateBusinessAndConflictsAsync(CalendarAttendance entity)
+        private async Task<(string[] Errors, bool Conflict)> ValidateBusinessAndConflictsAsync(CalendarAttendance entity, bool isUpdate = false)
         {
-            var business = _calendarDomainService.ValidateAttendanceBusinessRules(entity);
+            var business = _calendarDomainService.ValidateAttendanceBusinessRules(entity, isUpdate);
             if (!business.IsValid)
             {
                 return (business.Errors, false);

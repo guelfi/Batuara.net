@@ -19,6 +19,8 @@ import {
   Switch,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
@@ -54,6 +56,8 @@ const initialFormState: GuideFormState = {
 const splitCsv = (value: string) => value.split(',').map((item) => item.trim()).filter(Boolean);
 
 const GuidesPage: React.FC = () => {
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [rows, setRows] = useState<Guide[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -219,7 +223,7 @@ const GuidesPage: React.FC = () => {
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
             Guias e Entidades
           </Typography>
-          <Typography color="text.secondary">
+          <Typography color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
             Cadastre, filtre e ordene os guias e entidades exibidos institucionalmente.
           </Typography>
         </Box>
@@ -260,6 +264,11 @@ const GuidesPage: React.FC = () => {
           onPaginationModelChange={setPaginationModel}
           pageSizeOptions={[5, 10, 20]}
           disableRowSelectionOnClick
+          columnVisibilityModel={{
+            displayOrder: !isXs,
+            entryDate: !isXs,
+            email: !isXs,
+          }}
           sx={{ border: 0 }}
         />
       </Paper>
