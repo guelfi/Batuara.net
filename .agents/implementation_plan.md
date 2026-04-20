@@ -1,113 +1,25 @@
-# Plano de Implementação Consolidado — Batuara.net
+# Fase E — Refinamento de Calendário e Gestão de Eventos
 
-> Cruza o plano de sessão (testes E2E de 19/04/2026) com o ROADMAP.md oficial do projeto.
-> Atualizar este arquivo e o `.agents/session.md` ao final de cada sessão.
+## Problemas Identificados
+1. **Duplicidade:** Eventos como "Festa de Ogum" aparecem duplicados no calendário público quando cadastrados tanto em "Eventos" quanto em "Atendimentos".
+2. **Navegação Admin:** A tela de "Calendário Atendimento" no AdminDashboard não possui navegação mensal, dificultando a gestão futura/passada.
+3. **Restrição de Edição:** Eventos especiais (Festas, Cursos, Bazares) não devem ser editados via "Calendário Atendimento", apenas via "Eventos e Festas".
+4. **UI/UX Público:** O calendário no PublicWebsite está cortando ou com visualização incompleta em alguns viewports.
 
----
+## Mudanças Propostas
 
-## ✅ Fases Concluídas (histórico do ROADMAP)
+### 1. [MODIFY] [CalendarSection.tsx](file:///c:/Users/MarcoGuelfi/Projetos/Batuara.net/src/Frontend/PublicWebsite/src/components/sections/CalendarSection.tsx)
+- Implementar lógica de de-duplicação no `useMemo`: se houver um Evento e um Atendimento na mesma data com o mesmo nome, manter apenas o Evento.
+- Ajustar CSS para garantir que o calendário seja totalmente visível e responsivo (revisar paddings e maxWidth).
 
-| Fase | Descrição | Status |
-|:-----|:----------|:-------|
-| 1 | Emergência de Segurança (credenciais, CORS, .gitignore) | ✅ Concluída |
-| 2 | Estabilidade da API e infraestrutura (health checks, EF Core) | ✅ Concluída |
-| 2.1 | Validação de JWT Secret | ✅ Concluída |
-| 3 | Limpeza arquitetural e unificação de Auth | ✅ Concluída |
-| 4 | CI/CD e deploy automático na OCI | ✅ Concluída |
-| Pós-Deploy | Fix deadlock no interceptor de auth (spinner infinito) | ✅ Concluída |
-| 5 | Hardening: secret scanning, dependabot, CSP, Serilog, backup, runbook | ✅ Concluída (exceto 5.3) |
+### 2. [MODIFY] [CalendarPage.tsx](file:///c:/Users/MarcoGuelfi/Projetos/Batuara.net/src/Frontend/AdminDashboard/src/pages/CalendarPage.tsx)
+- Adicionar estado de `selectedMonthDate` para navegação mensal (mesma lógica do PublicWebsite).
+- Atualizar `loadAttendances` para enviar filtros de `month` e `year`.
+- No diálogo de edição, exibir uma mensagem de alerta e desabilitar o botão de salvar se o tipo for `Festa` ou `Curso`, orientando o usuário a usar a seção "Eventos e Festas".
 
-> **Fase 5.3 — HTTPS com Let's Encrypt:** ⏳ Bloqueado — aguarda domínio válido (`batuara.net`). Quando disponível: `sudo certbot --nginx -d batuara.net -d www.batuara.net ...`
+### 3. [OCI] Deploy
+- Executar build, push e merge para atualização na Oracle Cloud.
 
----
-
----
-
-## ✅ Fase Imediata A — Correção de CRUD (Backend)
-> **Status:** Concluída
-
-## ✅ Fase Imediata B — Responsividade Mobile (iPhone 16)
-> **Status:** Concluída
-
-## ✅ Fase Imediata C — Dashboard com Dados Reais
-> **Status:** Concluída
-
-## ✅ Fase Imediata D — Navegação de Eventos por Mês (PublicWebsite)
-> **Status:** Concluída
-
-## ✅ Fase Extra — Calendário Unificado e Navegação Mensal
-- Implementada navegação mensal no Calendário Público.
-- Unificada exibição de Eventos e Atendimentos no Calendário.
-- Sincronização dinâmica via API com filtros de mês/ano.
-
----
-
-## 🗺️ Backlog Estratégico — Fase 6 do ROADMAP
-
-> Itens do ROADMAP.md já planejados, mas **ainda não iniciados**.  
-> A execução das Fases A–D acima é pré-requisito para iniciar a Fase 6.
-
-### 6.0 — Fundação Técnica (pré-requisito da Fase 6)
-- Consolidar contratos OpenAPI 3.0
-- Padronizar envelopes JSON, paginação e filtros
-- Garantir serialização de enums como string (já parcialmente feito)
-- Restringir acesso ao Swagger em produção
-- Revisar políticas de rate limiting: auth (5/min), público (100/h), admin (1000/h)
-
-### 6.1 — Núcleo Operacional
-| Epic | Prioridade | Notas |
-|:-----|:-----------|:------|
-| EP-SiteSettings (admin + público) | P0 | Mais simples; valida fundação |
-| EP-Events (admin + público) | P0 | Parcialmente implementado; revisar filtros e paginação |
-| EP-Contact (público) | P0 | POST único; rate limit anti-spam |
-| EP-Calendar (admin + público + inscrições) | P1 | Mais complexo (capacidade, idempotência, transações) |
-
-### 6.2 — Conteúdo Espiritual
-| Epic | Prioridade |
-|:-----|:-----------|
-| EP-Orixas | P1 |
-| EP-UmbandaLines | P1 |
-| EP-SpiritualContents | P1 (busca textual + sanitização XSS) |
-
-### 6.3 — Operação e Auditoria
-| Epic | Notas |
-|:-----|:------|
-| EP-Dashboard | Fase Imediata C cobre parcialmente; Fase 6.3 adiciona `activity-logs` e auditoria persistente |
-| EP-Audit | Trilha de auditoria por usuário/entidade/ação; retenção e correlação com SIEM |
-
-### 6.4 — Segurança Avançada
-- MFA para Admin (TOTP)
-- RBAC granular por endpoint
-- WAF + SIEM + alertas
-- Pentest automatizado no CI/CD
-- HTTPS (depende do domínio `batuara.net` — item 5.3 ainda pendente)
-
----
-
-## Resumo de Todos os Arquivos — Fases Imediatas
-
-| # | Arquivo | Tipo | Fase |
-|:--|:--------|:-----|:-----|
-| 1 | `CalendarDomainService.cs` | Backend | A |
-| 2 | `CalendarAttendanceService.cs` | Backend | A |
-| 3 | `EventDomainService.cs` | Backend | A |
-| 4 | `EventService.cs` | Backend | A |
-| 5 | `CalendarPage.tsx` | AdminDashboard | B |
-| 6 | `EventsPage.tsx` | AdminDashboard | B |
-| 7 | `OrixasPage.tsx` | AdminDashboard | B |
-| 8 | `MembersPage.tsx` | AdminDashboard | B |
-| 9 | `GuidesPage.tsx` | AdminDashboard | B |
-| 10 | `UmbandaLinesPage.tsx` | AdminDashboard | B |
-| 11 | `SpiritualContentPage.tsx` | AdminDashboard | B |
-| 12 | `DonationsContactPage.tsx` | AdminDashboard | B |
-| 13 | `DashboardController.cs` | Backend (NEW) | C |
-| 14 | `IDashboardService.cs` | Backend (NEW) | C |
-| 15 | `DashboardService.cs` | Backend (NEW) | C |
-| 16 | `Program.cs` | Backend | C |
-| 17 | `DashboardPage.tsx` | AdminDashboard | C |
-| 18 | `api.ts` | AdminDashboard | C |
-| 19 | `PublicEventsController.cs` | Backend | D |
-| 20 | Página de Eventos | PublicWebsite | D |
-
-> **Total imediato:** 20 arquivos  
-> **Ordem de execução:** A → rebuild API → B → rebuild AdminDashboard → C → rebuild API + AdminDashboard → D → rebuild API + PublicWebsite
+## Verificação
+- Abrir o site público e validar que "Festa de Ogum" aparece apenas uma vez.
+- Abrir o Admin, navegar entre os meses no Calendário e tentar editar uma "Festa".

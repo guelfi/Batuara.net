@@ -30,6 +30,8 @@ namespace Batuara.API.Controllers
             [FromQuery] AttendanceType? type,
             [FromQuery] DateTime? fromDate,
             [FromQuery] DateTime? toDate,
+            [FromQuery] int? month,
+            [FromQuery] int? year,
             [FromQuery] bool? requiresRegistration,
             [FromQuery] bool? isActive,
             [FromQuery] int pageNumber = 1,
@@ -38,6 +40,13 @@ namespace Batuara.API.Controllers
         {
             try
             {
+                // Lógica de filtragem por mês/ano se fornecidos
+                if (month.HasValue && year.HasValue)
+                {
+                    fromDate = new DateTime(year.Value, month.Value, 1, 0, 0, 0, DateTimeKind.Utc);
+                    toDate = fromDate.Value.AddMonths(1).AddTicks(-1);
+                }
+
                 var result = await _service.GetAdminAsync(q, type, fromDate, toDate, requiresRegistration, isActive, pageNumber, pageSize, sort);
                 return Ok(new { success = true, data = result });
             }
