@@ -14,7 +14,9 @@ import {
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import InfoIcon from '@mui/icons-material/Info';
 import { useQuery } from '@tanstack/react-query';
+import { useTheme, useMediaQuery } from '@mui/material';
 import publicApi from '../../services/api';
 import { AttendanceType, CalendarAttendance, Event as BatuaraEvent, EventType } from '../../types';
 import {
@@ -40,6 +42,8 @@ const CalendarSection: React.FC = () => {
   const monthEnd = endOfMonth(selectedMonthDate);
 
   const [selectedDate, setSelectedDate] = useState<Date>(monthStart);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handlePrevMonth = () => {
     setSelectedMonthDate((prev: Date) => subMonths(prev, 1));
@@ -71,8 +75,8 @@ const CalendarSection: React.FC = () => {
   const getActivityColor = (type: AttendanceType | EventType | any): string => {
     const typeValue = typeof type === 'string' ? parseInt(type) : type;
 
-    if (typeValue === AttendanceType.Kardecismo) return '#1e88e5'; // Azul
-    if (typeValue === AttendanceType.Umbanda) return '#8e24aa';    // Roxo
+    if (typeValue === AttendanceType.Kardecismo) return '#9c27b0'; // Roxo (conforme solicitado)
+    if (typeValue === AttendanceType.Umbanda) return '#03a9f4';    // Azul Claro (conforme solicitado)
     if (typeValue === EventType.Festa || typeValue === AttendanceType.Festa) return '#e65100'; // Laranja
     if (typeValue === EventType.Bazar) return '#ef6c00';           // Laranja escuro
     if (typeValue === EventType.Celebracao) return '#d81b60';      // Rosa/Vinho
@@ -204,16 +208,41 @@ const CalendarSection: React.FC = () => {
               mx: 'auto',
               lineHeight: 1.6,
               mb: 2,
+              fontSize: { xs: '1rem', md: '1.5rem' }
             }}
           >
-            Confira os atendimentos espirituais programados para o mês corrente
+            {isMobile ? 'Agenda de atendimentos' : 'Confira os atendimentos espirituais programados para o mês corrente'}
           </Typography>
 
-          <Alert severity="info" sx={{ maxWidth: 800, mx: 'auto', mb: 4 }}>
-            <AlertTitle>Informações Importantes</AlertTitle>
-            Todos os atendimentos são gratuitos. Recomendamos chegar com 15 minutos de antecedência.
-            Para cursos e festas especiais, consulte os detalhes na seção de Eventos.
-          </Alert>
+          {/* Legenda de Cores */}
+          <Stack 
+            direction="row" 
+            flexWrap="wrap" 
+            justifyContent="center" 
+            gap={2} 
+            sx={{ mb: 4, px: 2 }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#03a9f4' }} />
+              <Typography variant="caption" fontWeight={600}>Gira de Umbanda</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#9c27b0' }} />
+              <Typography variant="caption" fontWeight={600}>Kardecismo</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#e65100' }} />
+              <Typography variant="caption" fontWeight={600}>Festas/Eventos</Typography>
+            </Box>
+          </Stack>
+
+          {!isMobile && (
+            <Alert severity="info" icon={<InfoIcon />} sx={{ maxWidth: 800, mx: 'auto', mb: 4 }}>
+              <AlertTitle>Informações Importantes</AlertTitle>
+              Todos os atendimentos são gratuitos. Recomendamos chegar com 15 minutos de antecedência.
+              Para cursos e festas especiais, consulte os detalhes na seção de Eventos.
+            </Alert>
+          )}
         </Box>
 
         {isLoading ? (
@@ -238,93 +267,166 @@ const CalendarSection: React.FC = () => {
             </Typography>
           </Box>
         ) : (
-          <Paper sx={{ p: { xs: 1, md: 3 }, borderRadius: 3, maxWidth: 1200, mx: 'auto', boxShadow: 3, overflow: 'hidden' }}>
-            <Box sx={{ overflowX: 'auto', width: '100%', pb: 1 }}>
-              <Box sx={{ minWidth: { xs: 750, md: '100%' } }}>
-                <Grid container spacing={1} sx={{ mb: 1 }}>
-                  {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((label) => (
-                    <Grid key={label} size={{ xs: 12 / 7 }}>
-                      <Box sx={{ textAlign: 'center', py: 1, fontWeight: 700, color: 'text.secondary' }}>{label}</Box>
-                    </Grid>
-                  ))}
-                </Grid>
+          <Stack spacing={3}>
+            <Paper sx={{ p: { xs: 1, md: 3 }, borderRadius: 3, maxWidth: 1200, mx: 'auto', boxShadow: 3, overflow: 'hidden' }}>
+              <Box sx={{ overflowX: isMobile ? 'auto' : 'hidden', width: '100%', pb: isMobile ? 1 : 0 }}>
+                <Box sx={{ minWidth: { xs: 450, md: '100%' } }}>
+                  <Grid container spacing={0.5} sx={{ mb: 1 }}>
+                    {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((label) => (
+                      <Grid key={label} size={{ xs: 12 / 7 }}>
+                        <Box sx={{ textAlign: 'center', py: 1, fontWeight: 700, color: 'text.secondary', fontSize: { xs: '0.75rem', md: '0.875rem' } }}>{label}</Box>
+                      </Grid>
+                    ))}
+                  </Grid>
 
-                <Grid container spacing={1}>
-                  {eventsByDay.map(({ day, items }) => {
-                    const isSelected = isSameDay(day, selectedDate);
-                    const isCurrentMonth = isSameMonth(day, monthStart);
-                    const today = isToday(day);
+                  <Grid container spacing={0.5}>
+                    {eventsByDay.map(({ day, items }) => {
+                      const isSelected = isSameDay(day, selectedDate);
+                      const isCurrentMonth = isSameMonth(day, monthStart);
+                      const today = isToday(day);
 
-                    return (
-                      <Grid key={day.toISOString()} size={{ xs: 12 / 7 }}>
-                        <Box
-                          onClick={() => setSelectedDate(day)}
-                          sx={{
-                            minHeight: { xs: 84, md: 110 },
-                            borderRadius: 2,
-                            border: 1,
-                            borderColor: isSelected ? 'primary.main' : 'divider',
-                            backgroundColor: isSelected ? 'rgba(25, 118, 210, 0.08)' : 'background.paper',
-                            p: 1,
-                            cursor: 'pointer',
-                            opacity: isCurrentMonth ? 1 : 0.35,
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                              borderColor: 'primary.main',
-                              transform: 'translateY(-1px)',
-                            },
-                          }}
-                        >
-                          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+                      return (
+                        <Grid key={day.toISOString()} size={{ xs: 12 / 7 }}>
+                          <Box
+                            onClick={() => setSelectedDate(day)}
+                            sx={{
+                              minHeight: { xs: 60, md: 110 },
+                              borderRadius: 2,
+                              border: 1,
+                              borderColor: isSelected ? 'primary.main' : 'divider',
+                              backgroundColor: isSelected ? 'rgba(25, 118, 210, 0.08)' : 'background.paper',
+                              p: { xs: 0.5, md: 1 },
+                              cursor: 'pointer',
+                              opacity: isCurrentMonth ? 1 : 0.35,
+                              transition: 'all 0.2s ease',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              '&:hover': {
+                                borderColor: 'primary.main',
+                                transform: 'translateY(-1px)',
+                              },
+                            }}
+                          >
                             <Typography
                               variant="body2"
                               sx={{
                                 fontWeight: today || isSelected ? 700 : 500,
                                 color: today ? 'primary.main' : 'text.primary',
+                                fontSize: { xs: '0.8rem', md: '0.875rem' },
+                                mb: 0.5
                               }}
                             >
                               {format(day, 'd')}
                             </Typography>
-                          </Stack>
-                          <Stack spacing={0.5}>
-                            {items.slice(0, 3).map((item) => (
-                              <Box
-                                key={item.id}
-                                sx={{
-                                  px: 0.75,
-                                  py: 0.35,
-                                  borderRadius: 1,
-                                  backgroundColor: `${getActivityColor(item.type)}20`,
-                                  borderLeft: `3px solid ${getActivityColor(item.type)}`,
-                                }}
-                              >
-                                <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, fontSize: '0.65rem' }}>
-                                  {item.startTime}
-                                </Typography>
-                                <Typography 
-                                  variant="caption" 
-                                  color="text.secondary" 
-                                  sx={{ 
-                                    display: 'block', 
-                                    whiteSpace: 'nowrap', 
-                                    overflow: 'hidden', 
-                                    textOverflow: 'ellipsis',
-                                    fontSize: '0.65rem'
-                                  }}
-                                >
-                                  {(item as any).displayTitle}
-                                </Typography>
-                              </Box>
-                            ))}
-                          </Stack>
-                        </Box>
-                      </Grid>
-                    );
-                  })}
-                </Grid>
+                            
+                            {/* Dots for Mobile / Detailed for Desktop */}
+                            {isMobile ? (
+                              <Stack direction="row" spacing={0.4} justifyContent="center" flexWrap="wrap" sx={{ width: '100%' }}>
+                                {items.slice(0, 4).map((item) => (
+                                  <Box
+                                    key={item.id}
+                                    sx={{
+                                      width: 6,
+                                      height: 6,
+                                      borderRadius: '50%',
+                                      backgroundColor: getActivityColor(item.type),
+                                    }}
+                                  />
+                                ))}
+                              </Stack>
+                            ) : (
+                              <Stack spacing={0.5} sx={{ width: '100%' }}>
+                                {items.slice(0, 3).map((item) => (
+                                  <Box
+                                    key={item.id}
+                                    sx={{
+                                      px: 0.75,
+                                      py: 0.35,
+                                      borderRadius: 1,
+                                      backgroundColor: `${getActivityColor(item.type)}20`,
+                                      borderLeft: `3px solid ${getActivityColor(item.type)}`,
+                                    }}
+                                  >
+                                    <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, fontSize: '0.65rem' }}>
+                                      {item.startTime}
+                                    </Typography>
+                                    <Typography 
+                                      variant="caption" 
+                                      color="text.secondary" 
+                                      sx={{ 
+                                        display: 'block', 
+                                        whiteSpace: 'nowrap', 
+                                        overflow: 'hidden', 
+                                        textOverflow: 'ellipsis',
+                                        fontSize: '0.65rem'
+                                      }}
+                                    >
+                                      {(item as any).displayTitle}
+                                    </Typography>
+                                  </Box>
+                                ))}
+                                {items.length > 3 && (
+                                  <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', fontSize: '0.6rem' }}>
+                                    + {items.length - 3} mais
+                                  </Typography>
+                                )}
+                              </Stack>
+                            )}
+                          </Box>
+                        </Grid>
+                      );
+                    })}
+                  </Grid>
+                </Box>
               </Box>
-            </Box>
-          </Paper>
+            </Paper>
+
+            {/* Detalhes do Dia Selecionado (Especialmente importante para Mobile) */}
+            <Paper sx={{ p: 2, borderRadius: 3, maxWidth: 1200, mx: 'auto', boxShadow: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CalendarTodayIcon fontSize="small" />
+                {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+              </Typography>
+              
+              {currentData.filter(item => isSameDay(parseISO(item.date), selectedDate)).length === 0 ? (
+                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', py: 2, textAlign: 'center' }}>
+                  Nenhuma atividade programada para este dia.
+                </Typography>
+              ) : (
+                <Stack spacing={1.5}>
+                  {currentData
+                    .filter(item => isSameDay(parseISO(item.date), selectedDate))
+                    .map((item) => (
+                      <Box
+                        key={item.id}
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 2,
+                          backgroundColor: `${getActivityColor(item.type)}08`,
+                          borderLeft: `5px solid ${getActivityColor(item.type)}`,
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <Box>
+                          <Typography variant="subtitle2" fontWeight={700}>
+                            {(item as any).displayTitle}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {getActivityLabel(item.type)}
+                          </Typography>
+                        </Box>
+                        <Typography variant="h6" color="primary.main" fontWeight={700}>
+                          {item.startTime}
+                        </Typography>
+                      </Box>
+                    ))}
+                </Stack>
+              )}
+            </Paper>
+          </Stack>
         )}
 
 
