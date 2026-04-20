@@ -151,11 +151,11 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
     border: isOverFooter ? '2px solid' : 'none',
     borderColor: isOverFooter ? 'primary.main' : 'transparent',
     transition: 'all 0.3s ease-in-out',
-    transform: isVisible ? 'translateX(0)' : 'translateX(-100px)',
+    transform: isVisible ? 'translateX(0)' : 'translateX(100px)',
     opacity: isVisible ? 1 : 0,
     '&:hover': {
       backgroundColor: isOverFooter ? 'rgba(255, 255, 255, 0.9)' : 'primary.dark',
-      transform: isVisible ? 'translateX(4px)' : 'translateX(-100px)',
+      transform: isVisible ? 'translateX(-4px)' : 'translateX(100px)',
       boxShadow: isOverFooter ? 6 : 4,
     }
   });
@@ -169,7 +169,7 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
         sx={{
           ...getButtonStyle(),
           bottom: { xs: 200, md: 220 },
-          left: { xs: 16, md: 20 },
+          right: { xs: 16, md: 20 },
         }}
       >
         <KeyboardArrowUpIcon fontSize="small" />
@@ -183,7 +183,7 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
         sx={{
           ...getButtonStyle(),
           bottom: { xs: 150, md: 165 },
-          left: { xs: 16, md: 20 },
+          right: { xs: 16, md: 20 },
           opacity: isVisible && currentSectionIndex > 0 ? (isOverFooter ? 1 : 1) : 0.3,
         }}
       >
@@ -198,9 +198,8 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
         sx={{
           ...getButtonStyle(),
           bottom: { xs: 100, md: 110 },
-          left: { xs: 16, md: 20 },
-          opacity: isVisible && currentSectionIndex < sections.length - 1 && !isOverFooter ? 1 : 0,
-          transform: isVisible && currentSectionIndex < sections.length - 1 && !isOverFooter ? 'translateX(0)' : 'translateX(-100px)',
+          right: { xs: 16, md: 20 },
+          transform: isVisible && currentSectionIndex < sections.length - 1 && !isOverFooter ? 'translateX(0)' : 'translateX(100px)',
         }}
       >
         <NavigateNextIcon fontSize="small" />
@@ -213,9 +212,8 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
         sx={{
           ...getButtonStyle(),
           bottom: { xs: 50, md: 55 },
-          left: { xs: 16, md: 20 },
-          opacity: isVisible && !isOverFooter ? 1 : 0,
-          transform: isVisible && !isOverFooter ? 'translateX(0)' : 'translateX(-100px)',
+          right: { xs: 16, md: 20 },
+          transform: isVisible && !isOverFooter ? 'translateX(0)' : 'translateX(100px)',
         }}
       >
         <KeyboardArrowDownIcon fontSize="small" />
