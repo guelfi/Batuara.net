@@ -238,78 +238,92 @@ const CalendarSection: React.FC = () => {
             </Typography>
           </Box>
         ) : (
-          <Paper sx={{ p: { xs: 1, md: 3 }, borderRadius: 3, maxWidth: 1100, mx: 'auto', boxShadow: 3 }}>
-            <Grid container spacing={1} sx={{ mb: 1 }}>
-              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((label) => (
-                <Grid key={label} size={{ xs: 12 / 7 }}>
-                  <Box sx={{ textAlign: 'center', py: 1, fontWeight: 700, color: 'text.secondary' }}>{label}</Box>
+          <Paper sx={{ p: { xs: 1, md: 3 }, borderRadius: 3, maxWidth: 1200, mx: 'auto', boxShadow: 3, overflow: 'hidden' }}>
+            <Box sx={{ overflowX: 'auto', width: '100%', pb: 1 }}>
+              <Box sx={{ minWidth: { xs: 750, md: '100%' } }}>
+                <Grid container spacing={1} sx={{ mb: 1 }}>
+                  {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((label) => (
+                    <Grid key={label} size={{ xs: 12 / 7 }}>
+                      <Box sx={{ textAlign: 'center', py: 1, fontWeight: 700, color: 'text.secondary' }}>{label}</Box>
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
-            </Grid>
 
-            <Grid container spacing={1}>
-              {eventsByDay.map(({ day, items }) => {
-                const isSelected = isSameDay(day, selectedDate);
-                const isCurrentMonth = isSameMonth(day, monthStart);
-                const today = isToday(day);
+                <Grid container spacing={1}>
+                  {eventsByDay.map(({ day, items }) => {
+                    const isSelected = isSameDay(day, selectedDate);
+                    const isCurrentMonth = isSameMonth(day, monthStart);
+                    const today = isToday(day);
 
-                return (
-                  <Grid key={day.toISOString()} size={{ xs: 12 / 7 }}>
-                    <Box
-                      onClick={() => setSelectedDate(day)}
-                      sx={{
-                        minHeight: { xs: 84, md: 96 },
-                        borderRadius: 2,
-                        border: 1,
-                        borderColor: isSelected ? 'primary.main' : 'divider',
-                        backgroundColor: isSelected ? 'rgba(25, 118, 210, 0.08)' : 'background.paper',
-                        p: 1,
-                        cursor: 'pointer',
-                        opacity: isCurrentMonth ? 1 : 0.35,
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          borderColor: 'primary.main',
-                          transform: 'translateY(-1px)',
-                        },
-                      }}
-                    >
-                      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
-                        <Typography
-                          variant="body2"
+                    return (
+                      <Grid key={day.toISOString()} size={{ xs: 12 / 7 }}>
+                        <Box
+                          onClick={() => setSelectedDate(day)}
                           sx={{
-                            fontWeight: today || isSelected ? 700 : 500,
-                            color: today ? 'primary.main' : 'text.primary',
+                            minHeight: { xs: 84, md: 110 },
+                            borderRadius: 2,
+                            border: 1,
+                            borderColor: isSelected ? 'primary.main' : 'divider',
+                            backgroundColor: isSelected ? 'rgba(25, 118, 210, 0.08)' : 'background.paper',
+                            p: 1,
+                            cursor: 'pointer',
+                            opacity: isCurrentMonth ? 1 : 0.35,
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              borderColor: 'primary.main',
+                              transform: 'translateY(-1px)',
+                            },
                           }}
                         >
-                          {format(day, 'd')}
-                        </Typography>
-                      </Stack>
-                      <Stack spacing={0.5}>
-                        {items.slice(0, 2).map((item) => (
-                          <Box
-                            key={item.id}
-                            sx={{
-                              px: 0.75,
-                              py: 0.35,
-                              borderRadius: 1,
-                              backgroundColor: `${getActivityColor(item.type)}20`,
-                              borderLeft: `3px solid ${getActivityColor(item.type)}`,
-                            }}
-                          >
-                            <Typography variant="caption" sx={{ display: 'block', fontWeight: 600 }}>
-                              {item.startTime}
+                          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontWeight: today || isSelected ? 700 : 500,
+                                color: today ? 'primary.main' : 'text.primary',
+                              }}
+                            >
+                              {format(day, 'd')}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {(item as any).displayTitle}
-                            </Typography>
-                          </Box>
-                        ))}
-                      </Stack>
-                    </Box>
-                  </Grid>
-                );
-              })}
-            </Grid>
+                          </Stack>
+                          <Stack spacing={0.5}>
+                            {items.slice(0, 3).map((item) => (
+                              <Box
+                                key={item.id}
+                                sx={{
+                                  px: 0.75,
+                                  py: 0.35,
+                                  borderRadius: 1,
+                                  backgroundColor: `${getActivityColor(item.type)}20`,
+                                  borderLeft: `3px solid ${getActivityColor(item.type)}`,
+                                }}
+                              >
+                                <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, fontSize: '0.65rem' }}>
+                                  {item.startTime}
+                                </Typography>
+                                <Typography 
+                                  variant="caption" 
+                                  color="text.secondary" 
+                                  sx={{ 
+                                    display: 'block', 
+                                    whiteSpace: 'nowrap', 
+                                    overflow: 'hidden', 
+                                    textOverflow: 'ellipsis',
+                                    fontSize: '0.65rem'
+                                  }}
+                                >
+                                  {(item as any).displayTitle}
+                                </Typography>
+                              </Box>
+                            ))}
+                          </Stack>
+                        </Box>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </Box>
+            </Box>
           </Paper>
         )}
 
