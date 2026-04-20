@@ -31,12 +31,28 @@ namespace Batuara.API.Controllers
             [FromQuery] EventType? type,
             [FromQuery] DateTime? fromDate,
             [FromQuery] DateTime? toDate,
+            [FromQuery] int? month,
+            [FromQuery] int? year,
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 20,
             [FromQuery] string? sort = null)
         {
             try
             {
+                // Lógica de filtragem por mês/ano se fornecidos
+                if (month.HasValue && year.HasValue)
+                {
+                    fromDate = new DateTime(year.Value, month.Value, 1, 0, 0, 0, DateTimeKind.Utc);
+                    toDate = fromDate.Value.AddMonths(1).AddTicks(-1);
+                }
+                // Default: mês atual se nenhuma data for fornecida
+                else if (!fromDate.HasValue && !toDate.HasValue)
+                {
+                    var now = DateTime.UtcNow;
+                    fromDate = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                    toDate = fromDate.Value.AddMonths(1).AddTicks(-1);
+                }
+
                 var result = await _eventService.GetPublicAsync(q, type, fromDate, toDate, pageNumber, pageSize, sort);
                 var etag = ComputeETag(result.TotalCount, result.PageNumber, result.PageSize, q, type, fromDate, toDate, sort, result.Data.Count);
                 if (Request.Headers.IfNoneMatch.Any(v => v == etag))

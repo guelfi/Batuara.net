@@ -78,18 +78,18 @@ namespace Batuara.Domain.Services
             return startDate.AddDays(7); // Fallback para próxima semana
         }
 
-        public (bool IsValid, string[] Errors) ValidateEventBusinessRules(Event eventEntity)
+        public (bool IsValid, string[] Errors) ValidateEventBusinessRules(Event eventEntity, bool isUpdate = false)
         {
             var errors = new List<string>();
 
             // Regra: Eventos não podem ser agendados no passado
-            if (eventEntity.EventDate.Date <= DateTime.Today)
+            if (!isUpdate && eventEntity.EventDate.Date <= DateTime.Today)
             {
                 errors.Add("Eventos não podem ser agendados no passado");
             }
 
             // Regra: Eventos devem ser agendados com pelo menos 24h de antecedência
-            if (eventEntity.EventDate.Date < DateTime.Today.AddDays(1) && !IsSpecialEvent(eventEntity))
+            if (!isUpdate && eventEntity.EventDate.Date < DateTime.Today.AddDays(1) && !IsSpecialEvent(eventEntity))
             {
                 errors.Add("Eventos devem ser agendados com pelo menos 24 horas de antecedência");
             }

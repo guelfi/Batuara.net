@@ -20,7 +20,7 @@ namespace Batuara.Domain.Services
         /// <summary>
         /// Valida as regras de negócio para atendimentos
         /// </summary>
-        (bool IsValid, string[] Errors) ValidateAttendanceBusinessRules(CalendarAttendance attendance);
+        (bool IsValid, string[] Errors) ValidateAttendanceBusinessRules(CalendarAttendance attendance, bool isUpdate = false);
 
         /// <summary>
         /// Sugere horários alternativos para um atendimento
