@@ -174,15 +174,15 @@ const CalendarSection: React.FC = () => {
   }, [currentData, monthDays]);
 
   return (
-    <Box id="calendar" sx={{ py: 8, backgroundColor: 'background.default' }}>
+    <Box id="calendar" sx={{ py: { xs: 4, md: 4 }, backgroundColor: 'background.default' }}>
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <Box sx={{ textAlign: 'center', mb: { xs: 2, md: 3 } }}>
           <Typography
             variant="h2"
             sx={{
-              fontSize: { xs: '1.7rem', md: '2.5rem' },
+              fontSize: { xs: '1.5rem', md: '2.2rem' },
               fontWeight: 600,
-              mb: 2,
+              mb: 1,
               color: 'primary.main',
               display: 'flex',
               alignItems: 'center',
@@ -206,9 +206,9 @@ const CalendarSection: React.FC = () => {
               color: 'text.secondary',
               maxWidth: '800px',
               mx: 'auto',
-              lineHeight: 1.6,
-              mb: 2,
-              fontSize: { xs: '1rem', md: '1.5rem' }
+              lineHeight: 1.4,
+              mb: 1,
+              fontSize: { xs: '0.9rem', md: '1.2rem' }
             }}
           >
             {isMobile ? 'Agenda de atendimentos' : 'Confira os atendimentos espirituais programados para o mês corrente'}
@@ -237,10 +237,11 @@ const CalendarSection: React.FC = () => {
           </Stack>
 
           {!isMobile && (
-            <Alert severity="info" icon={<InfoIcon />} sx={{ maxWidth: 800, mx: 'auto', mb: 4 }}>
-              <AlertTitle>Informações Importantes</AlertTitle>
-              Todos os atendimentos são gratuitos. Recomendamos chegar com 15 minutos de antecedência.
-              Para cursos e festas especiais, consulte os detalhes na seção de Eventos.
+            <Alert severity="info" icon={<InfoIcon />} sx={{ maxWidth: 800, mx: 'auto', mb: 2, py: 0.5 }}>
+              <AlertTitle sx={{ mb: 0 }}>Informações Importantes</AlertTitle>
+              <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                Todos os atendimentos são gratuitos. Recomendamos chegar com 15 minutos de antecedência.
+              </Typography>
             </Alert>
           )}
         </Box>
@@ -290,7 +291,7 @@ const CalendarSection: React.FC = () => {
                           <Box
                             onClick={() => setSelectedDate(day)}
                             sx={{
-                              minHeight: { xs: 60, md: 110 },
+                              minHeight: { xs: 60, md: 85 },
                               borderRadius: 2,
                               border: 1,
                               borderColor: isSelected ? 'primary.main' : 'divider',
