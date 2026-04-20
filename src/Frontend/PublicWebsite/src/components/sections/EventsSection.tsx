@@ -26,21 +26,33 @@ import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { useQuery } from '@tanstack/react-query';
 import publicApi from '../../services/api';
-import { EventType } from '../../types';
-import { endOfMonth, format, parseISO, startOfMonth } from 'date-fns';
+import { EventType, Event as BatuaraEvent } from '../../types';
+import { addMonths, subMonths, endOfMonth, format, parseISO, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import NavigationDots from '../common/NavigationDots';
 
 const EventsSection: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const currentMonthStart = startOfMonth(new Date());
-  const currentMonthEnd = endOfMonth(new Date());
+  
+  // Estado para navegação mensal
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const monthStart = startOfMonth(selectedDate);
+  const monthEnd = endOfMonth(selectedDate);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<EventType | null>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [maxScroll, setMaxScroll] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const handlePrevMonth = () => {
+    setSelectedDate((prev: Date) => subMonths(prev, 1));
+  };
+
+  const handleNextMonth = () => {
+    setSelectedDate((prev: Date) => addMonths(prev, 1));
+  };
 
   const normalizeEventType = (type: EventType | string): EventType => {
     if (typeof type === 'number') {
@@ -99,25 +111,21 @@ const EventsSection: React.FC = () => {
   };
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['public-events', currentMonthStart.toISOString()],
+    queryKey: ['public-events', format(selectedDate, 'yyyy-MM'), searchTerm, selectedType],
     queryFn: () =>
       publicApi.getEvents({
         pageNumber: 1,
         pageSize: 100,
         sort: 'date:asc',
-        fromDate: currentMonthStart.toISOString(),
-        toDate: currentMonthEnd.toISOString(),
+        month: selectedDate.getMonth() + 1,
+        year: selectedDate.getFullYear(),
+        q: searchTerm || undefined,
+        type: selectedType || undefined,
       }),
   });
 
   const events = data?.data ?? [];
-
-  const filteredEvents = events.filter((event) => {
-    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === null || normalizeEventType(event.type) === selectedType;
-    return matchesSearch && matchesType && event.isActive !== false;
-  });
+  const filteredEvents = events.filter((event: BatuaraEvent) => event.isActive !== false);
 
   const formatEventDate = (dateString: string): string => {
     try {
@@ -191,9 +199,21 @@ const EventsSection: React.FC = () => {
               fontWeight: 600,
               mb: 2,
               color: 'primary.main',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2
             }}
           >
-            Eventos do Mês
+            <IconButton onClick={handlePrevMonth} color="primary" size="large">
+              <ArrowBackIosIcon fontSize="inherit" />
+            </IconButton>
+            <Box component="span" sx={{ minWidth: { xs: 200, md: 350 }, textAlign: 'center', textTransform: 'capitalize' }}>
+              {format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR })}
+            </Box>
+            <IconButton onClick={handleNextMonth} color="primary" size="large">
+              <ArrowForwardIosIcon fontSize="inherit" />
+            </IconButton>
           </Typography>
           <Typography
             variant="h5"
@@ -205,7 +225,7 @@ const EventsSection: React.FC = () => {
               mb: 4,
             }}
           >
-            Acompanhe somente as festas, celebrações e atividades programadas para o mês corrente
+            Acompanhe as festas, celebrações e atividades programadas para o período selecionado
           </Typography>
 
           {/* Filtros */}
@@ -322,7 +342,7 @@ const EventsSection: React.FC = () => {
                 scrollbarWidth: 'none',
               }}
             >
-              {filteredEvents.map((event) => (
+              {filteredEvents.map((event: BatuaraEvent) => (
                 <Card
                   key={event.id}
                   sx={{
@@ -447,7 +467,7 @@ const EventsSection: React.FC = () => {
         ) : (
           /* Grid para desktop */
           <Grid container spacing={3}>
-            {filteredEvents.map((event) => (
+            {filteredEvents.map((event: BatuaraEvent) => (
               <Grid size={{ xs: 12, md: 6, lg: 4 }} key={event.id}>
                 <Card
                   sx={{

@@ -222,7 +222,7 @@ const DonationsContactPage: React.FC = () => {
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
             Doações e Contato
           </Typography>
-          <Typography color="text.secondary">
+          <Typography color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
             Administre os dados bancários, PIX, canais institucionais e a fila de mensagens recebidas pelo PublicWebsite.
           </Typography>
         </Box>

@@ -266,7 +266,7 @@ namespace Batuara.Infrastructure.Events.Services
                     entity.UpdateEventDate(newEventDate);
                 }
 
-                var businessAfter = _eventDomainService.ValidateEventBusinessRules(entity);
+                var businessAfter = _eventDomainService.ValidateEventBusinessRules(entity, true);
                 if (!businessAfter.IsValid)
                 {
                     return (null, businessAfter.Errors, false);

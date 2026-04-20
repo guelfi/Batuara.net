@@ -35,6 +35,8 @@ using Batuara.Infrastructure.UmbandaLines.Services;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Json;
+using Batuara.Application.Dashboard.Services;
+using Batuara.Infrastructure.Dashboard.Services;
 
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -224,6 +226,7 @@ builder.Services.AddScoped<ICalendarAttendanceService, CalendarAttendanceService
 builder.Services.AddScoped<ICalendarDomainService, CalendarDomainService>();
 builder.Services.AddScoped<IUmbandaLineService, UmbandaLineService>();
 builder.Services.AddScoped<ISpiritualContentService, SpiritualContentService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // Configure Rate Limiting
 builder.Services.AddRateLimiter(options =>

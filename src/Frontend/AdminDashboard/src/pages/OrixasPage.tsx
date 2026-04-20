@@ -19,6 +19,8 @@ import {
   Switch,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
@@ -54,6 +56,8 @@ const initialFormState: OrixaFormState = {
 const splitCsv = (value: string) => value.split(',').map((item) => item.trim()).filter(Boolean);
 
 const OrixasPage: React.FC = () => {
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [rows, setRows] = useState<Orixa[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -222,7 +226,7 @@ const OrixasPage: React.FC = () => {
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
             Orixás
           </Typography>
-          <Typography color="text.secondary">
+          <Typography color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
             Administre os textos doutrinários, características, cores, elementos e ordem de exibição dos Orixás.
           </Typography>
         </Box>
@@ -262,6 +266,10 @@ const OrixasPage: React.FC = () => {
           onPaginationModelChange={setPaginationModel}
           pageSizeOptions={[5, 10, 20]}
           disableRowSelectionOnClick
+          columnVisibilityModel={{
+            displayOrder: !isXs,
+            elements: !isXs,
+          }}
           sx={{ border: 0 }}
         />
       </Paper>

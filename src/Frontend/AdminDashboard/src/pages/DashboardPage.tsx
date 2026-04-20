@@ -17,30 +17,11 @@ import {
 import EventIcon from '@mui/icons-material/Event';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import PeopleIcon from '@mui/icons-material/People';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import NotificationsIcon from '@mui/icons-material/Notifications';
+import { Notifications as NotificationsIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-// Interfaces (mockadas por enquanto, idealmente viriam de types)
-interface Activity {
-  id: string;
-  userId: string;
-  userName: string;
-  action: string;
-  entityType: string;
-  entityId: string;
-  timestamp: string;
-  details: string;
-}
-
-interface DashboardStats {
-  totalEvents: number;
-  activeEvents: number;
-  totalAttendances: number;
-  totalUsers: number;
-  recentActivity: Activity[];
-}
+import apiService from '../services/api';
+import { DashboardStats, ActivityLog } from '../types';
 
 const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -57,47 +38,8 @@ const DashboardPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Como ainda não temos o backend, vamos usar dados mock
-      const mockStats: DashboardStats = {
-        totalEvents: 15,
-        activeEvents: 8,
-        totalAttendances: 42,
-        totalUsers: 5,
-        recentActivity: [
-          {
-            id: '1',
-            userId: '1',
-            userName: 'João Silva',
-            action: 'Criou evento',
-            entityType: 'Event',
-            entityId: '1',
-            timestamp: new Date().toISOString(),
-            details: 'Festa de Iemanjá 2024',
-          },
-          {
-            id: '2',
-            userId: '2',
-            userName: 'Maria Santos',
-            action: 'Atualizou calendário',
-            entityType: 'CalendarAttendance',
-            entityId: '2',
-            timestamp: new Date(Date.now() - 3600000).toISOString(),
-            details: 'Gira de Umbanda - Quinta-feira',
-          },
-          {
-            id: '3',
-            userId: '1',
-            userName: 'João Silva',
-            action: 'Adicionou Orixá',
-            entityType: 'Orixa',
-            entityId: '3',
-            timestamp: new Date(Date.now() - 7200000).toISOString(),
-            details: 'Oxum - Orixá das águas doces',
-          },
-        ],
-      };
-
-      setStats(mockStats);
+      const response = await apiService.getDashboardStats();
+      setStats(response.data);
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar dados do dashboard');
     } finally {

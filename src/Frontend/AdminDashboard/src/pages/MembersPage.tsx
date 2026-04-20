@@ -20,6 +20,8 @@ import {
   Switch,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
@@ -103,6 +105,8 @@ const getContributionStatusLabel = (status?: ContributionPaymentStatus) => {
 };
 
 const MembersPage: React.FC = () => {
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [rows, setRows] = useState<HouseMember[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -339,7 +343,7 @@ const MembersPage: React.FC = () => {
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
             Filhos da Casa
           </Typography>
-          <Typography color="text.secondary">
+          <Typography color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
             Gerencie dados pessoais, endereço, Orixás de cabeça e o histórico financeiro das contribuições mensais.
           </Typography>
         </Box>
@@ -381,6 +385,9 @@ const MembersPage: React.FC = () => {
           onPaginationModelChange={setPaginationModel}
           pageSizeOptions={[5, 10, 20]}
           disableRowSelectionOnClick
+          columnVisibilityModel={{
+            city: !isXs,
+          }}
           sx={{ border: 0 }}
         />
       </Paper>

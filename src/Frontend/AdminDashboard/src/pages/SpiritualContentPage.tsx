@@ -19,6 +19,8 @@ import {
   Switch,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Refresh as RefreshIcon, Star as StarIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
@@ -63,6 +65,8 @@ const categoryLabels: Record<SpiritualCategory, string> = {
 };
 
 const SpiritualContentPage: React.FC = () => {
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [rows, setRows] = useState<SpiritualContent[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -232,7 +236,7 @@ const SpiritualContentPage: React.FC = () => {
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
             Conteúdos Espirituais
           </Typography>
-          <Typography color="text.secondary">
+          <Typography color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
             Administre orações, pontos, ensinamentos e textos doutrinários publicados no portal público.
           </Typography>
         </Box>
@@ -298,6 +302,11 @@ const SpiritualContentPage: React.FC = () => {
           onPaginationModelChange={setPaginationModel}
           pageSizeOptions={[5, 10, 20]}
           disableRowSelectionOnClick
+          columnVisibilityModel={{
+            displayOrder: !isXs,
+            type: !isXs,
+            category: !isXs,
+          }}
           sx={{ border: 0 }}
         />
       </Paper>

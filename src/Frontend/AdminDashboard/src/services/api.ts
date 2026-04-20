@@ -11,6 +11,8 @@ import {
   SiteSettingsDto,
   SpiritualContent,
   UmbandaLine,
+  DashboardStats,
+  ActivityLog,
 } from '../types';
 
 class ApiService {
@@ -386,11 +388,11 @@ class ApiService {
 
   // Métodos para dashboard
   async getDashboardStats() {
-    return this.get('/dashboard/stats');
+    return this.get<DashboardStats>('/dashboard/stats');
   }
 
   async getActivityLogs(params?: any) {
-    return this.getPaginated('/dashboard/activity-logs', params);
+    return this.getPaginated<ActivityLog>('/dashboard/activity-logs', params);
   }
 }
 

@@ -19,6 +19,8 @@ import {
   Switch,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
@@ -58,6 +60,8 @@ const eventLabels: Record<EventType, string> = {
 };
 
 const EventsPage: React.FC = () => {
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [rows, setRows] = useState<BatuaraEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -252,7 +256,7 @@ const EventsPage: React.FC = () => {
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
             Eventos
           </Typography>
-          <Typography color="text.secondary">
+          <Typography color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
             Gerencie eventos públicos, datas especiais, horários, local e disponibilidade no portal.
           </Typography>
         </Box>
@@ -319,6 +323,11 @@ const EventsPage: React.FC = () => {
           onPaginationModelChange={setPaginationModel}
           pageSizeOptions={[5, 10, 20]}
           disableRowSelectionOnClick
+          columnVisibilityModel={{
+            type: !isXs,
+            location: !isXs,
+            isActive: !isXs,
+          }}
           sx={{
             border: 0,
             '& .MuiDataGrid-columnHeaders': {
