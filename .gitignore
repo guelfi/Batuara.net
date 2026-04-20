@@ -204,3 +204,8 @@ connectionstrings.json
 
 # Cursor IDE
 .cursor/
+
+# Local Environment Control
+.agents/
+.qoder/
+atend.md
