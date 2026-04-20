@@ -129,7 +129,18 @@ const CalendarSection: React.FC = () => {
         startTime: e.startTime || '---'
       }));
 
-    return [...attendances, ...events].sort((a, b) => {
+    // Priorizar Eventos sobre Atendimentos em caso de duplicidade (mesma data e nome)
+    const combined = [...events, ...attendances];
+    const seen = new Set();
+    const uniqueData = combined.filter(item => {
+      const dateStr = item.date.split('T')[0];
+      const key = `${dateStr}_${item.displayTitle.toLowerCase().trim()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    return uniqueData.sort((a, b) => {
       const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
       if (dateDiff !== 0) return dateDiff;
       return (a.startTime || '').localeCompare(b.startTime || '');
@@ -198,10 +209,10 @@ const CalendarSection: React.FC = () => {
             Confira os atendimentos espirituais programados para o mês corrente
           </Typography>
 
-          <Alert severity="info" sx={{ maxWidth: 600, mx: 'auto', mb: 4 }}>
+          <Alert severity="info" sx={{ maxWidth: 800, mx: 'auto', mb: 4 }}>
             <AlertTitle>Informações Importantes</AlertTitle>
             Todos os atendimentos são gratuitos. Recomendamos chegar com 15 minutos de antecedência.
-            Para cursos, é necessário inscrição prévia.
+            Para cursos e festas especiais, consulte os detalhes na seção de Eventos.
           </Alert>
         </Box>
 
@@ -227,7 +238,7 @@ const CalendarSection: React.FC = () => {
             </Typography>
           </Box>
         ) : (
-          <Paper sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 3, maxWidth: 980, mx: 'auto' }}>
+          <Paper sx={{ p: { xs: 1, md: 3 }, borderRadius: 3, maxWidth: 1100, mx: 'auto', boxShadow: 3 }}>
             <Grid container spacing={1} sx={{ mb: 1 }}>
               {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((label) => (
                 <Grid key={label} size={{ xs: 12 / 7 }}>

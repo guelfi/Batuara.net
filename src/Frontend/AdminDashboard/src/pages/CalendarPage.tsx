@@ -22,7 +22,18 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  ArrowBackIos as ArrowBackIosIcon,
+  ArrowForwardIos as ArrowForwardIosIcon,
+  CalendarToday as CalendarTodayIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  Refresh as RefreshIcon
+} from '@mui/icons-material';
+import { addMonths, subMonths, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import IconButton from '@mui/material/IconButton';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import apiService from '../services/api';
 import { AttendanceType, CalendarAttendance } from '../types';
@@ -62,6 +73,7 @@ const attendanceLabels: Record<AttendanceType, string> = {
 const CalendarPage: React.FC = () => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
+  const [selectedMonthDate, setSelectedMonthDate] = useState(new Date());
   const [rows, setRows] = useState<CalendarAttendance[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -90,6 +102,8 @@ const CalendarPage: React.FC = () => {
         pageNumber: paginationModel.page + 1,
         pageSize: paginationModel.pageSize,
         sort: 'date:asc',
+        month: selectedMonthDate.getMonth() + 1,
+        year: selectedMonthDate.getFullYear(),
       });
 
       setRows(response.data);
@@ -103,7 +117,7 @@ const CalendarPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [paginationModel.page, paginationModel.pageSize, query, registrationFilter, statusFilter, typeFilter]);
+  }, [paginationModel.page, paginationModel.pageSize, query, registrationFilter, statusFilter, typeFilter, selectedMonthDate]);
 
   useEffect(() => {
     loadAttendances();
@@ -171,6 +185,9 @@ const CalendarPage: React.FC = () => {
         ],
       },
   ];
+
+  const handlePrevMonth = () => setSelectedMonthDate(prev => subMonths(prev, 1));
+  const handleNextMonth = () => setSelectedMonthDate(prev => addMonths(prev, 1));
 
   const resetForm = () => {
     setEditingItem(null);
@@ -258,10 +275,21 @@ const CalendarPage: React.FC = () => {
             Calendário de Atendimentos
           </Typography>
           <Typography color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-            Gerencie horários, capacidade, inscrições e conflitos operacionais do calendário espiritual.
+            Gerencie horários e conflitos operacionais. Eventos especiais (Festas/Bazares) devem ser geridos em [Eventos e Festas].
           </Typography>
         </Box>
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Paper variant="outlined" sx={{ px: 2, py: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton onClick={handlePrevMonth} size="small">
+              <ArrowBackIosIcon fontSize="small" />
+            </IconButton>
+            <Typography sx={{ minWidth: 140, textAlign: 'center', fontWeight: 600, textTransform: 'capitalize' }}>
+              {format(selectedMonthDate, "MMMM 'de' yyyy", { locale: ptBR })}
+            </Typography>
+            <IconButton onClick={handleNextMonth} size="small">
+              <ArrowForwardIosIcon fontSize="small" />
+            </IconButton>
+          </Paper>
           <Button variant="outlined" startIcon={<RefreshIcon />} onClick={loadAttendances}>
             Atualizar
           </Button>
@@ -407,6 +435,11 @@ const CalendarPage: React.FC = () => {
                 label="Atendimento ativo"
               />
             )}
+            {(form.type === AttendanceType.Festa || form.type === AttendanceType.Curso || form.type === AttendanceType.Palestra) && (
+              <Alert severity="warning">
+                Atenção: Para eventos especiais como Festas, Bazares ou Cursos, recomendamos utilizar a seção <strong>Eventos e Festas</strong> para garantir a correta exibição de imagens e descrições detalhadas.
+              </Alert>
+            )}
             <Alert severity="info">
               O backend valida conflitos de horário com outros atendimentos e eventos especiais da mesma data.
             </Alert>
@@ -414,7 +447,11 @@ const CalendarPage: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancelar</Button>
-          <Button variant="contained" onClick={handleSubmit}>
+          <Button 
+            variant="contained" 
+            onClick={handleSubmit}
+            disabled={editingItem !== null && (form.type === AttendanceType.Festa || form.type === AttendanceType.Curso)}
+          >
             {editingItem ? 'Salvar alterações' : 'Criar atendimento'}
           </Button>
         </DialogActions>
