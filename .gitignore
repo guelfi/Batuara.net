@@ -188,6 +188,12 @@ batuara_backup_*.sql
 batuara_backup_*.sql.gz
 check_all_tables.sql
 
+# Dumps e snapshots locais do banco (não versionar)
+database/batuara_db_*.sql
+database/batuara_db_*.dump
+database/batuara_db_*_globals.sql
+database/batuara-db-data-*.tar.gz
+
 # Security - Private keys and certificates
 *.key
 *.pem
