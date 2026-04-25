@@ -146,8 +146,10 @@ services:
 
 networks:
   # Rede isolada para evitar conflitos com outros projetos
+  # IMPORTANTE: sem 'name:' aqui. O deploy-rolling.sh calcula o nome como
+  # "${COMPOSE_PROJECT_NAME}_${DOCKER_NETWORK}" = "batuara-net_batuara-network".
+  # Adicionar 'name:' quebraria essa lógica (nginx-proxy não conseguiria conectar).
   batuara-network:
-    name: ${DOCKER_NETWORK:-batuara-network}
     driver: bridge
     labels:
       - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
