@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Batuara.Application.Dashboard.DTOs;
 using Batuara.Application.Dashboard.Services;
+using Batuara.Domain.Entities;
 using Batuara.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,16 +22,37 @@ namespace Batuara.Infrastructure.Dashboard.Services
         public async Task<DashboardStatsDto> GetDashboardStatsAsync()
         {
             var now = DateTime.UtcNow;
+            var today = now.Date;
+            var endOfYear = new DateTime(now.Year, 12, 31, 23, 59, 59, DateTimeKind.Utc);
             var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-            
-            var totalEvents = await _context.Events.CountAsync();
-            var activeEvents = await _context.Events.CountAsync(e => e.IsActive && e.EventDate.Date >= now);
-            var totalAttendances = await _context.CalendarAttendances.CountAsync(a => a.AttendanceDate.Date >= startOfMonth && a.AttendanceDate.Date < startOfMonth.AddMonths(1));
-            var totalUsers = await _context.Users.CountAsync(u => u.IsActive);
+            var endOfMonth = startOfMonth.AddMonths(1).AddTicks(-1);
 
+            // Eventos (todos os tipos) de hoje até 31/12 do ano corrente
+            var eventsUntilEndOfYear = await _context.Events
+                .CountAsync(e => e.IsActive && e.EventDate.Date >= today && e.EventDate.Date <= endOfYear);
+
+            // Atendimentos espirituais (Umbanda=2 + Kardecismo=1) de hoje até 31/12
+            var spiritualTypes = new[] { AttendanceType.Umbanda, AttendanceType.Kardecismo };
+            var attendancesUntilEndOfYear = await _context.CalendarAttendances
+                .CountAsync(a => a.IsActive
+                    && spiritualTypes.Contains(a.Type)
+                    && a.AttendanceDate.Date >= today
+                    && a.AttendanceDate.Date <= endOfYear);
+
+            // Filhos da Casa ativos
+            var activeHouseMembers = await _context.HouseMembers
+                .CountAsync(m => m.IsActive);
+
+            // Atividade do mês corrente: eventos + atendimentos com data no mês
+            var eventsThisMonth = await _context.Events
+                .CountAsync(e => e.IsActive && e.EventDate.Date >= startOfMonth && e.EventDate.Date <= endOfMonth);
+            var attendancesThisMonth = await _context.CalendarAttendances
+                .CountAsync(a => a.IsActive && a.AttendanceDate.Date >= startOfMonth && a.AttendanceDate.Date <= endOfMonth);
+            var currentMonthActivity = eventsThisMonth + attendancesThisMonth;
+
+            // Atividade recente (eventos e atendimentos criados recentemente)
             var activities = new List<DashboardActivityDto>();
 
-            // Eventos recentes
             var recentEvents = await _context.Events
                 .OrderByDescending(e => e.CreatedAt)
                 .Take(5)
@@ -48,7 +70,6 @@ namespace Batuara.Infrastructure.Dashboard.Services
                 Details = e.Title
             }));
 
-            // Atendimentos recentes
             var recentAttendances = await _context.CalendarAttendances
                 .OrderByDescending(a => a.CreatedAt)
                 .Take(5)
@@ -66,24 +87,6 @@ namespace Batuara.Infrastructure.Dashboard.Services
                 Details = a.GetTypeDisplayName()
             }));
 
-            // Usuários recentes
-            var recentUsers = await _context.Users
-                .OrderByDescending(u => u.CreatedAt)
-                .Take(5)
-                .ToListAsync();
-            
-            activities.AddRange(recentUsers.Select(u => new DashboardActivityDto
-            {
-                Id = $"usr_{u.Id}",
-                UserId = "System",
-                UserName = "Sistema",
-                Action = "Novo usuário",
-                EntityType = "User",
-                EntityId = u.Id.ToString(),
-                Timestamp = u.CreatedAt,
-                Details = u.Name
-            }));
-
             var recentActivity = activities
                 .OrderByDescending(a => a.Timestamp)
                 .Take(10)
@@ -91,10 +94,10 @@ namespace Batuara.Infrastructure.Dashboard.Services
 
             return new DashboardStatsDto
             {
-                TotalEvents = totalEvents,
-                ActiveEvents = activeEvents,
-                TotalAttendances = totalAttendances,
-                TotalUsers = totalUsers,
+                EventsUntilEndOfYear = eventsUntilEndOfYear,
+                AttendancesUntilEndOfYear = attendancesUntilEndOfYear,
+                ActiveHouseMembers = activeHouseMembers,
+                CurrentMonthActivity = currentMonthActivity,
                 RecentActivity = recentActivity
             };
         }
