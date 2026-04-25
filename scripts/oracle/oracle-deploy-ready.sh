@@ -86,8 +86,8 @@ echo ""
 echo "=== 2. LIMPEZA DO DOCKER ==="
 
 log_info "Parando todos os containers Batuara..."
-docker ps --format "{{.Names}}" | grep -i batuara | xargs -r docker stop
-docker ps -a --format "{{.Names}}" | grep -i batuara | xargs -r docker rm -f
+docker ps --format "{{.Names}}" | grep -i batuara | grep -viE "(^|[-_])db($|[-_])" | xargs -r docker stop
+docker ps -a --format "{{.Names}}" | grep -i batuara | grep -viE "(^|[-_])db($|[-_])" | xargs -r docker rm -f
 
 log_info "Removendo imagens do Batuara..."
 docker images --format "{{.Repository}}:{{.Tag}} {{.ID}}" | grep -i batuara | awk '{print $2}' | xargs -r docker rmi -f

@@ -40,6 +40,18 @@ type OrixaFormState = {
   isActive: boolean;
 };
 
+type OrixaFormErrors = Partial<Record<keyof OrixaFormState, string>>;
+
+const validateOrixaForm = (form: OrixaFormState): OrixaFormErrors => {
+  const errors: OrixaFormErrors = {};
+  if (!form.name.trim()) errors.name = 'Nome é obrigatório.';
+  if (!form.description.trim()) errors.description = 'Descrição é obrigatória.';
+  if (!form.origin.trim()) errors.origin = 'Origem é obrigatória.';
+  if (!form.batuaraTeaching.trim()) errors.batuaraTeaching = 'Ensinamento Batuara é obrigatório.';
+  if (!form.colors.trim()) errors.colors = 'Informe pelo menos uma cor.';
+  return errors;
+};
+
 const initialFormState: OrixaFormState = {
   name: '',
   description: '',
@@ -67,6 +79,7 @@ const OrixasPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'true' | 'false'>('all');
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [totalCount, setTotalCount] = useState(0);
+  const [formErrors, setFormErrors] = useState<OrixaFormErrors>({});
   const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -169,9 +182,16 @@ const OrixasPage: React.FC = () => {
     setDialogOpen(false);
     setEditingItem(null);
     setForm(initialFormState);
+    setFormErrors({});
   };
 
   const handleSubmit = async () => {
+    const errors = validateOrixaForm(form);
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setFormErrors({});
     const payload = {
       name: form.name,
       description: form.description,
@@ -277,9 +297,9 @@ const OrixasPage: React.FC = () => {
       <Dialog open={dialogOpen} onClose={handleCloseDialog} fullWidth maxWidth="md">
         <DialogTitle>{editingItem ? 'Editar Orixá' : 'Novo Orixá'}</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Stack spacing={2} sx={{ mt: 1 }}>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField label="Nome" value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} fullWidth />
+              <TextField label="Nome" value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} error={!!formErrors.name} helperText={formErrors.name} fullWidth />
               <TextField
                 label="Ordem de exibição"
                 type="number"
@@ -293,25 +313,22 @@ const OrixasPage: React.FC = () => {
               label="Descrição"
               value={form.description}
               onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-              fullWidth
-              multiline
-              minRows={3}
+              error={!!formErrors.description} helperText={formErrors.description}
+              fullWidth multiline minRows={3}
             />
             <TextField
               label="Origem"
               value={form.origin}
               onChange={(e) => setForm((prev) => ({ ...prev, origin: e.target.value }))}
-              fullWidth
-              multiline
-              minRows={3}
+              error={!!formErrors.origin} helperText={formErrors.origin}
+              fullWidth multiline minRows={3}
             />
             <TextField
               label="Ensinamento Batuara"
               value={form.batuaraTeaching}
               onChange={(e) => setForm((prev) => ({ ...prev, batuaraTeaching: e.target.value }))}
-              fullWidth
-              multiline
-              minRows={4}
+              error={!!formErrors.batuaraTeaching} helperText={formErrors.batuaraTeaching}
+              fullWidth multiline minRows={4}
             />
             <TextField
               label="Características (separadas por vírgula)"
@@ -324,6 +341,7 @@ const OrixasPage: React.FC = () => {
                 label="Cores (separadas por vírgula)"
                 value={form.colors}
                 onChange={(e) => setForm((prev) => ({ ...prev, colors: e.target.value }))}
+                error={!!formErrors.colors} helperText={formErrors.colors}
                 fullWidth
               />
               <TextField

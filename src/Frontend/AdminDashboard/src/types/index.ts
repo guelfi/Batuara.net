@@ -262,10 +262,14 @@ export interface RevokeTokenRequest {
 
 // Tipos específicos do dashboard
 export interface DashboardStats {
-  totalEvents: number;
-  activeEvents: number;
-  totalAttendances: number;
-  totalUsers: number;
+  /** Eventos ativos de hoje até 31/12 do ano corrente */
+  eventsUntilEndOfYear: number;
+  /** Atendimentos espirituais (Umbanda + Kardecismo) de hoje até 31/12 */
+  attendancesUntilEndOfYear: number;
+  /** Filhos da Casa com isActive = true */
+  activeHouseMembers: number;
+  /** Eventos + Atendimentos no mês corrente */
+  currentMonthActivity: number;
   recentActivity: ActivityLog[];
 }
 

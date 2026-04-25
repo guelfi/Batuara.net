@@ -58,10 +58,14 @@ Todas as tarefas acima foram verificadas e confirmadas como implementadas confor
 
 ### PublicWebsite — Ajustes de Conteúdo e Layout
 - [x] Calendário: remover contador numérico por dia e simplificar a UI
+- [x] Calendário: remover legenda com bullets e textos explicativos; reduzir espaçamentos e eliminar overflow; manter apenas o aviso "Informações Importantes" em linha única; remover card inferior de detalhes
 - [x] Localização: consolidar exibição do endereço em formato único e corrigir texto introdutório
 - [x] Rodapé: alterar cor de fundo, simplificar redes sociais para Instagram e alinhar endereço/e-mail
 - [x] Orixás: remover cards adicionais inferiores mantendo apenas o carrossel principal
 - [x] Doações: remover bloco de campos “PIX / Banco / CNPJ / Agência / Conta / Tipo” na UI pública
+- [x] Festas e Eventos: remover CTA final "Quer ficar por dentro de todos os nossos eventos? / Entre em Contato"
+- [x] Guias e Entidades: remover textos introdutórios/explicativos adicionais (manter somente o título)
+- [x] Títulos com data: manter preposição "de" em minúsculo (ex.: "Abril de 2026")
 
 ### API / SiteSettings — Ajustes de Contrato e Dados
 - [x] SiteSettings público: adicionar fallbacks para dados institucionais e localização (endereço, Instagram, mapa)

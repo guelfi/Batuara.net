@@ -37,7 +37,8 @@ services:
     networks:
       - batuara-network
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
@@ -76,7 +77,8 @@ services:
     networks:
       - batuara-network
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:80/batuara-admin/" ]

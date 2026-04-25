@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import {
   Alert,
   Box,
@@ -22,11 +22,11 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import {
   Add as AddIcon,
   ArrowBackIos as ArrowBackIosIcon,
   ArrowForwardIos as ArrowForwardIosIcon,
-  CalendarToday as CalendarTodayIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
   Refresh as RefreshIcon
@@ -73,30 +73,30 @@ const attendanceLabels: Record<AttendanceType, string> = {
 const CalendarPage: React.FC = () => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
-  const [selectedMonthDate, setSelectedMonthDate] = useState(new Date());
-  const [rows, setRows] = useState<CalendarAttendance[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<CalendarAttendance | null>(null);
-  const [form, setForm] = useState<CalendarFormState>(initialFormState);
-  const [query, setQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | AttendanceType>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'true' | 'false'>('all');
-  const [registrationFilter, setRegistrationFilter] = useState<'all' | 'true' | 'false'>('all');
-  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
-  const [totalCount, setTotalCount] = useState(0);
-  const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+  const [selectedMonthDate, setSelectedMonthDate] = React.useState(new Date());
+  const [rows, setRows] = React.useState<CalendarAttendance[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [editingItem, setEditingItem] = React.useState<CalendarAttendance | null>(null);
+  const [form, setForm] = React.useState<CalendarFormState>(initialFormState);
+  const [query, setQuery] = React.useState('');
+  const [typeFilter, setTypeFilter] = React.useState<'all' | string>('all');
+  const [statusFilter, setStatusFilter] = React.useState<'all' | 'true' | 'false'>('all');
+  const [registrationFilter, setRegistrationFilter] = React.useState<'all' | 'true' | 'false'>('all');
+  const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 10 });
+  const [totalCount, setTotalCount] = React.useState(0);
+  const [feedback, setFeedback] = React.useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
     severity: 'success',
   });
 
-  const loadAttendances = useCallback(async () => {
+  const loadAttendances = React.useCallback(async () => {
     setLoading(true);
     try {
       const response = await apiService.getAttendances({
         q: query || undefined,
-        type: typeFilter === 'all' ? undefined : typeFilter,
+        type: typeFilter === 'all' ? undefined : (Number(typeFilter) as AttendanceType),
         isActive: statusFilter === 'all' ? undefined : statusFilter === 'true',
         requiresRegistration: registrationFilter === 'all' ? undefined : registrationFilter === 'true',
         pageNumber: paginationModel.page + 1,
@@ -119,11 +119,11 @@ const CalendarPage: React.FC = () => {
     }
   }, [paginationModel.page, paginationModel.pageSize, query, registrationFilter, statusFilter, typeFilter, selectedMonthDate]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadAttendances();
   }, [loadAttendances]);
 
-  const columns: GridColDef[] = [
+  const columns: GridColDef<CalendarAttendance>[] = [
       {
         field: 'date',
         headerName: 'Data',
@@ -186,8 +186,13 @@ const CalendarPage: React.FC = () => {
       },
   ];
 
-  const handlePrevMonth = () => setSelectedMonthDate(prev => subMonths(prev, 1));
-  const handleNextMonth = () => setSelectedMonthDate(prev => addMonths(prev, 1));
+  const handlePrevMonth = () => setSelectedMonthDate((prev: Date) => subMonths(prev, 1));
+  const handleNextMonth = () => setSelectedMonthDate((prev: Date) => addMonths(prev, 1));
+
+  const monthLabel = React.useMemo(() => {
+    const raw = format(selectedMonthDate, "MMMM 'de' yyyy", { locale: ptBR });
+    return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : raw;
+  }, [selectedMonthDate]);
 
   const resetForm = () => {
     setEditingItem(null);
@@ -283,8 +288,8 @@ const CalendarPage: React.FC = () => {
             <IconButton onClick={handlePrevMonth} size="small">
               <ArrowBackIosIcon fontSize="small" />
             </IconButton>
-            <Typography sx={{ minWidth: 140, textAlign: 'center', fontWeight: 600, textTransform: 'capitalize' }}>
-              {format(selectedMonthDate, "MMMM 'de' yyyy", { locale: ptBR })}
+            <Typography sx={{ minWidth: 140, textAlign: 'center', fontWeight: 600 }}>
+              {monthLabel}
             </Typography>
             <IconButton onClick={handleNextMonth} size="small">
               <ArrowForwardIosIcon fontSize="small" />
@@ -301,19 +306,32 @@ const CalendarPage: React.FC = () => {
 
       <Paper sx={{ p: 2, mb: 2 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-          <TextField label="Buscar" value={query} onChange={(e) => setQuery(e.target.value)} fullWidth />
+          <TextField
+            label="Buscar"
+            value={query}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setQuery(e.target.value)}
+            fullWidth
+          />
           <FormControl sx={{ minWidth: 180 }}>
             <InputLabel>Tipo</InputLabel>
-            <Select value={typeFilter} label="Tipo" onChange={(e) => setTypeFilter(e.target.value as 'all' | AttendanceType)}>
+            <Select
+              value={typeFilter}
+              label="Tipo"
+              onChange={(e: SelectChangeEvent) => setTypeFilter(e.target.value)}
+            >
               <MenuItem value="all">Todos</MenuItem>
               {Object.entries(attendanceLabels).map(([value, label]) => (
-                <MenuItem key={value} value={Number(value)}>{label}</MenuItem>
+                <MenuItem key={value} value={value}>{label}</MenuItem>
               ))}
             </Select>
           </FormControl>
           <FormControl sx={{ minWidth: 160 }}>
             <InputLabel>Status</InputLabel>
-            <Select value={statusFilter} label="Status" onChange={(e) => setStatusFilter(e.target.value as 'all' | 'true' | 'false')}>
+            <Select
+              value={statusFilter}
+              label="Status"
+              onChange={(e: SelectChangeEvent) => setStatusFilter(e.target.value as 'all' | 'true' | 'false')}
+            >
               <MenuItem value="all">Todos</MenuItem>
               <MenuItem value="true">Ativos</MenuItem>
               <MenuItem value="false">Inativos</MenuItem>
@@ -324,7 +342,7 @@ const CalendarPage: React.FC = () => {
             <Select
               value={registrationFilter}
               label="Inscrição"
-              onChange={(e) => setRegistrationFilter(e.target.value as 'all' | 'true' | 'false')}
+              onChange={(e: SelectChangeEvent) => setRegistrationFilter(e.target.value as 'all' | 'true' | 'false')}
             >
               <MenuItem value="all">Todas</MenuItem>
               <MenuItem value="true">Obrigatória</MenuItem>
@@ -366,7 +384,9 @@ const CalendarPage: React.FC = () => {
             <TextField
               label="Descrição"
               value={form.description}
-              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                setForm((prev: CalendarFormState) => ({ ...prev, description: e.target.value }))
+              }
               fullWidth
             />
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
@@ -375,7 +395,9 @@ const CalendarPage: React.FC = () => {
                 type="date"
                 InputLabelProps={{ shrink: true }}
                 value={form.date}
-                onChange={(e) => setForm((prev) => ({ ...prev, date: e.target.value }))}
+                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                  setForm((prev: CalendarFormState) => ({ ...prev, date: e.target.value }))
+                }
                 fullWidth
               />
               <TextField
@@ -383,7 +405,9 @@ const CalendarPage: React.FC = () => {
                 type="time"
                 InputLabelProps={{ shrink: true }}
                 value={form.startTime}
-                onChange={(e) => setForm((prev) => ({ ...prev, startTime: e.target.value }))}
+                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                  setForm((prev: CalendarFormState) => ({ ...prev, startTime: e.target.value }))
+                }
                 fullWidth
               />
               <TextField
@@ -391,16 +415,24 @@ const CalendarPage: React.FC = () => {
                 type="time"
                 InputLabelProps={{ shrink: true }}
                 value={form.endTime}
-                onChange={(e) => setForm((prev) => ({ ...prev, endTime: e.target.value }))}
+                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                  setForm((prev: CalendarFormState) => ({ ...prev, endTime: e.target.value }))
+                }
                 fullWidth
               />
             </Stack>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
               <FormControl fullWidth>
                 <InputLabel>Tipo</InputLabel>
-                <Select value={form.type} label="Tipo" onChange={(e) => setForm((prev) => ({ ...prev, type: Number(e.target.value) as AttendanceType }))}>
+                <Select
+                  value={String(form.type)}
+                  label="Tipo"
+                  onChange={(e: SelectChangeEvent) =>
+                    setForm((prev: CalendarFormState) => ({ ...prev, type: Number(e.target.value) as AttendanceType }))
+                  }
+                >
                   {Object.entries(attendanceLabels).map(([value, label]) => (
-                    <MenuItem key={value} value={Number(value)}>{label}</MenuItem>
+                    <MenuItem key={value} value={value}>{label}</MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -408,14 +440,18 @@ const CalendarPage: React.FC = () => {
                 label="Capacidade máxima"
                 type="number"
                 value={form.maxCapacity}
-                onChange={(e) => setForm((prev) => ({ ...prev, maxCapacity: e.target.value }))}
+                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                  setForm((prev: CalendarFormState) => ({ ...prev, maxCapacity: e.target.value }))
+                }
                 fullWidth
               />
             </Stack>
             <TextField
               label="Observações"
               value={form.observations}
-              onChange={(e) => setForm((prev) => ({ ...prev, observations: e.target.value }))}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                setForm((prev: CalendarFormState) => ({ ...prev, observations: e.target.value }))
+              }
               fullWidth
               multiline
               minRows={3}
@@ -424,20 +460,33 @@ const CalendarPage: React.FC = () => {
               control={
                 <Switch
                   checked={form.requiresRegistration}
-                  onChange={(e) => setForm((prev) => ({ ...prev, requiresRegistration: e.target.checked }))}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setForm((prev: CalendarFormState) => ({ ...prev, requiresRegistration: e.target.checked }))
+                  }
                 />
               }
               label="Exige inscrição prévia"
             />
             {editingItem && (
               <FormControlLabel
-                control={<Switch checked={form.isActive} onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))} />}
+                control={
+                  <Switch
+                    checked={form.isActive}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setForm((prev: CalendarFormState) => ({ ...prev, isActive: e.target.checked }))
+                    }
+                  />
+                }
                 label="Atendimento ativo"
               />
             )}
             {(form.type === AttendanceType.Festa || form.type === AttendanceType.Curso || form.type === AttendanceType.Palestra) && (
               <Alert severity="warning">
-                Atenção: Para eventos especiais como Festas, Bazares ou Cursos, recomendamos utilizar a seção <strong>Eventos e Festas</strong> para garantir a correta exibição de imagens e descrições detalhadas.
+                Atenção: Para eventos especiais como Festas, Bazares ou Cursos, recomendamos utilizar a seção{' '}
+                <Typography component="span" sx={{ fontWeight: 700 }}>
+                  Eventos e Festas
+                </Typography>{' '}
+                para garantir a correta exibição de imagens e descrições detalhadas.
               </Alert>
             )}
             <Alert severity="info">
@@ -457,8 +506,16 @@ const CalendarPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={feedback.open} autoHideDuration={4000} onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}>
-        <Alert severity={feedback.severity} variant="filled" onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}>
+      <Snackbar
+        open={feedback.open}
+        autoHideDuration={4000}
+        onClose={() => setFeedback((prev: typeof feedback) => ({ ...prev, open: false }))}
+      >
+        <Alert
+          severity={feedback.severity}
+          variant="filled"
+          onClose={() => setFeedback((prev: typeof feedback) => ({ ...prev, open: false }))}
+        >
           {feedback.message}
         </Alert>
       </Snackbar>
