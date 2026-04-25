@@ -154,6 +154,10 @@ networks:
     labels:
       - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
       - "project.name=${PROJECT_NAME:-batuara}"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
 
 volumes:
   # Volumes com prefixo para isolamento
