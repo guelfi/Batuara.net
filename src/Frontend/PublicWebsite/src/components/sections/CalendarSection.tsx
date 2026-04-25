@@ -260,8 +260,8 @@ const CalendarSection: React.FC = () => {
           <Stack spacing={3}>
             <Paper
               sx={{
-                p: { xs: 1, md: 2 },
-                borderRadius: 3,
+                p: { xs: 0.75, md: 1.5 },
+                borderRadius: 2,
                 maxWidth: 1200,
                 mx: 'auto',
                 boxShadow: 3,
@@ -285,7 +285,7 @@ const CalendarSection: React.FC = () => {
                       py: { xs: 0.5, md: 0.75 },
                       fontWeight: 700,
                       color: 'text.secondary',
-                      fontSize: { xs: '0.7rem', md: '0.85rem' },
+                      fontSize: { xs: '0.65rem', md: '0.78rem' },
                       userSelect: 'none',
                     }}
                   >
@@ -312,8 +312,8 @@ const CalendarSection: React.FC = () => {
                         }
                       }}
                       sx={{
-                        minHeight: { xs: 54, md: 82 },
-                        borderRadius: 2,
+                        minHeight: { xs: 50, md: 76 },
+                        borderRadius: 1,
                         border: 1,
                         borderColor: isSelected ? 'primary.main' : 'divider',
                         backgroundColor: isSelected ? 'rgba(25, 118, 210, 0.08)' : 'background.paper',
@@ -334,7 +334,7 @@ const CalendarSection: React.FC = () => {
                         sx={{
                           fontWeight: today || isSelected ? 700 : 500,
                           color: today ? 'primary.main' : 'text.primary',
-                          fontSize: { xs: '0.78rem', md: '0.875rem' },
+                          fontSize: { xs: '0.72rem', md: '0.8rem' },
                           mb: 0.25,
                         }}
                       >
