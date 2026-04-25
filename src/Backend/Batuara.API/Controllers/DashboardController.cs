@@ -21,7 +21,7 @@ namespace Batuara.API.Controllers
         public async Task<IActionResult> GetStats()
         {
             var stats = await _dashboardService.GetDashboardStatsAsync();
-            return Ok(stats);
+            return Ok(new { success = true, data = stats });
         }
     }
 }
