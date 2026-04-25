@@ -1,7 +1,6 @@
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -43,6 +42,7 @@ using FluentValidation.AspNetCore;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using System.Text.Json;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,6 +62,13 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 // Add HttpContextAccessor for request enrichment
 builder.Services.AddHttpContextAccessor();
 
@@ -80,7 +87,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddValidatorsFromAssemblyContaining<MappingProfile>();
 
 // Configure CORS using allowed origins from configuration
-var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowProxy", policy =>
@@ -200,7 +207,7 @@ builder.Services.AddDbContext<BatuaraDbContext>(options =>
 
 // Configure AutoMapper
 builder.Services.AddAutoMapper(cfg => {
-    cfg.AddProfile<Batuara.Application.Common.Mappings.MappingProfile>();
+    cfg.AddProfile<MappingProfile>();
 });
 
 // Configure Options
@@ -232,6 +239,7 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    var isDevelopment = builder.Environment.IsDevelopment();
 
     // Login endpoint: 5 requests per minute
     options.AddPolicy("login", context =>
@@ -241,7 +249,7 @@ builder.Services.AddRateLimiter(options =>
             key,
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 5,
+                PermitLimit = isDevelopment ? 60 : 5,
                 Window = TimeSpan.FromMinutes(1),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0
@@ -256,7 +264,7 @@ builder.Services.AddRateLimiter(options =>
             key,
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = isDevelopment ? 120 : 10,
                 Window = TimeSpan.FromMinutes(1),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0
@@ -271,7 +279,7 @@ builder.Services.AddRateLimiter(options =>
             key,
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 100,
+                PermitLimit = isDevelopment ? 2000 : 100,
                 Window = TimeSpan.FromMinutes(1),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 2
@@ -318,9 +326,11 @@ builder.Services.AddHealthChecks()
         connectionString ?? throw new InvalidOperationException("DefaultConnection not configured"),
         name: "postgresql",
         timeout: TimeSpan.FromSeconds(5),
-        tags: new[] { "db", "ready" });
+        tags: Program.HealthCheckTags);
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
@@ -414,11 +424,68 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<BatuaraDbContext>();
-        context.Database.Migrate();
-        
-        // Seed initial admin user
-        await Batuara.Infrastructure.Data.SeedData.SeedData.Initialize(services);
-        await context.SeedBatuaraDataAsync(services.GetRequiredService<ILogger<BatuaraDbContext>>());
+        static bool GetBoolEnv(string name, bool defaultValue)
+        {
+            var raw = Environment.GetEnvironmentVariable(name);
+            if (string.IsNullOrWhiteSpace(raw)) return defaultValue;
+            return raw.Trim().Equals("1", StringComparison.OrdinalIgnoreCase)
+                || raw.Trim().Equals("true", StringComparison.OrdinalIgnoreCase)
+                || raw.Trim().Equals("yes", StringComparison.OrdinalIgnoreCase)
+                || raw.Trim().Equals("y", StringComparison.OrdinalIgnoreCase);
+        }
+
+        static async Task<int> GetTableCountAsync(BatuaraDbContext dbContext, string schema, CancellationToken cancellationToken)
+        {
+            var connection = dbContext.Database.GetDbConnection();
+            var shouldClose = connection.State != System.Data.ConnectionState.Open;
+            if (shouldClose)
+            {
+                await connection.OpenAsync(cancellationToken);
+            }
+
+            try
+            {
+                using var cmd = connection.CreateCommand();
+                cmd.CommandText = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = @schema AND table_type = 'BASE TABLE';";
+                var p = cmd.CreateParameter();
+                p.ParameterName = "@schema";
+                p.Value = schema;
+                cmd.Parameters.Add(p);
+
+                var result = await cmd.ExecuteScalarAsync(cancellationToken);
+                return Convert.ToInt32(result);
+            }
+            finally
+            {
+                if (shouldClose)
+                {
+                    await connection.CloseAsync();
+                }
+            }
+        }
+
+        var applyMigrations = app.Environment.IsDevelopment() || GetBoolEnv("DB_APPLY_MIGRATIONS_ON_STARTUP", false);
+        var seedOnStartup = app.Environment.IsDevelopment() || GetBoolEnv("DB_SEED_ON_STARTUP", false);
+        var seedSchema = Environment.GetEnvironmentVariable("DB_SCHEMA")?.Trim();
+        if (string.IsNullOrWhiteSpace(seedSchema))
+        {
+            seedSchema = "batuara";
+        }
+
+        if (applyMigrations)
+        {
+            await context.Database.MigrateAsync();
+        }
+
+        if (seedOnStartup)
+        {
+            var tableCount = await GetTableCountAsync(context, seedSchema, CancellationToken.None);
+            if (tableCount == 0)
+            {
+                await SeedData.Initialize(services);
+                await context.SeedBatuaraDataAsync(services.GetRequiredService<ILogger<BatuaraDbContext>>());
+            }
+        }
     }
     catch (Exception ex)
     {
@@ -428,3 +495,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+partial class Program
+{
+    public static readonly string[] HealthCheckTags = ["db", "ready"];
+}

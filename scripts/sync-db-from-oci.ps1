@@ -19,11 +19,19 @@ param(
     [string]$LocalContainer = "batuara-net-local-db",
     [string]$DbName     = "batuara_db",
     [string]$DbUser     = "batuara_user",
-    [string]$DbSchema   = "batuara"
+    [string]$DbSchema   = "batuara",
+    [ValidateSet("custom","sql-gzip")]
+    [string]$DumpFormat = "sql-gzip",
+    [switch]$FullDatabase,
+    [string]$OutputPath = "",
+    [switch]$DumpOnly,
+    [switch]$KeepLocalBackup
 )
 
 $ErrorActionPreference = "Stop"
-$BackupFile = "$env:TEMP\batuara_sync_$(Get-Date -Format 'yyyyMMdd_HHmmss').sql.gz"
+$tempExt = if ($DumpFormat -eq "custom") { "dump" } else { "sql.gz" }
+$tempBackupFile = Join-Path $env:TEMP ("batuara_sync_{0}.{1}" -f (Get-Date -Format 'yyyyMMdd_HHmmss'), $tempExt)
+$localBackupFile = if ([string]::IsNullOrWhiteSpace($OutputPath)) { $tempBackupFile } else { $OutputPath }
 
 function Write-Step([string]$msg) {
     Write-Host "`n==> $msg" -ForegroundColor Cyan
@@ -42,7 +50,11 @@ Write-Host ""
 Write-Host "============================================" -ForegroundColor Yellow
 Write-Host "  Sync DB: OCI -> Dev Local" -ForegroundColor Yellow
 Write-Host "  Host : $OciHost" -ForegroundColor Yellow
-Write-Host "  DB   : $DbName (schema: $DbSchema)" -ForegroundColor Yellow
+if ($FullDatabase) {
+    Write-Host "  DB   : $DbName (full database)" -ForegroundColor Yellow
+} else {
+    Write-Host "  DB   : $DbName (schema: $DbSchema)" -ForegroundColor Yellow
+}
 Write-Host "============================================" -ForegroundColor Yellow
 
 # --- 1. Verificar pre-requisitos ---
@@ -53,7 +65,7 @@ if (-not (Test-Path $SshKey)) {
 }
 
 $containerRunning = docker ps --format "{{.Names}}" | Select-String -Pattern "^$LocalContainer$"
-if (-not $containerRunning) {
+if (-not $DumpOnly -and -not $containerRunning) {
     Write-Fail "Container local '$LocalContainer' não está em execução. Execute: docker compose -f docker-compose.local.yml up -d"
 }
 Write-Ok "Pré-requisitos OK"
@@ -67,10 +79,19 @@ if ($LASTEXITCODE -ne 0) {
 Write-Ok "Conexão SSH OK"
 
 # --- 3. Backup na OCI ---
-Write-Step "Gerando backup na OCI (schema: $DbSchema)..."
-$remotePath = "/tmp/batuara_sync.sql.gz"
+if ($FullDatabase) {
+    Write-Step "Gerando backup na OCI (full database)..."
+} else {
+    Write-Step "Gerando backup na OCI (schema: $DbSchema)..."
+}
+$remotePath = if ($DumpFormat -eq "custom") { "/tmp/batuara_sync.dump" } else { "/tmp/batuara_sync.sql.gz" }
+$dumpScope = if ($FullDatabase) { "" } else { "--schema=$DbSchema" }
 ssh -i $SshKey -o StrictHostKeyChecking=no "${OciUser}@${OciHost}" `
-    "docker exec $OciContainer pg_dump -U $DbUser -d $DbName --schema=$DbSchema --no-owner --no-acl | gzip > $remotePath && echo OK"
+    $(if ($DumpFormat -eq "custom") {
+        "docker exec $OciContainer pg_dump -U $DbUser -d $DbName $dumpScope --no-owner --no-acl -Fc > $remotePath && test -s $remotePath && echo OK"
+    } else {
+        "docker exec $OciContainer pg_dump -U $DbUser -d $DbName $dumpScope --no-owner --no-acl | gzip > $remotePath && test -s $remotePath && echo OK"
+    })
 
 if ($LASTEXITCODE -ne 0) {
     Write-Fail "Falha ao gerar backup na OCI"
@@ -79,19 +100,36 @@ Write-Ok "Backup gerado em $remotePath"
 
 # --- 4. Download do backup ---
 Write-Step "Baixando backup para local..."
-scp -i $SshKey -o StrictHostKeyChecking=no "${OciUser}@${OciHost}:${remotePath}" $BackupFile
+$targetDir = Split-Path -Parent $localBackupFile
+if (-not [string]::IsNullOrWhiteSpace($targetDir) -and -not (Test-Path $targetDir)) {
+    New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+}
+scp -i $SshKey -o StrictHostKeyChecking=no "${OciUser}@${OciHost}:${remotePath}" $localBackupFile
 
 if ($LASTEXITCODE -ne 0) {
     Write-Fail "Falha ao baixar backup"
 }
 
-$sizeMB = [math]::Round((Get-Item $BackupFile).Length / 1KB, 1)
-Write-Ok "Backup salvo em $BackupFile (${sizeMB}KB)"
+$sizeKB = [math]::Round((Get-Item $localBackupFile).Length / 1KB, 1)
+Write-Ok "Backup salvo em $localBackupFile (${sizeKB}KB)"
 
 # Limpar arquivo remoto
 ssh -i $SshKey -o StrictHostKeyChecking=no "${OciUser}@${OciHost}" "rm -f $remotePath" 2>&1 | Out-Null
 
 # --- 5. Restore no banco local ---
+if ($DumpOnly) {
+    Write-Step "DumpOnly habilitado: pulando restore local."
+    if (-not $KeepLocalBackup -and $localBackupFile -eq $tempBackupFile -and (Test-Path $tempBackupFile)) {
+        Remove-Item $tempBackupFile -Force 2>&1 | Out-Null
+    }
+    Write-Host ""
+    Write-Host "============================================" -ForegroundColor Green
+    Write-Host "  Dump concluído com sucesso!" -ForegroundColor Green
+    Write-Host "============================================" -ForegroundColor Green
+    Write-Host ""
+    exit 0
+}
+
 Write-Step "Restaurando no banco local..."
 
 # Terminar conexões ativas
@@ -104,9 +142,15 @@ docker exec $LocalContainer psql -U $DbUser -d postgres -c "CREATE DATABASE $DbN
 Write-Ok "Banco '$DbName' recriado"
 
 # Copiar e restaurar
-docker cp $BackupFile "${LocalContainer}:/tmp/restore.sql.gz"
-$restoreOutput = docker exec $LocalContainer bash -c "gunzip -c /tmp/restore.sql.gz | psql -U $DbUser -d $DbName -v ON_ERROR_STOP=0 2>&1"
-docker exec $LocalContainer rm /tmp/restore.sql.gz 2>&1 | Out-Null
+if ($DumpFormat -eq "custom") {
+    docker cp $localBackupFile "${LocalContainer}:/tmp/restore.dump"
+    $restoreOutput = docker exec $LocalContainer bash -c "pg_restore --exit-on-error --no-owner --no-acl -U $DbUser -d $DbName /tmp/restore.dump 2>&1"
+    docker exec $LocalContainer rm /tmp/restore.dump 2>&1 | Out-Null
+} else {
+    docker cp $localBackupFile "${LocalContainer}:/tmp/restore.sql.gz"
+    $restoreOutput = docker exec $LocalContainer bash -c "gunzip -c /tmp/restore.sql.gz | psql -U $DbUser -d $DbName -v ON_ERROR_STOP=0 2>&1"
+    docker exec $LocalContainer rm /tmp/restore.sql.gz 2>&1 | Out-Null
+}
 Write-Ok "Dados restaurados"
 
 # --- 6. Verificar tabelas e contagens ---
@@ -120,7 +164,9 @@ $migCount = docker exec $LocalContainer psql -U $DbUser -d $DbName -t -c `
 Write-Ok "Migrations registradas: $($migCount.Trim())"
 
 # --- 7. Limpar backup local temporário ---
-Remove-Item $BackupFile -Force 2>&1 | Out-Null
+if (-not $KeepLocalBackup -and $localBackupFile -eq $tempBackupFile -and (Test-Path $tempBackupFile)) {
+    Remove-Item $tempBackupFile -Force 2>&1 | Out-Null
+}
 
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Green

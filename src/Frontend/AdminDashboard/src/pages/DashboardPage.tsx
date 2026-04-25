@@ -21,7 +21,7 @@ import { Notifications as NotificationsIcon, TrendingUp as TrendingUpIcon } from
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import apiService from '../services/api';
-import { DashboardStats, ActivityLog } from '../types';
+import { DashboardStats } from '../types';
 
 const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -112,10 +112,10 @@ const DashboardPage: React.FC = () => {
                 </Typography>
               </Box>
               <Typography variant="h3" sx={{ fontWeight: 600, mb: 1 }}>
-                {stats?.totalEvents || 0}
+                {stats?.eventsUntilEndOfYear ?? 0}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {stats?.activeEvents || 0} ativos
+                Até o final do ano
               </Typography>
             </CardContent>
           </Card>
@@ -131,10 +131,10 @@ const DashboardPage: React.FC = () => {
                 </Typography>
               </Box>
               <Typography variant="h3" sx={{ fontWeight: 600, mb: 1 }}>
-                {stats?.totalAttendances || 0}
+                {stats?.attendancesUntilEndOfYear ?? 0}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Este mês
+                Espirituais até o final do ano
               </Typography>
             </CardContent>
           </Card>
@@ -146,14 +146,14 @@ const DashboardPage: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <PeopleIcon sx={{ color: 'success.main', mr: 1 }} />
                 <Typography variant="h6" color="success.main">
-                  Usuários
+                  Filhos da Casa
                 </Typography>
               </Box>
               <Typography variant="h3" sx={{ fontWeight: 600, mb: 1 }}>
-                {stats?.totalUsers || 0}
+                {stats?.activeHouseMembers ?? 0}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Administradores
+                Cadastrados e ativos
               </Typography>
             </CardContent>
           </Card>
@@ -169,10 +169,10 @@ const DashboardPage: React.FC = () => {
                 </Typography>
               </Box>
               <Typography variant="h3" sx={{ fontWeight: 600, mb: 1 }}>
-                {stats?.recentActivity?.length || 0}
+                {stats?.currentMonthActivity ?? 0}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Hoje
+                Eventos e atendimentos este mês
               </Typography>
             </CardContent>
           </Card>

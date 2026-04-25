@@ -174,8 +174,7 @@ cleanup_orphaned_resources() {
     log_info "Removendo redes não utilizadas..."
     docker network prune -f
     
-    log_info "Removendo volumes não utilizados..."
-    docker volume prune -f
+    log_warning "Pulando remoção de volumes (docker volume prune) para evitar perda de dados do PostgreSQL"
     
     log_success "Limpeza concluída"
 }

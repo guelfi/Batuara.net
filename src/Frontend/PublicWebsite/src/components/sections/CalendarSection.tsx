@@ -3,9 +3,7 @@ import {
   Box,
   Container,
   Typography,
-  Grid,
   Alert,
-  AlertTitle,
   CircularProgress,
   Paper,
   Stack,
@@ -36,6 +34,9 @@ import {
 import { ptBR } from 'date-fns/locale';
 
 const CalendarSection: React.FC = () => {
+  const IMPORTANT_INFO_TEXT =
+    'Informações Importantes: Todos os atendimentos são gratuitos. Recomendamos chegar com 30 minutos de antecedência';
+
   // Estado para navegação mensal
   const [selectedMonthDate, setSelectedMonthDate] = useState(new Date());
   const monthStart = startOfMonth(selectedMonthDate);
@@ -173,8 +174,13 @@ const CalendarSection: React.FC = () => {
     }));
   }, [currentData, monthDays]);
 
+  const monthLabel = useMemo(() => {
+    const raw = format(selectedMonthDate, "MMMM 'de' yyyy", { locale: ptBR });
+    return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : raw;
+  }, [selectedMonthDate]);
+
   return (
-    <Box id="calendar" sx={{ py: { xs: 4, md: 4 }, backgroundColor: 'background.default' }}>
+    <Box id="calendar" sx={{ pt: { xs: 5, md: 6 }, pb: { xs: 4, md: 4 }, backgroundColor: 'background.default' }}>
       <Container maxWidth="lg">
         <Box sx={{ textAlign: 'center', mb: { xs: 2, md: 3 } }}>
           <Typography
@@ -193,57 +199,40 @@ const CalendarSection: React.FC = () => {
             <IconButton onClick={handlePrevMonth} color="primary" size="large">
               <ArrowBackIosIcon fontSize="inherit" />
             </IconButton>
-            <Box component="span" sx={{ minWidth: { xs: 200, md: 350 }, textAlign: 'center', textTransform: 'capitalize' }}>
-              {format(selectedMonthDate, "MMMM 'de' yyyy", { locale: ptBR })}
+            <Box component="span" sx={{ minWidth: { xs: 200, md: 350 }, textAlign: 'center' }}>
+              {monthLabel}
             </Box>
             <IconButton onClick={handleNextMonth} color="primary" size="large">
               <ArrowForwardIosIcon fontSize="inherit" />
             </IconButton>
           </Typography>
-          <Typography
-            variant="h5"
+          <Alert
+            severity="info"
+            icon={<InfoIcon />}
             sx={{
-              color: 'text.secondary',
-              maxWidth: '800px',
+              maxWidth: 900,
               mx: 'auto',
-              lineHeight: 1.4,
-              mb: 1,
-              fontSize: { xs: '0.9rem', md: '1.2rem' }
+              mb: { xs: 2, md: 2 },
+              py: 0.5,
+              px: { xs: 1.25, md: 2 },
+              textAlign: 'left',
+              '& .MuiAlert-message': { width: '100%' },
             }}
           >
-            {isMobile ? 'Agenda de atendimentos' : 'Confira os atendimentos espirituais programados para o mês corrente'}
-          </Typography>
-
-          {/* Legenda de Cores */}
-          <Stack 
-            direction="row" 
-            flexWrap="wrap" 
-            justifyContent="center" 
-            gap={2} 
-            sx={{ mb: 4, px: 2 }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#03a9f4' }} />
-              <Typography variant="caption" fontWeight={600}>Gira de Umbanda</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#9c27b0' }} />
-              <Typography variant="caption" fontWeight={600}>Kardecismo</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#e65100' }} />
-              <Typography variant="caption" fontWeight={600}>Festas/Eventos</Typography>
-            </Box>
-          </Stack>
-
-          {!isMobile && (
-            <Alert severity="info" icon={<InfoIcon />} sx={{ maxWidth: 800, mx: 'auto', mb: 2, py: 0.5 }}>
-              <AlertTitle sx={{ mb: 0 }}>Informações Importantes</AlertTitle>
-              <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
-                Todos os atendimentos são gratuitos. Recomendamos chegar com 15 minutos de antecedência.
-              </Typography>
-            </Alert>
-          )}
+            <Typography
+              variant="body2"
+              title={IMPORTANT_INFO_TEXT}
+              sx={{
+                fontSize: { xs: '0.85rem', md: '0.95rem' },
+                lineHeight: 1.3,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {IMPORTANT_INFO_TEXT}
+            </Typography>
+          </Alert>
         </Box>
 
         {isLoading ? (
@@ -269,163 +258,151 @@ const CalendarSection: React.FC = () => {
           </Box>
         ) : (
           <Stack spacing={3}>
-            <Paper sx={{ p: { xs: 1, md: 3 }, borderRadius: 3, maxWidth: 1200, mx: 'auto', boxShadow: 3, overflow: 'hidden' }}>
-              <Box sx={{ overflowX: isMobile ? 'auto' : 'hidden', width: '100%', pb: isMobile ? 1 : 0 }}>
-                <Box sx={{ minWidth: { xs: 450, md: '100%' } }}>
-                  <Grid container spacing={0.5} sx={{ mb: 1 }}>
-                    {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((label) => (
-                      <Grid key={label} size={{ xs: 12 / 7 }}>
-                        <Box sx={{ textAlign: 'center', py: 1, fontWeight: 700, color: 'text.secondary', fontSize: { xs: '0.75rem', md: '0.875rem' } }}>{label}</Box>
-                      </Grid>
-                    ))}
-                  </Grid>
+            <Paper
+              sx={{
+                p: { xs: 0.75, md: 1.5 },
+                borderRadius: 2,
+                maxWidth: 1200,
+                mx: 'auto',
+                boxShadow: 3,
+                overflow: 'hidden',
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+                  columnGap: { xs: 0.5, md: 0.75 },
+                  rowGap: { xs: 0.5, md: 0.75 },
+                  width: '100%',
+                }}
+              >
+                {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((label) => (
+                  <Box
+                    key={label}
+                    sx={{
+                      textAlign: 'center',
+                      py: { xs: 0.5, md: 0.75 },
+                      fontWeight: 700,
+                      color: 'text.secondary',
+                      fontSize: { xs: '0.65rem', md: '0.78rem' },
+                      userSelect: 'none',
+                    }}
+                  >
+                    {label}
+                  </Box>
+                ))}
 
-                  <Grid container spacing={0.5}>
-                    {eventsByDay.map(({ day, items }) => {
-                      const isSelected = isSameDay(day, selectedDate);
-                      const isCurrentMonth = isSameMonth(day, monthStart);
-                      const today = isToday(day);
+                {eventsByDay.map(({ day, items }) => {
+                  const isSelected = isSameDay(day, selectedDate);
+                  const isCurrentMonth = isSameMonth(day, monthStart);
+                  const today = isToday(day);
 
-                      return (
-                        <Grid key={day.toISOString()} size={{ xs: 12 / 7 }}>
-                          <Box
-                            onClick={() => setSelectedDate(day)}
-                            sx={{
-                              minHeight: { xs: 60, md: 85 },
-                              borderRadius: 2,
-                              border: 1,
-                              borderColor: isSelected ? 'primary.main' : 'divider',
-                              backgroundColor: isSelected ? 'rgba(25, 118, 210, 0.08)' : 'background.paper',
-                              p: { xs: 0.5, md: 1 },
-                              cursor: 'pointer',
-                              opacity: isCurrentMonth ? 1 : 0.35,
-                              transition: 'all 0.2s ease',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              '&:hover': {
-                                borderColor: 'primary.main',
-                                transform: 'translateY(-1px)',
-                              },
-                            }}
-                          >
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontWeight: today || isSelected ? 700 : 500,
-                                color: today ? 'primary.main' : 'text.primary',
-                                fontSize: { xs: '0.8rem', md: '0.875rem' },
-                                mb: 0.5
-                              }}
-                            >
-                              {format(day, 'd')}
-                            </Typography>
-                            
-                            {/* Dots for Mobile / Detailed for Desktop */}
-                            {isMobile ? (
-                              <Stack direction="row" spacing={0.4} justifyContent="center" flexWrap="wrap" sx={{ width: '100%' }}>
-                                {items.slice(0, 4).map((item) => (
-                                  <Box
-                                    key={item.id}
-                                    sx={{
-                                      width: 6,
-                                      height: 6,
-                                      borderRadius: '50%',
-                                      backgroundColor: getActivityColor(item.type),
-                                    }}
-                                  />
-                                ))}
-                              </Stack>
-                            ) : (
-                              <Stack spacing={0.5} sx={{ width: '100%' }}>
-                                {items.slice(0, 3).map((item) => (
-                                  <Box
-                                    key={item.id}
-                                    sx={{
-                                      px: 0.75,
-                                      py: 0.35,
-                                      borderRadius: 1,
-                                      backgroundColor: `${getActivityColor(item.type)}20`,
-                                      borderLeft: `3px solid ${getActivityColor(item.type)}`,
-                                    }}
-                                  >
-                                    <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, fontSize: '0.65rem' }}>
-                                      {item.startTime}
-                                    </Typography>
-                                    <Typography 
-                                      variant="caption" 
-                                      color="text.secondary" 
-                                      sx={{ 
-                                        display: 'block', 
-                                        whiteSpace: 'nowrap', 
-                                        overflow: 'hidden', 
-                                        textOverflow: 'ellipsis',
-                                        fontSize: '0.65rem'
-                                      }}
-                                    >
-                                      {(item as any).displayTitle}
-                                    </Typography>
-                                  </Box>
-                                ))}
-                                {items.length > 3 && (
-                                  <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', fontSize: '0.6rem' }}>
-                                    + {items.length - 3} mais
-                                  </Typography>
-                                )}
-                              </Stack>
-                            )}
-                          </Box>
-                        </Grid>
-                      );
-                    })}
-                  </Grid>
-                </Box>
-              </Box>
-            </Paper>
-
-            {/* Detalhes do Dia Selecionado (Especialmente importante para Mobile) */}
-            <Paper sx={{ p: 2, borderRadius: 3, maxWidth: 1200, mx: 'auto', boxShadow: 2 }}>
-              <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CalendarTodayIcon fontSize="small" />
-                {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
-              </Typography>
-              
-              {currentData.filter(item => isSameDay(parseISO(item.date), selectedDate)).length === 0 ? (
-                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', py: 2, textAlign: 'center' }}>
-                  Nenhuma atividade programada para este dia.
-                </Typography>
-              ) : (
-                <Stack spacing={1.5}>
-                  {currentData
-                    .filter(item => isSameDay(parseISO(item.date), selectedDate))
-                    .map((item) => (
-                      <Box
-                        key={item.id}
+                  return (
+                    <Box
+                      key={day.toISOString()}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Selecionar dia ${format(day, "dd 'de' MMMM", { locale: ptBR })}`}
+                      onClick={() => setSelectedDate(day)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedDate(day);
+                        }
+                      }}
+                      sx={{
+                        minHeight: { xs: 50, md: 76 },
+                        borderRadius: 1,
+                        border: 1,
+                        borderColor: isSelected ? 'primary.main' : 'divider',
+                        backgroundColor: isSelected ? 'rgba(25, 118, 210, 0.08)' : 'background.paper',
+                        p: { xs: 0.5, md: 1 },
+                        cursor: 'pointer',
+                        opacity: isCurrentMonth ? 1 : 0.35,
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        outline: 'none',
+                        '&:hover': { borderColor: 'primary.main', transform: { xs: 'none', md: 'translateY(-1px)' } },
+                        '&:focus-visible': { boxShadow: `0 0 0 3px ${theme.palette.primary.main}33` },
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
                         sx={{
-                          p: 1.5,
-                          borderRadius: 2,
-                          backgroundColor: `${getActivityColor(item.type)}08`,
-                          borderLeft: `5px solid ${getActivityColor(item.type)}`,
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center'
+                          fontWeight: today || isSelected ? 700 : 500,
+                          color: today ? 'primary.main' : 'text.primary',
+                          fontSize: { xs: '0.72rem', md: '0.8rem' },
+                          mb: 0.25,
                         }}
                       >
-                        <Box>
-                          <Typography variant="subtitle2" fontWeight={700}>
-                            {(item as any).displayTitle}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {getActivityLabel(item.type)}
-                          </Typography>
-                        </Box>
-                        <Typography variant="h6" color="primary.main" fontWeight={700}>
-                          {item.startTime}
-                        </Typography>
-                      </Box>
-                    ))}
-                </Stack>
-              )}
+                        {format(day, 'd')}
+                      </Typography>
+
+                      {isMobile ? (
+                        <Stack
+                          direction="row"
+                          spacing={0.4}
+                          justifyContent="center"
+                          flexWrap="wrap"
+                          sx={{ width: '100%', minHeight: 8 }}
+                        >
+                          {items.slice(0, 4).map((item) => (
+                            <Box
+                              key={item.id}
+                              sx={{
+                                width: 6,
+                                height: 6,
+                                borderRadius: '50%',
+                                backgroundColor: getActivityColor(item.type),
+                              }}
+                            />
+                          ))}
+                        </Stack>
+                      ) : (
+                        <Stack spacing={0.5} sx={{ width: '100%' }}>
+                          {items.slice(0, 3).map((item) => (
+                            <Box
+                              key={item.id}
+                              sx={{
+                                px: 0.75,
+                                py: 0.35,
+                                borderRadius: 1,
+                                backgroundColor: `${getActivityColor(item.type)}20`,
+                                borderLeft: `3px solid ${getActivityColor(item.type)}`,
+                              }}
+                            >
+                              <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, fontSize: '0.65rem' }}>
+                                {item.startTime}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{
+                                  display: 'block',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  fontSize: '0.65rem'
+                                }}
+                              >
+                                {(item as any).displayTitle}
+                              </Typography>
+                            </Box>
+                          ))}
+                          {items.length > 3 && (
+                            <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', fontSize: '0.6rem' }}>
+                              + {items.length - 3} mais
+                            </Typography>
+                          )}
+                        </Stack>
+                      )}
+                    </Box>
+                  );
+                })}
+              </Box>
             </Paper>
           </Stack>
         )}

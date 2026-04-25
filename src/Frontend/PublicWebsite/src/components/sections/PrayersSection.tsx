@@ -23,7 +23,6 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useQuery } from '@tanstack/react-query';
 import publicApi from '../../services/api';
 import { SpiritualCategory, SpiritualContentType } from '../../types';
-import { mockSpiritualContent } from '../../data/mockData';
 
 const PrayersSection: React.FC = () => {
   const theme = useTheme();
@@ -132,7 +131,7 @@ const PrayersSection: React.FC = () => {
     }
   };
 
-  const allContents = (data?.data?.length ?? 0) > 0 ? data!.data : mockSpiritualContent;
+  const allContents = data?.data ?? [];
   const visibleContents = allContents.filter((item) =>
     item.isActive &&
     [SpiritualContentType.Prayer, SpiritualContentType.Teaching, SpiritualContentType.Doctrine, SpiritualContentType.Hymn]

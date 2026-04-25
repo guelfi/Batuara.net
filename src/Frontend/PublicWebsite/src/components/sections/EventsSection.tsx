@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -27,7 +27,7 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { useQuery } from '@tanstack/react-query';
 import publicApi from '../../services/api';
 import { EventType, Event as BatuaraEvent } from '../../types';
-import { addMonths, subMonths, endOfMonth, format, parseISO, startOfMonth } from 'date-fns';
+import { addMonths, subMonths, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import NavigationDots from '../common/NavigationDots';
 
@@ -37,8 +37,6 @@ const EventsSection: React.FC = () => {
   
   // Estado para navegação mensal
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const monthStart = startOfMonth(selectedDate);
-  const monthEnd = endOfMonth(selectedDate);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<EventType | null>(null);
@@ -53,6 +51,11 @@ const EventsSection: React.FC = () => {
   const handleNextMonth = () => {
     setSelectedDate((prev: Date) => addMonths(prev, 1));
   };
+
+  const monthLabel = useMemo(() => {
+    const raw = format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR });
+    return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : raw;
+  }, [selectedDate]);
 
   const normalizeEventType = (type: EventType | string): EventType => {
     if (typeof type === 'number') {
@@ -208,8 +211,8 @@ const EventsSection: React.FC = () => {
             <IconButton onClick={handlePrevMonth} color="primary" size="large">
               <ArrowBackIosIcon fontSize="inherit" />
             </IconButton>
-            <Box component="span" sx={{ minWidth: { xs: 200, md: 350 }, textAlign: 'center', textTransform: 'capitalize' }}>
-              {format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR })}
+            <Box component="span" sx={{ minWidth: { xs: 200, md: 350 }, textAlign: 'center' }}>
+              {monthLabel}
             </Box>
             <IconButton onClick={handleNextMonth} color="primary" size="large">
               <ArrowForwardIosIcon fontSize="inherit" />
@@ -554,23 +557,6 @@ const EventsSection: React.FC = () => {
           </Grid>
         )}
 
-        <Box sx={{ textAlign: 'center', mt: 6 }}>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Quer ficar por dentro de todos os nossos eventos?
-          </Typography>
-          <Button
-            variant="outlined"
-            size="large"
-            onClick={() => {
-              const element = document.querySelector('#contact');
-              if (element) {
-                element.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
-          >
-            Entre em Contato
-          </Button>
-        </Box>
       </Container>
     </Box>
   );
