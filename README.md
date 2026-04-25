@@ -61,19 +61,19 @@ A Casa de Caridade Caboclo Batuara e um espaco dedicado ao acolhimento espiritua
 
 ```
                     +---------------------------------------------+
-                    |              Nginx (Reverse Proxy)           |
+                    |              Nginx (Reverse Proxy)          |
                     |                                             |
-                    |  /batuara-public/  -> Public Website         |
-                    |  /batuara-admin/   -> Admin Dashboard        |
-                    |  /batuara-api/     -> API .NET               |
+                    |  /batuara-public/  -> Public Website        |
+                    |  /batuara-admin/   -> Admin Dashboard       |
+                    |  /batuara-api/     -> API .NET              |
                     +---------------------------------------------+
                          |                |                |
-              +----------+                |                +----------+
+              +----------+                |                +---------+
               v                           v                          v
      +-----------------+      +--------------------+      +-----------------+
-     |  Public Website  |      |   Admin Dashboard   |      |    API .NET 8    |
-     |  React + MUI     |      |   React + MUI       |      |   ASP.NET Core   |
-     |  Port: 3000      |      |   Port: 3001        |      |   Port: 8080     |
+     |  Public Website |      |   Admin Dashboard  |      |    API .NET 8   |
+     |  React + MUI    |      |   React + MUI      |      |   ASP.NET Core  |
+     |  Port: 3000     |      |   Port: 3001       |      |   Port: 8080    |
      +-----------------+      +--------------------+      +--------+--------+
                                                                     |
                                                            +--------v--------+
