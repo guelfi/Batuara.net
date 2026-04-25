@@ -40,6 +40,17 @@ type GuideFormState = {
   isActive: boolean;
 };
 
+type GuideFormErrors = Partial<Record<keyof GuideFormState, string>>;
+
+const validateGuideForm = (form: GuideFormState): GuideFormErrors => {
+  const errors: GuideFormErrors = {};
+  if (!form.name.trim()) errors.name = 'Nome é obrigatório.';
+  if (!form.description.trim()) errors.description = 'Descrição é obrigatória.';
+  if (!form.entryDate) errors.entryDate = 'Data de entrada é obrigatória.';
+  if (!form.specialties.trim()) errors.specialties = 'Informe pelo menos uma especialidade.';
+  return errors;
+};
+
 const initialFormState: GuideFormState = {
   name: '',
   description: '',
@@ -68,6 +79,7 @@ const GuidesPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'true' | 'false'>('all');
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [totalCount, setTotalCount] = useState(0);
+  const [formErrors, setFormErrors] = useState<GuideFormErrors>({});
   const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -166,9 +178,16 @@ const GuidesPage: React.FC = () => {
     setDialogOpen(false);
     setEditingItem(null);
     setForm(initialFormState);
+    setFormErrors({});
   };
 
   const handleSubmit = async () => {
+    const errors = validateGuideForm(form);
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setFormErrors({});
     const payload = {
       name: form.name,
       description: form.description,
@@ -278,7 +297,7 @@ const GuidesPage: React.FC = () => {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField label="Nome" value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} fullWidth />
+              <TextField label="Nome" value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} error={!!formErrors.name} helperText={formErrors.name} fullWidth />
               <TextField
                 label="Ordem de exibição"
                 type="number"
@@ -292,16 +311,16 @@ const GuidesPage: React.FC = () => {
               label="Descrição"
               value={form.description}
               onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-              fullWidth
-              multiline
-              minRows={4}
+              error={!!formErrors.description} helperText={formErrors.description}
+              fullWidth multiline minRows={4}
             />
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
               <TextField
                 label="Especialidades"
-                helperText="Separe por vírgula"
+                helperText={formErrors.specialties || 'Separe por vírgula'}
                 value={form.specialties}
                 onChange={(e) => setForm((prev) => ({ ...prev, specialties: e.target.value }))}
+                error={!!formErrors.specialties}
                 fullWidth
               />
               <TextField
@@ -310,6 +329,7 @@ const GuidesPage: React.FC = () => {
                 value={form.entryDate}
                 onChange={(e) => setForm((prev) => ({ ...prev, entryDate: e.target.value }))}
                 InputLabelProps={{ shrink: true }}
+                error={!!formErrors.entryDate} helperText={formErrors.entryDate}
                 fullWidth
               />
             </Stack>

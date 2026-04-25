@@ -22,7 +22,6 @@ import PeopleIcon from '@mui/icons-material/People';
 import { useQuery } from '@tanstack/react-query';
 import publicApi from '../../services/api';
 import { Guide } from '../../types';
-import { GuiaEntidade, guiasEntidadesData } from '../../data/guiasEntidadesData';
 
 type DisplayGuide = {
   id: string | number;
@@ -45,17 +44,19 @@ const GuiasEntidadesSection: React.FC = () => {
   });
 
   const guides = useMemo<DisplayGuide[]>(() => {
-    const apiGuides = [...(data ?? [])]
+    return [...(data ?? [])]
       .filter((item) => item.isActive)
       .sort((a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name))
       .map((item: Guide) => ({
         id: item.id,
         name: item.name,
         description: item.description,
-        highlight: item.entryDate ? `Desde ${new Date(item.entryDate).toLocaleDateString('pt-BR')}` : 'Guia da Casa Batuara',
+        highlight: 'Guia da Casa Batuara',
         metadata: [
           { label: 'Especialidades', value: item.specialties.join(' • ') || 'Não informado' },
-          { label: 'Contato', value: item.whatsapp || item.phone || item.email || 'Não informado' },
+          ...(item.whatsapp || item.phone || item.email
+            ? [{ label: 'Contato', value: item.whatsapp || item.phone || item.email || '' }]
+            : []),
         ],
         tags: item.specialties,
         email: item.email,
@@ -63,25 +64,6 @@ const GuiasEntidadesSection: React.FC = () => {
         whatsapp: item.whatsapp,
         photoUrl: item.photoUrl,
       }));
-
-    if (apiGuides.length > 0) {
-      return apiGuides;
-    }
-
-    return guiasEntidadesData.map((item: GuiaEntidade) => ({
-      id: item.id,
-      name: item.name,
-      description: item.description,
-      highlight: `Comemoração: ${item.comemoracao}`,
-      metadata: [
-        { label: 'Saudação', value: item.saudacao },
-        { label: 'Habitat', value: item.habitat },
-        { label: 'Cor', value: item.cor },
-        { label: 'Dia da Semana', value: item.diaSemana },
-        { label: 'Fruta', value: item.fruta },
-      ],
-      tags: item.caracteristicas,
-    }));
   }, [data]);
 
   const handleOpenDialog = (guia: DisplayGuide) => {
@@ -106,30 +88,6 @@ const GuiasEntidadesSection: React.FC = () => {
             }}
           >
             Guias e Entidades
-          </Typography>
-          <Typography
-            variant="h5"
-            sx={{
-              color: 'text.secondary',
-              maxWidth: '800px',
-              mx: 'auto',
-              lineHeight: 1.6,
-              mb: 2,
-            }}
-          >
-            Conheça os guias e entidades cadastrados pela administração da Casa Batuara
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              color: 'text.secondary',
-              maxWidth: '600px',
-              mx: 'auto',
-              lineHeight: 1.5,
-              fontStyle: 'italic',
-            }}
-          >
-            Os dados abaixo são sincronizados automaticamente com o painel administrativo e exibem somente registros ativos.
           </Typography>
         </Box>
 

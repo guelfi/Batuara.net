@@ -157,8 +157,7 @@ docker container prune -f
 log_info "Removendo imagens não utilizadas..."
 docker image prune -f
 
-log_info "Removendo volumes órfãos..."
-docker volume prune -f
+log_warning "Pulando remoção de volumes (docker volume prune) para evitar perda de dados do PostgreSQL"
 
 log_success "Limpeza do Docker concluída"
 

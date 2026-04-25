@@ -38,6 +38,17 @@ type UmbandaLineForm = {
   isActive: boolean;
 };
 
+type UmbandaLineFormErrors = Partial<Record<keyof UmbandaLineForm, string>>;
+
+const validateUmbandaLineForm = (form: UmbandaLineForm): UmbandaLineFormErrors => {
+  const errors: UmbandaLineFormErrors = {};
+  if (!form.name.trim()) errors.name = 'Nome é obrigatório.';
+  if (!form.description.trim()) errors.description = 'Descrição é obrigatória.';
+  if (!form.characteristics.trim()) errors.characteristics = 'Características são obrigatórias.';
+  if (!form.entities.trim()) errors.entities = 'Informe pelo menos uma entidade.';
+  return errors;
+};
+
 const initialForm: UmbandaLineForm = {
   name: '',
   description: '',
@@ -63,6 +74,7 @@ const UmbandaLinesPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'true' | 'false'>('all');
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [totalCount, setTotalCount] = useState(0);
+  const [formErrors, setFormErrors] = useState<UmbandaLineFormErrors>({});
   const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -165,9 +177,16 @@ const UmbandaLinesPage: React.FC = () => {
     setDialogOpen(false);
     setEditingItem(null);
     setForm(initialForm);
+    setFormErrors({});
   };
 
   const handleSubmit = async () => {
+    const errors = validateUmbandaLineForm(form);
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setFormErrors({});
     const payload = {
       name: form.name,
       description: form.description,
@@ -275,7 +294,7 @@ const UmbandaLinesPage: React.FC = () => {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField label="Nome" value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} fullWidth />
+              <TextField label="Nome" value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} error={!!formErrors.name} helperText={formErrors.name} fullWidth />
               <TextField
                 label="Ordem de exibição"
                 type="number"
@@ -284,8 +303,8 @@ const UmbandaLinesPage: React.FC = () => {
                 sx={{ minWidth: 160 }}
               />
             </Stack>
-            <TextField label="Descrição" value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} fullWidth multiline minRows={3} />
-            <TextField label="Características" value={form.characteristics} onChange={(e) => setForm((prev) => ({ ...prev, characteristics: e.target.value }))} fullWidth multiline minRows={2} />
+            <TextField label="Descrição" value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} error={!!formErrors.description} helperText={formErrors.description} fullWidth multiline minRows={3} />
+            <TextField label="Características" value={form.characteristics} onChange={(e) => setForm((prev) => ({ ...prev, characteristics: e.target.value }))} error={!!formErrors.characteristics} helperText={formErrors.characteristics} fullWidth multiline minRows={2} />
             <TextField
               label="Interpretação Batuara"
               value={form.batuaraInterpretation}
@@ -298,6 +317,7 @@ const UmbandaLinesPage: React.FC = () => {
               label="Entidades (separadas por vírgula)"
               value={form.entities}
               onChange={(e) => setForm((prev) => ({ ...prev, entities: e.target.value }))}
+              error={!!formErrors.entities} helperText={formErrors.entities}
               fullWidth
             />
             <TextField
