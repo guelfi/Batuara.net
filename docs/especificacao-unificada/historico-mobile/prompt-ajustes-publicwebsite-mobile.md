@@ -1,4 +1,4 @@
-Você é um assistente de engenharia de software trabalhando no repositório c:\Users\MarcoGuelfi\Projetos\Batuara.net , especificamente no frontend src\Frontend\PublicWebsite . Analise e implemente os ajustes descritos no arquivo docs\especificacao-unificada\ajustes.md (as imagens de referência estão em docs\especificacao-unificada\Batuara-Mobile/ , não precisam ser versionadas).
+Você é um assistente de engenharia de software trabalhando no repositório Batuara.net, especificamente no frontend src\Frontend\PublicWebsite. Analise e implemente os ajustes descritos no arquivo docs\especificacao-unificada\historico-mobile\ajustes.md (as imagens de referência estão em docs\especificacao-unificada\historico-mobile\Batuara-Mobile/ e docs\especificacao-unificada\historico-mobile\assets\mobile/).
 
 Objetivo Ajustar a experiência mobile do PublicWebsite, corrigindo espaçamentos entre Header e títulos das seções, removendo a navegação flutuante lateral direita (botões azuis), e melhorando a UX do Calendário (destaques por cor, instrução e card flutuante com detalhes).
 
