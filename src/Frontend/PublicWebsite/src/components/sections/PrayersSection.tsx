@@ -163,7 +163,7 @@ const PrayersSection: React.FC = () => {
       sx={{
         scrollMarginTop: { xs: 56, md: 88 },
         minHeight: { xs: '100vh', md: 'auto' },
-        pt: { xs: 1.5, md: 8 },
+        pt: { xs: 1.5, md: 4 },
         pb: { xs: 4, md: 8 },
         backgroundColor: 'background.default',
         [desktopMediaQuery]: {
@@ -197,6 +197,28 @@ const PrayersSection: React.FC = () => {
           >
             Palavras de fé, esperança e amor para elevar a alma
           </Typography>
+
+          <Card
+            sx={{
+              maxWidth: 820,
+              mx: 'auto',
+              mb: 2,
+              px: 2,
+              py: 1.25,
+              backgroundColor: 'primary.light',
+              color: 'primary.contrastText',
+              overflow: 'hidden',
+            }}
+          >
+            <Typography
+              variant="body2"
+              noWrap
+              title={'"A oração é o mais poderoso meio de cura que existe" - Emmanuel (psicografado por Francisco Cândido Xavier)'}
+              sx={{ fontWeight: 600, opacity: 0.95 }}
+            >
+              "A oração é o mais poderoso meio de cura que existe" - Emmanuel (psicografado por Francisco Cândido Xavier)
+            </Typography>
+          </Card>
 
           {/* Filtros */}
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap', mb: 2 }}>
@@ -341,17 +363,6 @@ const PrayersSection: React.FC = () => {
             ))}
           </Grid>
         )}
-
-        <Box sx={{ textAlign: 'center', mt: 4 }}>
-          <Card sx={{ p: 3, backgroundColor: 'primary.light', color: 'primary.contrastText' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-              "A oração é o mais poderoso meio de cura que existe"
-            </Typography>
-            <Typography variant="body1" sx={{ fontStyle: 'italic' }}>
-              - Emmanuel (psicografado por Francisco Cândido Xavier)
-            </Typography>
-          </Card>
-        </Box>
       </Container>
     </Box>
   );

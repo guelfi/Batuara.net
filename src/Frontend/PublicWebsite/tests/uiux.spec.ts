@@ -6,16 +6,15 @@ const navigationItems = [
   { label: 'Início', href: '#home' },
   { label: 'Nossa História', href: '#nossa-historia' },
   { label: 'Nossa Missão', href: '#nossa-missao' },
-  { label: 'Calendário Atendimento', href: '#calendario-atendimento' },
+  { label: 'Calendário', href: '#calendario-atendimento' },
   { label: 'Eventos e Festas', href: '#eventos-e-festas' },
   { label: 'Orixás', href: '#orixas' },
   { label: 'Guias e Entidades', href: '#guias-entidades' },
   { label: 'Linhas da Umbanda', href: '#linhas-da-umbanda' },
   { label: 'Orações', href: '#oracoes' },
   { label: 'Doações', href: '#doacoes' },
-  { label: 'Entre em Contato', href: '#entre-em-contato' },
-  { label: 'Nossa Localização', href: '#nossa-localizacao' },
-  { label: 'Redes Sociais', href: '#redes-sociais' },
+  { label: 'Contato', href: '#entre-em-contato' },
+  { label: 'Localização', href: '#nossa-localizacao' },
 ];
 
 const mockApiResponse = <T,>(data: T) => ({
@@ -439,6 +438,32 @@ test('UI/UX: navegação por menu + screenshots por seção', async ({ page }, t
 
   await page.goto('/');
   await expect(page.locator('#home')).toBeVisible();
+
+  if (testInfo.project.name === 'desktop') {
+    const originalViewport = page.viewportSize();
+    const viewports = [
+      { width: 1024, height: 720 },
+      { width: 1280, height: 720 },
+      { width: 1440, height: 800 },
+    ];
+
+    for (const vp of viewports) {
+      await page.setViewportSize(vp);
+      await page.locator('#nossa-localizacao').scrollIntoViewIfNeeded();
+      await page.waitForTimeout(100);
+      const buffer = await page.screenshot({
+        clip: { x: 0, y: 0, width: vp.width, height: Math.min(vp.height, 320) },
+      });
+      await testInfo.attach(`desktop-header-spacing-${vp.width}w.png`, {
+        body: buffer,
+        contentType: 'image/png',
+      });
+    }
+
+    if (originalViewport) {
+      await page.setViewportSize(originalViewport);
+    }
+  }
 
   if (shouldScreenshot) {
     await expect(page.locator('#home')).toHaveScreenshot('uiux-00-home.png', { timeout: 30_000 });

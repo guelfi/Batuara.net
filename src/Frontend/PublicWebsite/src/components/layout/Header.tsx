@@ -21,16 +21,15 @@ const navigationItems: NavigationItem[] = [
   { label: 'Início', href: '#home' },
   { label: 'Nossa História', href: '#nossa-historia' },
   { label: 'Nossa Missão', href: '#nossa-missao' },
-  { label: 'Calendário Atendimento', href: '#calendario-atendimento' },
+  { label: 'Calendário', href: '#calendario-atendimento' },
   { label: 'Eventos e Festas', href: '#eventos-e-festas' },
   { label: 'Orixás', href: '#orixas' },
   { label: 'Guias e Entidades', href: '#guias-entidades' },
   { label: 'Linhas da Umbanda', href: '#linhas-da-umbanda' },
   { label: 'Orações', href: '#oracoes' },
   { label: 'Doações', href: '#doacoes' },
-  { label: 'Entre em Contato', href: '#entre-em-contato' },
-  { label: 'Nossa Localização', href: '#nossa-localizacao' },
-  { label: 'Redes Sociais', href: '#redes-sociais' },
+  { label: 'Contato', href: '#entre-em-contato' },
+  { label: 'Localização', href: '#nossa-localizacao' },
 ];
 
 const Header: React.FC = () => {

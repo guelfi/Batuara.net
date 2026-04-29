@@ -146,6 +146,23 @@ export const batuaraTheme = createTheme({
   },
   spacing: 8,
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        html: {
+          overflowX: 'hidden',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        },
+        body: {
+          overflowX: 'hidden',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        },
+        'body::-webkit-scrollbar': {
+          display: 'none',
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {
