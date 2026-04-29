@@ -490,7 +490,9 @@ test('UI/UX: navegação por menu + screenshots por seção', async ({ page }, t
     await expect(page.locator('#home')).toHaveScreenshot('uiux-00-home.png', { timeout: 30_000 });
   }
 
-  for (const [index, item] of navigationItems.slice(1).entries()) {
+  const navigationItemsWithoutHome = navigationItems.slice(1);
+  for (let index = 0; index < navigationItemsWithoutHome.length; index++) {
+    const item = navigationItemsWithoutHome[index];
     await navigateByMenu(page, item.label, item.href);
     if (item.href === '#linhas-da-umbanda') {
       await page.evaluate(() => {
@@ -502,7 +504,7 @@ test('UI/UX: navegação por menu + screenshots por seção', async ({ page }, t
     const order = String(index + 1).padStart(2, '0');
     const id = item.href.replace('#', '');
     if (shouldScreenshot) {
-      const screenshotOptions: Parameters<(typeof expect)['prototype']['toHaveScreenshot']>[1] = { timeout: 30_000 };
+      const screenshotOptions: { timeout: number; maxDiffPixelRatio?: number } = { timeout: 30_000 };
       if (testInfo.project.name === 'mobile' && (id === 'orixas' || id === 'guias-entidades')) {
         screenshotOptions.maxDiffPixelRatio = 0.04;
       }
