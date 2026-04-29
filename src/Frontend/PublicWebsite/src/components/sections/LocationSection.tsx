@@ -26,7 +26,7 @@ const LocationSection: React.FC = () => {
     <Box
       id="nossa-localizacao"
       sx={{
-        scrollMarginTop: { xs: 56, md: 88 },
+        scrollMarginTop: { xs: 56, md: 64 },
         minHeight: { xs: '100vh', md: 'auto' },
         pt: { xs: 1.5, md: 4 },
         pb: { xs: 4, md: 8 },
