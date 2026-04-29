@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -38,6 +38,7 @@ const Header: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const sectionIds = useMemo(() => navigationItems.map((item) => item.href.replace('#', '')), []);
+  const appBarRef = useRef<HTMLDivElement | null>(null);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -46,7 +47,9 @@ const Header: React.FC = () => {
   const handleNavClick = (href: string) => {
     const element = document.querySelector(href);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+      const headerHeight = appBarRef.current?.offsetHeight ?? (isMobile ? 56 : 64);
+      const targetTop = element.getBoundingClientRect().top + window.scrollY - headerHeight;
+      window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
       window.history.replaceState(null, '', href);
       setActiveHref(href);
     }
@@ -128,7 +131,7 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <AppBar position="fixed" elevation={2}>
+      <AppBar ref={appBarRef} position="fixed" elevation={2}>
         <Toolbar sx={{ display: 'flex', alignItems: 'center' }}>
           {/* Logo/Título à esquerda */}
           <Box

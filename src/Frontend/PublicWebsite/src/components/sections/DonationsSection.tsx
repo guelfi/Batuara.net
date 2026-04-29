@@ -77,7 +77,7 @@ const DonationsSection: React.FC = () => {
     <Box
       id="doacoes"
       sx={{
-        scrollMarginTop: { xs: 56, md: 88 },
+        scrollMarginTop: { xs: 56, md: 64 },
         minHeight: { xs: '100vh', md: 'auto' },
         pt: { xs: 1.5, md: 4 },
         pb: { xs: 4, md: 8 },
