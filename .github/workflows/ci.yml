@@ -159,7 +159,7 @@ jobs:
         working-directory: src/Frontend/PublicWebsite
 
       - name: Run visual tests
-        run: npm run test:visual
+        run: npx playwright test --project=desktop --project=tablet --project=mobile
         working-directory: src/Frontend/PublicWebsite
         env:
           CI: true
