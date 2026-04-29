@@ -157,9 +157,18 @@ const PrayersSection: React.FC = () => {
   };
 
   return (
-    <Box id="prayers" sx={{ py: 8, backgroundColor: 'background.default' }}>
+    <Box
+      id="oracoes"
+      sx={{
+        scrollMarginTop: { xs: 56, md: 88 },
+        minHeight: { xs: '100vh', md: 'auto' },
+        pt: { xs: 1.5, md: 8 },
+        pb: { xs: 4, md: 8 },
+        backgroundColor: 'background.default',
+      }}
+    >
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
+        <Box sx={{ textAlign: 'center', mb: { xs: 3, md: 4 } }}>
           <Typography
             variant="h2"
             sx={{

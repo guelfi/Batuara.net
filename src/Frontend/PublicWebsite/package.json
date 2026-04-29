@@ -32,6 +32,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:visual": "playwright test",
+    "test:visual:update": "playwright test --update-snapshots",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -53,6 +55,7 @@
     ]
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "@testing-library/dom": "^10.4.1",
     "sass": "^1.99.0"
   }

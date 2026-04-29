@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -19,22 +19,26 @@ import { NavigationItem } from '../../types';
 
 const navigationItems: NavigationItem[] = [
   { label: 'Início', href: '#home' },
-  { label: 'Sobre', href: '#about' },
-  { label: 'Calendário', href: '#calendar' },        // MOVIDO PARA CIMA
-  { label: 'Festas e Eventos', href: '#events' },    // RENOMEADO E REORDENADO
+  { label: 'Nossa História', href: '#nossa-historia' },
+  { label: 'Nossa Missão', href: '#nossa-missao' },
+  { label: 'Calendário Atendimento', href: '#calendario-atendimento' },
+  { label: 'Eventos e Festas', href: '#eventos-e-festas' },
   { label: 'Orixás', href: '#orixas' },
   { label: 'Guias e Entidades', href: '#guias-entidades' },
-  { label: 'Linhas da Umbanda', href: '#umbanda' },
-  { label: 'Orações', href: '#prayers' },
-  { label: 'Doações', href: '#donations' },
-  { label: 'Contato', href: '#contact' },
-  { label: 'Localização', href: '#location' },
+  { label: 'Linhas da Umbanda', href: '#linhas-da-umbanda' },
+  { label: 'Orações', href: '#oracoes' },
+  { label: 'Doações', href: '#doacoes' },
+  { label: 'Entre em Contato', href: '#entre-em-contato' },
+  { label: 'Nossa Localização', href: '#nossa-localizacao' },
+  { label: 'Redes Sociais', href: '#redes-sociais' },
 ];
 
 const Header: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [activeHref, setActiveHref] = useState<string>('#home');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const sectionIds = useMemo(() => navigationItems.map((item) => item.href.replace('#', '')), []);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -43,33 +47,56 @@ const Header: React.FC = () => {
   const handleNavClick = (href: string) => {
     const element = document.querySelector(href);
     if (element) {
-      const isMobile = window.innerWidth < 768;
-      const headerHeight = isMobile ? 56 : 64;
-
-      // Offset ajustado para aproximar as seções do header
-      let offsetHeight;
-
-      if (href === '#home') {
-        // Hero: no mobile fica com muito mais espaço do header, no desktop vai para o topo absoluto
-        offsetHeight = isMobile ? 0 : 0; // Offset zero para dar máximo espaço visual no mobile
-      } else if (href === '#location') {
-        // Location: mantém o offset atual (está correto)
-        offsetHeight = headerHeight + 16;
-      } else {
-        // Outras seções: diminuir 60px do offset anterior para aproximar do header
-        offsetHeight = headerHeight - 44; // headerHeight + 16 - 60 = headerHeight - 44
-      }
-
-      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-      const offsetPosition = elementPosition - offsetHeight;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
+      element.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+      window.history.replaceState(null, '', href);
+      setActiveHref(href);
     }
     setMobileOpen(false);
   };
+
+  useEffect(() => {
+    const handleHashSync = () => {
+      if (window.location.hash) {
+        setActiveHref(window.location.hash);
+      }
+    };
+
+    handleHashSync();
+    window.addEventListener('hashchange', handleHashSync);
+
+    return () => window.removeEventListener('hashchange', handleHashSync);
+  }, []);
+
+  useEffect(() => {
+    const elements = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => !!el);
+
+    if (elements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0))[0];
+
+        const target = visible?.target as HTMLElement | undefined;
+        const nextHref = target?.id ? `#${target.id}` : undefined;
+        if (nextHref) {
+          setActiveHref((prev) => (prev === nextHref ? prev : nextHref));
+        }
+      },
+      {
+        root: null,
+        threshold: [0.25, 0.5, 0.75],
+        rootMargin: '-20% 0px -65% 0px',
+      }
+    );
+
+    elements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [sectionIds]);
 
   const drawer = (
     <Box sx={{ width: 250 }}>
@@ -89,8 +116,8 @@ const Header: React.FC = () => {
               primary={item.label}
               sx={{
                 '& .MuiListItemText-primary': {
-                  color: theme.palette.primary.main,
-                  fontWeight: 500,
+                  color: item.href === activeHref ? theme.palette.primary.main : theme.palette.text.primary,
+                  fontWeight: item.href === activeHref ? 700 : 500,
                 }
               }}
             />
@@ -174,7 +201,7 @@ const Header: React.FC = () => {
                 alignItems: 'center',
                 gap: 0.5,
                 flexGrow: 1,
-                flexWrap: 'nowrap',
+                flexWrap: 'wrap',
               }}
             >
               {navigationItems.map((item) => (
@@ -184,12 +211,13 @@ const Header: React.FC = () => {
                   onClick={() => handleNavClick(item.href)}
                   sx={{
                     textTransform: 'none',
-                    fontWeight: 500,
+                    fontWeight: item.href === activeHref ? 700 : 500,
                     px: 0.7,
-                    py: 1,
+                    py: 0.7,
                     minWidth: 'auto',
                     fontSize: '0.8rem',
                     whiteSpace: 'nowrap',
+                    backgroundColor: item.href === activeHref ? 'rgba(255, 255, 255, 0.14)' : 'transparent',
                     '&:hover': {
                       backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     },

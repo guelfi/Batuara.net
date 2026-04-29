@@ -5,6 +5,7 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  Fade,
   Typography,
   Card,
   CardContent,
@@ -18,13 +19,46 @@ import {
   ArrowBackIos as ArrowBackIcon,
   ArrowForwardIos as ArrowForwardIcon
 } from '@mui/icons-material';
+import { TransitionProps } from '@mui/material/transitions';
 import { useQuery } from '@tanstack/react-query';
 import NavigationDots from '../common/NavigationDots';
 import publicApi from '../../services/api';
 import { UmbandaLine } from '../../types';
 
+const colorMap: Record<string, string> = {
+  branco: '#e8eaf6',
+  azul: '#1976d2',
+  'azul claro': '#42a5f5',
+  'azul marinho': '#1a237e',
+  prata: '#90a4ae',
+  lilás: '#9c27b0',
+  roxo: '#7b1fa2',
+  dourado: '#f9a825',
+  amarelo: '#fbc02d',
+  vermelho: '#d32f2f',
+  verde: '#388e3c',
+  'verde escuro': '#2e7d32',
+  marrom: '#795548',
+  preto: '#212121',
+  rosa: '#e91e63',
+  coral: '#ff7043',
+  laranja: '#f57c00',
+  arcoíris: '#673ab7',
+  'arco-íris': '#673ab7',
+};
+
+const colorKeys = Object.keys(colorMap).sort((a, b) => b.length - a.length);
+
+const DialogTransition = React.forwardRef(function DialogTransition(
+  props: TransitionProps & { children: React.ReactElement },
+  ref: React.Ref<unknown>
+) {
+  return <Fade ref={ref} {...props} timeout={{ enter: 220, exit: 180 }} />;
+});
+
 const UmbandaSection: React.FC = () => {
   const [selectedLinha, setSelectedLinha] = useState<UmbandaLine | null>(null);
+  const [selectedLinhaColor, setSelectedLinhaColor] = useState<string | null>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [maxScroll, setMaxScroll] = useState(0);
   const theme = useTheme();
@@ -51,12 +85,33 @@ const UmbandaSection: React.FC = () => {
     return palette[index % palette.length];
   };
 
-  const handleCardClick = (linha: UmbandaLine) => {
+  const getAccentColorFromLinha = (linha: UmbandaLine, index: number): string => {
+    const text = `${linha.name} ${linha.description} ${linha.characteristics} ${linha.batuaraInterpretation} ${linha.entities.join(' ')}`.toLowerCase();
+    const hex = text.match(/#(?:[0-9a-f]{3}|[0-9a-f]{6})\b/i)?.[0];
+    if (hex) return hex;
+
+    const name = linha.name.toLowerCase();
+    if (name.includes('oxalá') || name.includes('oxala')) return colorMap.branco;
+    if (name.includes('yemanjá') || name.includes('iemanjá') || name.includes('yemanja') || name.includes('iemanja')) return colorMap['azul claro'];
+    if (name.includes('caboclo')) return colorMap.verde;
+
+    for (const key of colorKeys) {
+      if (text.includes(key)) {
+        return colorMap[key];
+      }
+    }
+
+    return getLinhaColor(index);
+  };
+
+  const handleCardClick = (linha: UmbandaLine, accentColor: string) => {
     setSelectedLinha(linha);
+    setSelectedLinhaColor(accentColor);
   };
 
   const handleCloseDialog = () => {
     setSelectedLinha(null);
+    setSelectedLinhaColor(null);
   };
 
   const handleScroll = () => {
@@ -105,22 +160,33 @@ const UmbandaSection: React.FC = () => {
     }
   };
 
-  const canScrollLeft = scrollPosition > 0;
-  const canScrollRight = scrollPosition < maxScroll;
+  const canScrollLeft = scrollPosition > 4;
+  const canScrollRight = scrollPosition < maxScroll - 4;
 
   useEffect(() => {
-    // Atualizar estado inicial dos botões
-    if (scrollContainerRef.current) {
-      handleScroll();
-    }
-  }, []);
+    let raf2 = 0;
+
+    const raf1 = window.requestAnimationFrame(() => {
+      raf2 = window.requestAnimationFrame(() => {
+        handleScroll();
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(raf1);
+      if (raf2) window.cancelAnimationFrame(raf2);
+    };
+  }, [linhas.length, isMobile]);
 
   return (
     <Box
-      id="umbanda"
+      id="linhas-da-umbanda"
       sx={{
-        py: 8,
-        px: 2,
+        scrollMarginTop: { xs: 56, md: 88 },
+        minHeight: { xs: '100vh', md: 'auto' },
+        pt: { xs: 1.5, md: 8 },
+        pb: { xs: 4, md: 8 },
+        px: { xs: 1.5, md: 2 },
         backgroundColor: 'background.default',
       }}
     >
@@ -154,62 +220,67 @@ const UmbandaSection: React.FC = () => {
         </Typography>
 
         {/* Container com botões de navegação */}
-        <Box sx={{ position: 'relative' }}>
+        <Box sx={{ position: 'relative', overflow: 'clip' }}>
           {/* Botão de navegação esquerda */}
-          {canScrollLeft && (
-            <IconButton
-              onClick={scrollLeft}
-              sx={{
-                position: 'absolute',
-                left: -20,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                zIndex: 2,
-                backgroundColor: 'background.paper',
-                boxShadow: theme.shadows[4],
-                '&:hover': {
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                },
-              }}
-            >
-              <ArrowBackIcon />
-            </IconButton>
-          )}
+          <IconButton
+            onClick={scrollLeft}
+            disabled={!canScrollLeft}
+            sx={{
+              position: 'absolute',
+              left: { xs: 4, md: -20 },
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 2,
+              backgroundColor: 'background.paper',
+              boxShadow: theme.shadows[4],
+              opacity: canScrollLeft ? 1 : 0.35,
+              '&:hover': {
+                backgroundColor: 'primary.main',
+                color: 'white',
+              },
+            }}
+          >
+            <ArrowBackIcon />
+          </IconButton>
 
           {/* Botão de navegação direita */}
-          {canScrollRight && (
-            <IconButton
-              onClick={scrollRight}
-              sx={{
-                position: 'absolute',
-                right: -20,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                zIndex: 2,
-                backgroundColor: 'background.paper',
-                boxShadow: theme.shadows[4],
-                '&:hover': {
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                },
-              }}
-            >
-              <ArrowForwardIcon />
-            </IconButton>
-          )}
+          <IconButton
+            onClick={scrollRight}
+            disabled={!canScrollRight}
+            sx={{
+              position: 'absolute',
+              right: { xs: 4, md: -20 },
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 2,
+              backgroundColor: 'background.paper',
+              boxShadow: theme.shadows[4],
+              opacity: canScrollRight ? 1 : 0.35,
+              '&:hover': {
+                backgroundColor: 'primary.main',
+                color: 'white',
+              },
+            }}
+          >
+            <ArrowForwardIcon />
+          </IconButton>
 
           <Box
+            id="umbanda-carousel"
             ref={scrollContainerRef}
             onScroll={handleScroll}
             sx={{
               display: 'flex',
               gap: 3,
               overflowX: 'auto',
+              overscrollBehaviorX: 'contain',
+              WebkitOverflowScrolling: 'touch',
               pb: 2,
-              scrollbarWidth: 'thin',
+              px: { xs: 0.5, md: 0 },
+              scrollSnapType: 'x mandatory',
+              scrollbarWidth: { xs: 'none', md: 'thin' },
               '&::-webkit-scrollbar': {
-                height: 8,
+                height: { xs: 0, md: 8 },
               },
               '&::-webkit-scrollbar-track': {
                 backgroundColor: 'rgba(0,0,0,0.1)',
@@ -222,18 +293,26 @@ const UmbandaSection: React.FC = () => {
             }}
           >
           {linhas.map((linha, index) => (
+            (() => {
+              const accentColor = getAccentColorFromLinha(linha, index);
+              const accentText = accentColor === '#e8eaf6' ? '#1a237e' : accentColor;
+
+              return (
             <Card
               key={linha.id}
-              onClick={() => handleCardClick(linha)}
+              onClick={() => handleCardClick(linha, accentColor)}
               sx={{
                 minWidth: isMobile ? 320 : 320,
                 cursor: 'pointer',
-                transition: 'all 0.3s ease',
+                scrollSnapAlign: 'start',
+                transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
                 '&:hover': {
                   transform: 'translateY(-8px)',
                   boxShadow: 6,
+                  borderColor: `${accentColor}90`,
                 },
-                borderTop: `4px solid ${getLinhaColor(index)}`,
+                border: `1px solid ${accentColor}35`,
+                borderLeft: `6px solid ${accentColor}`,
               }}
             >
               <CardContent sx={{ p: 3 }}>
@@ -242,7 +321,7 @@ const UmbandaSection: React.FC = () => {
                   sx={{
                     fontWeight: 600,
                     mb: 2,
-                    color: 'primary.main',
+                    color: accentText,
                     fontSize: '1.1rem',
                   }}
                 >
@@ -265,11 +344,13 @@ const UmbandaSection: React.FC = () => {
                     label={linha.workingDays[0] || 'Atuação contínua'}
                     size="small"
                     sx={{
-                      backgroundColor: getLinhaColor(index),
-                      color: 'white',
+                      backgroundColor: `${accentColor}18`,
+                      border: `1px solid ${accentColor}45`,
+                      color: accentText,
                       fontWeight: 500,
                       mb: 2,
                     }}
+                    variant="outlined"
                   />
                 </Box>
 
@@ -284,11 +365,13 @@ const UmbandaSection: React.FC = () => {
                         label={entidade}
                         size="small"
                         sx={{
-                          backgroundColor: getLinhaColor(index),
-                          color: 'white',
+                          backgroundColor: `${accentColor}18`,
+                          border: `1px solid ${accentColor}45`,
+                          color: accentText,
                           fontSize: '0.75rem',
                           fontWeight: 500,
                         }}
+                        variant="outlined"
                       />
                     ))}
                     {linha.entities.length > 2 && (
@@ -319,6 +402,8 @@ const UmbandaSection: React.FC = () => {
                 </Box>
               </CardContent>
             </Card>
+              );
+            })()
           ))}
           </Box>
         </Box>
@@ -385,8 +470,30 @@ const UmbandaSection: React.FC = () => {
         </Alert>
       )}
 
-      <Dialog open={!!selectedLinha} onClose={handleCloseDialog} fullWidth maxWidth="md">
-        <DialogTitle>{selectedLinha?.name}</DialogTitle>
+      <Dialog
+        open={!!selectedLinha}
+        onClose={handleCloseDialog}
+        fullWidth
+        maxWidth="md"
+        TransitionComponent={DialogTransition}
+        PaperProps={{
+          sx: {
+            borderTop: `8px solid ${selectedLinhaColor ?? theme.palette.primary.main}`,
+            borderRadius: 3,
+            overflow: 'hidden',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 800,
+            backgroundColor: `${(selectedLinhaColor ?? theme.palette.primary.main)}14`,
+            borderBottom: `1px solid ${(selectedLinhaColor ?? theme.palette.primary.main)}30`,
+            color: (selectedLinhaColor ?? theme.palette.primary.main) === '#e8eaf6' ? '#1a237e' : (selectedLinhaColor ?? theme.palette.primary.main),
+          }}
+        >
+          {selectedLinha?.name}
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'grid', gap: 2, py: 1 }}>
             <Typography variant="body1" color="text.secondary">
@@ -414,7 +521,17 @@ const UmbandaSection: React.FC = () => {
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {selectedLinha?.entities.map((entity) => (
-                  <Chip key={entity} label={entity} size="small" />
+                  <Chip
+                    key={entity}
+                    label={entity}
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      borderColor: `${(selectedLinhaColor ?? theme.palette.primary.main)}70`,
+                      color: (selectedLinhaColor ?? theme.palette.primary.main) === '#e8eaf6' ? '#1a237e' : (selectedLinhaColor ?? theme.palette.primary.main),
+                      backgroundColor: `${(selectedLinhaColor ?? theme.palette.primary.main)}10`,
+                    }}
+                  />
                 ))}
               </Box>
             </Box>
@@ -424,7 +541,17 @@ const UmbandaSection: React.FC = () => {
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {(selectedLinha?.workingDays.length ? selectedLinha.workingDays : ['Atuação contínua']).map((day) => (
-                  <Chip key={day} label={day} size="small" variant="outlined" />
+                  <Chip
+                    key={day}
+                    label={day}
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      borderColor: `${(selectedLinhaColor ?? theme.palette.primary.main)}70`,
+                      color: (selectedLinhaColor ?? theme.palette.primary.main) === '#e8eaf6' ? '#1a237e' : (selectedLinhaColor ?? theme.palette.primary.main),
+                      backgroundColor: `${(selectedLinhaColor ?? theme.palette.primary.main)}10`,
+                    }}
+                  />
                 ))}
               </Box>
             </Box>

@@ -73,7 +73,16 @@ const DonationsSection: React.FC = () => {
   };
 
   return (
-    <Box id="donations" sx={{ py: 8, backgroundColor: 'background.paper' }}>
+    <Box
+      id="doacoes"
+      sx={{
+        scrollMarginTop: { xs: 56, md: 88 },
+        minHeight: { xs: '100vh', md: 'auto' },
+        pt: { xs: 1.5, md: 8 },
+        pb: { xs: 4, md: 8 },
+        backgroundColor: 'background.paper',
+      }}
+    >
       <Container maxWidth="lg">
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Typography
@@ -108,14 +117,31 @@ const DonationsSection: React.FC = () => {
           <Alert severity="warning">Os dados de doação não puderam ser carregados neste momento.</Alert>
         ) : (
           <>
-            <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', mb: 4, flexWrap: 'wrap' }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(2, minmax(220px, 1fr))' },
+                gap: { xs: 1.25, md: 3 },
+                justifyContent: 'center',
+                mb: 4,
+                maxWidth: { xs: '100%', sm: 520 },
+                mx: 'auto',
+              }}
+            >
               <Button
                 variant="contained"
                 size="large"
                 startIcon={<QrCodeIcon />}
                 onClick={() => setShowPixDialog(true)}
                 disabled={!pixValue}
-                sx={{ px: 4, py: 1.5, fontSize: '1.1rem', fontWeight: 600, minWidth: 200 }}
+                fullWidth
+                sx={{
+                  px: { xs: 1.25, md: 4 },
+                  py: { xs: 1.1, md: 1.5 },
+                  fontSize: { xs: '0.85rem', md: '1.1rem' },
+                  fontWeight: 700,
+                  minWidth: 0,
+                }}
               >
                 Doação via PIX
               </Button>
@@ -124,12 +150,19 @@ const DonationsSection: React.FC = () => {
                 size="large"
                 startIcon={<HandshakeIcon />}
                 onClick={() => {
-                  const element = document.querySelector('#contact');
+                  const element = document.querySelector('#entre-em-contato');
                   if (element) {
                     element.scrollIntoView({ behavior: 'smooth' });
                   }
                 }}
-                sx={{ px: 4, py: 1.5, fontSize: '1.1rem', fontWeight: 600, minWidth: 200 }}
+                fullWidth
+                sx={{
+                  px: { xs: 1.25, md: 4 },
+                  py: { xs: 1.1, md: 1.5 },
+                  fontSize: { xs: '0.85rem', md: '1.1rem' },
+                  fontWeight: 700,
+                  minWidth: 0,
+                }}
               >
                 Falar com a Casa
               </Button>
@@ -138,8 +171,8 @@ const DonationsSection: React.FC = () => {
             <Grid container spacing={3} sx={{ mb: 4 }}>
               <Grid size={{ xs: 12, md: 4 }}>
                 <Card sx={{ height: '100%', textAlign: 'center' }}>
-                  <CardContent sx={{ p: 3 }}>
-                    <FavoriteIcon sx={{ fontSize: 36, color: 'secondary.main', mb: 1.5 }} />
+                  <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                    <FavoriteIcon sx={{ fontSize: { xs: 30, md: 36 }, color: 'secondary.main', mb: 1.25 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5 }}>
                       Assistência Espiritual
                     </Typography>
@@ -149,10 +182,10 @@ const DonationsSection: React.FC = () => {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid size={{ xs: 12, md: 4 }}>
+              <Grid size={{ xs: 6, md: 4 }}>
                 <Card sx={{ height: '100%', textAlign: 'center' }}>
-                  <CardContent sx={{ p: 3 }}>
-                    <VolunteerActivismIcon sx={{ fontSize: 36, color: 'primary.main', mb: 1.5 }} />
+                  <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                    <VolunteerActivismIcon sx={{ fontSize: { xs: 30, md: 36 }, color: 'primary.main', mb: 1.25 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5 }}>
                       Ações Sociais
                     </Typography>
@@ -162,10 +195,10 @@ const DonationsSection: React.FC = () => {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid size={{ xs: 12, md: 4 }}>
+              <Grid size={{ xs: 6, md: 4 }}>
                 <Card sx={{ height: '100%', textAlign: 'center' }}>
-                  <CardContent sx={{ p: 3 }}>
-                    <HandshakeIcon sx={{ fontSize: 36, color: 'success.main', mb: 1.5 }} />
+                  <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                    <HandshakeIcon sx={{ fontSize: { xs: 30, md: 36 }, color: 'success.main', mb: 1.25 }} />
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5 }}>
                       Transparência
                     </Typography>
