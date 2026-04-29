@@ -41,7 +41,7 @@ const AboutSection: React.FC = () => {
         sx={{
           scrollMarginTop: { xs: 56, md: 88 },
           minHeight: { xs: '100vh', md: 'auto' },
-          pt: { xs: 1.5, md: 8 },
+          pt: { xs: 1.5, md: 4 },
           pb: { xs: 4, md: 8 },
           backgroundColor: 'background.default',
           [desktopMediaQuery]: {
@@ -231,7 +231,7 @@ const AboutSection: React.FC = () => {
           sx={{
             scrollMarginTop: { xs: 56, md: 88 },
             minHeight: { xs: '100vh', md: 'auto' },
-            pt: { xs: 1.5, md: 8 },
+            pt: { xs: 1.5, md: 4 },
             pb: { xs: 4, md: 8 },
             backgroundColor: 'background.paper',
           }}
