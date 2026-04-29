@@ -150,7 +150,7 @@ const OrixasSection: React.FC = () => {
       sx={{
         scrollMarginTop: { xs: 56, md: 64 },
         minHeight: { xs: '100vh', md: 'auto' },
-        pt: { xs: 1.5, md: 4 },
+        pt: { xs: 1.5, md: 2 },
         pb: { xs: 4, md: 8 },
         backgroundColor: 'background.paper',
         [desktopMediaQuery]: {
@@ -214,12 +214,13 @@ const OrixasSection: React.FC = () => {
                   onClick={() => scroll('left')}
                   sx={{
                     position: 'absolute',
-                    left: { xs: 4, md: -20 },
+                    left: { xs: 4, md: 8 },
                     top: '50%',
                     transform: 'translateY(-50%)',
                     zIndex: 2,
-                    backgroundColor: 'background.paper',
-                    boxShadow: theme.shadows[4],
+                    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                    border: '1px solid rgba(0, 0, 0, 0.08)',
+                    boxShadow: theme.shadows[6],
                     '&:hover': {
                       backgroundColor: 'primary.main',
                       color: 'white',
@@ -235,12 +236,13 @@ const OrixasSection: React.FC = () => {
                   onClick={() => scroll('right')}
                   sx={{
                     position: 'absolute',
-                    right: { xs: 4, md: -20 },
+                    right: { xs: 4, md: 8 },
                     top: '50%',
                     transform: 'translateY(-50%)',
                     zIndex: 2,
-                    backgroundColor: 'background.paper',
-                    boxShadow: theme.shadows[4],
+                    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                    border: '1px solid rgba(0, 0, 0, 0.08)',
+                    boxShadow: theme.shadows[6],
                     '&:hover': {
                       backgroundColor: 'primary.main',
                       color: 'white',

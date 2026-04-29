@@ -163,7 +163,7 @@ const PrayersSection: React.FC = () => {
       sx={{
         scrollMarginTop: { xs: 56, md: 64 },
         minHeight: { xs: '100vh', md: 'auto' },
-        pt: { xs: 1.5, md: 4 },
+        pt: { xs: 1.5, md: 2 },
         pb: { xs: 4, md: 8 },
         backgroundColor: 'background.default',
         [desktopMediaQuery]: {
@@ -212,9 +212,19 @@ const PrayersSection: React.FC = () => {
           >
             <Typography
               variant="body2"
-              noWrap
               title={'"A oração é o mais poderoso meio de cura que existe" - Emmanuel (psicografado por Francisco Cândido Xavier)'}
-              sx={{ fontWeight: 600, opacity: 0.95 }}
+              sx={{
+                fontWeight: 600,
+                opacity: 0.95,
+                lineHeight: 1.35,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: { xs: 'normal', md: 'nowrap' },
+                display: { xs: '-webkit-box', md: 'block' },
+                WebkitBoxOrient: 'vertical',
+                WebkitLineClamp: 2,
+                maxHeight: { xs: '2.7em', md: 'none' },
+              }}
             >
               "A oração é o mais poderoso meio de cura que existe" - Emmanuel (psicografado por Francisco Cândido Xavier)
             </Typography>

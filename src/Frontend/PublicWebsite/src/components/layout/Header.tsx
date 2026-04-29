@@ -45,6 +45,18 @@ const Header: React.FC = () => {
   };
 
   const handleNavClick = (href: string) => {
+    if (href === '#home') {
+      const element = document.querySelector(href);
+      if (element) {
+        const targetTop = element.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+        window.history.replaceState(null, '', href);
+        setActiveHref(href);
+      }
+      setMobileOpen(false);
+      return;
+    }
+
     const element = document.querySelector(href);
     if (element) {
       const headerHeight = appBarRef.current?.offsetHeight ?? (isMobile ? 56 : 64);
