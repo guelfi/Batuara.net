@@ -54,7 +54,14 @@ const LocationSection: React.FC = () => {
               <Box
                 component="iframe"
                 src={siteSettings.mapEmbedUrl || 'https://www.google.com/maps'}
-                sx={{ width: '100%', height: { xs: 220, md: 340 }, border: 'none' }}
+                sx={{
+                  width: '100%',
+                  height: { xs: 220, md: 340 },
+                  border: 'none',
+                  [desktopMediaQuery]: {
+                    height: 420,
+                  },
+                }}
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               />
