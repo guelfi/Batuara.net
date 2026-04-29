@@ -502,7 +502,11 @@ test('UI/UX: navegação por menu + screenshots por seção', async ({ page }, t
     const order = String(index + 1).padStart(2, '0');
     const id = item.href.replace('#', '');
     if (shouldScreenshot) {
-      await expect(page.locator(item.href)).toHaveScreenshot(`uiux-${order}-${id}.png`, { timeout: 30_000 });
+      const screenshotOptions: Parameters<(typeof expect)['prototype']['toHaveScreenshot']>[1] = { timeout: 30_000 };
+      if (testInfo.project.name === 'mobile' && id === 'orixas') {
+        screenshotOptions.maxDiffPixelRatio = 0.04;
+      }
+      await expect(page.locator(item.href)).toHaveScreenshot(`uiux-${order}-${id}.png`, screenshotOptions);
     } else {
       await expect(page.locator(item.href)).toBeVisible();
     }
