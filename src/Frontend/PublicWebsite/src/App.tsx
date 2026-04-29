@@ -14,7 +14,6 @@ import PrayersSection from './components/sections/PrayersSection';
 import DonationsSection from './components/sections/DonationsSection';
 import ContactSection from './components/sections/ContactSection';
 import LocationSection from './components/sections/LocationSection';
-import Footer from './components/layout/Footer';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import LoadingProvider from './components/common/LoadingProvider';
 
@@ -48,7 +47,6 @@ function App() {
               <DonationsSection />
               <ContactSection />
               <LocationSection />
-              <Footer />
             </Layout>
           </LoadingProvider>
         </ThemeProvider>

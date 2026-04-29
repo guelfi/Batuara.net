@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -21,16 +21,15 @@ const navigationItems: NavigationItem[] = [
   { label: 'Início', href: '#home' },
   { label: 'Nossa História', href: '#nossa-historia' },
   { label: 'Nossa Missão', href: '#nossa-missao' },
-  { label: 'Calendário Atendimento', href: '#calendario-atendimento' },
+  { label: 'Calendário', href: '#calendario-atendimento' },
   { label: 'Eventos e Festas', href: '#eventos-e-festas' },
   { label: 'Orixás', href: '#orixas' },
   { label: 'Guias e Entidades', href: '#guias-entidades' },
   { label: 'Linhas da Umbanda', href: '#linhas-da-umbanda' },
   { label: 'Orações', href: '#oracoes' },
   { label: 'Doações', href: '#doacoes' },
-  { label: 'Entre em Contato', href: '#entre-em-contato' },
-  { label: 'Nossa Localização', href: '#nossa-localizacao' },
-  { label: 'Redes Sociais', href: '#redes-sociais' },
+  { label: 'Contato', href: '#entre-em-contato' },
+  { label: 'Localização', href: '#nossa-localizacao' },
 ];
 
 const Header: React.FC = () => {
@@ -39,15 +38,30 @@ const Header: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const sectionIds = useMemo(() => navigationItems.map((item) => item.href.replace('#', '')), []);
+  const appBarRef = useRef<HTMLDivElement | null>(null);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
   const handleNavClick = (href: string) => {
+    if (href === '#home') {
+      const element = document.querySelector(href);
+      if (element) {
+        const targetTop = element.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+        window.history.replaceState(null, '', href);
+        setActiveHref(href);
+      }
+      setMobileOpen(false);
+      return;
+    }
+
     const element = document.querySelector(href);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+      const headerHeight = appBarRef.current?.offsetHeight ?? (isMobile ? 56 : 64);
+      const targetTop = element.getBoundingClientRect().top + window.scrollY - headerHeight;
+      window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
       window.history.replaceState(null, '', href);
       setActiveHref(href);
     }
@@ -129,7 +143,7 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <AppBar position="fixed" elevation={2}>
+      <AppBar ref={appBarRef} position="fixed" elevation={2}>
         <Toolbar sx={{ display: 'flex', alignItems: 'center' }}>
           {/* Logo/Título à esquerda */}
           <Box

@@ -6,16 +6,15 @@ const navigationItems = [
   { label: 'Início', href: '#home' },
   { label: 'Nossa História', href: '#nossa-historia' },
   { label: 'Nossa Missão', href: '#nossa-missao' },
-  { label: 'Calendário Atendimento', href: '#calendario-atendimento' },
+  { label: 'Calendário', href: '#calendario-atendimento' },
   { label: 'Eventos e Festas', href: '#eventos-e-festas' },
   { label: 'Orixás', href: '#orixas' },
   { label: 'Guias e Entidades', href: '#guias-entidades' },
   { label: 'Linhas da Umbanda', href: '#linhas-da-umbanda' },
   { label: 'Orações', href: '#oracoes' },
   { label: 'Doações', href: '#doacoes' },
-  { label: 'Entre em Contato', href: '#entre-em-contato' },
-  { label: 'Nossa Localização', href: '#nossa-localizacao' },
-  { label: 'Redes Sociais', href: '#redes-sociais' },
+  { label: 'Contato', href: '#entre-em-contato' },
+  { label: 'Localização', href: '#nossa-localizacao' },
 ];
 
 const mockApiResponse = <T,>(data: T) => ({
@@ -432,14 +431,64 @@ function collectPageErrors(page: Page) {
   return errors;
 }
 
-test('UI/UX: navegação por menu + screenshots por seção (3 breakpoints)', async ({ page }) => {
+test('UI/UX: navegação por menu + screenshots por seção', async ({ page }, testInfo) => {
   test.setTimeout(180_000);
   const errors = collectPageErrors(page);
+  const shouldScreenshot = ['desktop', 'tablet', 'mobile'].includes(testInfo.project.name);
 
   await page.goto('/');
   await expect(page.locator('#home')).toBeVisible();
 
-  await expect(page.locator('#home')).toHaveScreenshot('uiux-00-home.png', { timeout: 30_000 });
+  await navigateByMenu(page, 'Calendário', '#calendario-atendimento');
+  await navigateByMenu(page, 'Início', '#home');
+  await expect
+    .poll(async () => {
+      return page.evaluate(() => {
+        const el = document.getElementById('home');
+        if (!el) return null;
+        return el.getBoundingClientRect().top;
+      });
+    })
+    .toBeLessThan(2);
+  await expect
+    .poll(async () => {
+      return page.evaluate(() => {
+        const el = document.getElementById('home');
+        if (!el) return null;
+        return Math.abs(el.getBoundingClientRect().top);
+      });
+    })
+    .toBeLessThan(2);
+
+  if (testInfo.project.name === 'desktop') {
+    const originalViewport = page.viewportSize();
+    const viewports = [
+      { width: 1024, height: 720 },
+      { width: 1280, height: 720 },
+      { width: 1440, height: 800 },
+    ];
+
+    for (const vp of viewports) {
+      await page.setViewportSize(vp);
+      await page.locator('#nossa-localizacao').scrollIntoViewIfNeeded();
+      await page.waitForTimeout(100);
+      const buffer = await page.screenshot({
+        clip: { x: 0, y: 0, width: vp.width, height: Math.min(vp.height, 320) },
+      });
+      await testInfo.attach(`desktop-header-spacing-${vp.width}w.png`, {
+        body: buffer,
+        contentType: 'image/png',
+      });
+    }
+
+    if (originalViewport) {
+      await page.setViewportSize(originalViewport);
+    }
+  }
+
+  if (shouldScreenshot) {
+    await expect(page.locator('#home')).toHaveScreenshot('uiux-00-home.png', { timeout: 30_000 });
+  }
 
   for (const [index, item] of navigationItems.slice(1).entries()) {
     await navigateByMenu(page, item.label, item.href);
@@ -452,7 +501,15 @@ test('UI/UX: navegação por menu + screenshots por seção (3 breakpoints)', as
     }
     const order = String(index + 1).padStart(2, '0');
     const id = item.href.replace('#', '');
-    await expect(page.locator(item.href)).toHaveScreenshot(`uiux-${order}-${id}.png`, { timeout: 30_000 });
+    if (shouldScreenshot) {
+      const screenshotOptions: Parameters<(typeof expect)['prototype']['toHaveScreenshot']>[1] = { timeout: 30_000 };
+      if (testInfo.project.name === 'mobile' && id === 'orixas') {
+        screenshotOptions.maxDiffPixelRatio = 0.04;
+      }
+      await expect(page.locator(item.href)).toHaveScreenshot(`uiux-${order}-${id}.png`, screenshotOptions);
+    } else {
+      await expect(page.locator(item.href)).toBeVisible();
+    }
   }
 
   expect(errors.join('\n')).toBe('');

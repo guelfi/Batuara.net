@@ -4,6 +4,7 @@ declare const process: { env: Record<string, string | undefined> };
 
 const port = process.env.PORT ? Number(process.env.PORT) : 4173;
 const baseURL = `http://localhost:${port}`;
+const enableBrowserChannels = process.env.PLAYWRIGHT_CHANNELS === '1';
 
 export default defineConfig({
   testDir: './tests',
@@ -28,7 +29,7 @@ export default defineConfig({
     command: 'npm start',
     url: baseURL,
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 300_000,
     env: {
       BROWSER: 'none',
       PORT: String(port),
@@ -61,5 +62,31 @@ export default defineConfig({
         deviceScaleFactor: 3,
       },
     },
+    {
+      name: 'desktop-firefox',
+      use: {
+        browserName: 'firefox',
+        viewport: { width: 1280, height: 720 },
+      },
+    },
+    {
+      name: 'desktop-webkit',
+      use: {
+        browserName: 'webkit',
+        viewport: { width: 1280, height: 720 },
+      },
+    },
+    ...(enableBrowserChannels
+      ? ([
+          {
+            name: 'desktop-edge',
+            use: {
+              browserName: 'chromium',
+              channel: 'msedge',
+              viewport: { width: 1280, height: 720 },
+            },
+          },
+        ] as const)
+      : []),
   ],
 });

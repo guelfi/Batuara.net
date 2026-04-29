@@ -26,6 +26,7 @@ import { useQuery } from '@tanstack/react-query';
 import NavigationDots from '../common/NavigationDots';
 import publicApi from '../../services/api';
 import { Orixa } from '../../types';
+import { desktopMediaQuery } from '../../theme/theme';
 
 const colorMap: Record<string, string> = {
   branco: '#e8eaf6',
@@ -147,11 +148,15 @@ const OrixasSection: React.FC = () => {
     <Box
       id="orixas"
       sx={{
-        scrollMarginTop: { xs: 56, md: 88 },
+        scrollMarginTop: { xs: 56, md: 64 },
         minHeight: { xs: '100vh', md: 'auto' },
-        pt: { xs: 1.5, md: 8 },
+        pt: { xs: 1.5, md: 2 },
         pb: { xs: 4, md: 8 },
         backgroundColor: 'background.paper',
+        [desktopMediaQuery]: {
+          minHeight: 'calc(100vh - 88px)',
+          pb: 10,
+        },
       }}
     >
       <Container maxWidth="lg">
@@ -209,12 +214,13 @@ const OrixasSection: React.FC = () => {
                   onClick={() => scroll('left')}
                   sx={{
                     position: 'absolute',
-                    left: { xs: 4, md: -20 },
+                    left: { xs: 4, md: 8 },
                     top: '50%',
                     transform: 'translateY(-50%)',
                     zIndex: 2,
-                    backgroundColor: 'background.paper',
-                    boxShadow: theme.shadows[4],
+                    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                    border: '1px solid rgba(0, 0, 0, 0.08)',
+                    boxShadow: theme.shadows[6],
                     '&:hover': {
                       backgroundColor: 'primary.main',
                       color: 'white',
@@ -230,12 +236,13 @@ const OrixasSection: React.FC = () => {
                   onClick={() => scroll('right')}
                   sx={{
                     position: 'absolute',
-                    right: { xs: 4, md: -20 },
+                    right: { xs: 4, md: 8 },
                     top: '50%',
                     transform: 'translateY(-50%)',
                     zIndex: 2,
-                    backgroundColor: 'background.paper',
-                    boxShadow: theme.shadows[4],
+                    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                    border: '1px solid rgba(0, 0, 0, 0.08)',
+                    boxShadow: theme.shadows[6],
                     '&:hover': {
                       backgroundColor: 'primary.main',
                       color: 'white',

@@ -1,13 +1,15 @@
 import React from 'react';
-import { Alert, Avatar, Box, Card, CardContent, CircularProgress, Container, Grid, Typography } from '@mui/material';
+import { Alert, Avatar, Box, Card, CardContent, CircularProgress, Container, Grid, Typography, useMediaQuery } from '@mui/material';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import PeopleIcon from '@mui/icons-material/People';
 import { useQuery } from '@tanstack/react-query';
 import publicApi from '../../services/api';
+import { desktopMediaQuery } from '../../theme/theme';
 
 const AboutSection: React.FC = () => {
+  const isDesktop = useMediaQuery('(min-width:1024px)');
   const historyTitle = 'Nossa História';
   const historySubtitle = 'Uma jornada de fé, caridade e amor ao próximo';
   const historyParagraphs = [
@@ -22,10 +24,30 @@ const AboutSection: React.FC = () => {
   });
 
   const values = [
-    { icon: <MenuBookIcon sx={{ fontSize: 32 }} />, title: 'Tradição', text: 'Preservando os ensinamentos ancestrais', color: 'primary.main' },
-    { icon: <FavoriteIcon sx={{ fontSize: 32 }} />, title: 'Caridade', text: 'Assistência espiritual gratuita, orientação e consolação para todos que nos procuram, sem distinção.', color: '#f4b400' },
-    { icon: <PeopleIcon sx={{ fontSize: 32 }} />, title: 'Fraternidade', text: 'Uma família espiritual unida pelo amor, onde todos são tratados como irmãos.', color: 'success.main' },
-    { icon: <AutoAwesomeIcon sx={{ fontSize: 32 }} />, title: 'Espiritualidade', text: 'Desenvolvimento espiritual através do estudo, da oração e da prática da mediunidade com responsabilidade.', color: 'info.main' },
+    {
+      icon: <MenuBookIcon sx={{ fontSize: { xs: 22, sm: 26, md: 28 } }} />,
+      title: 'Tradição',
+      text: 'Preservando os ensinamentos ancestrais',
+      color: 'primary.main',
+    },
+    {
+      icon: <FavoriteIcon sx={{ fontSize: { xs: 22, sm: 26, md: 28 } }} />,
+      title: 'Caridade',
+      text: 'Assistência espiritual gratuita, orientação e consolação para todos que nos procuram, sem distinção.',
+      color: '#f4b400',
+    },
+    {
+      icon: <PeopleIcon sx={{ fontSize: { xs: 22, sm: 26, md: 28 } }} />,
+      title: 'Fraternidade',
+      text: 'Uma família espiritual unida pelo amor, onde todos são tratados como irmãos.',
+      color: 'success.main',
+    },
+    {
+      icon: <AutoAwesomeIcon sx={{ fontSize: { xs: 22, sm: 26, md: 28 } }} />,
+      title: 'Espiritualidade',
+      text: 'Desenvolvimento espiritual através do estudo, da oração e da prática da mediunidade com responsabilidade.',
+      color: 'info.main',
+    },
   ];
 
   const missionText =
@@ -37,11 +59,15 @@ const AboutSection: React.FC = () => {
       <Box
         id="nossa-historia"
         sx={{
-          scrollMarginTop: { xs: 56, md: 88 },
+          scrollMarginTop: { xs: 56, md: 64 },
           minHeight: { xs: '100vh', md: 'auto' },
-          pt: { xs: 1.5, md: 8 },
+          pt: { xs: 1.5, md: 2 },
           pb: { xs: 4, md: 8 },
           backgroundColor: 'background.default',
+          [desktopMediaQuery]: {
+            minHeight: 'calc(100vh - 88px)',
+            pb: 10,
+          },
         }}
       >
         <Container maxWidth="lg">
@@ -64,37 +90,65 @@ const AboutSection: React.FC = () => {
 
           <Box
             sx={{
-              maxWidth: 980,
+              maxWidth: isDesktop ? 1100 : 980,
               mx: 'auto',
-              mb: 4,
+              mb: isDesktop ? 6 : 4,
               px: { xs: 2, md: 3 },
             }}
           >
-            <Box
-              sx={{
-                '& p': { lineHeight: 2, marginBottom: 2.5, textAlign: 'justify', color: 'text.primary' },
-                '& img': { display: 'none' },
-                '& ul': { pl: 3 },
-                '& a': { color: 'primary.main' },
-                '& blockquote': {
-                  borderLeft: 4,
-                  borderColor: 'primary.main',
-                  pl: 2,
-                  ml: 0,
-                  color: 'text.secondary',
-                },
-              }}
-            >
-              {(siteSettings as any)?.historyHtml ? (
-                <Box dangerouslySetInnerHTML={{ __html: (siteSettings as any)?.historyHtml }} />
-              ) : (
-                historyParagraphs.map((paragraph) => (
-                  <Typography key={paragraph} component="p">
-                    {paragraph}
-                  </Typography>
-                ))
-              )}
-            </Box>
+            {isDesktop ? (
+              <Box
+                sx={{
+                  '& p': { lineHeight: 2, marginBottom: 2.5, textAlign: 'justify', color: 'text.primary' },
+                  '& img': { display: 'none' },
+                  '& ul': { pl: 3 },
+                  '& a': { color: 'primary.main' },
+                  '& blockquote': {
+                    borderLeft: 4,
+                    borderColor: 'primary.main',
+                    pl: 2,
+                    ml: 0,
+                    color: 'text.secondary',
+                  },
+                }}
+              >
+                {(siteSettings as any)?.historyHtml ? (
+                  <Box dangerouslySetInnerHTML={{ __html: (siteSettings as any)?.historyHtml }} />
+                ) : (
+                  historyParagraphs.map((paragraph) => (
+                    <Typography key={paragraph} component="p">
+                      {paragraph}
+                    </Typography>
+                  ))
+                )}
+              </Box>
+            ) : (
+              <Box
+                sx={{
+                  '& p': { lineHeight: 2, marginBottom: 2.5, textAlign: 'justify', color: 'text.primary' },
+                  '& img': { display: 'none' },
+                  '& ul': { pl: 3 },
+                  '& a': { color: 'primary.main' },
+                  '& blockquote': {
+                    borderLeft: 4,
+                    borderColor: 'primary.main',
+                    pl: 2,
+                    ml: 0,
+                    color: 'text.secondary',
+                  },
+                }}
+              >
+                {(siteSettings as any)?.historyHtml ? (
+                  <Box dangerouslySetInnerHTML={{ __html: (siteSettings as any)?.historyHtml }} />
+                ) : (
+                  historyParagraphs.map((paragraph) => (
+                    <Typography key={paragraph} component="p">
+                      {paragraph}
+                    </Typography>
+                  ))
+                )}
+              </Box>
+            )}
           </Box>
         </Container>
       </Box>
@@ -102,15 +156,19 @@ const AboutSection: React.FC = () => {
       <Box
         id="nossa-missao"
         sx={{
-          scrollMarginTop: { xs: 56, md: 88 },
-          minHeight: { xs: '100vh', md: 'auto' },
-          pt: { xs: 1.5, md: 8 },
-          pb: { xs: 4, md: 8 },
+          scrollMarginTop: { xs: 56, md: 64 },
+          minHeight: { xs: 'calc(100vh - 56px)', md: 'auto' },
+          pt: { xs: 1.5, md: 2 },
+          pb: { xs: 2.5, md: 6 },
           backgroundColor: 'background.paper',
+          [desktopMediaQuery]: {
+            minHeight: 'calc(100vh - 88px)',
+            pb: 6,
+          },
         }}
       >
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: 'center', mb: { xs: 3, md: 5 } }}>
+          <Box sx={{ textAlign: 'center', mb: { xs: 1.5, md: 4 } }}>
             <Typography variant="h2" sx={{ fontSize: { xs: '1.7rem', md: '2.5rem' }, fontWeight: 600, mb: 1.5, color: 'primary.main' }}>
               Nossa Missão
             </Typography>
@@ -119,53 +177,101 @@ const AboutSection: React.FC = () => {
             </Typography>
           </Box>
 
-          <Grid container spacing={{ xs: 2, md: 3 }} sx={{ maxWidth: 980, mx: 'auto' }}>
-            {[
-              { icon: <AutoAwesomeIcon sx={{ fontSize: 32 }} />, title: 'Missão', text: missionText, color: 'primary.main' },
-              ...values,
-            ].map((item) => (
-              <Grid
-                key={item.title}
-                size={{
-                  xs: item.title === 'Missão' ? 12 : 6,
-                  sm: 6,
-                  md: 4,
+          <Box sx={{ maxWidth: 1100, mx: 'auto' }}>
+            <Box sx={{ maxWidth: 560, mx: 'auto', mb: { xs: 1.25, md: 3 } }}>
+              <Card
+                sx={{
+                  height: '100%',
+                  textAlign: 'center',
+                  boxShadow: 3,
+                  borderRadius: 2,
                 }}
               >
-                <Card
-                  sx={{
-                    height: '100%',
-                    textAlign: 'center',
-                    boxShadow: 3,
-                    borderRadius: 2,
-                  }}
-                >
-                  <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: item.color,
-                        width: { xs: 52, md: 64 },
-                        height: { xs: 52, md: 64 },
-                        mx: 'auto',
-                        mb: 2,
-                        '& svg': {
-                          fontSize: { xs: 26, md: 32 },
-                        },
-                      }}
-                    >
-                      {item.icon}
-                    </Avatar>
-                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                      {item.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                      {item.text}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+                <CardContent sx={{ p: { xs: 1.5, md: 2.5 } }}>
+                  <Avatar
+                    sx={{
+                      bgcolor: 'primary.main',
+                      width: { xs: 44, md: 60 },
+                      height: { xs: 44, md: 60 },
+                      mx: 'auto',
+                      mb: { xs: 1.1, md: 1.5 },
+                      '& svg': {
+                        fontSize: { xs: 22, md: 30 },
+                      },
+                    }}
+                  >
+                    <AutoAwesomeIcon sx={{ fontSize: 32 }} />
+                  </Avatar>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: { xs: 0.75, md: 1 } }}>
+                    Missão
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    title={missionText}
+                    sx={{
+                      lineHeight: 1.5,
+                      fontSize: { xs: '0.85rem', md: '0.9rem' },
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: { xs: '-webkit-box', md: 'block' },
+                      WebkitBoxOrient: 'vertical',
+                      WebkitLineClamp: 3,
+                    }}
+                  >
+                    {missionText}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Box>
+
+            <Grid container spacing={{ xs: 1.25, md: 2 }}>
+              {values.map((item) => (
+                <Grid key={item.title} size={{ xs: 6, sm: 6, md: 3 }}>
+                  <Card
+                    sx={{
+                      height: '100%',
+                      textAlign: 'center',
+                      boxShadow: 3,
+                      borderRadius: 2,
+                    }}
+                  >
+                    <CardContent sx={{ p: { xs: 1.25, md: 2 } }}>
+                      <Avatar
+                        sx={{
+                          bgcolor: item.color,
+                          width: { xs: 40, sm: 50, md: 52 },
+                          height: { xs: 40, sm: 50, md: 52 },
+                          mx: 'auto',
+                          mb: { xs: 1.25, md: 1.5 },
+                        }}
+                      >
+                        {item.icon}
+                      </Avatar>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: { xs: 0.5, md: 1 }, fontSize: { xs: '0.9rem', md: '1rem' } }}>
+                        {item.title}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          lineHeight: 1.45,
+                          fontSize: { xs: '0.78rem', sm: '0.9rem', md: '0.9rem' },
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: { xs: '-webkit-box', sm: 'block' },
+                          WebkitBoxOrient: 'vertical',
+                          WebkitLineClamp: 2,
+                        }}
+                      >
+                        {item.text}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
         </Container>
       </Box>
     </>

@@ -24,7 +24,6 @@ const sections = [
   '#doacoes',
   '#entre-em-contato',
   '#nossa-localizacao',
-  '#redes-sociais'
 ];
 
 // Função de throttling

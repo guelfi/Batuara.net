@@ -24,6 +24,7 @@ import { useQuery } from '@tanstack/react-query';
 import NavigationDots from '../common/NavigationDots';
 import publicApi from '../../services/api';
 import { UmbandaLine } from '../../types';
+import { desktopMediaQuery } from '../../theme/theme';
 
 const colorMap: Record<string, string> = {
   branco: '#e8eaf6',
@@ -182,12 +183,16 @@ const UmbandaSection: React.FC = () => {
     <Box
       id="linhas-da-umbanda"
       sx={{
-        scrollMarginTop: { xs: 56, md: 88 },
+        scrollMarginTop: { xs: 56, md: 64 },
         minHeight: { xs: '100vh', md: 'auto' },
-        pt: { xs: 1.5, md: 8 },
-        pb: { xs: 4, md: 8 },
+        pt: { xs: 1.5, md: 2 },
+        pb: { xs: 4, md: 6 },
         px: { xs: 1.5, md: 2 },
         backgroundColor: 'background.default',
+        [desktopMediaQuery]: {
+          minHeight: 'calc(100vh - 88px)',
+          pb: 6,
+        },
       }}
     >
       <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
@@ -209,7 +214,7 @@ const UmbandaSection: React.FC = () => {
           variant="h6"
           sx={{
             textAlign: 'center',
-            mb: 6,
+            mb: { xs: 4, md: 4 },
             color: 'text.secondary',
             maxWidth: 800,
             mx: 'auto',
@@ -227,12 +232,13 @@ const UmbandaSection: React.FC = () => {
             disabled={!canScrollLeft}
             sx={{
               position: 'absolute',
-              left: { xs: 4, md: -20 },
+              left: { xs: 4, md: 8 },
               top: '50%',
               transform: 'translateY(-50%)',
               zIndex: 2,
-              backgroundColor: 'background.paper',
-              boxShadow: theme.shadows[4],
+              backgroundColor: 'rgba(255, 255, 255, 0.92)',
+              border: '1px solid rgba(0, 0, 0, 0.08)',
+              boxShadow: theme.shadows[6],
               opacity: canScrollLeft ? 1 : 0.35,
               '&:hover': {
                 backgroundColor: 'primary.main',
@@ -249,12 +255,13 @@ const UmbandaSection: React.FC = () => {
             disabled={!canScrollRight}
             sx={{
               position: 'absolute',
-              right: { xs: 4, md: -20 },
+              right: { xs: 4, md: 8 },
               top: '50%',
               transform: 'translateY(-50%)',
               zIndex: 2,
-              backgroundColor: 'background.paper',
-              boxShadow: theme.shadows[4],
+              backgroundColor: 'rgba(255, 255, 255, 0.92)',
+              border: '1px solid rgba(0, 0, 0, 0.08)',
+              boxShadow: theme.shadows[6],
               opacity: canScrollRight ? 1 : 0.35,
               '&:hover': {
                 backgroundColor: 'primary.main',
@@ -315,20 +322,20 @@ const UmbandaSection: React.FC = () => {
                 borderLeft: `6px solid ${accentColor}`,
               }}
             >
-              <CardContent sx={{ p: 3 }}>
+              <CardContent sx={{ p: { xs: 2.5, md: 2.25 } }}>
                 <Typography
                   variant="h6"
                   sx={{
                     fontWeight: 600,
-                    mb: 2,
+                    mb: 1.5,
                     color: accentText,
-                    fontSize: '1.1rem',
+                    fontSize: { xs: '1.02rem', md: '1.05rem' },
                   }}
                 >
                   {linha.name}
                 </Typography>
 
-                <Box sx={{ mb: 2 }}>
+                <Box sx={{ mb: 1.5 }}>
                   <Typography
                     variant="body2"
                     sx={{
@@ -348,13 +355,13 @@ const UmbandaSection: React.FC = () => {
                       border: `1px solid ${accentColor}45`,
                       color: accentText,
                       fontWeight: 500,
-                      mb: 2,
+                      mb: 1.5,
                     }}
                     variant="outlined"
                   />
                 </Box>
 
-                <Box sx={{ mb: 2 }}>
+                <Box sx={{ mb: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, fontSize: '0.8rem' }}>
                     Entidades:
                   </Typography>
@@ -393,8 +400,8 @@ const UmbandaSection: React.FC = () => {
                     variant="body2"
                     sx={{
                       color: 'text.secondary',
-                      fontSize: '0.85rem',
-                      lineHeight: 1.4,
+                      fontSize: { xs: '0.82rem', md: '0.83rem' },
+                      lineHeight: 1.35,
                     }}
                   >
                     {linha.characteristics}
@@ -411,7 +418,7 @@ const UmbandaSection: React.FC = () => {
 
 
         {/* Dicas de interação */}
-        <Box sx={{ textAlign: 'center', mt: 2 }}>
+        <Box sx={{ textAlign: 'center', mt: 1.5 }}>
           <Typography
             variant="body2"
             sx={{
