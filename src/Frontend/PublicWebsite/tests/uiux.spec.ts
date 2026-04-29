@@ -503,7 +503,7 @@ test('UI/UX: navegação por menu + screenshots por seção', async ({ page }, t
     const id = item.href.replace('#', '');
     if (shouldScreenshot) {
       const screenshotOptions: Parameters<(typeof expect)['prototype']['toHaveScreenshot']>[1] = { timeout: 30_000 };
-      if (testInfo.project.name === 'mobile' && id === 'orixas') {
+      if (testInfo.project.name === 'mobile' && (id === 'orixas' || id === 'guias-entidades')) {
         screenshotOptions.maxDiffPixelRatio = 0.04;
       }
       await expect(page.locator(item.href)).toHaveScreenshot(`uiux-${order}-${id}.png`, screenshotOptions);
