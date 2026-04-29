@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-04-26",
+  "rubric": {
+    "unit": "boolean",
+    "scoring": "1 ponto por requisito atendido",
+    "requirements": [
+      "menu_13_itens_equivalentes",
+      "nossa_missao_mobile_secao_dedicada",
+      "nossa_missao_desktop_ancora_subsecao_historia",
+      "sem_referencias_absolutas_em_docs",
+      "links_de_assets_validos"
+    ]
+  },
+  "runs": [
+    {
+      "tool": "Trae",
+      "scenario": "unified",
+      "promptId": "uiux-01",
+      "specEntryPoint": "docs/especificacao-unificada/index.json",
+      "results": {
+        "menu_13_itens_equivalentes": null,
+        "nossa_missao_mobile_secao_dedicada": null,
+        "nossa_missao_desktop_ancora_subsecao_historia": null,
+        "sem_referencias_absolutas_em_docs": null,
+        "links_de_assets_validos": null
+      }
+    }
+  ]
+}
