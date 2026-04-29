@@ -12,15 +12,12 @@ import {
   Button,
   Chip,
   IconButton,
-  TextField,
-  InputAdornment,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
 import EventIcon from '@mui/icons-material/Event';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -38,7 +35,6 @@ const EventsSection: React.FC = () => {
   // Estado para navegação mensal
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<EventType | null>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [maxScroll, setMaxScroll] = useState(0);
@@ -99,22 +95,22 @@ const EventsSection: React.FC = () => {
   const getEventTypeColor = (type: EventType | string): string => {
     switch (normalizeEventType(type)) {
       case EventType.Festa:
-        return theme.palette.secondary.main;
+        return '#2e7d32';
       case EventType.Evento:
-        return theme.palette.primary.main;
+        return '#1976d2';
       case EventType.Celebracao:
-        return theme.palette.warning.main;
+        return '#d81b60';
       case EventType.Palestra:
-        return theme.palette.info.main;
+        return '#00acc1';
       case EventType.Bazar:
-        return theme.palette.success.main;
+        return '#ef6c00';
       default:
-        return theme.palette.primary.main;
+        return '#1976d2';
     }
   };
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['public-events', format(selectedDate, 'yyyy-MM'), searchTerm, selectedType],
+    queryKey: ['public-events', format(selectedDate, 'yyyy-MM'), selectedType],
     queryFn: () =>
       publicApi.getEvents({
         pageNumber: 1,
@@ -122,13 +118,14 @@ const EventsSection: React.FC = () => {
         sort: 'date:asc',
         month: selectedDate.getMonth() + 1,
         year: selectedDate.getFullYear(),
-        q: searchTerm || undefined,
         type: selectedType || undefined,
       }),
   });
 
-  const events = data?.data ?? [];
-  const filteredEvents = events.filter((event: BatuaraEvent) => event.isActive !== false);
+  const filteredEvents = useMemo(
+    () => (data?.data ?? []).filter((event: BatuaraEvent) => event.isActive !== false),
+    [data?.data]
+  );
 
   const formatEventDate = (dateString: string): string => {
     try {
@@ -189,12 +186,21 @@ const EventsSection: React.FC = () => {
     if (scrollContainerRef.current) {
       handleScroll();
     }
-  }, [filteredEvents]);
+  }, [filteredEvents.length]);
 
   return (
-    <Box id="events" sx={{ py: 8, backgroundColor: 'background.paper' }}>
+    <Box
+      id="eventos-e-festas"
+      sx={{
+        scrollMarginTop: { xs: 56, md: 88 },
+        minHeight: { xs: '100vh', md: 'auto' },
+        pt: { xs: 1.5, md: 8 },
+        pb: { xs: 4, md: 8 },
+        backgroundColor: 'background.paper',
+      }}
+    >
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <Box sx={{ textAlign: 'center', mb: { xs: 3, md: 6 } }}>
           <Typography
             variant="h2"
             sx={{
@@ -205,16 +211,17 @@ const EventsSection: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 2
+              gap: { xs: 1, md: 2 },
+              flexWrap: 'wrap',
             }}
           >
-            <IconButton onClick={handlePrevMonth} color="primary" size="large">
+            <IconButton onClick={handlePrevMonth} color="primary" size={isMobile ? 'medium' : 'large'} sx={{ p: { xs: 0.75, md: 1 } }}>
               <ArrowBackIosIcon fontSize="inherit" />
             </IconButton>
-            <Box component="span" sx={{ minWidth: { xs: 200, md: 350 }, textAlign: 'center' }}>
+            <Box component="span" sx={{ minWidth: { xs: 170, md: 350 }, textAlign: 'center' }}>
               {monthLabel}
             </Box>
-            <IconButton onClick={handleNextMonth} color="primary" size="large">
+            <IconButton onClick={handleNextMonth} color="primary" size={isMobile ? 'medium' : 'large'} sx={{ p: { xs: 0.75, md: 1 } }}>
               <ArrowForwardIosIcon fontSize="inherit" />
             </IconButton>
           </Typography>
@@ -232,21 +239,8 @@ const EventsSection: React.FC = () => {
           </Typography>
 
           {/* Filtros */}
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap', mb: 4 }}>
-            <TextField
-              placeholder="Buscar eventos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ minWidth: 250 }}
-            />
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap', mb: { xs: 2.5, md: 4 } }}>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
               <FilterListIcon color="action" />
               <Chip
                 label="Todos"
@@ -259,8 +253,17 @@ const EventsSection: React.FC = () => {
                   key={type}
                   label={getEventTypeLabel(type as EventType)}
                   onClick={() => setSelectedType(type as EventType)}
-                  color={selectedType === type ? 'primary' : 'default'}
                   variant={selectedType === type ? 'filled' : 'outlined'}
+                  sx={
+                    selectedType === type
+                      ? {
+                          backgroundColor: getEventTypeColor(type as EventType),
+                          color: 'white',
+                          borderColor: getEventTypeColor(type as EventType),
+                          fontWeight: 700,
+                        }
+                      : undefined
+                  }
                 />
               ))}
             </Box>
@@ -287,13 +290,13 @@ const EventsSection: React.FC = () => {
           </Box>
         ) : isMobile ? (
           /* Carrossel para mobile */
-          <Box sx={{ position: 'relative', mb: 4 }}>
+          <Box sx={{ position: 'relative', mb: 4, overflow: 'clip' }}>
             {canScrollLeft && (
               <IconButton
                 onClick={() => scroll('left')}
                 sx={{
                   position: 'absolute',
-                  left: -20,
+                  left: { xs: 4, md: -20 },
                   top: '50%',
                   transform: 'translateY(-50%)',
                   zIndex: 2,
@@ -314,7 +317,7 @@ const EventsSection: React.FC = () => {
                 onClick={() => scroll('right')}
                 sx={{
                   position: 'absolute',
-                  right: -20,
+                  right: { xs: 4, md: -20 },
                   top: '50%',
                   transform: 'translateY(-50%)',
                   zIndex: 2,
@@ -338,7 +341,11 @@ const EventsSection: React.FC = () => {
                 gap: 3,
                 overflowX: 'auto',
                 scrollBehavior: 'smooth',
+                overscrollBehaviorX: 'contain',
+                WebkitOverflowScrolling: 'touch',
                 pb: 2,
+                px: { xs: 0.5, md: 0 },
+                scrollSnapType: 'x mandatory',
                 '&::-webkit-scrollbar': {
                   display: 'none',
                 },
@@ -354,6 +361,7 @@ const EventsSection: React.FC = () => {
                     height: 'auto',
                     display: 'flex',
                     flexDirection: 'column',
+                    scrollSnapAlign: 'start',
                     transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
                     '&:hover': {
                       transform: 'translateY(-4px)',

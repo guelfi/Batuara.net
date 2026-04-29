@@ -119,7 +119,7 @@ ssh -i $SshKey -o StrictHostKeyChecking=no "${OciUser}@${OciHost}" "rm -f $remot
 # --- 5. Restore no banco local ---
 if ($DumpOnly) {
     Write-Step "DumpOnly habilitado: pulando restore local."
-    if (-not $KeepLocalBackup -and $localBackupFile -eq $tempBackupFile -and (Test-Path $tempBackupFile)) {
+    if (-not $KeepLocalBackup -and $localBackupFile -ne $tempBackupFile -and (Test-Path $tempBackupFile)) {
         Remove-Item $tempBackupFile -Force 2>&1 | Out-Null
     }
     Write-Host ""

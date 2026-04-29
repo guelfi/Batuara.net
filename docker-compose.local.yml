@@ -33,6 +33,8 @@ services:
       - JwtSettings__Secret=${JWT_SECRET}
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Development}
+      - DB_APPLY_MIGRATIONS_ON_STARTUP=false
+      - DB_SEED_ON_STARTUP=false
       - SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD}
     networks:
       - batuara-network

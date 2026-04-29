@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -7,6 +7,7 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  Fade,
   IconButton,
   Link,
   Stack,
@@ -15,11 +16,15 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import PeopleIcon from '@mui/icons-material/People';
+import { TransitionProps } from '@mui/material/transitions';
 import { useQuery } from '@tanstack/react-query';
+import NavigationDots from '../common/NavigationDots';
 import publicApi from '../../services/api';
 import { Guide } from '../../types';
 
@@ -36,8 +41,45 @@ type DisplayGuide = {
   photoUrl?: string;
 };
 
+const colorMap: Record<string, string> = {
+  branco: '#e8eaf6',
+  azul: '#1976d2',
+  'azul claro': '#42a5f5',
+  'azul marinho': '#1a237e',
+  prata: '#90a4ae',
+  lilás: '#9c27b0',
+  roxo: '#7b1fa2',
+  dourado: '#f9a825',
+  amarelo: '#fbc02d',
+  vermelho: '#d32f2f',
+  verde: '#388e3c',
+  'verde escuro': '#2e7d32',
+  marrom: '#795548',
+  preto: '#212121',
+  rosa: '#e91e63',
+  coral: '#ff7043',
+  laranja: '#f57c00',
+  arcoíris: '#673ab7',
+  'arco-íris': '#673ab7',
+};
+
+const colorKeys = Object.keys(colorMap).sort((a, b) => b.length - a.length);
+
+const DialogTransition = React.forwardRef(function DialogTransition(
+  props: TransitionProps & { children: React.ReactElement },
+  ref: React.Ref<unknown>
+) {
+  return <Fade ref={ref} {...props} timeout={{ enter: 220, exit: 180 }} />;
+});
+
 const GuiasEntidadesSection: React.FC = () => {
   const [selectedGuia, setSelectedGuia] = useState<DisplayGuide | null>(null);
+  const [selectedAccentColor, setSelectedAccentColor] = useState<string | null>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [maxScroll, setMaxScroll] = useState(0);
   const { data, isLoading, isError } = useQuery({
     queryKey: ['public-guides'],
     queryFn: () => publicApi.getGuides(),
@@ -66,18 +108,100 @@ const GuiasEntidadesSection: React.FC = () => {
       }));
   }, [data]);
 
-  const handleOpenDialog = (guia: DisplayGuide) => {
+  const getAccentColorFromGuide = (guia: DisplayGuide): string => {
+    const text = `${guia.name} ${guia.highlight} ${guia.description} ${guia.tags.join(' ')}`.toLowerCase();
+    const hex = text.match(/#(?:[0-9a-f]{3}|[0-9a-f]{6})\b/i)?.[0];
+    if (hex) return hex;
+
+    for (const key of colorKeys) {
+      if (text.includes(key)) {
+        return colorMap[key];
+      }
+    }
+
+    return theme.palette.primary.main;
+  };
+
+  const handleOpenDialog = (guia: DisplayGuide, accentColor: string) => {
     setSelectedGuia(guia);
+    setSelectedAccentColor(accentColor);
   };
 
   const handleCloseDialog = () => {
     setSelectedGuia(null);
+    setSelectedAccentColor(null);
   };
 
+  const dialogAccentColor = selectedAccentColor ?? theme.palette.primary.main;
+  const dialogTitleColor = dialogAccentColor === '#e8eaf6' ? '#1a237e' : dialogAccentColor;
+
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      setScrollPosition(container.scrollLeft);
+      setMaxScroll(container.scrollWidth - container.clientWidth);
+    }
+  };
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      const cardWidth = isMobile ? 300 : 340;
+      const gap = 24;
+      const scrollAmount = cardWidth + gap;
+      scrollContainerRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      const cardWidth = isMobile ? 300 : 340;
+      const gap = 24;
+      const scrollAmount = cardWidth + gap;
+      scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const handleDotClick = (dotIndex: number) => {
+    if (scrollContainerRef.current) {
+      const itemWidth = isMobile ? 300 : 340;
+      const gap = 24;
+      const itemWithGap = itemWidth + gap;
+      const targetScroll = dotIndex * itemWithGap;
+      scrollContainerRef.current.scrollTo({ left: targetScroll, behavior: 'smooth' });
+    }
+  };
+
+  const canScrollLeft = scrollPosition > 4;
+  const canScrollRight = scrollPosition < maxScroll - 4;
+
+  useEffect(() => {
+    let raf2 = 0;
+    const raf1 = window.requestAnimationFrame(() => {
+      handleScroll();
+      raf2 = window.requestAnimationFrame(() => {
+        handleScroll();
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(raf1);
+      if (raf2) window.cancelAnimationFrame(raf2);
+    };
+  }, [guides.length, isMobile]);
+
   return (
-    <Box id="guias-entidades" sx={{ py: 8, backgroundColor: 'background.default' }}>
+    <Box
+      id="guias-entidades"
+      sx={{
+        scrollMarginTop: { xs: 56, md: 88 },
+        minHeight: { xs: '100vh', md: 'auto' },
+        pt: { xs: 1.5, md: 8 },
+        pb: { xs: 4, md: 8 },
+        backgroundColor: 'background.default',
+      }}
+    >
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <Box sx={{ textAlign: 'center', mb: { xs: 3, md: 6 } }}>
           <Typography
             variant="h2"
             sx={{
@@ -88,6 +212,9 @@ const GuiasEntidadesSection: React.FC = () => {
             }}
           >
             Guias e Entidades
+          </Typography>
+          <Typography variant="h6" sx={{ color: 'text.secondary', maxWidth: 900, mx: 'auto', lineHeight: 1.6 }}>
+            Conheça os guias e entidades que trabalham em nossa casa e suas orientações espirituais
           </Typography>
         </Box>
 
@@ -101,39 +228,43 @@ const GuiasEntidadesSection: React.FC = () => {
           <Alert severity="info">Nenhum guia ou entidade ativo foi cadastrado até o momento.</Alert>
         ) : (
           <>
-            <Box sx={{ position: 'relative' }}>
+            <Box sx={{ position: 'relative', overflow: 'clip' }}>
               <IconButton
-                onClick={() => {
-                  const container = document.getElementById('guides-carousel');
-                  container?.scrollBy({ left: -340, behavior: 'smooth' });
-                }}
+                onClick={scrollLeft}
+                disabled={!canScrollLeft}
                 sx={{
                   position: 'absolute',
-                  left: -18,
+                  left: { xs: 4, md: -20 },
                   top: '50%',
                   transform: 'translateY(-50%)',
                   zIndex: 2,
                   backgroundColor: 'background.paper',
-                  boxShadow: 3,
-                  display: { xs: 'none', md: 'flex' },
+                  boxShadow: theme.shadows[4],
+                  opacity: canScrollLeft ? 1 : 0.35,
+                  '&:hover': {
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                  },
                 }}
               >
                 <ArrowBackIosIcon />
               </IconButton>
               <IconButton
-                onClick={() => {
-                  const container = document.getElementById('guides-carousel');
-                  container?.scrollBy({ left: 340, behavior: 'smooth' });
-                }}
+                onClick={scrollRight}
+                disabled={!canScrollRight}
                 sx={{
                   position: 'absolute',
-                  right: -18,
+                  right: { xs: 4, md: -20 },
                   top: '50%',
                   transform: 'translateY(-50%)',
                   zIndex: 2,
                   backgroundColor: 'background.paper',
-                  boxShadow: 3,
-                  display: { xs: 'none', md: 'flex' },
+                  boxShadow: theme.shadows[4],
+                  opacity: canScrollRight ? 1 : 0.35,
+                  '&:hover': {
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                  },
                 }}
               >
                 <ArrowForwardIosIcon />
@@ -141,29 +272,47 @@ const GuiasEntidadesSection: React.FC = () => {
 
               <Box
                 id="guides-carousel"
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
                 sx={{
                   display: 'flex',
                   gap: 3,
                   overflowX: 'auto',
                   scrollBehavior: 'smooth',
+                  overscrollBehaviorX: 'contain',
+                  WebkitOverflowScrolling: 'touch',
                   pb: 2,
+                  px: { xs: 0.5, md: 0 },
+                  scrollSnapType: 'x mandatory',
                   '&::-webkit-scrollbar': { display: 'none' },
                   scrollbarWidth: 'none',
                 }}
               >
                 {guides.map((guia) => (
-                  <Card
-                    key={guia.id}
-                    onClick={() => handleOpenDialog(guia)}
-                    sx={{
-                      minWidth: { xs: 300, md: 340 },
-                      maxWidth: { xs: 300, md: 340 },
-                      cursor: 'pointer',
-                      borderTop: '3px solid',
-                      borderColor: 'primary.main',
-                      boxShadow: 3,
-                    }}
-                  >
+                  (() => {
+                    const accentColor = getAccentColorFromGuide(guia);
+                    const accentText = accentColor === '#e8eaf6' ? '#1a237e' : accentColor;
+
+                    return (
+                      <Card
+                        key={guia.id}
+                        onClick={() => handleOpenDialog(guia, accentColor)}
+                        sx={{
+                          minWidth: { xs: 300, md: 340 },
+                          maxWidth: { xs: 300, md: 340 },
+                          cursor: 'pointer',
+                          scrollSnapAlign: 'start',
+                          transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
+                          border: `1px solid ${accentColor}35`,
+                          borderLeft: `6px solid ${accentColor}`,
+                          boxShadow: 3,
+                          '&:hover': {
+                            transform: 'translateY(-8px)',
+                            boxShadow: 6,
+                            borderColor: `${accentColor}90`,
+                          },
+                        }}
+                      >
                     <CardContent>
                       <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
                         <Box
@@ -171,7 +320,7 @@ const GuiasEntidadesSection: React.FC = () => {
                             width: 64,
                             height: 64,
                             borderRadius: '50%',
-                            backgroundColor: 'primary.main',
+                            backgroundColor: accentColor,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -186,7 +335,7 @@ const GuiasEntidadesSection: React.FC = () => {
                           )}
                         </Box>
                         <Box>
-                          <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                          <Typography variant="h6" sx={{ fontWeight: 800, color: accentText }}>
                             {guia.name}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
@@ -220,7 +369,17 @@ const GuiasEntidadesSection: React.FC = () => {
 
                       <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
                         {guia.tags.slice(0, 3).map((tag) => (
-                          <Chip key={tag} label={tag} size="small" color="primary" variant="outlined" />
+                          <Chip
+                            key={tag}
+                            label={tag}
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              borderColor: `${accentColor}70`,
+                              color: accentText,
+                              backgroundColor: `${accentColor}10`,
+                            }}
+                          />
                         ))}
                       </Stack>
 
@@ -230,13 +389,54 @@ const GuiasEntidadesSection: React.FC = () => {
                         </Button>
                       </Box>
                     </CardContent>
-                  </Card>
+                      </Card>
+                    );
+                  })()
                 ))}
               </Box>
+              <NavigationDots
+                totalItems={guides.length}
+                currentIndex={(() => {
+                  const itemWidth = isMobile ? 300 : 340;
+                  const gap = 24;
+                  const itemWithGap = itemWidth + gap;
+                  const totalDots = guides.length;
+
+                  if (scrollPosition >= maxScroll * 0.9) {
+                    return totalDots - 1;
+                  }
+
+                  return Math.floor(scrollPosition / itemWithGap);
+                })()}
+                itemsPerView={1}
+                onDotClick={handleDotClick}
+              />
             </Box>
 
-            <Dialog open={!!selectedGuia} onClose={handleCloseDialog} fullWidth maxWidth="sm">
-              <DialogTitle>{selectedGuia?.name}</DialogTitle>
+            <Dialog
+              open={!!selectedGuia}
+              onClose={handleCloseDialog}
+              fullWidth
+              maxWidth="sm"
+              TransitionComponent={DialogTransition}
+              PaperProps={{
+                sx: {
+                  borderTop: `8px solid ${dialogAccentColor}`,
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                },
+              }}
+            >
+              <DialogTitle
+                sx={{
+                  fontWeight: 800,
+                  backgroundColor: `${dialogAccentColor}14`,
+                  borderBottom: `1px solid ${dialogAccentColor}30`,
+                  color: dialogTitleColor,
+                }}
+              >
+                {selectedGuia?.name}
+              </DialogTitle>
               <DialogContent>
                 {selectedGuia && (
                   <Stack spacing={2}>
@@ -269,7 +469,17 @@ const GuiasEntidadesSection: React.FC = () => {
                       </Typography>
                       <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
                         {selectedGuia.tags.map((specialty) => (
-                          <Chip key={specialty} label={specialty} size="small" color="primary" />
+                          <Chip
+                            key={specialty}
+                            label={specialty}
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              borderColor: `${dialogAccentColor}70`,
+                              color: dialogTitleColor,
+                              backgroundColor: `${dialogAccentColor}10`,
+                            }}
+                          />
                         ))}
                       </Stack>
                     </Box>

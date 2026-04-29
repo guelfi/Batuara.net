@@ -5,8 +5,12 @@ import {
   Card,
   CircularProgress,
   Container,
+  IconButton,
+  Link,
+  Stack,
   Typography,
 } from '@mui/material';
+import InstagramIcon from '@mui/icons-material/Instagram';
 import { useQuery } from '@tanstack/react-query';
 import publicApi from '../../services/api';
 
@@ -17,7 +21,16 @@ const LocationSection: React.FC = () => {
   });
 
   return (
-    <Box id="location" sx={{ py: 8, backgroundColor: 'background.default' }}>
+    <Box
+      id="nossa-localizacao"
+      sx={{
+        scrollMarginTop: { xs: 56, md: 88 },
+        minHeight: { xs: '100vh', md: 'auto' },
+        pt: { xs: 1.5, md: 8 },
+        pb: { xs: 4, md: 8 },
+        backgroundColor: 'background.default',
+      }}
+    >
       <Container maxWidth="lg">
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Typography variant="h2" sx={{ fontSize: { xs: '1.7rem', md: '2.5rem' }, fontWeight: 600, mb: 1, color: 'primary.main' }}>
@@ -55,6 +68,33 @@ const LocationSection: React.FC = () => {
                   {siteSettings.referenceNotes}
                 </Typography>
               )}
+            </Box>
+
+            <Box sx={{ mt: 3, maxWidth: 820, mx: 'auto' }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, textAlign: 'center' }}>
+                Redes Sociais
+              </Typography>
+              <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" sx={{ flexWrap: 'wrap' }}>
+                <IconButton
+                  component={Link}
+                  href={siteSettings.instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram da Casa Batuara"
+                  sx={{ color: 'primary.main' }}
+                >
+                  <InstagramIcon />
+                </IconButton>
+                <Link
+                  href={siteSettings.instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  underline="hover"
+                  sx={{ fontWeight: 700 }}
+                >
+                  @{siteSettings.instagram}
+                </Link>
+              </Stack>
             </Box>
           </>
         )}
