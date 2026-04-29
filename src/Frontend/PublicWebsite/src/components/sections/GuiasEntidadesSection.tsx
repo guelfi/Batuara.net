@@ -27,6 +27,7 @@ import { useQuery } from '@tanstack/react-query';
 import NavigationDots from '../common/NavigationDots';
 import publicApi from '../../services/api';
 import { Guide } from '../../types';
+import { desktopMediaQuery } from '../../theme/theme';
 
 type DisplayGuide = {
   id: string | number;
@@ -198,6 +199,10 @@ const GuiasEntidadesSection: React.FC = () => {
         pt: { xs: 1.5, md: 8 },
         pb: { xs: 4, md: 8 },
         backgroundColor: 'background.default',
+        [desktopMediaQuery]: {
+          minHeight: 'calc(100vh - 88px)',
+          pb: 10,
+        },
       }}
     >
       <Container maxWidth="lg">

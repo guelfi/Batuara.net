@@ -24,6 +24,7 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { useQuery } from '@tanstack/react-query';
 import publicApi from '../../services/api';
 import { EventType, Event as BatuaraEvent } from '../../types';
+import { desktopMediaQuery } from '../../theme/theme';
 import { addMonths, subMonths, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import NavigationDots from '../common/NavigationDots';
@@ -197,6 +198,10 @@ const EventsSection: React.FC = () => {
         pt: { xs: 1.5, md: 8 },
         pb: { xs: 4, md: 8 },
         backgroundColor: 'background.paper',
+        [desktopMediaQuery]: {
+          minHeight: 'calc(100vh - 88px)',
+          pb: 10,
+        },
       }}
     >
       <Container maxWidth="lg">

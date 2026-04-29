@@ -22,6 +22,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTheme, useMediaQuery } from '@mui/material';
 import publicApi from '../../services/api';
 import { AttendanceType, CalendarAttendance, Event as BatuaraEvent, EventType } from '../../types';
+import { desktopMediaQuery } from '../../theme/theme';
 import {
   addMonths,
   subMonths,
@@ -376,6 +377,10 @@ const CalendarSection: React.FC = () => {
         pt: { xs: 1.5, md: 6 },
         pb: { xs: 4, md: 4 },
         backgroundColor: 'background.default',
+        [desktopMediaQuery]: {
+          minHeight: 'calc(100vh - 88px)',
+          pb: 10,
+        },
       }}
     >
       <Container maxWidth="lg">

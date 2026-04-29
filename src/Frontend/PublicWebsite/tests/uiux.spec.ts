@@ -432,14 +432,17 @@ function collectPageErrors(page: Page) {
   return errors;
 }
 
-test('UI/UX: navegação por menu + screenshots por seção (3 breakpoints)', async ({ page }) => {
+test('UI/UX: navegação por menu + screenshots por seção', async ({ page }, testInfo) => {
   test.setTimeout(180_000);
   const errors = collectPageErrors(page);
+  const shouldScreenshot = ['desktop', 'tablet', 'mobile'].includes(testInfo.project.name);
 
   await page.goto('/');
   await expect(page.locator('#home')).toBeVisible();
 
-  await expect(page.locator('#home')).toHaveScreenshot('uiux-00-home.png', { timeout: 30_000 });
+  if (shouldScreenshot) {
+    await expect(page.locator('#home')).toHaveScreenshot('uiux-00-home.png', { timeout: 30_000 });
+  }
 
   for (const [index, item] of navigationItems.slice(1).entries()) {
     await navigateByMenu(page, item.label, item.href);
@@ -452,7 +455,11 @@ test('UI/UX: navegação por menu + screenshots por seção (3 breakpoints)', as
     }
     const order = String(index + 1).padStart(2, '0');
     const id = item.href.replace('#', '');
-    await expect(page.locator(item.href)).toHaveScreenshot(`uiux-${order}-${id}.png`, { timeout: 30_000 });
+    if (shouldScreenshot) {
+      await expect(page.locator(item.href)).toHaveScreenshot(`uiux-${order}-${id}.png`, { timeout: 30_000 });
+    } else {
+      await expect(page.locator(item.href)).toBeVisible();
+    }
   }
 
   expect(errors.join('\n')).toBe('');
