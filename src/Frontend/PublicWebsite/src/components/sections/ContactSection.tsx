@@ -66,7 +66,16 @@ const ContactSection: React.FC = () => {
   };
 
   return (
-    <Box id="contact" sx={{ py: 6, backgroundColor: 'background.default' }}>
+    <Box
+      id="entre-em-contato"
+      sx={{
+        scrollMarginTop: { xs: 56, md: 88 },
+        minHeight: { xs: '100vh', md: 'auto' },
+        pt: { xs: 1.5, md: 6 },
+        pb: { xs: 4, md: 6 },
+        backgroundColor: 'background.default',
+      }}
+    >
       <Container maxWidth="md">
         <Box sx={{ textAlign: 'center', mb: 2.5 }}>
           <Box

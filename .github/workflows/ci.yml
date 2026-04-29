@@ -137,6 +137,33 @@ jobs:
           CI: false
           REACT_APP_API_URL: /batuara-api/api
 
+  visual-regression-public-website:
+    name: Visual Regression - Public Website
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: src/Frontend/PublicWebsite/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+        working-directory: src/Frontend/PublicWebsite
+
+      - name: Install Playwright (Chromium)
+        run: npx playwright install --with-deps chromium
+        working-directory: src/Frontend/PublicWebsite
+
+      - name: Run visual tests
+        run: npm run test:visual
+        working-directory: src/Frontend/PublicWebsite
+        env:
+          CI: true
+
   build-admin-dashboard:
     name: Build Admin Dashboard
     runs-on: ubuntu-latest
@@ -164,7 +191,7 @@ jobs:
   docker-build:
     name: Docker Build Test
     runs-on: ubuntu-latest
-    needs: [build-api, test-api, build-public-website, build-admin-dashboard, secret-scanning, audit-dependencies]
+    needs: [build-api, test-api, build-public-website, visual-regression-public-website, build-admin-dashboard, secret-scanning, audit-dependencies]
     steps:
       - uses: actions/checkout@v6
 

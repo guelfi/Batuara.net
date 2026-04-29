@@ -1,8 +1,6 @@
 import React from 'react';
 import { Box, Container, Divider, Grid, IconButton, Link, Typography } from '@mui/material';
 import InstagramIcon from '@mui/icons-material/Instagram';
-import EmailIcon from '@mui/icons-material/Email';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { useQuery } from '@tanstack/react-query';
 import publicApi from '../../services/api';
 
@@ -13,14 +11,14 @@ const Footer: React.FC = () => {
     queryKey: ['siteSettings', 'public'],
     queryFn: () => publicApi.getSiteSettings(),
   });
-  const address = siteSettings
-    ? `${siteSettings.street}, ${siteSettings.number}${siteSettings.complement ? ` - ${siteSettings.complement}` : ''} - ${siteSettings.district}, ${siteSettings.city} - ${siteSettings.state}, ${siteSettings.zipCode}`
-    : '';
 
   return (
     <Box
       component="footer"
+      id="redes-sociais"
       sx={{
+        scrollMarginTop: { xs: 56, md: 88 },
+        minHeight: 'auto',
         backgroundColor: '#2579d1',
         color: 'white',
         py: 4,
@@ -28,7 +26,7 @@ const Footer: React.FC = () => {
     >
       <Container maxWidth="lg">
         <Grid container spacing={4}>
-          <Grid size={{ xs: 12, md: 4 }}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               Casa de Caridade Caboclo Batuara
             </Typography>
@@ -40,27 +38,7 @@ const Footer: React.FC = () => {
             </Typography>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-              Contato
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <LocationOnIcon fontSize="small" />
-                <Typography variant="body2" sx={{ lineHeight: 1.7 }}>
-                  {address}
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <EmailIcon fontSize="small" />
-                <Link href={`mailto:${siteSettings?.institutionalEmail || siteSettings?.email || ''}`} color="inherit" underline="hover">
-                  {siteSettings?.institutionalEmail || siteSettings?.email}
-                </Link>
-              </Box>
-            </Box>
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 4 }}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               Redes Sociais
             </Typography>
