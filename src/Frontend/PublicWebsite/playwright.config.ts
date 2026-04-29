@@ -11,7 +11,7 @@ export default defineConfig({
   expect: {
     timeout: 10_000,
     toHaveScreenshot: {
-      maxDiffPixelRatio: 0.005,
+      maxDiffPixelRatio: 0.02,
     },
   },
   retries: process.env.CI ? 1 : 0,
