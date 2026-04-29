@@ -26,6 +26,7 @@ import HandshakeIcon from '@mui/icons-material/Handshake';
 import QRCode from 'qrcode';
 import { useQuery } from '@tanstack/react-query';
 import publicApi from '../../services/api';
+import { desktopMediaQuery } from '../../theme/theme';
 
 const DonationsSection: React.FC = () => {
   const theme = useTheme();
@@ -76,11 +77,15 @@ const DonationsSection: React.FC = () => {
     <Box
       id="doacoes"
       sx={{
-        scrollMarginTop: { xs: 56, md: 88 },
+        scrollMarginTop: { xs: 56, md: 64 },
         minHeight: { xs: '100vh', md: 'auto' },
-        pt: { xs: 1.5, md: 8 },
+        pt: { xs: 1.5, md: 2 },
         pb: { xs: 4, md: 8 },
         backgroundColor: 'background.paper',
+        [desktopMediaQuery]: {
+          minHeight: 'calc(100vh - 88px)',
+          pb: 10,
+        },
       }}
     >
       <Container maxWidth="lg">

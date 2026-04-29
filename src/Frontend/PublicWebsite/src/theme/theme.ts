@@ -146,6 +146,23 @@ export const batuaraTheme = createTheme({
   },
   spacing: 8,
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        html: {
+          overflowX: 'hidden',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        },
+        body: {
+          overflowX: 'hidden',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        },
+        'body::-webkit-scrollbar': {
+          display: 'none',
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {
@@ -194,6 +211,9 @@ export const batuaraTheme = createTheme({
 
 // Cores específicas dos Orixás para uso em componentes
 export const orixaColors = batuaraColors;
+
+export const desktopMinWidth = 1024;
+export const desktopMediaQuery = `@media (min-width:${desktopMinWidth}px)`;
 
 // Função para obter cor do Orixá
 export const getOrixaColor = (orixaName: string): string => {

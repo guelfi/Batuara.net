@@ -33,17 +33,13 @@ const HeroSection: React.FC = () => {
   const handleScrollToSection = (sectionId: string) => {
     const element = document.querySelector(sectionId);
     if (element) {
-      // Altura do header diferente para mobile e desktop
-      const isMobileDevice = window.innerWidth < 768;
-      const offsetHeight = isMobileDevice ? 48 : 32; // Offset maior para mobile para coincidir com o carregamento inicial
+      const header = document.querySelector('header');
+      const fallbackHeaderHeight = window.innerWidth < 900 ? 56 : 64;
+      const headerHeight = header instanceof HTMLElement ? header.offsetHeight : fallbackHeaderHeight;
+      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+      const offsetPosition = elementPosition - headerHeight;
 
-      const elementPosition = element.getBoundingClientRect().top + window.scrollY; // Usar scrollY ao invés de pageYOffset
-      const offsetPosition = elementPosition - offsetHeight;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
+      window.scrollTo({ top: Math.max(0, offsetPosition), behavior: 'smooth' });
     }
   };
 
@@ -127,7 +123,7 @@ const HeroSection: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        pt: { xs: '80px', md: '84px' }, // Aumentado significativamente para dar muito mais espaço do Header no mobile
+        pt: { xs: '64px', md: '64px' },
         pb: { xs: 2, md: 6 }, // Reduzir padding bottom no mobile
       }}
     >
