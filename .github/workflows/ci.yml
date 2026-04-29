@@ -139,7 +139,7 @@ jobs:
 
   visual-regression-public-website:
     name: Visual Regression - Public Website
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
 
@@ -155,7 +155,7 @@ jobs:
         working-directory: src/Frontend/PublicWebsite
 
       - name: Install Playwright (Chromium)
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
         working-directory: src/Frontend/PublicWebsite
 
       - name: Run visual tests
