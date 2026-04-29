@@ -1,0 +1,31 @@
+{
+    "schemaVersion":  1,
+    "root":  "docs/especificacao-unificada",
+    "generatedAt":  "2026-04-26",
+    "specs":  [
+                  {
+                      "id":  "uiux-desktop",
+                      "platform":  "desktop",
+                      "path":  "specs/desktop/spec-ui-ux-desktop.md",
+                      "dependsOnSpecs":  [
+                                         ],
+                      "referencesAssets":  [
+                                               "assets/desktop/inicio/captura-2026-04-26-175337.png",
+                                               "assets/desktop/nossa-historia-missao/captura-2026-04-26-175352.png",
+                                               "assets/desktop/nossa-historia-missao/captura-2026-04-26-175939.png",
+                                               "assets/desktop/calendario-atendimento/captura-2026-04-26-175421.png",
+                                               "assets/desktop/eventos-e-festas/captura-2026-04-26-175455.png",
+                                               "assets/desktop/orixas/captura-2026-04-26-175509.png",
+                                               "assets/shared/ui/bullet-orixas.png",
+                                               "assets/desktop/guias-e-entidades/captura-2026-04-26-175522.png",
+                                               "assets/desktop/linhas-da-umbanda/captura-2026-04-26-175536.png",
+                                               "assets/desktop/oracoes/captura-2026-04-26-175549.png",
+                                               "assets/desktop/doacoes/captura-2026-04-26-175604.png",
+                                               "assets/desktop/entre-em-contato/captura-2026-04-26-175624.png",
+                                               "assets/desktop/nossa-localizacao/captura-2026-04-26-175637.png",
+                                               "assets/desktop/redes-sociais-rodape/captura-2026-04-26-175651.png",
+                                               "historico-mobile/assets/mobile/nossa-missao/captura-2026-04-26-172047.png"
+                                           ]
+                  }
+              ]
+}
