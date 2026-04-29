@@ -26,6 +26,7 @@ import { useQuery } from '@tanstack/react-query';
 import NavigationDots from '../common/NavigationDots';
 import publicApi from '../../services/api';
 import { Orixa } from '../../types';
+import { desktopMediaQuery } from '../../theme/theme';
 
 const colorMap: Record<string, string> = {
   branco: '#e8eaf6',
@@ -152,6 +153,10 @@ const OrixasSection: React.FC = () => {
         pt: { xs: 1.5, md: 8 },
         pb: { xs: 4, md: 8 },
         backgroundColor: 'background.paper',
+        [desktopMediaQuery]: {
+          minHeight: 'calc(100vh - 88px)',
+          pb: 10,
+        },
       }}
     >
       <Container maxWidth="lg">

@@ -195,6 +195,9 @@ export const batuaraTheme = createTheme({
 // Cores específicas dos Orixás para uso em componentes
 export const orixaColors = batuaraColors;
 
+export const desktopMinWidth = 1024;
+export const desktopMediaQuery = `@media (min-width:${desktopMinWidth}px)`;
+
 // Função para obter cor do Orixá
 export const getOrixaColor = (orixaName: string): string => {
   const colorMap: { [key: string]: string } = {

@@ -5,14 +5,11 @@ import {
   Card,
   CircularProgress,
   Container,
-  IconButton,
-  Link,
-  Stack,
   Typography,
 } from '@mui/material';
-import InstagramIcon from '@mui/icons-material/Instagram';
 import { useQuery } from '@tanstack/react-query';
 import publicApi from '../../services/api';
+import { desktopMediaQuery } from '../../theme/theme';
 
 const LocationSection: React.FC = () => {
   const { data: siteSettings, isLoading, isError } = useQuery({
@@ -29,6 +26,10 @@ const LocationSection: React.FC = () => {
         pt: { xs: 1.5, md: 8 },
         pb: { xs: 4, md: 8 },
         backgroundColor: 'background.default',
+        [desktopMediaQuery]: {
+          minHeight: 'calc(100vh - 88px)',
+          pb: 10,
+        },
       }}
     >
       <Container maxWidth="lg">
@@ -68,33 +69,6 @@ const LocationSection: React.FC = () => {
                   {siteSettings.referenceNotes}
                 </Typography>
               )}
-            </Box>
-
-            <Box sx={{ mt: 3, maxWidth: 820, mx: 'auto' }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, textAlign: 'center' }}>
-                Redes Sociais
-              </Typography>
-              <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" sx={{ flexWrap: 'wrap' }}>
-                <IconButton
-                  component={Link}
-                  href={siteSettings.instagramUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram da Casa Batuara"
-                  sx={{ color: 'primary.main' }}
-                >
-                  <InstagramIcon />
-                </IconButton>
-                <Link
-                  href={siteSettings.instagramUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  underline="hover"
-                  sx={{ fontWeight: 700 }}
-                >
-                  @{siteSettings.instagram}
-                </Link>
-              </Stack>
             </Box>
           </>
         )}

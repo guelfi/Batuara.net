@@ -14,6 +14,7 @@ import {
 import SendIcon from '@mui/icons-material/Send';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import publicApi from '../../services/api';
+import { desktopMediaQuery } from '../../theme/theme';
 
 interface ContactForm {
   name: string;
@@ -74,6 +75,10 @@ const ContactSection: React.FC = () => {
         pt: { xs: 1.5, md: 6 },
         pb: { xs: 4, md: 6 },
         backgroundColor: 'background.default',
+        [desktopMediaQuery]: {
+          minHeight: 'calc(100vh - 88px)',
+          pb: 10,
+        },
       }}
     >
       <Container maxWidth="md">

@@ -24,6 +24,7 @@ import { useQuery } from '@tanstack/react-query';
 import NavigationDots from '../common/NavigationDots';
 import publicApi from '../../services/api';
 import { UmbandaLine } from '../../types';
+import { desktopMediaQuery } from '../../theme/theme';
 
 const colorMap: Record<string, string> = {
   branco: '#e8eaf6',
@@ -188,6 +189,10 @@ const UmbandaSection: React.FC = () => {
         pb: { xs: 4, md: 8 },
         px: { xs: 1.5, md: 2 },
         backgroundColor: 'background.default',
+        [desktopMediaQuery]: {
+          minHeight: 'calc(100vh - 88px)',
+          pb: 10,
+        },
       }}
     >
       <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
