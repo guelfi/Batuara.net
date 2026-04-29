@@ -30,6 +30,7 @@ x86/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/
+artifacts/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
@@ -169,6 +170,10 @@ TestResults/
 *.coverage
 *.coveragexml
 
+# Playwright
+playwright-report/
+test-results/
+
 # SonarQube
 .sonarqube/
 
@@ -215,3 +220,7 @@ connectionstrings.json
 .agents/
 .qoder/
 atend.md
+
+# Docs de especificacao unificada - artefatos gerados (nao versionar)
+docs/especificacao-unificada/index/
+docs/especificacao-unificada/metrics/evaluations.json

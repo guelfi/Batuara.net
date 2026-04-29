@@ -13,16 +13,18 @@ interface NavigationButtonsProps {
 // Lista das seções na ordem
 const sections = [
   '#home',
-  '#about',
-  '#events',
-  '#calendar',
+  '#nossa-historia',
+  '#nossa-missao',
+  '#calendario-atendimento',
+  '#eventos-e-festas',
   '#orixas',
   '#guias-entidades',
-  '#umbanda',
-  '#prayers',
-  '#donations',
-  '#contact',
-  '#location'
+  '#linhas-da-umbanda',
+  '#oracoes',
+  '#doacoes',
+  '#entre-em-contato',
+  '#nossa-localizacao',
+  '#redes-sociais'
 ];
 
 // Função de throttling
@@ -72,13 +74,13 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
     });
     setCurrentSectionIndex(currentIndex);
 
-    // Verificar se estamos sobre o footer (seção location ou próximo do final da página)
+    // Verificar se estamos sobre o footer (última seção ou próximo do final da página)
     const windowHeight = window.innerHeight;
     const documentHeight = document.documentElement.scrollHeight;
     const isNearBottom = scrollTop + windowHeight >= documentHeight - 100;
-    const isInLocationSection = currentIndex === sections.length - 1; // location é a última seção
+    const isInLastSection = currentIndex === sections.length - 1;
 
-    setIsOverFooter(isNearBottom || isInLocationSection);
+    setIsOverFooter(isNearBottom || isInLastSection);
   }, [threshold]);
 
   useEffect(() => {
@@ -93,30 +95,8 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
   const scrollToSection = (sectionId: string) => {
     const element = document.querySelector(sectionId);
     if (element) {
-      const isMobile = window.innerWidth < 768;
-      const headerHeight = isMobile ? 56 : 64;
-
-      // Offset ajustado para aproximar as seções do header
-      let offsetHeight;
-
-      if (sectionId === '#home') {
-        // Hero: no mobile precisa ficar com muito mais espaço do header, no desktop vai para o topo absoluto
-        offsetHeight = isMobile ? 0 : 0; // Offset zero para dar máximo espaço visual no mobile
-      } else if (sectionId === '#location') {
-        // Location: mantém o offset atual (está correto)
-        offsetHeight = headerHeight + 16;
-      } else {
-        // Outras seções: diminuir 60px do offset anterior para aproximar do header
-        offsetHeight = headerHeight - 44; // headerHeight + 16 - 60 = headerHeight - 44
-      }
-
-      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-      const offsetPosition = elementPosition - offsetHeight;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: smooth ? 'smooth' : 'auto'
-      });
+      element.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start', inline: 'nearest' });
+      window.history.replaceState(null, '', sectionId);
     }
   };
 
@@ -133,11 +113,7 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
   };
 
   const scrollToFooter = () => {
-    // Scroll para o final da página (footer)
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: smooth ? 'smooth' : 'auto'
-    });
+    scrollToSection(sections[sections.length - 1]);
   };
 
   const getButtonStyle = () => ({
@@ -161,7 +137,7 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
   });
 
   return (
-    <Box>
+    <Box sx={{ pointerEvents: 'none' }}>
       {/* Botão Topo */}
       <Fab
         onClick={scrollToTop}
@@ -170,6 +146,7 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
           ...getButtonStyle(),
           bottom: { xs: 200, md: 220 },
           right: { xs: 16, md: 20 },
+          pointerEvents: 'auto',
         }}
       >
         <KeyboardArrowUpIcon fontSize="small" />
@@ -185,6 +162,7 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
           bottom: { xs: 150, md: 165 },
           right: { xs: 16, md: 20 },
           opacity: isVisible && currentSectionIndex > 0 ? (isOverFooter ? 1 : 1) : 0.3,
+          pointerEvents: 'auto',
         }}
       >
         <NavigateBeforeIcon fontSize="small" />
@@ -200,6 +178,7 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
           bottom: { xs: 100, md: 110 },
           right: { xs: 16, md: 20 },
           transform: isVisible && currentSectionIndex < sections.length - 1 && !isOverFooter ? 'translateX(0)' : 'translateX(100px)',
+          pointerEvents: 'auto',
         }}
       >
         <NavigateNextIcon fontSize="small" />
@@ -214,6 +193,7 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
           bottom: { xs: 50, md: 55 },
           right: { xs: 16, md: 20 },
           transform: isVisible && !isOverFooter ? 'translateX(0)' : 'translateX(100px)',
+          pointerEvents: 'auto',
         }}
       >
         <KeyboardArrowDownIcon fontSize="small" />

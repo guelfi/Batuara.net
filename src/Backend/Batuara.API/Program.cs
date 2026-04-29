@@ -293,7 +293,7 @@ builder.Services.AddRateLimiter(options =>
             key,
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 100,
+                PermitLimit = isDevelopment ? 5000 : 100,
                 Window = TimeSpan.FromHours(1),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0
@@ -434,43 +434,8 @@ using (var scope = app.Services.CreateScope())
                 || raw.Trim().Equals("y", StringComparison.OrdinalIgnoreCase);
         }
 
-        static async Task<int> GetTableCountAsync(BatuaraDbContext dbContext, string schema, CancellationToken cancellationToken)
-        {
-            var connection = dbContext.Database.GetDbConnection();
-            var shouldClose = connection.State != System.Data.ConnectionState.Open;
-            if (shouldClose)
-            {
-                await connection.OpenAsync(cancellationToken);
-            }
-
-            try
-            {
-                using var cmd = connection.CreateCommand();
-                cmd.CommandText = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = @schema AND table_type = 'BASE TABLE';";
-                var p = cmd.CreateParameter();
-                p.ParameterName = "@schema";
-                p.Value = schema;
-                cmd.Parameters.Add(p);
-
-                var result = await cmd.ExecuteScalarAsync(cancellationToken);
-                return Convert.ToInt32(result);
-            }
-            finally
-            {
-                if (shouldClose)
-                {
-                    await connection.CloseAsync();
-                }
-            }
-        }
-
         var applyMigrations = app.Environment.IsDevelopment() || GetBoolEnv("DB_APPLY_MIGRATIONS_ON_STARTUP", false);
         var seedOnStartup = app.Environment.IsDevelopment() || GetBoolEnv("DB_SEED_ON_STARTUP", false);
-        var seedSchema = Environment.GetEnvironmentVariable("DB_SCHEMA")?.Trim();
-        if (string.IsNullOrWhiteSpace(seedSchema))
-        {
-            seedSchema = "batuara";
-        }
 
         if (applyMigrations)
         {
@@ -479,12 +444,8 @@ using (var scope = app.Services.CreateScope())
 
         if (seedOnStartup)
         {
-            var tableCount = await GetTableCountAsync(context, seedSchema, CancellationToken.None);
-            if (tableCount == 0)
-            {
-                await SeedData.Initialize(services);
-                await context.SeedBatuaraDataAsync(services.GetRequiredService<ILogger<BatuaraDbContext>>());
-            }
+            await SeedData.Initialize(services);
+            await context.SeedBatuaraDataAsync(services.GetRequiredService<ILogger<BatuaraDbContext>>());
         }
     }
     catch (Exception ex)

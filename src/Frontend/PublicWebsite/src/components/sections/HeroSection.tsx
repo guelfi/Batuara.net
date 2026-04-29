@@ -55,9 +55,13 @@ const HeroSection: React.FC = () => {
     }
   };
 
+  const mobileCardWidth = 144;
+  const mobileCardGap = 12;
+  const mobileCardWithGap = mobileCardWidth + mobileCardGap;
+
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
-      const scrollAmount = 172; // Ajustado para o novo tamanho (160 + 12)
+      const scrollAmount = mobileCardWithGap;
       const currentScroll = scrollContainerRef.current.scrollLeft;
       const targetScroll = direction === 'left'
         ? currentScroll - scrollAmount
@@ -72,10 +76,7 @@ const HeroSection: React.FC = () => {
 
   const handleDotClick = (dotIndex: number) => {
     if (scrollContainerRef.current) {
-      const itemWidth = 160; // Diminuído ainda mais os cards (de 180 para 160)
-      const gap = 12; // Ajustado para o novo gap (1.5 * 8 = 12px)
-      const itemWithGap = itemWidth + gap;
-      const targetScroll = dotIndex * itemWithGap;
+      const targetScroll = dotIndex * mobileCardWithGap;
 
       scrollContainerRef.current.scrollTo({
         left: targetScroll,
@@ -122,7 +123,7 @@ const HeroSection: React.FC = () => {
         color: 'white',
         position: 'relative',
         overflow: 'hidden',
-        minHeight: { xs: '70vh', md: '100vh' }, // Reduzir altura no mobile
+        minHeight: { xs: '100vh', md: '100vh' },
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -227,7 +228,7 @@ const HeroSection: React.FC = () => {
                 <Button
                   variant="contained"
                   size={isMobile ? "medium" : "large"} // Botão menor no mobile
-                  onClick={() => handleScrollToSection('#about')}
+                  onClick={() => handleScrollToSection('#nossa-historia')}
                   sx={{
                     backgroundColor: 'white',
                     color: theme.palette.primary.main,
@@ -245,7 +246,7 @@ const HeroSection: React.FC = () => {
                 <Button
                   variant="outlined"
                   size={isMobile ? "medium" : "large"} // Botão menor no mobile
-                  onClick={() => handleScrollToSection('#calendar')}
+                  onClick={() => handleScrollToSection('#calendario-atendimento')}
                   sx={{
                     borderColor: 'white',
                     color: 'white',
@@ -352,7 +353,8 @@ const HeroSection: React.FC = () => {
             <Box
               sx={{
                 display: { xs: 'block', md: 'none' },
-                position: 'relative'
+                position: 'relative',
+                overflow: 'clip',
               }}
             >
               {canScrollLeft && (
@@ -360,7 +362,7 @@ const HeroSection: React.FC = () => {
                   onClick={() => scroll('left')}
                   sx={{
                     position: 'absolute',
-                    left: -20,
+                    left: { xs: 4, md: -20 },
                     top: '50%',
                     transform: 'translateY(-50%)',
                     zIndex: 2,
@@ -380,7 +382,7 @@ const HeroSection: React.FC = () => {
                   onClick={() => scroll('right')}
                   sx={{
                     position: 'absolute',
-                    right: -20,
+                    right: { xs: 4, md: -20 },
                     top: '50%',
                     transform: 'translateY(-50%)',
                     zIndex: 2,
@@ -403,7 +405,11 @@ const HeroSection: React.FC = () => {
                   gap: 1.5, // Gap menor entre cards
                   overflowX: 'auto',
                   scrollBehavior: 'smooth',
+                  overscrollBehaviorX: 'contain',
+                  WebkitOverflowScrolling: 'touch',
                   pb: 1.5, // Padding bottom menor
+                  px: 0.5,
+                  scrollSnapType: 'x mandatory',
                   '&::-webkit-scrollbar': {
                     display: 'none',
                   },
@@ -412,18 +418,19 @@ const HeroSection: React.FC = () => {
               >
                 <Card
                   sx={{
-                    minWidth: 160, // Cards menores
+                    minWidth: mobileCardWidth,
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     backdropFilter: 'blur(10px)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
+                    scrollSnapAlign: 'start',
                   }}
                 >
                   <CardContent sx={{ textAlign: 'center', py: 1.5, px: 1.5 }}>
-                    <FavoriteIcon sx={{ fontSize: 28, mb: 0.3, color: 'white' }} />
-                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '0.9rem', mb: 0.2 }}>
+                    <FavoriteIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '0.85rem', mb: 0.2 }}>
                       Caridade
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.75rem' }}>
+                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.72rem' }}>
                       "Fora da caridade não há salvação"
                     </Typography>
                   </CardContent>
@@ -431,18 +438,19 @@ const HeroSection: React.FC = () => {
 
                 <Card
                   sx={{
-                    minWidth: 160, // Cards menores
+                    minWidth: mobileCardWidth,
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     backdropFilter: 'blur(10px)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
+                    scrollSnapAlign: 'start',
                   }}
                 >
                   <CardContent sx={{ textAlign: 'center', py: 1.5, px: 1.5 }}>
-                    <PeopleIcon sx={{ fontSize: 28, mb: 0.3, color: 'white' }} />
-                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '0.9rem', mb: 0.2 }}>
+                    <PeopleIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '0.85rem', mb: 0.2 }}>
                       Fraternidade
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.75rem' }}>
+                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.72rem' }}>
                       Unidos no amor e na fé
                     </Typography>
                   </CardContent>
@@ -450,18 +458,19 @@ const HeroSection: React.FC = () => {
 
                 <Card
                   sx={{
-                    minWidth: 160, // Cards menores
+                    minWidth: mobileCardWidth,
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     backdropFilter: 'blur(10px)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
+                    scrollSnapAlign: 'start',
                   }}
                 >
                   <CardContent sx={{ textAlign: 'center', py: 1.5, px: 1.5 }}>
-                    <AutoAwesomeIcon sx={{ fontSize: 28, mb: 0.3, color: 'white' }} />
-                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '0.9rem', mb: 0.2 }}>
+                    <AutoAwesomeIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '0.85rem', mb: 0.2 }}>
                       Espiritualidade
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.75rem' }}>
+                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.72rem' }}>
                       Elevação da alma através da fé
                     </Typography>
                   </CardContent>
@@ -469,18 +478,19 @@ const HeroSection: React.FC = () => {
 
                 <Card
                   sx={{
-                    minWidth: 160, // Cards menores
+                    minWidth: mobileCardWidth,
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     backdropFilter: 'blur(10px)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
+                    scrollSnapAlign: 'start',
                   }}
                 >
                   <CardContent sx={{ textAlign: 'center', py: 1.5, px: 1.5 }}>
-                    <MenuBookIcon sx={{ fontSize: 28, mb: 0.3, color: 'white' }} />
-                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '0.9rem', mb: 0.2 }}>
+                    <MenuBookIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '0.85rem', mb: 0.2 }}>
                       Tradição
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.75rem' }}>
+                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.72rem' }}>
                       Preservando os ensinamentos ancestrais
                     </Typography>
                   </CardContent>
@@ -504,10 +514,6 @@ const HeroSection: React.FC = () => {
                 <NavigationDots
                   totalItems={4}
                   currentIndex={(() => {
-                    const itemWidth = 160; // Tamanho dos cards
-                    const gap = 12; // Gap entre cards (1.5 * 8 = 12px do tema MUI)
-                    const itemWithGap = itemWidth + gap;
-
                     // Se chegou ao final do scroll, mostrar o último dot
                     if (scrollPosition >= maxScroll - 10) {
                       return 3;
@@ -515,8 +521,8 @@ const HeroSection: React.FC = () => {
 
                     // Calcular o índice baseado na posição do scroll
                     // Adicionar metade do itemWidth para melhor detecção do centro
-                    const adjustedScrollPosition = scrollPosition + (itemWidth / 2);
-                    const calculatedIndex = Math.floor(adjustedScrollPosition / itemWithGap);
+                    const adjustedScrollPosition = scrollPosition + (mobileCardWidth / 2);
+                    const calculatedIndex = Math.floor(adjustedScrollPosition / mobileCardWithGap);
 
                     // Garantir que o índice esteja dentro dos limites
                     return Math.min(Math.max(calculatedIndex, 0), 3);

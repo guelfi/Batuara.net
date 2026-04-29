@@ -10,6 +10,7 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  Fade,
   Grid,
   IconButton,
   Stack,
@@ -20,6 +21,7 @@ import {
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import { TransitionProps } from '@mui/material/transitions';
 import { useQuery } from '@tanstack/react-query';
 import NavigationDots from '../common/NavigationDots';
 import publicApi from '../../services/api';
@@ -47,10 +49,18 @@ const colorMap: Record<string, string> = {
   'arco-íris': '#673ab7',
 };
 
+const DialogTransition = React.forwardRef(function DialogTransition(
+  props: TransitionProps & { children: React.ReactElement },
+  ref: React.Ref<unknown>
+) {
+  return <Fade ref={ref} {...props} timeout={{ enter: 220, exit: 180 }} />;
+});
+
 const OrixasSection: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectedOrixa, setSelectedOrixa] = useState<Orixa | null>(null);
+  const [selectedAccentColor, setSelectedAccentColor] = useState<string | null>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [maxScroll, setMaxScroll] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -62,12 +72,14 @@ const OrixasSection: React.FC = () => {
 
   const orixas = [...(data ?? [])].sort((a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name));
 
-  const handleOpenDialog = (orixa: Orixa) => {
+  const handleOpenDialog = (orixa: Orixa, accentColor: string) => {
     setSelectedOrixa(orixa);
+    setSelectedAccentColor(accentColor);
   };
 
   const handleCloseDialog = () => {
     setSelectedOrixa(null);
+    setSelectedAccentColor(null);
   };
 
   const scroll = (direction: 'left' | 'right') => {
@@ -128,10 +140,22 @@ const OrixasSection: React.FC = () => {
     return ['#e8eaf6', '#fbc02d', '#90a4ae'].includes(backgroundColor) ? '#1a237e' : '#ffffff';
   };
 
+  const dialogAccentColor = selectedAccentColor ?? (selectedOrixa ? getOrixaColor(selectedOrixa) : theme.palette.primary.main);
+  const dialogTitleColor = dialogAccentColor === '#e8eaf6' ? '#1a237e' : dialogAccentColor;
+
   return (
-    <Box id="orixas" sx={{ py: 8, backgroundColor: 'background.paper' }}>
+    <Box
+      id="orixas"
+      sx={{
+        scrollMarginTop: { xs: 56, md: 88 },
+        minHeight: { xs: '100vh', md: 'auto' },
+        pt: { xs: 1.5, md: 8 },
+        pb: { xs: 4, md: 8 },
+        backgroundColor: 'background.paper',
+      }}
+    >
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <Box sx={{ textAlign: 'center', mb: { xs: 3, md: 6 } }}>
           <Typography
             variant="h2"
             sx={{
@@ -179,13 +203,13 @@ const OrixasSection: React.FC = () => {
           <Alert severity="info">Nenhum Orixá ativo foi encontrado para exibição pública.</Alert>
         ) : (
           <>
-            <Box sx={{ position: 'relative', mb: 4 }}>
+            <Box sx={{ position: 'relative', mb: 4, overflow: 'clip' }}>
               {canScrollLeft && (
                 <IconButton
                   onClick={() => scroll('left')}
                   sx={{
                     position: 'absolute',
-                    left: -20,
+                    left: { xs: 4, md: -20 },
                     top: '50%',
                     transform: 'translateY(-50%)',
                     zIndex: 2,
@@ -206,7 +230,7 @@ const OrixasSection: React.FC = () => {
                   onClick={() => scroll('right')}
                   sx={{
                     position: 'absolute',
-                    right: -20,
+                    right: { xs: 4, md: -20 },
                     top: '50%',
                     transform: 'translateY(-50%)',
                     zIndex: 2,
@@ -230,7 +254,11 @@ const OrixasSection: React.FC = () => {
                   gap: 3,
                   overflowX: 'auto',
                   scrollBehavior: 'smooth',
+                  overscrollBehaviorX: 'contain',
+                  WebkitOverflowScrolling: 'touch',
                   pb: 2,
+                  px: { xs: 0.5, md: 0 },
+                  scrollSnapType: 'x mandatory',
                   '&::-webkit-scrollbar': {
                     display: 'none',
                   },
@@ -243,18 +271,20 @@ const OrixasSection: React.FC = () => {
                   return (
                     <Card
                       key={orixa.id}
-                      onClick={() => handleOpenDialog(orixa)}
+                      onClick={() => handleOpenDialog(orixa, accentColor)}
                       sx={{
                         minWidth: isMobile ? 260 : 300,
                         maxWidth: isMobile ? 260 : 300,
                         height: 340,
                         cursor: 'pointer',
-                        transition: 'all 0.3s ease-in-out',
-                        border: '2px solid transparent',
+                        scrollSnapAlign: 'start',
+                        transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
+                        border: `1px solid ${accentColor}35`,
+                        borderLeft: `6px solid ${accentColor}`,
                         '&:hover': {
                           transform: 'translateY(-8px)',
                           boxShadow: theme.shadows[8],
-                          borderColor: accentColor,
+                          borderColor: `${accentColor}90`,
                         },
                       }}
                     >
@@ -388,8 +418,30 @@ const OrixasSection: React.FC = () => {
           </>
         )}
 
-        <Dialog open={Boolean(selectedOrixa)} onClose={handleCloseDialog} fullWidth maxWidth="md">
-          <DialogTitle>{selectedOrixa?.name}</DialogTitle>
+        <Dialog
+          open={Boolean(selectedOrixa)}
+          onClose={handleCloseDialog}
+          fullWidth
+          maxWidth="md"
+          TransitionComponent={DialogTransition}
+          PaperProps={{
+            sx: {
+              borderTop: `8px solid ${dialogAccentColor}`,
+              borderRadius: 3,
+              overflow: 'hidden',
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              fontWeight: 800,
+              backgroundColor: `${dialogAccentColor}14`,
+              borderBottom: `1px solid ${dialogAccentColor}30`,
+              color: dialogTitleColor,
+            }}
+          >
+            {selectedOrixa?.name}
+          </DialogTitle>
           <DialogContent>
             {selectedOrixa && (
               <Stack spacing={3} sx={{ mt: 1 }}>
@@ -419,7 +471,18 @@ const OrixasSection: React.FC = () => {
                     </Typography>
                     <Stack direction="row" spacing={1} flexWrap="wrap">
                       {selectedOrixa.characteristics.map((item) => (
-                        <Chip key={item} label={item} size="small" sx={{ mb: 1 }} />
+                        <Chip
+                          key={item}
+                          label={item}
+                          size="small"
+                          sx={{
+                            mb: 1,
+                            backgroundColor: `${dialogAccentColor}12`,
+                            border: `1px solid ${dialogAccentColor}35`,
+                            color: dialogTitleColor,
+                          }}
+                          variant="outlined"
+                        />
                       ))}
                     </Stack>
                   </Grid>
@@ -429,7 +492,18 @@ const OrixasSection: React.FC = () => {
                     </Typography>
                     <Stack direction="row" spacing={1} flexWrap="wrap">
                       {selectedOrixa.colors.map((item) => (
-                        <Chip key={item} label={item} size="small" sx={{ mb: 1 }} />
+                        <Chip
+                          key={item}
+                          label={item}
+                          size="small"
+                          sx={{
+                            mb: 1,
+                            backgroundColor: `${dialogAccentColor}12`,
+                            border: `1px solid ${dialogAccentColor}35`,
+                            color: dialogTitleColor,
+                          }}
+                          variant="outlined"
+                        />
                       ))}
                     </Stack>
                   </Grid>
@@ -439,7 +513,18 @@ const OrixasSection: React.FC = () => {
                     </Typography>
                     <Stack direction="row" spacing={1} flexWrap="wrap">
                       {selectedOrixa.elements.map((item) => (
-                        <Chip key={item} label={item} size="small" sx={{ mb: 1 }} />
+                        <Chip
+                          key={item}
+                          label={item}
+                          size="small"
+                          sx={{
+                            mb: 1,
+                            backgroundColor: `${dialogAccentColor}12`,
+                            border: `1px solid ${dialogAccentColor}35`,
+                            color: dialogTitleColor,
+                          }}
+                          variant="outlined"
+                        />
                       ))}
                     </Stack>
                   </Grid>
