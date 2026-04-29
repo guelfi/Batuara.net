@@ -123,7 +123,7 @@ const HeroSection: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        pt: { xs: '80px', md: '84px' }, // Aumentado significativamente para dar muito mais espaço do Header no mobile
+        pt: { xs: '64px', md: '64px' },
         pb: { xs: 2, md: 6 }, // Reduzir padding bottom no mobile
       }}
     >

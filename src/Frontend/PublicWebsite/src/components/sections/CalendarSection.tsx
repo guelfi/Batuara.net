@@ -374,17 +374,28 @@ const CalendarSection: React.FC = () => {
       sx={{
         scrollMarginTop: { xs: 56, md: 64 },
         minHeight: { xs: '100vh', md: 'auto' },
-        pt: { xs: 1.5, md: 4 },
+        pt: { xs: 1.5, md: 2 },
         pb: { xs: 4, md: 4 },
         backgroundColor: 'background.default',
         [desktopMediaQuery]: {
           minHeight: 'calc(100vh - 88px)',
-          pb: 10,
+          pb: 6,
+        },
+        '@media (min-width:1024px) and (max-height:800px)': {
+          pb: 3,
         },
       }}
     >
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: { xs: 1.5, md: 3 } }}>
+        <Box
+          sx={{
+            textAlign: 'center',
+            mb: { xs: 1.5, md: 3 },
+            '@media (min-width:1024px) and (max-height:800px)': {
+              mb: 2,
+            },
+          }}
+        >
           <Typography
             variant="h2"
             sx={{
@@ -467,6 +478,9 @@ const CalendarSection: React.FC = () => {
                 mx: 'auto',
                 boxShadow: 3,
                 overflow: 'hidden',
+                '@media (min-width:1024px) and (max-height:800px)': {
+                  p: 1,
+                },
               }}
             >
               <Stack
@@ -499,6 +513,10 @@ const CalendarSection: React.FC = () => {
                   columnGap: { xs: 0.5, md: 0.75 },
                   rowGap: { xs: 0.5, md: 0.75 },
                   width: '100%',
+                  '@media (min-width:1024px) and (max-height:800px)': {
+                    columnGap: 0.5,
+                    rowGap: 0.5,
+                  },
                 }}
               >
                 {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((label) => (
@@ -570,6 +588,10 @@ const CalendarSection: React.FC = () => {
                         outline: 'none',
                         '&:hover': { borderColor: 'primary.main', transform: { xs: 'none', md: 'translateY(-1px)' } },
                         '&:focus-visible': { boxShadow: `0 0 0 3px ${theme.palette.primary.main}33` },
+                        '@media (min-width:1024px) and (max-height:800px)': {
+                          minHeight: 66,
+                          p: 0.75,
+                        },
                       }}
                     >
                       <Typography

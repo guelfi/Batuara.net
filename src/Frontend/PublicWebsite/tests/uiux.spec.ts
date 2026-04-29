@@ -439,6 +439,27 @@ test('UI/UX: navegação por menu + screenshots por seção', async ({ page }, t
   await page.goto('/');
   await expect(page.locator('#home')).toBeVisible();
 
+  await navigateByMenu(page, 'Calendário', '#calendario-atendimento');
+  await navigateByMenu(page, 'Início', '#home');
+  await expect
+    .poll(async () => {
+      return page.evaluate(() => {
+        const el = document.getElementById('home');
+        if (!el) return null;
+        return el.getBoundingClientRect().top;
+      });
+    })
+    .toBeLessThan(2);
+  await expect
+    .poll(async () => {
+      return page.evaluate(() => {
+        const el = document.getElementById('home');
+        if (!el) return null;
+        return Math.abs(el.getBoundingClientRect().top);
+      });
+    })
+    .toBeLessThan(2);
+
   if (testInfo.project.name === 'desktop') {
     const originalViewport = page.viewportSize();
     const viewports = [
