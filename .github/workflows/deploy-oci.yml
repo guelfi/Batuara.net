@@ -6,7 +6,7 @@ on:
       confirm_deploy:
         description: 'Digite YES para confirmar o deploy na OCI'
         required: true
-        default: 'NO'
+        default: ''
 
 # Prevent concurrent deployments
 concurrency:
@@ -14,13 +14,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate:
+    name: Validate deploy inputs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch and confirmation
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/master" ]; then
+            echo "::error::Deploy permitido apenas a partir do branch 'master'. Branch atual: ${GITHUB_REF}"
+            exit 1
+          fi
+
+          if [ "${{ github.event.inputs.confirm_deploy }}" != "YES" ]; then
+            echo "::error::Para executar o deploy, preencha confirm_deploy exatamente com YES."
+            exit 1
+          fi
+
   deploy:
     name: Deploy to Oracle Cloud
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'workflow_dispatch' &&
-      github.event.inputs.confirm_deploy == 'YES' &&
-      github.ref == 'refs/heads/master'
+    needs: validate
     environment: production
 
     steps:
