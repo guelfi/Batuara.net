@@ -158,8 +158,8 @@ const AboutSection: React.FC = () => {
         sx={{
           scrollMarginTop: { xs: 56, md: 64 },
           minHeight: { xs: 'calc(100vh - 56px)', md: 'auto' },
-          pt: { xs: 1.5, md: 2 },
-          pb: { xs: 2.5, md: 6 },
+          pt: { xs: 1.125, md: 2 },
+          pb: { xs: 2.125, md: 6 },
           backgroundColor: 'background.paper',
           [desktopMediaQuery]: {
             minHeight: 'calc(100vh - 88px)',
@@ -178,7 +178,7 @@ const AboutSection: React.FC = () => {
           </Box>
 
           <Box sx={{ maxWidth: 1100, mx: 'auto' }}>
-            <Box sx={{ maxWidth: 560, mx: 'auto', mb: { xs: 1.25, md: 3 } }}>
+            <Box sx={{ maxWidth: 560, mx: 'auto', mb: { xs: 1, md: 3 } }}>
               <Card
                 sx={{
                   height: '100%',
@@ -187,14 +187,14 @@ const AboutSection: React.FC = () => {
                   borderRadius: 2,
                 }}
               >
-                <CardContent sx={{ p: { xs: 1.5, md: 2.5 } }}>
+                <CardContent sx={{ p: { xs: 1.125, md: 2.25 } }}>
                   <Avatar
                     sx={{
                       bgcolor: 'primary.main',
                       width: { xs: 44, md: 60 },
                       height: { xs: 44, md: 60 },
                       mx: 'auto',
-                      mb: { xs: 1.1, md: 1.5 },
+                      mb: { xs: 0.9, md: 1.5 },
                       '& svg': {
                         fontSize: { xs: 22, md: 30 },
                       },
@@ -202,7 +202,7 @@ const AboutSection: React.FC = () => {
                   >
                     <AutoAwesomeIcon sx={{ fontSize: 32 }} />
                   </Avatar>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: { xs: 0.75, md: 1 } }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: { xs: 0.6, md: 1 } }}>
                     Missão
                   </Typography>
                   <Typography
@@ -220,7 +220,7 @@ const AboutSection: React.FC = () => {
               </Card>
             </Box>
 
-            <Grid container spacing={{ xs: 1.25, md: 2 }}>
+            <Grid container spacing={{ xs: 1, md: 2 }}>
               {values.map((item) => (
                 <Grid key={item.title} size={{ xs: 6, sm: 6, md: 3 }}>
                   <Card
@@ -231,14 +231,14 @@ const AboutSection: React.FC = () => {
                       borderRadius: 2,
                     }}
                   >
-                    <CardContent sx={{ p: { xs: 1.25, md: 2 } }}>
+                    <CardContent sx={{ p: { xs: 0.875, md: 1.75 } }}>
                       <Avatar
                         sx={{
                           bgcolor: item.color,
                           width: { xs: 40, sm: 50, md: 52 },
                           height: { xs: 40, sm: 50, md: 52 },
                           mx: 'auto',
-                          mb: { xs: 1.25, md: 1.5 },
+                          mb: { xs: 1, md: 1.5 },
                         }}
                       >
                         {item.icon}

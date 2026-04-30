@@ -25,12 +25,14 @@ jobs:
       - name: Validate branch and confirmation
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            if [ "${GITHUB_REF}" != "refs/heads/master" ]; then
-              echo "::error::Deploy permitido apenas a partir do branch 'master'. Branch atual: ${GITHUB_REF}"
+            if [ "${GITHUB_REF}" != "refs/heads/master" ] && [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+              echo "::error::Deploy permitido apenas a partir do branch 'master' (ou 'main'). Branch atual: ${GITHUB_REF}"
               exit 1
             fi
 
-            if [ "${{ github.event.inputs.confirm_deploy }}" != "YES" ]; then
+            CONFIRM_RAW="${{ github.event.inputs.confirm_deploy }}"
+            CONFIRM_CLEAN="$(echo "$CONFIRM_RAW" | tr -d '\r\n\t ' | tr '[:lower:]' '[:upper:]')"
+            if [ "$CONFIRM_CLEAN" != "YES" ]; then
               echo "::error::Para executar o deploy, preencha confirm_deploy exatamente com YES."
               exit 1
             fi
@@ -42,8 +44,8 @@ jobs:
               exit 1
             fi
 
-            if [ "${{ github.event.workflow_run.head_branch }}" != "master" ]; then
-              echo "::error::Deploy automático bloqueado: apenas merge/push em 'master' dispara deploy (branch=${{ github.event.workflow_run.head_branch }})."
+            if [ "${{ github.event.workflow_run.head_branch }}" != "master" ] && [ "${{ github.event.workflow_run.head_branch }}" != "main" ]; then
+              echo "::error::Deploy automático bloqueado: apenas merge/push em 'master' (ou 'main') dispara deploy (branch=${{ github.event.workflow_run.head_branch }})."
               exit 1
             fi
           fi
@@ -81,6 +83,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
+          DEPLOY_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
           SCP_CMD="scp -o StrictHostKeyChecking=no"
           SSH_CMD="ssh -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST}"
 
@@ -91,7 +94,7 @@ jobs:
           TMPENV=$(mktemp)
           printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD" > "$TMPENV"
           printf 'JWT_SECRET=%s\n' "$JWT_SECRET" >> "$TMPENV"
-          printf 'GITHUB_SHA=%s\n' "$GITHUB_SHA" >> "$TMPENV"
+          printf 'GITHUB_SHA=%s\n' "$DEPLOY_SHA" >> "$TMPENV"
           $SCP_CMD "$TMPENV" ${OCI_USER}@${OCI_HOST}:/tmp/deploy-env
           rm -f "$TMPENV"
 
@@ -117,3 +120,9 @@ jobs:
           echo ""
           echo "=== Health Check ==="
           $SSH_CMD "curl -sf http://localhost:3003/health || echo 'API health check failed (may need more time)'"
+          echo ""
+          echo "=== Deployed Commit (server) ==="
+          $SSH_CMD "cd /var/www/batuara_net/Batuara.net && git rev-parse HEAD && git log -1 --oneline"
+          echo ""
+          echo "=== PublicWebsite asset-manifest (container) ==="
+          $SSH_CMD "docker exec batuara-net-public-website sh -lc \"test -f /usr/share/nginx/html/asset-manifest.json && (cat /usr/share/nginx/html/asset-manifest.json | head -n 40) || echo 'asset-manifest.json not found'\""

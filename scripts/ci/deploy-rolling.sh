@@ -160,6 +160,14 @@ else
     git reset --hard "origin/$BRANCH"
 fi
 
+if [ "$GITHUB_SHA" != "latest" ]; then
+    if git cat-file -e "${GITHUB_SHA}^{commit}" 2>/dev/null; then
+        git reset --hard "$GITHUB_SHA"
+    else
+        log_warning "GITHUB_SHA '${GITHUB_SHA:0:8}' não encontrado localmente após fetch. Prosseguindo com origin/$BRANCH."
+    fi
+fi
+
 log_success "Code updated to: $(git log -1 --oneline)"
 
 # --- Step 2: Write .env.production ---
@@ -210,7 +218,7 @@ DEPLOY_STATE="api"
 log_info "Step 4: Rebuilding and restarting API (rolling)..."
 
 API_CONTAINER="${COMPOSE_PROJECT_NAME:-batuara-net}-api"
-$COMPOSE_CMD --env-file .env.production -f "$COMPOSE_FILE" up -d --build --no-deps api
+$COMPOSE_CMD --env-file .env.production -f "$COMPOSE_FILE" up -d --build --no-deps --force-recreate api
 
 if ! wait_for_healthy "$API_CONTAINER" "http://localhost:${API_PORT:-3003}/health" $HEALTH_TIMEOUT; then
     log_error "API failed health check!"
@@ -222,7 +230,7 @@ DEPLOY_STATE="publicwebsite"
 log_info "Step 5: Rebuilding and restarting Public Website (rolling)..."
 
 PUBLIC_CONTAINER="${COMPOSE_PROJECT_NAME:-batuara-net}-public-website"
-$COMPOSE_CMD --env-file .env.production -f "$COMPOSE_FILE" up -d --build --no-deps publicwebsite
+$COMPOSE_CMD --env-file .env.production -f "$COMPOSE_FILE" up -d --build --no-deps --force-recreate publicwebsite
 
 if ! wait_for_healthy "$PUBLIC_CONTAINER" "http://localhost:3000" 90; then
     log_warning "Public Website health check uncertain - container may still be starting"
@@ -233,7 +241,7 @@ DEPLOY_STATE="admindashboard"
 log_info "Step 6: Rebuilding and restarting Admin Dashboard (rolling)..."
 
 ADMIN_CONTAINER="${COMPOSE_PROJECT_NAME:-batuara-net}-admin-dashboard"
-$COMPOSE_CMD --env-file .env.production -f "$COMPOSE_FILE" up -d --build --no-deps admindashboard
+$COMPOSE_CMD --env-file .env.production -f "$COMPOSE_FILE" up -d --build --no-deps --force-recreate admindashboard
 
 if ! wait_for_healthy "$ADMIN_CONTAINER" "http://localhost:3001" 90; then
     log_warning "Admin Dashboard health check uncertain - container may still be starting"
