@@ -29,7 +29,8 @@ Regras:
 - [ ] Garantir ausência de scroll horizontal em 320px para todas as rotas (mobile).
 - [ ] Garantir estados loading/error/empty em todas as telas com dados remotos.
 - [ ] Garantir acessibilidade mínima: contraste AA, foco visível (desktop), aria-label em ícones.
-- [ ] Remover botão “Atualizar” nas telas onde não agrega valor (desktop e mobile), seguindo regra: auto-refresh/pull-to-refresh.
+- [x] Remover botão “Atualizar” nas telas onde não agrega valor (desktop e mobile), seguindo regra: auto-refresh/pull-to-refresh.
+  - [x] CalendarPage / EventsPage / OrixasPage / GuidesPage / UmbandaLinesPage / SpiritualContentPage / MembersPage / LocationPage / DonationsContactPage / HistoryPage
 
 ## Navegação / Drawer
 

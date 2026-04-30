@@ -22,7 +22,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Refresh as RefreshIcon, Star as StarIcon } from '@mui/icons-material';
+import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Star as StarIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import apiService from '../services/api';
 import { SpiritualCategory, SpiritualContent, SpiritualContentType } from '../types';
@@ -241,9 +241,6 @@ const SpiritualContentPage: React.FC = () => {
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
-          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={loadContents}>
-            Atualizar
-          </Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
             Novo conteúdo
           </Button>

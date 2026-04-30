@@ -11,7 +11,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { Refresh as RefreshIcon, Save as SaveIcon } from '@mui/icons-material';
+import { Save as SaveIcon } from '@mui/icons-material';
 import apiService from '../services/api';
 import { SiteSettingsDto } from '../types';
 
@@ -104,9 +104,6 @@ const LocationPage: React.FC = () => {
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
-          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={loadSettings}>
-            Atualizar
-          </Button>
           <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave} disabled={saving}>
             Salvar
           </Button>
