@@ -111,6 +111,9 @@ const MembersPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<HouseMember | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<HouseMember | null>(null);
+  const [deactivating, setDeactivating] = useState(false);
   const [form, setForm] = useState<MemberFormState>(initialFormState);
   const [query, setQuery] = useState('');
   const [cityFilter, setCityFilter] = useState('');
@@ -187,7 +190,7 @@ const MembersPage: React.FC = () => {
       width: 110,
       getActions: (params) => [
         <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-        <GridActionsCellItem icon={<DeleteIcon />} label="Excluir" onClick={() => handleDelete(params.row.id)} />,
+        <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
       ],
     },
   ];
@@ -236,6 +239,19 @@ const MembersPage: React.FC = () => {
     setDialogOpen(false);
     setEditingItem(null);
     setForm(initialFormState);
+  };
+
+  const handleRequestDeactivate = (item: HouseMember) => {
+    setConfirmTarget(item);
+    setConfirmOpen(true);
+  };
+
+  const handleCloseConfirm = () => {
+    if (deactivating) {
+      return;
+    }
+    setConfirmOpen(false);
+    setConfirmTarget(null);
   };
 
   const contributionSummary = useMemo(() => {
@@ -322,17 +338,55 @@ const MembersPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleConfirmDeactivate = async () => {
+    if (!confirmTarget) {
+      return;
+    }
+
+    setDeactivating(true);
     try {
-      await apiService.deleteHouseMember(String(id));
+      const response = await apiService.getHouseMember(String(confirmTarget.id));
+      const member = response.data;
+
+      await apiService.updateHouseMember(String(confirmTarget.id), {
+        fullName: member.fullName,
+        birthDate: member.birthDate.slice(0, 10),
+        entryDate: member.entryDate.slice(0, 10),
+        headOrixaFront: member.headOrixaFront,
+        headOrixaBack: member.headOrixaBack,
+        headOrixaRonda: member.headOrixaRonda,
+        email: member.email,
+        mobilePhone: member.mobilePhone,
+        zipCode: member.zipCode,
+        street: member.street,
+        number: member.number,
+        complement: member.complement || undefined,
+        district: member.district,
+        city: member.city,
+        state: member.state,
+        isActive: false,
+        contributions: member.contributions.map((item) => ({
+          id: item.id,
+          referenceMonth: item.referenceMonth.slice(0, 10),
+          dueDate: item.dueDate.slice(0, 10),
+          amount: item.amount,
+          status: item.status,
+          paidAt: item.status === ContributionPaymentStatus.Paid && item.paidAt ? item.paidAt.slice(0, 10) : undefined,
+          notes: item.notes || undefined,
+        })),
+      });
+
       setFeedback({ open: true, message: 'Cadastro inativado com sucesso.', severity: 'success' });
+      handleCloseConfirm();
       await loadMembers();
     } catch (error: any) {
       setFeedback({
         open: true,
-        message: error?.response?.data?.message || 'Não foi possível remover o cadastro.',
+        message: error?.response?.data?.message || 'Não foi possível inativar o cadastro.',
         severity: 'error',
       });
+    } finally {
+      setDeactivating(false);
     }
   };
 
@@ -513,6 +567,21 @@ const MembersPage: React.FC = () => {
           <Button onClick={handleCloseDialog}>Cancelar</Button>
           <Button variant="contained" onClick={handleSubmit}>
             {editingItem ? 'Salvar alterações' : 'Criar cadastro'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmOpen} onClose={handleCloseConfirm} fullWidth maxWidth="sm">
+        <DialogTitle>Inativar cadastro?</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mt: 1 }}>
+            {confirmTarget ? `O cadastro “${confirmTarget.fullName}” será marcado como inativo e não ficará disponível como membro ativo.` : 'Este cadastro será marcado como inativo e não ficará disponível como membro ativo.'}
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirm} disabled={deactivating}>Cancelar</Button>
+          <Button variant="contained" color="warning" onClick={handleConfirmDeactivate} disabled={deactivating}>
+            Inativar
           </Button>
         </DialogActions>
       </Dialog>

@@ -71,6 +71,9 @@ const SpiritualContentPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<SpiritualContent | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<SpiritualContent | null>(null);
+  const [deactivating, setDeactivating] = useState(false);
   const [form, setForm] = useState<SpiritualContentForm>(initialForm);
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | SpiritualContentType>('all');
@@ -151,7 +154,7 @@ const SpiritualContentPage: React.FC = () => {
         width: 110,
         getActions: (params) => [
           <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-          <GridActionsCellItem icon={<DeleteIcon />} label="Excluir" onClick={() => handleDelete(params.row.id)} />,
+          <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
         ],
       },
   ];
@@ -181,6 +184,19 @@ const SpiritualContentPage: React.FC = () => {
     setDialogOpen(false);
     setEditingItem(null);
     setForm(initialForm);
+  };
+
+  const handleRequestDeactivate = (item: SpiritualContent) => {
+    setConfirmTarget(item);
+    setConfirmOpen(true);
+  };
+
+  const handleCloseConfirm = () => {
+    if (deactivating) {
+      return;
+    }
+    setConfirmOpen(false);
+    setConfirmTarget(null);
   };
 
   const handleSubmit = async () => {
@@ -215,17 +231,35 @@ const SpiritualContentPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleConfirmDeactivate = async () => {
+    if (!confirmTarget) {
+      return;
+    }
+
+    setDeactivating(true);
     try {
-      await apiService.deleteSpiritualContent(String(id));
-      setFeedback({ open: true, message: 'Conteúdo espiritual removido com sucesso.', severity: 'success' });
+      await apiService.updateSpiritualContent(String(confirmTarget.id), {
+        title: confirmTarget.title,
+        content: confirmTarget.content,
+        type: confirmTarget.type,
+        category: confirmTarget.category,
+        source: confirmTarget.source,
+        displayOrder: confirmTarget.displayOrder,
+        isFeatured: confirmTarget.isFeatured,
+        isActive: false,
+      });
+
+      setFeedback({ open: true, message: 'Conteúdo espiritual inativado com sucesso.', severity: 'success' });
+      handleCloseConfirm();
       await loadContents();
     } catch (error: any) {
       setFeedback({
         open: true,
-        message: error?.response?.data?.message || 'Não foi possível remover o conteúdo espiritual.',
+        message: error?.response?.data?.message || 'Não foi possível inativar o conteúdo espiritual.',
         severity: 'error',
       });
+    } finally {
+      setDeactivating(false);
     }
   };
 
@@ -370,6 +404,21 @@ const SpiritualContentPage: React.FC = () => {
           <Button onClick={handleCloseDialog}>Cancelar</Button>
           <Button variant="contained" onClick={handleSubmit}>
             {editingItem ? 'Salvar alterações' : 'Criar conteúdo'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmOpen} onClose={handleCloseConfirm} fullWidth maxWidth="sm">
+        <DialogTitle>Inativar conteúdo?</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mt: 1 }}>
+            {confirmTarget ? `O conteúdo “${confirmTarget.title}” será marcado como inativo e deixará de aparecer no portal.` : 'Este conteúdo será marcado como inativo e deixará de aparecer no portal.'}
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirm} disabled={deactivating}>Cancelar</Button>
+          <Button variant="contained" color="warning" onClick={handleConfirmDeactivate} disabled={deactivating}>
+            Inativar
           </Button>
         </DialogActions>
       </Dialog>

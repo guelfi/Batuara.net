@@ -71,7 +71,7 @@ Critérios de aceitação (Dashboard / Atividade):
 
 ## Nossa História
 
-- [ ] Remover “Recarregar/Atualizar” (desktop e mobile), manter “Salvar” como ação primária.
+- [x] Remover “Recarregar/Atualizar” (desktop e mobile), manter “Salvar” como ação primária.
 - [ ] Mobile: ação “Salvar” sticky (não coberta pelo teclado).
 - [ ] Validação: Título/Subtítulo obrigatórios; feedback inline + toast.
 
@@ -81,15 +81,15 @@ Critérios de aceitação (Nossa História):
 ## Calendário Atendimento
 
 ### Cabeçalho / Filtros / Listagem (Calendario.jpeg)
-- [ ] Remover “Atualizar” (desktop e mobile).
+- [x] Remover “Atualizar” (desktop e mobile).
 - [ ] Filtros colapsados em mobile (bottom sheet “Filtrar”); manter apenas “Buscar” inline.
 - [ ] Listagem mobile: Data, Tipo (bullet/ícone), Horário, Ativo/Inativo, Editar, Inativar.
-- [ ] Confirmar inativação (modal) para ação “Excluir”.
+- [x] Confirmar inativação (modal) para ação “Excluir”.
 - [ ] Paginação ou scroll infinito + loading/error/empty.
 
 Critérios de aceitação (Calendário Atendimento):
 - [ ] Nenhum scroll horizontal em 320px.
-- [ ] Ação “Inativar” sempre pede confirmação e não remove registro definitivamente.
+- [x] Ação “Inativar” sempre pede confirmação e não remove registro definitivamente.
 
 ### Modal Novo Atendimento (IMG_6788.jpeg)
 - [ ] Full-screen dialog/bottom sheet com rolagem interna.
@@ -103,7 +103,7 @@ Critérios de aceitação (Calendário Atendimento):
 ## Eventos e Festas
 
 ### Listagem / Filtros (Evetos e Festas.jpeg)
-- [ ] Remover “Atualizar” (desktop e mobile); manter “Novo evento” como ação primária.
+- [x] Remover “Atualizar” (desktop e mobile); manter “Novo evento” como ação primária.
 - [ ] Filtros colapsados em mobile (bottom sheet).
 - [ ] Listagem mobile: Data, Título, Horário, Ativo/Inativo, Editar, Inativar.
 - [ ] Paginação/scroll infinito + loading/error/empty.
@@ -120,20 +120,20 @@ Critérios de aceitação (Calendário Atendimento):
 
 ## Nossos Orixás (Orixas.jpeg)
 
-- [ ] Remover “Atualizar” (desktop e mobile); manter “Novo Orixá”.
+- [x] Remover “Atualizar” (desktop e mobile); manter “Novo Orixá”.
 - [ ] Filtros colapsados em mobile.
 - [ ] Mobile: exibir somente colunas essenciais:
   - [ ] Nome do Orixá
   - [ ] bullet com Cor Principal
   - [ ] Ativo/Inativo
   - [ ] Editar (ícone)
-  - [ ] Inativar (ícone) + confirmação
+  - [x] Inativar (ícone) + confirmação
 - [ ] Garantir ações 48×48dp e aria-label.
 - [ ] Paginação/scroll infinito + loading/error/empty.
 
 ## Guias e Entidades (Guias e Entidades.jpeg)
 
-- [ ] Remover “Atualizar” (desktop e mobile); manter “Novo cadastro”.
+- [x] Remover “Atualizar” (desktop e mobile); manter “Novo cadastro”.
 - [ ] Filtros colapsados em mobile (bottom sheet).
 - [ ] Mobile: Nome, Especialidade principal (chip único), Ativo/Inativo, Editar, Inativar.
 - [ ] Chips longos truncam com “+N” e abrem detalhes em bottom sheet.
@@ -147,7 +147,7 @@ Critérios de aceitação (Calendário Atendimento):
 
 ## Orações e Pontos / Conteúdos Espirituais (Contudo Espiritual.jpeg)
 
-- [ ] “Atualizar” não deve ser botão destacado; remover ou substituir por ação discreta (quando necessário).
+- [x] “Atualizar” não deve ser botão destacado; remover ou substituir por ação discreta (quando necessário).
 - [ ] Filtros avançados colapsados em mobile.
 - [ ] Mobile: Título, Tipo, Destaque, Ativo/Inativo, Editar, Inativar + confirmação.
 - [ ] Editor/preview (se existir): full-screen com abas (Conteúdo/Metadados/Preview).

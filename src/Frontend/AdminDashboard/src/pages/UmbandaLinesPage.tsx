@@ -67,6 +67,9 @@ const UmbandaLinesPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<UmbandaLine | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<UmbandaLine | null>(null);
+  const [deactivating, setDeactivating] = useState(false);
   const [form, setForm] = useState<UmbandaLineForm>(initialForm);
   const [query, setQuery] = useState('');
   const [entityFilter, setEntityFilter] = useState('');
@@ -147,7 +150,7 @@ const UmbandaLinesPage: React.FC = () => {
         width: 110,
         getActions: (params) => [
           <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-          <GridActionsCellItem icon={<DeleteIcon />} label="Excluir" onClick={() => handleDelete(params.row.id)} />,
+          <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
         ],
       },
   ];
@@ -178,6 +181,19 @@ const UmbandaLinesPage: React.FC = () => {
     setEditingItem(null);
     setForm(initialForm);
     setFormErrors({});
+  };
+
+  const handleRequestDeactivate = (item: UmbandaLine) => {
+    setConfirmTarget(item);
+    setConfirmOpen(true);
+  };
+
+  const handleCloseConfirm = () => {
+    if (deactivating) {
+      return;
+    }
+    setConfirmOpen(false);
+    setConfirmTarget(null);
   };
 
   const handleSubmit = async () => {
@@ -218,17 +234,35 @@ const UmbandaLinesPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleConfirmDeactivate = async () => {
+    if (!confirmTarget) {
+      return;
+    }
+
+    setDeactivating(true);
     try {
-      await apiService.deleteUmbandaLine(String(id));
-      setFeedback({ open: true, message: 'Linha de Umbanda removida com sucesso.', severity: 'success' });
+      await apiService.updateUmbandaLine(String(confirmTarget.id), {
+        name: confirmTarget.name,
+        description: confirmTarget.description,
+        characteristics: confirmTarget.characteristics,
+        batuaraInterpretation: confirmTarget.batuaraInterpretation,
+        displayOrder: confirmTarget.displayOrder,
+        entities: confirmTarget.entities,
+        workingDays: confirmTarget.workingDays,
+        isActive: false,
+      });
+
+      setFeedback({ open: true, message: 'Linha de Umbanda inativada com sucesso.', severity: 'success' });
+      handleCloseConfirm();
       await loadLines();
     } catch (error: any) {
       setFeedback({
         open: true,
-        message: error?.response?.data?.message || 'Não foi possível remover a linha de Umbanda.',
+        message: error?.response?.data?.message || 'Não foi possível inativar a linha de Umbanda.',
         severity: 'error',
       });
+    } finally {
+      setDeactivating(false);
     }
   };
 
@@ -338,6 +372,21 @@ const UmbandaLinesPage: React.FC = () => {
           <Button onClick={handleCloseDialog}>Cancelar</Button>
           <Button variant="contained" onClick={handleSubmit}>
             {editingItem ? 'Salvar alterações' : 'Criar linha'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmOpen} onClose={handleCloseConfirm} fullWidth maxWidth="sm">
+        <DialogTitle>Inativar linha de Umbanda?</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mt: 1 }}>
+            {confirmTarget ? `A linha “${confirmTarget.name}” será marcada como inativa e deixará de aparecer no portal.` : 'Esta linha será marcada como inativa e deixará de aparecer no portal.'}
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirm} disabled={deactivating}>Cancelar</Button>
+          <Button variant="contained" color="warning" onClick={handleConfirmDeactivate} disabled={deactivating}>
+            Inativar
           </Button>
         </DialogActions>
       </Dialog>

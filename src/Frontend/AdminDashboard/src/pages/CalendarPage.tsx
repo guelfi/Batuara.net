@@ -77,6 +77,9 @@ const CalendarPage: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editingItem, setEditingItem] = React.useState<CalendarAttendance | null>(null);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [confirmTarget, setConfirmTarget] = React.useState<CalendarAttendance | null>(null);
+  const [deactivating, setDeactivating] = React.useState(false);
   const [form, setForm] = React.useState<CalendarFormState>(initialFormState);
   const [query, setQuery] = React.useState('');
   const [typeFilter, setTypeFilter] = React.useState<'all' | string>('all');
@@ -180,7 +183,7 @@ const CalendarPage: React.FC = () => {
         width: 110,
         getActions: (params) => [
           <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-          <GridActionsCellItem icon={<DeleteIcon />} label="Excluir" onClick={() => handleDelete(params.row.id)} />,
+          <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
         ],
       },
   ];
@@ -224,6 +227,19 @@ const CalendarPage: React.FC = () => {
     resetForm();
   };
 
+  const handleRequestDeactivate = (item: CalendarAttendance) => {
+    setConfirmTarget(item);
+    setConfirmOpen(true);
+  };
+
+  const handleCloseConfirm = () => {
+    if (deactivating) {
+      return;
+    }
+    setConfirmOpen(false);
+    setConfirmTarget(null);
+  };
+
   const handleSubmit = async () => {
     try {
       const payload = {
@@ -257,17 +273,36 @@ const CalendarPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleConfirmDeactivate = async () => {
+    if (!confirmTarget) {
+      return;
+    }
+
+    setDeactivating(true);
     try {
-      await apiService.deleteAttendance(String(id));
-      setFeedback({ open: true, message: 'Atendimento removido com sucesso.', severity: 'success' });
+      await apiService.updateAttendance(String(confirmTarget.id), {
+        date: confirmTarget.date.slice(0, 10),
+        startTime: confirmTarget.startTime || undefined,
+        endTime: confirmTarget.endTime || undefined,
+        type: confirmTarget.type,
+        description: confirmTarget.description || undefined,
+        observations: confirmTarget.observations || undefined,
+        requiresRegistration: confirmTarget.requiresRegistration,
+        maxCapacity: confirmTarget.maxCapacity ?? undefined,
+        isActive: false,
+      });
+
+      setFeedback({ open: true, message: 'Atendimento inativado com sucesso.', severity: 'success' });
+      handleCloseConfirm();
       await loadAttendances();
     } catch (error: any) {
       setFeedback({
         open: true,
-        message: error?.response?.data?.message || 'Não foi possível remover o atendimento.',
+        message: error?.response?.data?.message || 'Não foi possível inativar o atendimento.',
         severity: 'error',
       });
+    } finally {
+      setDeactivating(false);
     }
   };
 
@@ -498,6 +533,21 @@ const CalendarPage: React.FC = () => {
             disabled={editingItem !== null && (form.type === AttendanceType.Festa || form.type === AttendanceType.Curso)}
           >
             {editingItem ? 'Salvar alterações' : 'Criar atendimento'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmOpen} onClose={handleCloseConfirm} fullWidth maxWidth="sm">
+        <DialogTitle>Inativar atendimento?</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mt: 1 }}>
+            {confirmTarget ? `O atendimento de ${new Date(confirmTarget.date).toLocaleDateString('pt-BR')} será marcado como inativo e não ficará disponível para visitantes.` : 'Este atendimento será marcado como inativo e não ficará disponível para visitantes.'}
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirm} disabled={deactivating}>Cancelar</Button>
+          <Button variant="contained" color="warning" onClick={handleConfirmDeactivate} disabled={deactivating}>
+            Inativar
           </Button>
         </DialogActions>
       </Dialog>

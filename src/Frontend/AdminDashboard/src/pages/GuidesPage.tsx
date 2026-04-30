@@ -73,6 +73,9 @@ const GuidesPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Guide | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<Guide | null>(null);
+  const [deactivating, setDeactivating] = useState(false);
   const [form, setForm] = useState<GuideFormState>(initialFormState);
   const [query, setQuery] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('');
@@ -146,7 +149,7 @@ const GuidesPage: React.FC = () => {
       width: 110,
       getActions: (params) => [
         <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-        <GridActionsCellItem icon={<DeleteIcon />} label="Excluir" onClick={() => handleDelete(params.row.id)} />,
+        <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
       ],
     },
   ];
@@ -179,6 +182,19 @@ const GuidesPage: React.FC = () => {
     setEditingItem(null);
     setForm(initialFormState);
     setFormErrors({});
+  };
+
+  const handleRequestDeactivate = (item: Guide) => {
+    setConfirmTarget(item);
+    setConfirmOpen(true);
+  };
+
+  const handleCloseConfirm = () => {
+    if (deactivating) {
+      return;
+    }
+    setConfirmOpen(false);
+    setConfirmTarget(null);
   };
 
   const handleSubmit = async () => {
@@ -221,17 +237,37 @@ const GuidesPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleConfirmDeactivate = async () => {
+    if (!confirmTarget) {
+      return;
+    }
+
+    setDeactivating(true);
     try {
-      await apiService.deleteGuide(String(id));
-      setFeedback({ open: true, message: 'Registro removido com sucesso.', severity: 'success' });
+      await apiService.updateGuide(String(confirmTarget.id), {
+        name: confirmTarget.name,
+        description: confirmTarget.description,
+        photoUrl: confirmTarget.photoUrl || undefined,
+        specialties: confirmTarget.specialties,
+        entryDate: confirmTarget.entryDate.slice(0, 10),
+        email: confirmTarget.email || undefined,
+        phone: confirmTarget.phone || undefined,
+        whatsapp: confirmTarget.whatsapp || undefined,
+        displayOrder: confirmTarget.displayOrder,
+        isActive: false,
+      });
+
+      setFeedback({ open: true, message: 'Cadastro inativado com sucesso.', severity: 'success' });
+      handleCloseConfirm();
       await loadGuides();
     } catch (error: any) {
       setFeedback({
         open: true,
-        message: error?.response?.data?.message || 'Não foi possível remover o registro.',
+        message: error?.response?.data?.message || 'Não foi possível inativar o cadastro.',
         severity: 'error',
       });
+    } finally {
+      setDeactivating(false);
     }
   };
 
@@ -356,6 +392,21 @@ const GuidesPage: React.FC = () => {
           <Button onClick={handleCloseDialog}>Cancelar</Button>
           <Button variant="contained" onClick={handleSubmit}>
             {editingItem ? 'Salvar alterações' : 'Criar cadastro'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmOpen} onClose={handleCloseConfirm} fullWidth maxWidth="sm">
+        <DialogTitle>Inativar cadastro?</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mt: 1 }}>
+            {confirmTarget ? `O cadastro “${confirmTarget.name}” será marcado como inativo e deixará de aparecer no portal.` : 'Este cadastro será marcado como inativo e deixará de aparecer no portal.'}
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirm} disabled={deactivating}>Cancelar</Button>
+          <Button variant="contained" color="warning" onClick={handleConfirmDeactivate} disabled={deactivating}>
+            Inativar
           </Button>
         </DialogActions>
       </Dialog>

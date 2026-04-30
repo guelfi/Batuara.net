@@ -66,6 +66,9 @@ const EventsPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<BatuaraEvent | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<BatuaraEvent | null>(null);
+  const [deactivating, setDeactivating] = useState(false);
   const [form, setForm] = useState<EventFormState>(initialFormState);
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | EventType>('all');
@@ -166,7 +169,7 @@ const EventsPage: React.FC = () => {
       width: 110,
       getActions: (params) => [
         <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-        <GridActionsCellItem icon={<DeleteIcon />} label="Excluir" onClick={() => handleDelete(params.row.id)} />,
+        <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
       ],
     },
   ];
@@ -202,6 +205,19 @@ const EventsPage: React.FC = () => {
     resetForm();
   };
 
+  function handleRequestDeactivate(item: BatuaraEvent) {
+    setConfirmTarget(item);
+    setConfirmOpen(true);
+  }
+
+  function handleCloseConfirm() {
+    if (deactivating) {
+      return;
+    }
+    setConfirmOpen(false);
+    setConfirmTarget(null);
+  }
+
   const handleSubmit = async () => {
     try {
       const payload = {
@@ -235,19 +251,38 @@ const EventsPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  async function handleConfirmDeactivate() {
+    if (!confirmTarget) {
+      return;
+    }
+
+    setDeactivating(true);
     try {
-      await apiService.deleteEvent(String(id));
-      setFeedback({ open: true, message: 'Evento removido com sucesso.', severity: 'success' });
+      await apiService.updateEvent(String(confirmTarget.id), {
+        title: confirmTarget.title,
+        description: confirmTarget.description,
+        date: confirmTarget.date.slice(0, 10),
+        startTime: confirmTarget.startTime || undefined,
+        endTime: confirmTarget.endTime || undefined,
+        type: confirmTarget.type,
+        location: confirmTarget.location || undefined,
+        imageUrl: confirmTarget.imageUrl || undefined,
+        isActive: false,
+      });
+
+      setFeedback({ open: true, message: 'Evento inativado com sucesso.', severity: 'success' });
+      handleCloseConfirm();
       await loadEvents();
     } catch (error: any) {
       setFeedback({
         open: true,
-        message: error?.response?.data?.message || 'Não foi possível remover o evento.',
+        message: error?.response?.data?.message || 'Não foi possível inativar o evento.',
         severity: 'error',
       });
+    } finally {
+      setDeactivating(false);
     }
-  };
+  }
 
   return (
     <Box>
@@ -417,6 +452,21 @@ const EventsPage: React.FC = () => {
           <Button onClick={handleCloseDialog}>Cancelar</Button>
           <Button variant="contained" onClick={handleSubmit}>
             {editingItem ? 'Salvar alterações' : 'Criar evento'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmOpen} onClose={handleCloseConfirm} fullWidth maxWidth="sm">
+        <DialogTitle>Inativar evento?</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mt: 1 }}>
+            {confirmTarget ? `O evento “${confirmTarget.title}” será marcado como inativo e deixará de aparecer no portal.` : 'Este evento será marcado como inativo e deixará de aparecer no portal.'}
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirm} disabled={deactivating}>Cancelar</Button>
+          <Button variant="contained" color="warning" onClick={handleConfirmDeactivate} disabled={deactivating}>
+            Inativar
           </Button>
         </DialogActions>
       </Dialog>
