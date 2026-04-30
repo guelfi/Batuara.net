@@ -174,8 +174,9 @@ TestResults/
 playwright-report/
 test-results/
 
-# PublicWebsite tests
-src/Frontend/PublicWebsite/tests/
+# Security scan artifacts (local)
+results.sarif
+*.sarif
 
 # SonarQube
 .sonarqube/
