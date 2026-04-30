@@ -210,13 +210,8 @@ const AboutSection: React.FC = () => {
                     color="text.secondary"
                     title={missionText}
                     sx={{
-                      lineHeight: 1.5,
-                      fontSize: { xs: '0.85rem', md: '0.9rem' },
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      display: { xs: '-webkit-box', md: 'block' },
-                      WebkitBoxOrient: 'vertical',
-                      WebkitLineClamp: 3,
+                      lineHeight: 1.45,
+                      fontSize: { xs: '0.82rem', md: '0.9rem' },
                     }}
                   >
                     {missionText}
@@ -257,11 +252,6 @@ const AboutSection: React.FC = () => {
                         sx={{
                           lineHeight: 1.45,
                           fontSize: { xs: '0.78rem', sm: '0.9rem', md: '0.9rem' },
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: { xs: '-webkit-box', sm: 'block' },
-                          WebkitBoxOrient: 'vertical',
-                          WebkitLineClamp: 2,
                         }}
                       >
                         {item.text}
