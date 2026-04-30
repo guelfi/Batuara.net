@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { Alert, Avatar, Box, Card, CardContent, CircularProgress, Container, Grid, Typography, useMediaQuery } from '@mui/material';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import publicApi from '../../services/api';
 import { desktopMediaQuery } from '../../theme/theme';
 
-const AboutSection: React.FC = () => {
+const AboutSection = () => {
   const isDesktop = useMediaQuery('(min-width:1024px)');
   const historyTitle = 'Nossa História';
   const historySubtitle = 'Uma jornada de fé, caridade e amor ao próximo';
@@ -238,7 +238,7 @@ const AboutSection: React.FC = () => {
                           width: { xs: 40, sm: 50, md: 52 },
                           height: { xs: 40, sm: 50, md: 52 },
                           mx: 'auto',
-                          mb: { xs: 1, md: 1.5 },
+                          mb: { xs: 0.625, md: 1.5 },
                         }}
                       >
                         {item.icon}
