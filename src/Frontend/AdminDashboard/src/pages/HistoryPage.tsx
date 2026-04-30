@@ -15,7 +15,6 @@ import {
   FormatItalic as ItalicIcon,
   FormatListBulleted as ListIcon,
   FormatQuote as QuoteIcon,
-  Refresh as RefreshIcon,
   Save as SaveIcon,
 } from '@mui/icons-material';
 import apiService from '../services/api';
@@ -184,9 +183,6 @@ const HistoryPage: React.FC = () => {
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
-          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={loadSettings}>
-            Recarregar
-          </Button>
           <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave} disabled={saving}>
             Salvar
           </Button>

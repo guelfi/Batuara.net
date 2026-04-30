@@ -22,7 +22,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import apiService from '../services/api';
 import { Guide } from '../types';
@@ -247,9 +247,6 @@ const GuidesPage: React.FC = () => {
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
-          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={loadGuides}>
-            Atualizar
-          </Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
             Novo cadastro
           </Button>

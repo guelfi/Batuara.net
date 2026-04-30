@@ -28,8 +28,7 @@ import {
   ArrowBackIos as ArrowBackIosIcon,
   ArrowForwardIos as ArrowForwardIosIcon,
   Delete as DeleteIcon,
-  Edit as EditIcon,
-  Refresh as RefreshIcon
+  Edit as EditIcon
 } from '@mui/icons-material';
 import { addMonths, subMonths, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -295,9 +294,6 @@ const CalendarPage: React.FC = () => {
               <ArrowForwardIosIcon fontSize="small" />
             </IconButton>
           </Paper>
-          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={loadAttendances}>
-            Atualizar
-          </Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
             Novo atendimento
           </Button>

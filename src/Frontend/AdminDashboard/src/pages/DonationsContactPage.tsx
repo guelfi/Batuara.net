@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -20,7 +21,7 @@ import {
   Typography,
 } from '@mui/material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
-import { Edit as EditIcon, Refresh as RefreshIcon, Save as SaveIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Save as SaveIcon } from '@mui/icons-material';
 import apiService from '../services/api';
 import { ContactMessage, ContactMessageStatus, SiteSettingsDto } from '../types';
 
@@ -210,7 +211,7 @@ const DonationsContactPage: React.FC = () => {
   if (loadingSettings || !settings) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-        <RefreshIcon />
+        <CircularProgress />
       </Box>
     );
   }
@@ -227,9 +228,6 @@ const DonationsContactPage: React.FC = () => {
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
-          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={() => { loadSettings(); loadMessages(); }}>
-            Atualizar
-          </Button>
           <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave} disabled={saving}>
             Salvar
           </Button>
