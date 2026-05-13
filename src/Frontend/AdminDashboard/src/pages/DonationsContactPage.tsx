@@ -1,26 +1,43 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
   Box,
   Button,
   Chip,
+  CircularProgress,
+  Drawer,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
   Grid,
+  IconButton,
+  InputAdornment,
   InputLabel,
   MenuItem,
+  Menu,
   Paper,
   Select,
   Snackbar,
   Stack,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
-import { Edit as EditIcon, Refresh as RefreshIcon, Save as SaveIcon } from '@mui/icons-material';
+import {
+  Edit as EditIcon,
+  Close as CloseIcon,
+  ExpandMore as ExpandMoreIcon,
+  FilterList as FilterListIcon,
+  MoreVert as MoreVertIcon,
+  Save as SaveIcon,
+} from '@mui/icons-material';
 import apiService from '../services/api';
 import { ContactMessage, ContactMessageStatus, SiteSettingsDto } from '../types';
 
@@ -53,17 +70,30 @@ const getStatusColor = (status: ContactMessageStatus): 'default' | 'warning' | '
 };
 
 const DonationsContactPage: React.FC = () => {
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [settings, setSettings] = useState<SiteSettingsDto | null>(null);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [settingsErrors, setSettingsErrors] = useState<{
+    institutionalEmail?: string;
+    primaryPhone?: string;
+    secondaryPhone?: string;
+    whatsappNumber?: string;
+    companyDocument?: string;
+  }>({});
   const [messageFilter, setMessageFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | ContactMessageStatus>('all');
+  const [mobileMessageFiltersOpen, setMobileMessageFiltersOpen] = useState(false);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [totalCount, setTotalCount] = useState(0);
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [messageMenuAnchorEl, setMessageMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [messageMenuRow, setMessageMenuRow] = useState<ContactMessage | null>(null);
   const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -88,6 +118,7 @@ const DonationsContactPage: React.FC = () => {
 
   const loadMessages = useCallback(async () => {
     setLoadingMessages(true);
+    setMessagesError(null);
     try {
       const response = await apiService.getContactMessages({
         q: messageFilter || undefined,
@@ -99,9 +130,13 @@ const DonationsContactPage: React.FC = () => {
       setMessages(response.data);
       setTotalCount(response.totalCount);
     } catch (error: any) {
+      const message = error?.response?.data?.message || 'Não foi possível carregar as mensagens recebidas.';
+      setMessages([]);
+      setTotalCount(0);
+      setMessagesError(message);
       setFeedback({
         open: true,
-        message: error?.response?.data?.message || 'Não foi possível carregar as mensagens recebidas.',
+        message,
         severity: 'error',
       });
     } finally {
@@ -117,8 +152,64 @@ const DonationsContactPage: React.FC = () => {
     loadMessages();
   }, [loadMessages]);
 
+  const onlyDigits = (value: string) => value.replace(/\D/g, '');
+
+  const formatPhoneBr = (value: string) => {
+    const digits = onlyDigits(value).slice(0, 11);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
+
+  const formatCnpj = (value: string) => {
+    const digits = onlyDigits(value).slice(0, 14);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+    if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
+    if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
+    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
+  };
+
+  const validateSettings = (): typeof settingsErrors => {
+    const nextErrors: typeof settingsErrors = {};
+    const emailValue = (settings?.institutionalEmail || '').trim();
+    if (emailValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
+      nextErrors.institutionalEmail = 'Informe um e-mail válido.';
+    }
+
+    const phoneDigits = onlyDigits(settings?.primaryPhone || '');
+    if (settings?.primaryPhone?.trim() && !(phoneDigits.length === 10 || phoneDigits.length === 11)) {
+      nextErrors.primaryPhone = 'Informe um telefone válido (DDD + número).';
+    }
+
+    const secondaryDigits = onlyDigits(settings?.secondaryPhone || '');
+    if (settings?.secondaryPhone?.trim() && !(secondaryDigits.length === 10 || secondaryDigits.length === 11)) {
+      nextErrors.secondaryPhone = 'Informe um telefone válido (DDD + número).';
+    }
+
+    const whatsappDigits = onlyDigits(settings?.whatsappNumber || '');
+    if (settings?.whatsappNumber?.trim() && !(whatsappDigits.length === 10 || whatsappDigits.length === 11)) {
+      nextErrors.whatsappNumber = 'Informe um WhatsApp válido (DDD + número).';
+    }
+
+    const cnpjDigits = onlyDigits(settings?.companyDocument || '');
+    if (settings?.companyDocument?.trim() && cnpjDigits.length !== 14) {
+      nextErrors.companyDocument = 'CNPJ deve conter 14 dígitos.';
+    }
+
+    return nextErrors;
+  };
+
   const handleSave = async () => {
     if (!settings) {
+      return;
+    }
+
+    const nextErrors = validateSettings();
+    setSettingsErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      setFeedback({ open: true, message: 'Revise os campos com erro antes de salvar.', severity: 'error' });
       return;
     }
 
@@ -152,34 +243,77 @@ const DonationsContactPage: React.FC = () => {
     }
   };
 
-  const columns: GridColDef[] = [
-    { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180 },
-    { field: 'subject', headerName: 'Assunto', flex: 1, minWidth: 220 },
-    { field: 'email', headerName: 'E-mail', flex: 1, minWidth: 220 },
-    {
-      field: 'receivedAt',
-      headerName: 'Recebida em',
-      width: 170,
-      valueFormatter: (value) => new Date(value).toLocaleString('pt-BR'),
-    },
-    {
-      field: 'status',
-      headerName: 'Status',
-      width: 150,
-      renderCell: (params) => <Chip size="small" label={getStatusLabel(params.row.status)} color={getStatusColor(params.row.status)} />,
-    },
-    {
-      field: 'actions',
-      type: 'actions',
-      width: 90,
-      getActions: (params) => [
-        <GridActionsCellItem icon={<EditIcon />} label="Atender" onClick={() => {
-          setSelectedMessage(params.row);
-          setMessageDialogOpen(true);
-        }} />,
-      ],
-    },
-  ];
+  const openMessageDialog = (message: ContactMessage) => {
+    setSelectedMessage(message);
+    setMessageDialogOpen(true);
+  };
+
+  const openMessageMenu = (event: React.MouseEvent<HTMLElement>, row: ContactMessage) => {
+    setMessageMenuAnchorEl(event.currentTarget);
+    setMessageMenuRow(row);
+  };
+
+  const closeMessageMenu = () => {
+    setMessageMenuAnchorEl(null);
+    setMessageMenuRow(null);
+  };
+
+  const columns: GridColDef[] = isXs
+    ? [
+        { field: 'name', headerName: 'Nome', flex: 1, minWidth: 160 },
+        { field: 'subject', headerName: 'Assunto', flex: 1.2, minWidth: 180 },
+        {
+          field: 'status',
+          headerName: 'Status',
+          width: 130,
+          renderCell: (params) => (
+            <Chip size="small" label={getStatusLabel(params.row.status)} color={getStatusColor(params.row.status)} />
+          ),
+        },
+        {
+          field: 'receivedAt',
+          headerName: 'Data',
+          width: 150,
+          valueFormatter: (value) => new Date(value).toLocaleDateString('pt-BR'),
+        },
+        {
+          field: 'actions',
+          headerName: '',
+          width: 64,
+          sortable: false,
+          filterable: false,
+          renderCell: (params) => (
+            <IconButton aria-label="Ações da mensagem" onClick={(e) => openMessageMenu(e, params.row)}>
+              <MoreVertIcon />
+            </IconButton>
+          ),
+        },
+      ]
+    : [
+        { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180 },
+        { field: 'subject', headerName: 'Assunto', flex: 1, minWidth: 220 },
+        { field: 'email', headerName: 'E-mail', flex: 1, minWidth: 220 },
+        {
+          field: 'receivedAt',
+          headerName: 'Recebida em',
+          width: 170,
+          valueFormatter: (value) => new Date(value).toLocaleString('pt-BR'),
+        },
+        {
+          field: 'status',
+          headerName: 'Status',
+          width: 150,
+          renderCell: (params) => (
+            <Chip size="small" label={getStatusLabel(params.row.status)} color={getStatusColor(params.row.status)} />
+          ),
+        },
+        {
+          field: 'actions',
+          type: 'actions',
+          width: 90,
+          getActions: (params) => [<GridActionsCellItem icon={<EditIcon />} label="Atender" onClick={() => openMessageDialog(params.row)} />],
+        },
+      ];
 
   const updateMessageField = (field: keyof ContactMessage, value: string | number) => {
     setSelectedMessage((prev) => (prev ? { ...prev, [field]: value } : prev));
@@ -210,13 +344,13 @@ const DonationsContactPage: React.FC = () => {
   if (loadingSettings || !settings) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-        <RefreshIcon />
+        <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Box>
+    <Box sx={{ pb: { xs: 10, md: 0 } }}>
       <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
@@ -226,70 +360,351 @@ const DonationsContactPage: React.FC = () => {
             Administre os dados bancários, PIX, canais institucionais e a fila de mensagens recebidas pelo PublicWebsite.
           </Typography>
         </Box>
-        <Stack direction="row" spacing={1}>
-          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={() => { loadSettings(); loadMessages(); }}>
-            Atualizar
-          </Button>
-          <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave} disabled={saving}>
-            Salvar
-          </Button>
-        </Stack>
+        {!isXs && (
+          <Stack direction="row" spacing={1}>
+            <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave} disabled={saving}>
+              Salvar
+            </Button>
+          </Stack>
+        )}
       </Stack>
 
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <Paper sx={{ p: 3, height: '100%' }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Contato institucional
-            </Typography>
-            <Stack spacing={2}>
-              <TextField label="E-mail institucional" value={settings.institutionalEmail} onChange={(e) => setSettings((prev) => prev ? { ...prev, institutionalEmail: e.target.value } : prev)} fullWidth />
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField label="Telefone principal" value={settings.primaryPhone} onChange={(e) => setSettings((prev) => prev ? { ...prev, primaryPhone: e.target.value } : prev)} fullWidth />
-                <TextField label="Telefone secundário" value={settings.secondaryPhone || ''} onChange={(e) => setSettings((prev) => prev ? { ...prev, secondaryPhone: e.target.value } : prev)} fullWidth />
+      {isXs ? (
+        <Stack spacing={2}>
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Contato institucional</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Stack spacing={2}>
+                <TextField
+                  label="E-mail institucional"
+                  value={settings.institutionalEmail}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, institutionalEmail: e.target.value } : prev))}
+                  error={!!settingsErrors.institutionalEmail}
+                  helperText={settingsErrors.institutionalEmail}
+                  fullWidth
+                />
+                <TextField
+                  label="Telefone principal"
+                  value={settings.primaryPhone}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, primaryPhone: formatPhoneBr(e.target.value) } : prev))}
+                  error={!!settingsErrors.primaryPhone}
+                  helperText={settingsErrors.primaryPhone}
+                  fullWidth
+                />
+                <TextField
+                  label="Telefone secundário"
+                  value={settings.secondaryPhone || ''}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, secondaryPhone: formatPhoneBr(e.target.value) } : prev))}
+                  error={!!settingsErrors.secondaryPhone}
+                  helperText={settingsErrors.secondaryPhone}
+                  fullWidth
+                />
+                <TextField
+                  label="WhatsApp"
+                  value={settings.whatsappNumber || ''}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, whatsappNumber: formatPhoneBr(e.target.value) } : prev))}
+                  error={!!settingsErrors.whatsappNumber}
+                  helperText={settingsErrors.whatsappNumber}
+                  fullWidth
+                />
+                <TextField
+                  label="Horário de atendimento"
+                  value={settings.serviceHours || ''}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, serviceHours: e.target.value } : prev))}
+                  fullWidth
+                />
               </Stack>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField label="WhatsApp" value={settings.whatsappNumber || ''} onChange={(e) => setSettings((prev) => prev ? { ...prev, whatsappNumber: e.target.value } : prev)} fullWidth />
-                <TextField label="Horário de atendimento" value={settings.serviceHours || ''} onChange={(e) => setSettings((prev) => prev ? { ...prev, serviceHours: e.target.value } : prev)} fullWidth />
-              </Stack>
-            </Stack>
-          </Paper>
-        </Grid>
+            </AccordionDetails>
+          </Accordion>
 
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <Paper sx={{ p: 3, height: '100%' }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Doações e PIX
-            </Typography>
-            <Stack spacing={2}>
-              <TextField label="Chave PIX" value={settings.pixKey || ''} onChange={(e) => setSettings((prev) => prev ? { ...prev, pixKey: e.target.value } : prev)} fullWidth />
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField label="Favorecido PIX" value={settings.pixRecipientName || ''} onChange={(e) => setSettings((prev) => prev ? { ...prev, pixRecipientName: e.target.value } : prev)} fullWidth />
-                <TextField label="Cidade PIX" value={settings.pixCity || ''} onChange={(e) => setSettings((prev) => prev ? { ...prev, pixCity: e.target.value } : prev)} fullWidth />
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Doações e PIX</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Stack spacing={2}>
+                <TextField
+                  label="Chave PIX"
+                  value={settings.pixKey || ''}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixKey: e.target.value } : prev))}
+                  fullWidth
+                />
+                <TextField
+                  label="Favorecido PIX"
+                  value={settings.pixRecipientName || ''}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixRecipientName: e.target.value } : prev))}
+                  fullWidth
+                />
+                <TextField
+                  label="Cidade PIX"
+                  value={settings.pixCity || ''}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixCity: e.target.value } : prev))}
+                  fullWidth
+                />
+                <TextField
+                  label="Banco"
+                  value={settings.bankName || ''}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankName: e.target.value } : prev))}
+                  fullWidth
+                />
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  <TextField
+                    label="Agência"
+                    value={settings.bankAgency || ''}
+                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankAgency: e.target.value } : prev))}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Conta"
+                    value={settings.bankAccount || ''}
+                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankAccount: e.target.value } : prev))}
+                    fullWidth
+                  />
+                </Stack>
+                <TextField
+                  label="Tipo de conta"
+                  value={settings.bankAccountType || ''}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankAccountType: e.target.value } : prev))}
+                  fullWidth
+                />
+                <TextField
+                  label="CNPJ"
+                  value={settings.companyDocument || ''}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, companyDocument: formatCnpj(e.target.value) } : prev))}
+                  error={!!settingsErrors.companyDocument}
+                  helperText={settingsErrors.companyDocument}
+                  fullWidth
+                />
+                <Alert severity="info">
+                  {settings.pixPayload
+                    ? 'O payload PIX será regenerado automaticamente no backend a cada atualização.'
+                    : 'Ao salvar uma chave PIX válida, o backend gera automaticamente o payload para QR Code.'}
+                </Alert>
               </Stack>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField label="Banco" value={settings.bankName || ''} onChange={(e) => setSettings((prev) => prev ? { ...prev, bankName: e.target.value } : prev)} fullWidth />
-                <TextField label="Agência" value={settings.bankAgency || ''} onChange={(e) => setSettings((prev) => prev ? { ...prev, bankAgency: e.target.value } : prev)} fullWidth />
+            </AccordionDetails>
+          </Accordion>
+        </Stack>
+      ) : (
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, lg: 6 }}>
+            <Paper sx={{ p: 3, height: '100%' }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Contato institucional
+              </Typography>
+              <Stack spacing={2}>
+                <TextField
+                  label="E-mail institucional"
+                  value={settings.institutionalEmail}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, institutionalEmail: e.target.value } : prev))}
+                  error={!!settingsErrors.institutionalEmail}
+                  helperText={settingsErrors.institutionalEmail}
+                  fullWidth
+                />
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  <TextField
+                    label="Telefone principal"
+                    value={settings.primaryPhone}
+                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, primaryPhone: formatPhoneBr(e.target.value) } : prev))}
+                    error={!!settingsErrors.primaryPhone}
+                    helperText={settingsErrors.primaryPhone}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Telefone secundário"
+                    value={settings.secondaryPhone || ''}
+                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, secondaryPhone: formatPhoneBr(e.target.value) } : prev))}
+                    error={!!settingsErrors.secondaryPhone}
+                    helperText={settingsErrors.secondaryPhone}
+                    fullWidth
+                  />
+                </Stack>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  <TextField
+                    label="WhatsApp"
+                    value={settings.whatsappNumber || ''}
+                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, whatsappNumber: formatPhoneBr(e.target.value) } : prev))}
+                    error={!!settingsErrors.whatsappNumber}
+                    helperText={settingsErrors.whatsappNumber}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Horário de atendimento"
+                    value={settings.serviceHours || ''}
+                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, serviceHours: e.target.value } : prev))}
+                    fullWidth
+                  />
+                </Stack>
               </Stack>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField label="Conta" value={settings.bankAccount || ''} onChange={(e) => setSettings((prev) => prev ? { ...prev, bankAccount: e.target.value } : prev)} fullWidth />
-                <TextField label="Tipo de conta" value={settings.bankAccountType || ''} onChange={(e) => setSettings((prev) => prev ? { ...prev, bankAccountType: e.target.value } : prev)} fullWidth />
+            </Paper>
+          </Grid>
+
+          <Grid size={{ xs: 12, lg: 6 }}>
+            <Paper sx={{ p: 3, height: '100%' }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Doações e PIX
+              </Typography>
+              <Stack spacing={2}>
+                <TextField
+                  label="Chave PIX"
+                  value={settings.pixKey || ''}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixKey: e.target.value } : prev))}
+                  fullWidth
+                />
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  <TextField
+                    label="Favorecido PIX"
+                    value={settings.pixRecipientName || ''}
+                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixRecipientName: e.target.value } : prev))}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Cidade PIX"
+                    value={settings.pixCity || ''}
+                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixCity: e.target.value } : prev))}
+                    fullWidth
+                  />
+                </Stack>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  <TextField
+                    label="Banco"
+                    value={settings.bankName || ''}
+                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankName: e.target.value } : prev))}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Agência"
+                    value={settings.bankAgency || ''}
+                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankAgency: e.target.value } : prev))}
+                    fullWidth
+                  />
+                </Stack>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  <TextField
+                    label="Conta"
+                    value={settings.bankAccount || ''}
+                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankAccount: e.target.value } : prev))}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Tipo de conta"
+                    value={settings.bankAccountType || ''}
+                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankAccountType: e.target.value } : prev))}
+                    fullWidth
+                  />
+                </Stack>
+                <TextField
+                  label="CNPJ"
+                  value={settings.companyDocument || ''}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, companyDocument: formatCnpj(e.target.value) } : prev))}
+                  error={!!settingsErrors.companyDocument}
+                  helperText={settingsErrors.companyDocument}
+                  fullWidth
+                />
+                <Alert severity="info">
+                  {settings.pixPayload
+                    ? 'O payload PIX será regenerado automaticamente no backend a cada atualização.'
+                    : 'Ao salvar uma chave PIX válida, o backend gera automaticamente o payload para QR Code.'}
+                </Alert>
               </Stack>
-              <TextField label="CNPJ" value={settings.companyDocument || ''} onChange={(e) => setSettings((prev) => prev ? { ...prev, companyDocument: e.target.value } : prev)} fullWidth />
-              <Alert severity="info">
-                {settings.pixPayload ? 'O payload PIX será regenerado automaticamente no backend a cada atualização.' : 'Ao salvar uma chave PIX válida, o backend gera automaticamente o payload para QR Code.'}
-              </Alert>
-            </Stack>
-          </Paper>
+            </Paper>
+          </Grid>
         </Grid>
-      </Grid>
+      )}
 
       <Paper sx={{ p: 2, mt: 3, mb: 2 }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-          <TextField label="Buscar mensagem" value={messageFilter} onChange={(e) => setMessageFilter(e.target.value)} fullWidth />
-          <FormControl sx={{ minWidth: 220 }}>
+        {isXs ? (
+          <Stack spacing={1.5}>
+            <TextField
+              label="Buscar mensagem"
+              value={messageFilter}
+              onChange={(e) => setMessageFilter(e.target.value)}
+              InputProps={{
+                endAdornment: messageFilter ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Limpar busca"
+                      size="small"
+                      onClick={() => {
+                        setMessageFilter('');
+                        setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                      }}
+                      edge="end"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+              fullWidth
+            />
+            <Button
+              variant="outlined"
+              startIcon={<FilterListIcon />}
+              onClick={() => setMobileMessageFiltersOpen(true)}
+              fullWidth
+            >
+              Filtrar
+            </Button>
+          </Stack>
+        ) : (
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+            <TextField
+              label="Buscar mensagem"
+              value={messageFilter}
+              onChange={(e) => setMessageFilter(e.target.value)}
+              InputProps={{
+                endAdornment: messageFilter ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Limpar busca"
+                      size="small"
+                      onClick={() => {
+                        setMessageFilter('');
+                        setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                      }}
+                      edge="end"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+              fullWidth
+            />
+            <FormControl sx={{ minWidth: 220 }}>
+              <InputLabel>Status</InputLabel>
+              <Select value={statusFilter} label="Status" onChange={(e) => setStatusFilter(e.target.value as 'all' | ContactMessageStatus)}>
+                <MenuItem value="all">Todos</MenuItem>
+                <MenuItem value={ContactMessageStatus.New}>Nova</MenuItem>
+                <MenuItem value={ContactMessageStatus.InProgress}>Em atendimento</MenuItem>
+                <MenuItem value={ContactMessageStatus.Resolved}>Resolvida</MenuItem>
+                <MenuItem value={ContactMessageStatus.Archived}>Arquivada</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+        )}
+      </Paper>
+
+      <Drawer
+        anchor="bottom"
+        open={mobileMessageFiltersOpen}
+        onClose={() => setMobileMessageFiltersOpen(false)}
+        PaperProps={{ sx: { p: 2, pb: 3, borderTopLeftRadius: 16, borderTopRightRadius: 16 } }}
+      >
+        <Stack spacing={2}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Filtros
+          </Typography>
+          <FormControl fullWidth>
             <InputLabel>Status</InputLabel>
-            <Select value={statusFilter} label="Status" onChange={(e) => setStatusFilter(e.target.value as 'all' | ContactMessageStatus)}>
+            <Select
+              value={statusFilter}
+              label="Status"
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | ContactMessageStatus)}
+              sx={{ minHeight: 48 }}
+            >
               <MenuItem value="all">Todos</MenuItem>
               <MenuItem value={ContactMessageStatus.New}>Nova</MenuItem>
               <MenuItem value={ContactMessageStatus.InProgress}>Em atendimento</MenuItem>
@@ -297,8 +712,29 @@ const DonationsContactPage: React.FC = () => {
               <MenuItem value={ContactMessageStatus.Archived}>Arquivada</MenuItem>
             </Select>
           </FormControl>
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="text"
+              onClick={() => {
+                setStatusFilter('all');
+                setMobileMessageFiltersOpen(false);
+              }}
+              fullWidth
+            >
+              Limpar
+            </Button>
+            <Button variant="contained" onClick={() => setMobileMessageFiltersOpen(false)} fullWidth>
+              Aplicar
+            </Button>
+          </Stack>
         </Stack>
-      </Paper>
+      </Drawer>
+
+      {messagesError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {messagesError}
+        </Alert>
+      )}
 
       <Paper sx={{ p: 1 }}>
         <DataGrid
@@ -312,13 +748,53 @@ const DonationsContactPage: React.FC = () => {
           onPaginationModelChange={setPaginationModel}
           pageSizeOptions={[5, 10, 20]}
           disableRowSelectionOnClick
-          sx={{ border: 0 }}
+          getRowHeight={isXs ? () => 'auto' : undefined}
+          slots={{
+            noRowsOverlay: () => (
+              <Stack sx={{ height: 140 }} alignItems="center" justifyContent="center">
+                <Typography color="text.secondary">Nenhum registro encontrado.</Typography>
+              </Stack>
+            ),
+          }}
+          sx={{
+            border: 0,
+            '& .MuiDataGrid-columnHeaders': {
+              backgroundColor: 'action.hover',
+            },
+            '& .MuiDataGrid-cell .MuiIconButton-root': {
+              width: 48,
+              height: 48,
+            },
+          }}
         />
       </Paper>
 
-      <Dialog open={messageDialogOpen} onClose={() => setMessageDialogOpen(false)} fullWidth maxWidth="md">
+      <Menu
+        anchorEl={messageMenuAnchorEl}
+        open={Boolean(messageMenuAnchorEl)}
+        onClose={closeMessageMenu}
+      >
+        <MenuItem
+          onClick={() => {
+            if (messageMenuRow) {
+              openMessageDialog(messageMenuRow);
+            }
+            closeMessageMenu();
+          }}
+        >
+          Atender
+        </MenuItem>
+      </Menu>
+
+      <Dialog
+        open={messageDialogOpen}
+        onClose={() => setMessageDialogOpen(false)}
+        fullWidth
+        maxWidth="md"
+        fullScreen={isXs}
+      >
         <DialogTitle>Atendimento da mensagem</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ pb: isXs ? 12 : 2 }}>
           {selectedMessage && (
             <Stack spacing={2} sx={{ mt: 1 }}>
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
@@ -358,13 +834,62 @@ const DonationsContactPage: React.FC = () => {
             </Stack>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setMessageDialogOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleSaveMessage}>Salvar atendimento</Button>
-        </DialogActions>
+        {isXs ? (
+          <Box
+            sx={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              p: 2,
+              bgcolor: 'background.paper',
+              borderTop: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <Stack direction="row" spacing={1}>
+              <Button onClick={() => setMessageDialogOpen(false)} fullWidth>
+                Cancelar
+              </Button>
+              <Button variant="contained" onClick={handleSaveMessage} fullWidth>
+                Salvar
+              </Button>
+            </Stack>
+          </Box>
+        ) : (
+          <DialogActions>
+            <Button onClick={() => setMessageDialogOpen(false)}>Cancelar</Button>
+            <Button variant="contained" onClick={handleSaveMessage}>Salvar atendimento</Button>
+          </DialogActions>
+        )}
       </Dialog>
 
-      <Snackbar open={feedback.open} autoHideDuration={4000} onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}>
+      {isXs && (
+        <Box
+          sx={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            p: 2,
+            bgcolor: 'background.paper',
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            zIndex: theme.zIndex.appBar,
+          }}
+        >
+          <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave} disabled={saving} fullWidth>
+            Salvar
+          </Button>
+        </Box>
+      )}
+
+      <Snackbar
+        open={feedback.open}
+        autoHideDuration={4000}
+        onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: messageDialogOpen ? 'top' : 'bottom', horizontal: 'center' }}
+      >
         <Alert severity={feedback.severity} variant="filled" onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}>
           {feedback.message}
         </Alert>

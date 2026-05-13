@@ -93,6 +93,8 @@ O sistema utiliza JWT (JSON Web Tokens) para autenticação:
 - Lista de todos os eventos
 - Criação e edição de eventos
 - Gerenciamento de status (ativo/inativo)
+- Mobile: listagem compacta com bullet (badge) indicando o tipo do evento ao lado da data
+- Paleta: cores de tipo alinhadas ao Calendário do site público via variáveis CSS `--batuara-calendar-event-*` definidas no tema
 
 ### Calendário (`/calendar`)
 - Visualização em calendário

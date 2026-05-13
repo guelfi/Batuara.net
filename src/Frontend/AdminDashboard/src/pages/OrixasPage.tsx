@@ -19,12 +19,16 @@ import {
   Switch,
   TextField,
   Typography,
+  IconButton,
+  InputAdornment,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import type { SelectChangeEvent } from '@mui/material/Select';
+import { Add as AddIcon, Close as CloseIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import apiService from '../services/api';
+import GridPager from '../components/common/GridPager';
 import { Orixa } from '../types';
 
 type OrixaFormState = {
@@ -67,13 +71,54 @@ const initialFormState: OrixaFormState = {
 
 const splitCsv = (value: string) => value.split(',').map((item) => item.trim()).filter(Boolean);
 
+const getColorSwatch = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+  const raw = value.trim();
+  if (!raw) return null;
+
+  const lower = raw.toLowerCase();
+  if (lower.startsWith('#') || lower.startsWith('rgb') || lower.startsWith('hsl')) return raw;
+
+  const normalized = lower
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const map: Record<string, string> = {
+    branco: '#ffffff',
+    preto: '#000000',
+    cinza: '#9e9e9e',
+    'cinza escuro': '#616161',
+    'cinza claro': '#e0e0e0',
+    azul: '#1976d2',
+    'azul escuro': '#0d47a1',
+    verde: '#2e7d32',
+    vermelho: '#d32f2f',
+    amarelo: '#fbc02d',
+    laranja: '#f57c00',
+    roxo: '#6a1b9a',
+    lilas: '#8e24aa',
+    rosa: '#d81b60',
+    marrom: '#6d4c41',
+    dourado: '#c9a227',
+    prata: '#b0bec5',
+  };
+
+  return map[normalized] ?? null;
+};
+
 const OrixasPage: React.FC = () => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [rows, setRows] = useState<Orixa[]>([]);
   const [loading, setLoading] = useState(false);
+  const [gridError, setGridError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Orixa | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<Orixa | null>(null);
+  const [deactivating, setDeactivating] = useState(false);
   const [form, setForm] = useState<OrixaFormState>(initialFormState);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'true' | 'false'>('all');
@@ -88,6 +133,7 @@ const OrixasPage: React.FC = () => {
 
   const loadOrixas = useCallback(async () => {
     setLoading(true);
+    setGridError(null);
     try {
       const response = await apiService.getOrixas({
         q: query || undefined,
@@ -100,9 +146,13 @@ const OrixasPage: React.FC = () => {
       setRows(response.data);
       setTotalCount(response.totalCount);
     } catch (error: any) {
+      const message = error?.response?.data?.message || 'Não foi possível carregar os Orixás.';
+      setRows([]);
+      setTotalCount(0);
+      setGridError(message);
       setFeedback({
         open: true,
-        message: error?.response?.data?.message || 'Não foi possível carregar os Orixás.',
+        message,
         severity: 'error',
       });
     } finally {
@@ -114,46 +164,130 @@ const OrixasPage: React.FC = () => {
     loadOrixas();
   }, [loadOrixas]);
 
-  const columns: GridColDef[] = [
-    { field: 'displayOrder', headerName: 'Ordem', width: 90 },
-    { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180 },
-    {
-      field: 'colors',
-      headerName: 'Cores',
-      flex: 1,
-      minWidth: 180,
-      renderCell: (params) => (
-        <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
-          {params.row.colors.slice(0, 2).map((color: string) => (
-            <Chip key={color} label={color} size="small" />
-          ))}
-          {params.row.colors.length > 2 && <Chip label={`+${params.row.colors.length - 2}`} size="small" variant="outlined" />}
-        </Stack>
-      ),
-    },
-    {
-      field: 'elements',
-      headerName: 'Elementos',
-      flex: 1,
-      minWidth: 180,
-      renderCell: (params) => params.row.elements.join(', '),
-    },
-    {
-      field: 'isActive',
-      headerName: 'Status',
-      width: 110,
-      renderCell: (params) => <Chip size="small" label={params.row.isActive ? 'Ativo' : 'Inativo'} color={params.row.isActive ? 'success' : 'default'} />,
-    },
-    {
-      field: 'actions',
-      type: 'actions',
-      width: 110,
-      getActions: (params) => [
-        <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-        <GridActionsCellItem icon={<DeleteIcon />} label="Excluir" onClick={() => handleDelete(params.row.id)} />,
-      ],
-    },
-  ];
+  const columns: GridColDef[] = isXs
+    ? [
+        {
+          field: 'summary',
+          headerName: 'Orixá',
+          flex: 1,
+          minWidth: 120,
+          renderCell: (params) => (
+            <Typography variant="body2" sx={{ whiteSpace: 'normal', lineHeight: 1.25, py: 1 }}>
+              {params.row.name}
+            </Typography>
+          ),
+          sortable: false,
+          filterable: false,
+        },
+        {
+          field: 'isActive',
+          headerName: 'Status',
+          width: 90,
+          renderCell: (params) => (
+            <Typography variant="body2" sx={{ whiteSpace: 'nowrap', py: 1 }}>
+              {params.row.isActive ? 'Ativo' : 'Inativo'}
+            </Typography>
+          ),
+          sortable: false,
+          filterable: false,
+        },
+        {
+          field: 'primaryColor',
+          headerName: 'Cor',
+          width: 90,
+          valueGetter: (_, row) => row.colors?.[0] ?? '',
+          renderCell: (params) => (
+            <Stack direction="row" spacing={0.75} alignItems="center" sx={{ py: 1 }}>
+              <Box
+                aria-hidden
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  bgcolor: getColorSwatch(params.value) || 'text.disabled',
+                  flexShrink: 0,
+                }}
+              />
+              <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
+                {params.value || '—'}
+              </Typography>
+            </Stack>
+          ),
+          sortable: false,
+          filterable: false,
+        },
+        {
+          field: 'actions',
+          type: 'actions',
+          width: 140,
+          getActions: (params) => [
+            <GridActionsCellItem icon={<EditIcon fontSize="small" />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
+            <GridActionsCellItem icon={<DeleteIcon fontSize="small" />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
+          ],
+        },
+      ]
+    : [
+        { field: 'displayOrder', headerName: 'Ordem', width: 90 },
+        { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180 },
+        {
+          field: 'isActive',
+          headerName: 'Status',
+          width: 110,
+          renderCell: (params) => (
+            <Chip
+              size="small"
+              label={params.row.isActive ? 'Ativo' : 'Inativo'}
+              color={params.row.isActive ? 'success' : 'default'}
+            />
+          ),
+        },
+        {
+          field: 'colors',
+          headerName: 'Cores',
+          flex: 1,
+          minWidth: 180,
+          renderCell: (params) => (
+            <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
+              {params.row.colors.slice(0, 2).map((color: string) => (
+                <Chip
+                  key={color}
+                  label={color}
+                  size="small"
+                  icon={
+                    <Box
+                      aria-hidden
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        bgcolor: getColorSwatch(color) || 'text.disabled',
+                      }}
+                    />
+                  }
+                  sx={{ '& .MuiChip-icon': { ml: 0.75, mr: 0.5 } }}
+                />
+              ))}
+              {params.row.colors.length > 2 && <Chip label={`+${params.row.colors.length - 2}`} size="small" variant="outlined" />}
+            </Stack>
+          ),
+        },
+        {
+          field: 'elements',
+          headerName: 'Elementos',
+          flex: 1,
+          minWidth: 180,
+          renderCell: (params) => params.row.elements.join(', '),
+        },
+        {
+          field: 'actions',
+          type: 'actions',
+          width: 110,
+          getActions: (params) => [
+            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
+            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
+          ],
+        },
+      ];
 
   const handleOpenDialog = (item?: Orixa) => {
     if (item) {
@@ -183,6 +317,19 @@ const OrixasPage: React.FC = () => {
     setEditingItem(null);
     setForm(initialFormState);
     setFormErrors({});
+  };
+
+  const handleRequestDeactivate = (item: Orixa) => {
+    setConfirmTarget(item);
+    setConfirmOpen(true);
+  };
+
+  const handleCloseConfirm = () => {
+    if (deactivating) {
+      return;
+    }
+    setConfirmOpen(false);
+    setConfirmTarget(null);
   };
 
   const handleSubmit = async () => {
@@ -225,17 +372,26 @@ const OrixasPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleConfirmDeactivate = async () => {
+    if (!confirmTarget) {
+      return;
+    }
+
+    setDeactivating(true);
     try {
-      await apiService.deleteOrixa(String(id));
-      setFeedback({ open: true, message: 'Orixá removido com sucesso.', severity: 'success' });
+      await apiService.deleteOrixa(String(confirmTarget.id));
+
+      setFeedback({ open: true, message: 'Orixá inativado com sucesso.', severity: 'success' });
+      handleCloseConfirm();
       await loadOrixas();
     } catch (error: any) {
       setFeedback({
         open: true,
-        message: error?.response?.data?.message || 'Não foi possível remover o Orixá.',
+        message: error?.response?.data?.message || 'Não foi possível inativar o Orixá.',
         severity: 'error',
       });
+    } finally {
+      setDeactivating(false);
     }
   };
 
@@ -246,35 +402,95 @@ const OrixasPage: React.FC = () => {
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
             Orixás
           </Typography>
-          <Typography color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-            Administre os textos doutrinários, características, cores, elementos e ordem de exibição dos Orixás.
-          </Typography>
         </Box>
-        <Stack direction="row" spacing={1}>
-          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={loadOrixas}>
-            Atualizar
-          </Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()} fullWidth={isXs}>
             Novo Orixá
           </Button>
         </Stack>
       </Stack>
 
+      {gridError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {gridError}
+        </Alert>
+      )}
+
       <Paper sx={{ p: 2, mb: 2 }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-          <TextField label="Buscar" value={query} onChange={(e) => setQuery(e.target.value)} fullWidth />
-          <FormControl sx={{ minWidth: 160 }}>
-            <InputLabel>Status</InputLabel>
-            <Select value={statusFilter} label="Status" onChange={(e) => setStatusFilter(e.target.value as 'all' | 'true' | 'false')}>
-              <MenuItem value="all">Todos</MenuItem>
-              <MenuItem value="true">Ativos</MenuItem>
-              <MenuItem value="false">Inativos</MenuItem>
-            </Select>
-          </FormControl>
-        </Stack>
+        {isXs ? (
+          <Stack spacing={1.5}>
+            <TextField
+              label="Buscar"
+              value={query}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setQuery(e.target.value)}
+              InputProps={{
+                endAdornment: query ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Limpar busca"
+                      size="small"
+                      onClick={() => {
+                        setQuery('');
+                        setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                      }}
+                      edge="end"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+              fullWidth
+            />
+          </Stack>
+        ) : (
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+            <TextField
+              label="Buscar"
+              value={query}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setQuery(e.target.value)}
+              InputProps={{
+                endAdornment: query ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Limpar busca"
+                      size="small"
+                      onClick={() => {
+                        setQuery('');
+                        setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                      }}
+                      edge="end"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+              fullWidth
+            />
+            <FormControl sx={{ minWidth: 160 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={statusFilter}
+                label="Status"
+                onChange={(e: SelectChangeEvent) => setStatusFilter(e.target.value as 'all' | 'true' | 'false')}
+              >
+                <MenuItem value="all">Todos</MenuItem>
+                <MenuItem value="true">Ativos</MenuItem>
+                <MenuItem value="false">Inativos</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+        )}
       </Paper>
 
       <Paper sx={{ p: 1 }}>
+        <GridPager
+          page={paginationModel.page}
+          pageSize={paginationModel.pageSize}
+          totalCount={totalCount}
+          onPageChange={(page) => setPaginationModel((prev) => ({ ...prev, page }))}
+        />
         <DataGrid
           autoHeight
           rows={rows}
@@ -284,13 +500,24 @@ const OrixasPage: React.FC = () => {
           paginationMode="server"
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
-          pageSizeOptions={[5, 10, 20]}
+          pageSizeOptions={[10]}
+          hideFooter
           disableRowSelectionOnClick
-          columnVisibilityModel={{
-            displayOrder: !isXs,
-            elements: !isXs,
+          getRowHeight={isXs ? () => 'auto' : undefined}
+          slots={{
+            noRowsOverlay: () => (
+              <Stack sx={{ height: 140 }} alignItems="center" justifyContent="center">
+                <Typography color="text.secondary">Nenhum registro encontrado.</Typography>
+              </Stack>
+            ),
           }}
-          sx={{ border: 0 }}
+          sx={{
+            border: 0,
+            '& .MuiDataGrid-actionsCell .MuiIconButton-root': {
+              width: 48,
+              height: 48,
+            },
+          }}
         />
       </Paper>
 
@@ -372,6 +599,21 @@ const OrixasPage: React.FC = () => {
           <Button onClick={handleCloseDialog}>Cancelar</Button>
           <Button variant="contained" onClick={handleSubmit}>
             {editingItem ? 'Salvar alterações' : 'Criar Orixá'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmOpen} onClose={handleCloseConfirm} fullWidth maxWidth="sm">
+        <DialogTitle>Inativar Orixá?</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mt: 1 }}>
+            {confirmTarget ? `O Orixá “${confirmTarget.name}” será marcado como inativo e deixará de aparecer no portal.` : 'Este Orixá será marcado como inativo e deixará de aparecer no portal.'}
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirm} disabled={deactivating}>Cancelar</Button>
+          <Button variant="contained" color="warning" onClick={handleConfirmDeactivate} disabled={deactivating}>
+            Inativar
           </Button>
         </DialogActions>
       </Dialog>

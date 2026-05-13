@@ -21,6 +21,17 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+const logAuthDebug = (label: string, error: any) => {
+  if (process.env.NODE_ENV !== 'development') {
+    return;
+  }
+  const status = error?.response?.status;
+  const url = error?.config?.url;
+  const apiMessage = error?.response?.data?.message;
+  const message = error?.message;
+  console.warn('[Auth]', label, { status, url, apiMessage, message });
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,7 +76,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(null);
       }
     } catch (error) {
-      console.error('Error initializing authentication:', error);
+      logAuthDebug('initializeAuth', error);
       // On any error, clear auth data to be safe
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
@@ -79,7 +90,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await apiService.post('/auth/logout');
     } catch (error) {
-      console.error('Error during session timeout logout:', error);
+      logAuthDebug('sessionTimeoutLogout', error);
     } finally {
       try {
         localStorage.removeItem('authToken');
@@ -158,7 +169,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error(response.message || 'Error logging in');
       }
     } catch (error: any) {
-      console.error('Login error:', error);
+      logAuthDebug('login', error);
       const status = error.response?.status;
       const apiMessage = error.response?.data?.message;
 
@@ -192,7 +203,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await apiService.post('/auth/logout');
     } catch (error) {
-      console.error('Error during logout:', error);
+      logAuthDebug('logout', error);
     } finally {
       try {
         localStorage.removeItem('authToken');
@@ -215,7 +226,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(userData);
       }
     } catch (error) {
-      console.error('Error refreshing user data:', error);
+      logAuthDebug('refreshUser', error);
     }
   };
 

@@ -11,16 +11,12 @@ namespace Batuara.API.Controllers
     [Route("api/calendar/attendances")]
     [Route("api/v1/calendar/attendances")]
     [Authorize(Roles = "Admin,Editor")]
-    public class CalendarAttendancesController : ControllerBase
+    public class CalendarAttendancesController(
+        ICalendarAttendanceService service,
+        ILogger<CalendarAttendancesController> logger) : ControllerBase
     {
-        private readonly ICalendarAttendanceService _service;
-        private readonly ILogger<CalendarAttendancesController> _logger;
-
-        public CalendarAttendancesController(ICalendarAttendanceService service, ILogger<CalendarAttendancesController> logger)
-        {
-            _service = service;
-            _logger = logger;
-        }
+        private readonly ICalendarAttendanceService _service = service;
+        private readonly ILogger<CalendarAttendancesController> _logger = logger;
 
         [HttpGet]
         [EnableRateLimiting("authenticated")]
@@ -53,7 +49,7 @@ namespace Batuara.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving calendar attendances");
-                return StatusCode(500, new { success = false, message = "An error occurred while retrieving calendar attendances" });
+                return StatusCode(500, new { success = false, message = "Ocorreu um erro ao listar os atendimentos" });
             }
         }
 
@@ -68,7 +64,7 @@ namespace Batuara.API.Controllers
                 var item = await _service.GetByIdAsync(id);
                 if (item == null)
                 {
-                    return NotFound(new { success = false, message = "Attendance not found" });
+                    return NotFound(new { success = false, message = "Atendimento não encontrado" });
                 }
 
                 return Ok(new { success = true, data = item });
@@ -76,7 +72,7 @@ namespace Batuara.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving calendar attendance");
-                return StatusCode(500, new { success = false, message = "An error occurred while retrieving the attendance" });
+                return StatusCode(500, new { success = false, message = "Ocorreu um erro ao obter o atendimento" });
             }
         }
 
@@ -105,7 +101,7 @@ namespace Batuara.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating calendar attendance");
-                return StatusCode(500, new { success = false, message = "An error occurred while creating the attendance" });
+                return StatusCode(500, new { success = false, message = "Ocorreu um erro ao criar o atendimento" });
             }
         }
 
@@ -122,9 +118,9 @@ namespace Batuara.API.Controllers
                 var (updated, errors, conflict) = await _service.UpdateAsync(id, request);
                 if (errors.Length > 0)
                 {
-                    if (updated == null && errors.Length == 1 && errors[0] == "Attendance not found")
+                    if (updated == null && errors.Length == 1 && errors[0] == "Atendimento não encontrado")
                     {
-                        return NotFound(new { success = false, message = "Attendance not found" });
+                        return NotFound(new { success = false, message = "Atendimento não encontrado" });
                     }
 
                     if (conflict)
@@ -140,7 +136,7 @@ namespace Batuara.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating calendar attendance");
-                return StatusCode(500, new { success = false, message = "An error occurred while updating the attendance" });
+                return StatusCode(500, new { success = false, message = "Ocorreu um erro ao atualizar o atendimento" });
             }
         }
 
@@ -152,10 +148,16 @@ namespace Batuara.API.Controllers
         {
             try
             {
-                var deleted = await _service.SoftDeleteAsync(id);
+                var (deleted, errors) = await _service.SoftDeleteAsync(id);
                 if (!deleted)
                 {
-                    return NotFound(new { success = false, message = "Attendance not found" });
+                    if (errors.Length == 1 && errors[0] == "Atendimento não encontrado")
+                    {
+                        return NotFound(new { success = false, message = "Atendimento não encontrado" });
+                    }
+
+                    var firstError = errors.Length > 0 ? errors[0] : null;
+                    return BadRequest(new { success = false, message = firstError ?? "Não foi possível excluir o atendimento", errors });
                 }
 
                 return NoContent();
@@ -163,7 +165,7 @@ namespace Batuara.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting calendar attendance");
-                return StatusCode(500, new { success = false, message = "An error occurred while deleting the attendance" });
+                return StatusCode(500, new { success = false, message = "Ocorreu um erro ao excluir o atendimento" });
             }
         }
     }

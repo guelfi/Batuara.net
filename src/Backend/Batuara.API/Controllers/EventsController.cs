@@ -11,16 +11,12 @@ namespace Batuara.API.Controllers
     [Route("api/events")]
     [Route("api/v1/events")]
     [Authorize(Roles = "Admin,Editor")]
-    public class EventsController : ControllerBase
+    public class EventsController(
+        IEventService eventService,
+        ILogger<EventsController> logger) : ControllerBase
     {
-        private readonly IEventService _eventService;
-        private readonly ILogger<EventsController> _logger;
-
-        public EventsController(IEventService eventService, ILogger<EventsController> logger)
-        {
-            _eventService = eventService;
-            _logger = logger;
-        }
+        private readonly IEventService _eventService = eventService;
+        private readonly ILogger<EventsController> _logger = logger;
 
         [HttpGet]
         [EnableRateLimiting("authenticated")]
@@ -43,7 +39,7 @@ namespace Batuara.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving events list");
-                return StatusCode(500, new { success = false, message = "An error occurred while retrieving events" });
+                return StatusCode(500, new { success = false, message = "Ocorreu um erro ao listar os eventos" });
             }
         }
 
@@ -58,7 +54,7 @@ namespace Batuara.API.Controllers
                 var item = await _eventService.GetByIdAsync(id);
                 if (item == null)
                 {
-                    return NotFound(new { success = false, message = "Event not found" });
+                    return NotFound(new { success = false, message = "Evento não encontrado" });
                 }
 
                 return Ok(new { success = true, data = item });
@@ -66,7 +62,7 @@ namespace Batuara.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving event");
-                return StatusCode(500, new { success = false, message = "An error occurred while retrieving the event" });
+                return StatusCode(500, new { success = false, message = "Ocorreu um erro ao obter o evento" });
             }
         }
 
@@ -95,7 +91,7 @@ namespace Batuara.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating event");
-                return StatusCode(500, new { success = false, message = "An error occurred while creating the event" });
+                return StatusCode(500, new { success = false, message = "Ocorreu um erro ao criar o evento" });
             }
         }
 
@@ -112,9 +108,9 @@ namespace Batuara.API.Controllers
                 var (updated, errors, conflict) = await _eventService.UpdateAsync(id, request, isPatch: false);
                 if (errors.Length > 0)
                 {
-                    if (updated == null && errors.Length == 1 && errors[0] == "Event not found")
+                    if (updated == null && errors.Length == 1 && errors[0] == "Evento não encontrado")
                     {
-                        return NotFound(new { success = false, message = "Event not found" });
+                        return NotFound(new { success = false, message = "Evento não encontrado" });
                     }
 
                     if (conflict)
@@ -130,7 +126,7 @@ namespace Batuara.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating event");
-                return StatusCode(500, new { success = false, message = "An error occurred while updating the event" });
+                return StatusCode(500, new { success = false, message = "Ocorreu um erro ao atualizar o evento" });
             }
         }
 
@@ -147,9 +143,9 @@ namespace Batuara.API.Controllers
                 var (updated, errors, conflict) = await _eventService.UpdateAsync(id, request, isPatch: true);
                 if (errors.Length > 0)
                 {
-                    if (updated == null && errors.Length == 1 && errors[0] == "Event not found")
+                    if (updated == null && errors.Length == 1 && errors[0] == "Evento não encontrado")
                     {
-                        return NotFound(new { success = false, message = "Event not found" });
+                        return NotFound(new { success = false, message = "Evento não encontrado" });
                     }
 
                     if (conflict)
@@ -165,7 +161,7 @@ namespace Batuara.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error patching event");
-                return StatusCode(500, new { success = false, message = "An error occurred while updating the event" });
+                return StatusCode(500, new { success = false, message = "Ocorreu um erro ao atualizar o evento" });
             }
         }
 
@@ -177,10 +173,16 @@ namespace Batuara.API.Controllers
         {
             try
             {
-                var deleted = await _eventService.SoftDeleteAsync(id);
+                var (deleted, errors) = await _eventService.SoftDeleteAsync(id);
                 if (!deleted)
                 {
-                    return NotFound(new { success = false, message = "Event not found" });
+                    if (errors.Length == 1 && errors[0] == "Evento não encontrado")
+                    {
+                        return NotFound(new { success = false, message = "Evento não encontrado" });
+                    }
+
+                    var firstError = errors.Length > 0 ? errors[0] : null;
+                    return BadRequest(new { success = false, message = firstError ?? "Não foi possível excluir o evento", errors });
                 }
 
                 return NoContent();
@@ -188,7 +190,7 @@ namespace Batuara.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting event");
-                return StatusCode(500, new { success = false, message = "An error occurred while deleting the event" });
+                return StatusCode(500, new { success = false, message = "Ocorreu um erro ao excluir o evento" });
             }
         }
     }

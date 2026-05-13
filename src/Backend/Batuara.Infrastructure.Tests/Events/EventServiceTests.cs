@@ -93,5 +93,89 @@ namespace Batuara.Infrastructure.Tests.Events
             publicList.Data.Should().HaveCount(1);
             publicList.Data.First().Title.Should().Contain("Palestra");
         }
+
+        [Fact]
+        public async Task Update_Should_Be_Denied_When_Less_Than_3_Days_Before_Scheduled_Date()
+        {
+            var db = CreateInMemoryDb();
+            var service = new EventService(db, new EventDomainService());
+            var eventDate = DateTime.SpecifyKind(DateTime.Today.AddDays(2), DateTimeKind.Utc);
+
+            var entity = new Event(
+                "Evento",
+                "Descricao",
+                new Domain.ValueObjects.EventDate(eventDate, TimeSpan.FromHours(15), TimeSpan.FromHours(16)),
+                EventType.Evento);
+            db.Events.Add(entity);
+            await db.SaveChangesAsync();
+
+            var request = new UpdateEventRequest
+            {
+                Title = "Evento alterado"
+            };
+
+            var (updated, errors, conflict) = await service.UpdateAsync(entity.Id, request, isPatch: true);
+
+            updated.Should().BeNull();
+            conflict.Should().BeFalse();
+            errors.Should().ContainSingle()
+                .Which.Should().Contain("menos de 3 dias");
+        }
+
+        [Fact]
+        public async Task Update_Should_Succeed_When_At_Least_3_Days_Before_Scheduled_Date()
+        {
+            var db = CreateInMemoryDb();
+            var service = new EventService(db, new EventDomainService());
+            var eventDate = DateTime.SpecifyKind(DateTime.Today.AddDays(10), DateTimeKind.Utc);
+
+            var entity = new Event(
+                "Evento",
+                "Descricao",
+                new Domain.ValueObjects.EventDate(eventDate, TimeSpan.FromHours(15), TimeSpan.FromHours(16)),
+                EventType.Evento);
+            db.Events.Add(entity);
+            await db.SaveChangesAsync();
+
+            var request = new UpdateEventRequest
+            {
+                Title = "Evento alterado"
+            };
+
+            var (updated, errors, conflict) = await service.UpdateAsync(entity.Id, request, isPatch: true);
+
+            updated.Should().NotBeNull();
+            conflict.Should().BeFalse();
+            errors.Should().BeEmpty();
+            updated!.Title.Should().Be("Evento alterado");
+        }
+
+        [Fact]
+        public async Task Update_Should_Allow_NonSchedule_Changes_Even_When_Existing_Event_Violates_Schedule_Rule()
+        {
+            var db = CreateInMemoryDb();
+            var service = new EventService(db, new EventDomainService());
+            var eventDate = DateTime.SpecifyKind(DateTime.Today.AddDays(10), DateTimeKind.Utc);
+
+            var entity = new Event(
+                "Evento",
+                "Descricao",
+                new Domain.ValueObjects.EventDate(eventDate, TimeSpan.FromHours(10), TimeSpan.FromHours(11)),
+                EventType.Evento);
+            db.Events.Add(entity);
+            await db.SaveChangesAsync();
+
+            var request = new UpdateEventRequest
+            {
+                Description = "Descricao atualizada"
+            };
+
+            var (updated, errors, conflict) = await service.UpdateAsync(entity.Id, request, isPatch: true);
+
+            updated.Should().NotBeNull();
+            conflict.Should().BeFalse();
+            errors.Should().BeEmpty();
+            updated!.Description.Should().Be("Descricao atualizada");
+        }
     }
 }

@@ -92,20 +92,26 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowProxy", policy =>
     {
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+            return;
+        }
+
         if (allowedOrigins.Length > 0)
         {
             policy.WithOrigins(allowedOrigins)
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
+            return;
         }
-        else
-        {
-            // Fallback for development only
-            policy.AllowAnyOrigin()
-                .AllowAnyMethod()
-                .AllowAnyHeader();
-        }
+
+        policy.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
     });
 });
 
@@ -434,8 +440,8 @@ using (var scope = app.Services.CreateScope())
                 || raw.Trim().Equals("y", StringComparison.OrdinalIgnoreCase);
         }
 
-        var applyMigrations = app.Environment.IsDevelopment() || GetBoolEnv("DB_APPLY_MIGRATIONS_ON_STARTUP", false);
-        var seedOnStartup = app.Environment.IsDevelopment() || GetBoolEnv("DB_SEED_ON_STARTUP", false);
+        var applyMigrations = GetBoolEnv("DB_APPLY_MIGRATIONS_ON_STARTUP", app.Environment.IsDevelopment());
+        var seedOnStartup = GetBoolEnv("DB_SEED_ON_STARTUP", app.Environment.IsDevelopment());
 
         if (applyMigrations)
         {
