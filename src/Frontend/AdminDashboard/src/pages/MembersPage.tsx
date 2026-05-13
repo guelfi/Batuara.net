@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Chip,
+  Drawer,
   Dialog,
   DialogActions,
   DialogContent,
@@ -18,14 +19,19 @@ import {
   Snackbar,
   Stack,
   Switch,
+  Tab,
+  Tabs,
   TextField,
   Typography,
+  IconButton,
+  InputAdornment,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Add as AddIcon, Close as CloseIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import apiService from '../services/api';
+import GridPager from '../components/common/GridPager';
 import { ContributionPaymentStatus, HouseMember, HouseMemberContribution } from '../types';
 
 type ContributionFormState = {
@@ -104,21 +110,44 @@ const getContributionStatusLabel = (status?: ContributionPaymentStatus) => {
   return 'Sem lançamento';
 };
 
+const onlyDigits = (value: string) => value.replace(/\D/g, '');
+
+const formatPhoneBr = (value: string) => {
+  const digits = onlyDigits(value).slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
+const formatUf = (value: string) => value.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 2);
+
 const MembersPage: React.FC = () => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [rows, setRows] = useState<HouseMember[]>([]);
   const [loading, setLoading] = useState(false);
+  const [gridError, setGridError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<HouseMember | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<HouseMember | null>(null);
   const [deactivating, setDeactivating] = useState(false);
   const [form, setForm] = useState<MemberFormState>(initialFormState);
+  const [dialogTab, setDialogTab] = useState(0);
+  const [formErrors, setFormErrors] = useState<{
+    fullName?: string;
+    email?: string;
+    mobilePhone?: string;
+    state?: string;
+  }>({});
   const [query, setQuery] = useState('');
   const [cityFilter, setCityFilter] = useState('');
   const [stateFilter, setStateFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'true' | 'false'>('all');
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsTitle, setDetailsTitle] = useState('');
+  const [detailsItems, setDetailsItems] = useState<string[]>([]);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [totalCount, setTotalCount] = useState(0);
   const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -129,6 +158,7 @@ const MembersPage: React.FC = () => {
 
   const loadMembers = useCallback(async () => {
     setLoading(true);
+    setGridError(null);
     try {
       const response = await apiService.getHouseMembers({
         q: query || undefined,
@@ -143,9 +173,13 @@ const MembersPage: React.FC = () => {
       setRows(response.data);
       setTotalCount(response.totalCount);
     } catch (error: any) {
+      const message = error?.response?.data?.message || 'Não foi possível carregar os filhos da casa.';
+      setRows([]);
+      setTotalCount(0);
+      setGridError(message);
       setFeedback({
         open: true,
-        message: error?.response?.data?.message || 'Não foi possível carregar os filhos da casa.',
+        message,
         severity: 'error',
       });
     } finally {
@@ -157,43 +191,74 @@ const MembersPage: React.FC = () => {
     loadMembers();
   }, [loadMembers]);
 
-  const columns: GridColDef[] = [
-    { field: 'fullName', headerName: 'Nome', flex: 1, minWidth: 220 },
-    {
-      field: 'headOrixaFront',
-      headerName: 'Orixás',
-      flex: 1,
-      minWidth: 220,
-      renderCell: (params) => `${params.row.headOrixaFront} / ${params.row.headOrixaBack} / ${params.row.headOrixaRonda}`,
-    },
-    { field: 'city', headerName: 'Cidade', width: 160 },
-    { field: 'mobilePhone', headerName: 'Celular', width: 150 },
-    {
-      field: 'currentMonthContributionStatus',
-      headerName: 'Mensalidade',
-      width: 150,
-      renderCell: (params) => {
-        const status = params.row.currentMonthContributionStatus as ContributionPaymentStatus | undefined;
-        const color = status === ContributionPaymentStatus.Paid ? 'success' : status === ContributionPaymentStatus.Pending ? 'warning' : 'default';
-        return <Chip size="small" label={getContributionStatusLabel(status)} color={color} />;
-      },
-    },
-    {
-      field: 'isActive',
-      headerName: 'Status',
-      width: 120,
-      renderCell: (params) => <Chip size="small" label={params.row.isActive ? 'Ativo' : 'Inativo'} color={params.row.isActive ? 'success' : 'default'} />,
-    },
-    {
-      field: 'actions',
-      type: 'actions',
-      width: 110,
-      getActions: (params) => [
-        <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-        <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
-      ],
-    },
-  ];
+  const openDetails = (title: string, items: string[]) => {
+    setDetailsTitle(title);
+    setDetailsItems(items);
+    setDetailsOpen(true);
+  };
+
+  const columns: GridColDef[] = isXs
+    ? [
+        {
+          field: 'fullName',
+          headerName: 'Nome',
+          flex: 1,
+          minWidth: 140,
+          renderCell: (params) => (
+            <Typography variant="body2" sx={{ whiteSpace: 'normal', lineHeight: 1.25, py: 1 }}>
+              {params.row.fullName}
+            </Typography>
+          ),
+        },
+        {
+          field: 'mobilePhone',
+          headerName: 'Celular',
+          width: 120,
+          renderCell: (params) => (
+            <Typography variant="body2" sx={{ whiteSpace: 'nowrap', py: 1 }}>
+              {params.row.mobilePhone || '—'}
+            </Typography>
+          ),
+          sortable: false,
+          filterable: false,
+        },
+        {
+          field: 'email',
+          headerName: 'E-mail',
+          flex: 1,
+          minWidth: 160,
+          renderCell: (params) => (
+            <Typography variant="body2" sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', py: 1 }}>
+              {params.row.email || '—'}
+            </Typography>
+          ),
+          sortable: false,
+          filterable: false,
+        },
+        {
+          field: 'actions',
+          type: 'actions',
+          width: 140,
+          getActions: (params) => [
+            <GridActionsCellItem icon={<EditIcon fontSize="small" />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
+            <GridActionsCellItem icon={<DeleteIcon fontSize="small" />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
+          ],
+        },
+      ]
+    : [
+        { field: 'fullName', headerName: 'Nome', flex: 1.2, minWidth: 240 },
+        { field: 'mobilePhone', headerName: 'Celular', width: 160 },
+        { field: 'email', headerName: 'E-mail', flex: 1.2, minWidth: 260 },
+        {
+          field: 'actions',
+          type: 'actions',
+          width: 110,
+          getActions: (params) => [
+            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
+            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
+          ],
+        },
+      ];
 
   const mapContribution = (contribution: HouseMemberContribution): ContributionFormState => ({
     id: contribution.id,
@@ -232,6 +297,8 @@ const MembersPage: React.FC = () => {
       setForm(initialFormState);
     }
 
+    setDialogTab(0);
+    setFormErrors({});
     setDialogOpen(true);
   };
 
@@ -239,6 +306,7 @@ const MembersPage: React.FC = () => {
     setDialogOpen(false);
     setEditingItem(null);
     setForm(initialFormState);
+    setFormErrors({});
   };
 
   const handleRequestDeactivate = (item: HouseMember) => {
@@ -290,14 +358,40 @@ const MembersPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    const nextErrors: typeof formErrors = {};
+    if (!form.fullName.trim()) nextErrors.fullName = 'Nome completo é obrigatório.';
+
+    const emailValue = form.email.trim();
+    if (emailValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
+      nextErrors.email = 'Informe um e-mail válido.';
+    }
+
+    const phoneDigits = onlyDigits(form.mobilePhone);
+    if (form.mobilePhone.trim() && !(phoneDigits.length === 10 || phoneDigits.length === 11)) {
+      nextErrors.mobilePhone = 'Informe um celular válido (DDD + número).';
+    }
+
+    const uf = form.state.trim();
+    if (uf && formatUf(uf).length !== 2) {
+      nextErrors.state = 'UF deve conter 2 letras.';
+    }
+
+    setFormErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      if (nextErrors.state) setDialogTab(1);
+      else setDialogTab(0);
+      setFeedback({ open: true, message: 'Revise os campos obrigatórios antes de salvar.', severity: 'error' });
+      return;
+    }
+
     const payload = {
-      fullName: form.fullName,
+      fullName: form.fullName.trim(),
       birthDate: form.birthDate,
       entryDate: form.entryDate,
       headOrixaFront: form.headOrixaFront,
       headOrixaBack: form.headOrixaBack,
       headOrixaRonda: form.headOrixaRonda,
-      email: form.email,
+      email: form.email.trim(),
       mobilePhone: form.mobilePhone,
       zipCode: form.zipCode,
       street: form.street,
@@ -305,7 +399,7 @@ const MembersPage: React.FC = () => {
       complement: form.complement || undefined,
       district: form.district,
       city: form.city,
-      state: form.state,
+      state: formatUf(form.state),
       isActive: form.isActive,
       contributions: form.contributions.map((item) => ({
         id: item.id,
@@ -397,34 +491,137 @@ const MembersPage: React.FC = () => {
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
             Filhos da Casa
           </Typography>
-          <Typography color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-            Gerencie dados pessoais, endereço, Orixás de cabeça e o histórico financeiro das contribuições mensais.
-          </Typography>
         </Box>
-        <Stack direction="row" spacing={1}>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()} fullWidth={isXs}>
             Novo cadastro
           </Button>
         </Stack>
       </Stack>
 
+      {gridError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {gridError}
+        </Alert>
+      )}
+
       <Paper sx={{ p: 2, mb: 2 }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-          <TextField label="Buscar" value={query} onChange={(e) => setQuery(e.target.value)} fullWidth />
-          <TextField label="Cidade" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} fullWidth />
-          <TextField label="UF" value={stateFilter} onChange={(e) => setStateFilter(e.target.value.toUpperCase())} sx={{ maxWidth: 120 }} />
-          <FormControl sx={{ minWidth: 160 }}>
-            <InputLabel>Status</InputLabel>
-            <Select value={statusFilter} label="Status" onChange={(e) => setStatusFilter(e.target.value as 'all' | 'true' | 'false')}>
-              <MenuItem value="all">Todos</MenuItem>
-              <MenuItem value="true">Ativos</MenuItem>
-              <MenuItem value="false">Inativos</MenuItem>
-            </Select>
-          </FormControl>
-        </Stack>
+        {isXs ? (
+          <Stack spacing={1.5}>
+            <TextField
+              label="Buscar"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              InputProps={{
+                endAdornment: query ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Limpar busca"
+                      size="small"
+                      onClick={() => {
+                        setQuery('');
+                        setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                      }}
+                      edge="end"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+              fullWidth
+            />
+          </Stack>
+        ) : (
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+            <TextField
+              label="Buscar"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              InputProps={{
+                endAdornment: query ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Limpar busca"
+                      size="small"
+                      onClick={() => {
+                        setQuery('');
+                        setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                      }}
+                      edge="end"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+              fullWidth
+            />
+            <TextField
+              label="Cidade"
+              value={cityFilter}
+              onChange={(e) => setCityFilter(e.target.value)}
+              InputProps={{
+                endAdornment: cityFilter ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Limpar cidade"
+                      size="small"
+                      onClick={() => {
+                        setCityFilter('');
+                        setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                      }}
+                      edge="end"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+              fullWidth
+            />
+            <TextField
+              label="UF"
+              value={stateFilter}
+              onChange={(e) => setStateFilter(e.target.value.toUpperCase())}
+              InputProps={{
+                endAdornment: stateFilter ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Limpar UF"
+                      size="small"
+                      onClick={() => {
+                        setStateFilter('');
+                        setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                      }}
+                      edge="end"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+              sx={{ maxWidth: 120 }}
+            />
+            <FormControl sx={{ minWidth: 160 }}>
+              <InputLabel>Status</InputLabel>
+              <Select value={statusFilter} label="Status" onChange={(e) => setStatusFilter(e.target.value as 'all' | 'true' | 'false')}>
+                <MenuItem value="all">Todos</MenuItem>
+                <MenuItem value="true">Ativos</MenuItem>
+                <MenuItem value="false">Inativos</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+        )}
       </Paper>
 
       <Paper sx={{ p: 1 }}>
+        <GridPager
+          page={paginationModel.page}
+          pageSize={paginationModel.pageSize}
+          totalCount={totalCount}
+          onPageChange={(page) => setPaginationModel((prev) => ({ ...prev, page }))}
+        />
         <DataGrid
           autoHeight
           rows={rows}
@@ -434,134 +631,288 @@ const MembersPage: React.FC = () => {
           paginationMode="server"
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
-          pageSizeOptions={[5, 10, 20]}
+          pageSizeOptions={[10]}
+          hideFooter
           disableRowSelectionOnClick
-          columnVisibilityModel={{
-            city: !isXs,
+          columnVisibilityModel={
+            isXs
+              ? undefined
+              : {
+                  city: !isXs,
+                }
+          }
+          getRowHeight={isXs ? () => 'auto' : undefined}
+          slots={{
+            noRowsOverlay: () => (
+              <Stack sx={{ height: 140 }} alignItems="center" justifyContent="center">
+                <Typography color="text.secondary">Nenhum registro encontrado.</Typography>
+              </Stack>
+            ),
           }}
-          sx={{ border: 0 }}
+          sx={{
+            border: 0,
+            '& .MuiDataGrid-actionsCell .MuiIconButton-root': {
+              width: 48,
+              height: 48,
+            },
+          }}
         />
       </Paper>
 
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} fullWidth maxWidth="lg">
-        <DialogTitle>{editingItem ? 'Editar filho da casa' : 'Novo filho da casa'}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <Typography variant="h6">Dados pessoais</Typography>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField label="Nome completo" value={form.fullName} onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))} fullWidth />
-              <TextField label="E-mail" value={form.email} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} fullWidth />
-              <TextField label="Celular" value={form.mobilePhone} onChange={(e) => setForm((prev) => ({ ...prev, mobilePhone: e.target.value }))} fullWidth />
-            </Stack>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField label="Data de nascimento" type="date" value={form.birthDate} onChange={(e) => setForm((prev) => ({ ...prev, birthDate: e.target.value }))} InputLabelProps={{ shrink: true }} fullWidth />
-              <TextField label="Data de entrada na casa" type="date" value={form.entryDate} onChange={(e) => setForm((prev) => ({ ...prev, entryDate: e.target.value }))} InputLabelProps={{ shrink: true }} fullWidth />
-            </Stack>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField label="Orixá de frente" value={form.headOrixaFront} onChange={(e) => setForm((prev) => ({ ...prev, headOrixaFront: e.target.value }))} fullWidth />
-              <TextField label="Orixá de costas" value={form.headOrixaBack} onChange={(e) => setForm((prev) => ({ ...prev, headOrixaBack: e.target.value }))} fullWidth />
-              <TextField label="Orixá de ronda" value={form.headOrixaRonda} onChange={(e) => setForm((prev) => ({ ...prev, headOrixaRonda: e.target.value }))} fullWidth />
-            </Stack>
-
-            <Divider />
-            <Typography variant="h6">Endereço</Typography>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField label="CEP" value={form.zipCode} onChange={(e) => setForm((prev) => ({ ...prev, zipCode: e.target.value }))} sx={{ minWidth: 160 }} />
-              <TextField label="Logradouro" value={form.street} onChange={(e) => setForm((prev) => ({ ...prev, street: e.target.value }))} fullWidth />
-              <TextField label="Número" value={form.number} onChange={(e) => setForm((prev) => ({ ...prev, number: e.target.value }))} sx={{ minWidth: 120 }} />
-            </Stack>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField label="Complemento" value={form.complement} onChange={(e) => setForm((prev) => ({ ...prev, complement: e.target.value }))} fullWidth />
-              <TextField label="Bairro" value={form.district} onChange={(e) => setForm((prev) => ({ ...prev, district: e.target.value }))} fullWidth />
-              <TextField label="Cidade" value={form.city} onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))} fullWidth />
-              <TextField label="UF" value={form.state} onChange={(e) => setForm((prev) => ({ ...prev, state: e.target.value.toUpperCase() }))} sx={{ minWidth: 100 }} />
-            </Stack>
-
-            <Divider />
-            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
-              <Box>
-                <Typography variant="h6">Mensalidades</Typography>
-                <Typography color="text.secondary">
-                  Controle histórico de contribuições mensais sugeridas em R$ 50,00.
-                </Typography>
-              </Box>
-              <Button variant="outlined" startIcon={<AddIcon />} onClick={addContribution}>
-                Adicionar mensalidade
-              </Button>
-            </Stack>
-
-            <Stack spacing={2}>
-              {form.contributions.map((item, index) => (
-                <Paper key={`${item.referenceMonth}-${index}`} variant="outlined" sx={{ p: 2 }}>
-                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                    <TextField
-                      label="Mês de referência"
-                      type="date"
-                      value={item.referenceMonth}
-                      onChange={(e) => updateContribution(index, 'referenceMonth', e.target.value)}
-                      InputLabelProps={{ shrink: true }}
-                      fullWidth
-                    />
-                    <TextField
-                      label="Vencimento"
-                      type="date"
-                      value={item.dueDate}
-                      onChange={(e) => updateContribution(index, 'dueDate', e.target.value)}
-                      InputLabelProps={{ shrink: true }}
-                      fullWidth
-                    />
-                    <TextField
-                      label="Valor"
-                      type="number"
-                      value={item.amount}
-                      onChange={(e) => updateContribution(index, 'amount', e.target.value)}
-                      inputProps={{ min: 0, step: 0.01 }}
-                      fullWidth
-                    />
-                    <FormControl fullWidth>
-                      <InputLabel>Status</InputLabel>
-                      <Select value={item.status} label="Status" onChange={(e) => updateContribution(index, 'status', Number(e.target.value))}>
-                        <MenuItem value={ContributionPaymentStatus.Pending}>Pendente</MenuItem>
-                        <MenuItem value={ContributionPaymentStatus.Paid}>Pago</MenuItem>
-                      </Select>
-                    </FormControl>
-                    <TextField
-                      label="Pago em"
-                      type="date"
-                      value={item.paidAt}
-                      onChange={(e) => updateContribution(index, 'paidAt', e.target.value)}
-                      InputLabelProps={{ shrink: true }}
-                      fullWidth
-                      disabled={item.status !== ContributionPaymentStatus.Paid}
-                    />
-                    <Button color="error" onClick={() => removeContribution(index)}>
-                      Remover
-                    </Button>
-                  </Stack>
-                  <TextField
-                    label="Observações"
-                    value={item.notes}
-                    onChange={(e) => updateContribution(index, 'notes', e.target.value)}
-                    fullWidth
-                    multiline
-                    minRows={2}
-                    sx={{ mt: 2 }}
-                  />
-                </Paper>
+      <Drawer
+        anchor="bottom"
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        PaperProps={{ sx: { p: 2, pb: 3, borderTopLeftRadius: 16, borderTopRightRadius: 16 } }}
+      >
+        <Stack spacing={2}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            {detailsTitle || 'Detalhes'}
+          </Typography>
+          {detailsItems.length > 0 ? (
+            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+              {detailsItems.map((item) => (
+                <Chip key={item} label={item} size="small" sx={{ mb: 1 }} />
               ))}
             </Stack>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              Nenhum item para exibir.
+            </Typography>
+          )}
+          <Button variant="contained" onClick={() => setDetailsOpen(false)} fullWidth>
+            Fechar
+          </Button>
+        </Stack>
+      </Drawer>
 
-            <Alert severity="info">
-              {`Mensalidades registradas: ${form.contributions.length} | Pagas: ${contributionSummary.paid} | Pendentes: ${contributionSummary.pending} | Total previsto: R$ ${contributionSummary.total.toFixed(2)}`}
-            </Alert>
+      <Dialog open={dialogOpen} onClose={handleCloseDialog} fullWidth maxWidth="lg">
+        <DialogTitle>{editingItem ? 'Editar filho da casa' : 'Novo filho da casa'}</DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <Tabs value={dialogTab} onChange={(_, value) => setDialogTab(value)} variant="fullWidth">
+            <Tab label="Dados pessoais" />
+            <Tab label="Endereço" />
+            <Tab label="Orixás" />
+          </Tabs>
 
-            {editingItem && (
-              <FormControlLabel
-                control={<Switch checked={form.isActive} onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))} />}
-                label="Cadastro ativo"
-              />
+          <Box sx={{ p: 2, pb: 2 }}>
+            {dialogTab === 0 && (
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  <TextField
+                    label="Nome completo"
+                    value={form.fullName}
+                    onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
+                    error={!!formErrors.fullName}
+                    helperText={formErrors.fullName}
+                    fullWidth
+                  />
+                  <TextField
+                    label="E-mail"
+                    value={form.email}
+                    onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                    error={!!formErrors.email}
+                    helperText={formErrors.email}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Celular"
+                    value={form.mobilePhone}
+                    onChange={(e) => setForm((prev) => ({ ...prev, mobilePhone: formatPhoneBr(e.target.value) }))}
+                    error={!!formErrors.mobilePhone}
+                    helperText={formErrors.mobilePhone}
+                    fullWidth
+                  />
+                </Stack>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  <TextField
+                    label="Data de nascimento"
+                    type="date"
+                    value={form.birthDate}
+                    onChange={(e) => setForm((prev) => ({ ...prev, birthDate: e.target.value }))}
+                    InputLabelProps={{ shrink: true }}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Data de entrada na casa"
+                    type="date"
+                    value={form.entryDate}
+                    onChange={(e) => setForm((prev) => ({ ...prev, entryDate: e.target.value }))}
+                    InputLabelProps={{ shrink: true }}
+                    fullWidth
+                  />
+                </Stack>
+
+                <Divider />
+                <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
+                  <Box>
+                    <Typography variant="h6">Mensalidades</Typography>
+                    <Typography color="text.secondary">
+                      Controle histórico de contribuições mensais sugeridas em R$ 50,00.
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={addContribution}
+                    fullWidth={isXs}
+                  >
+                    Adicionar mensalidade
+                  </Button>
+                </Stack>
+
+                <Stack spacing={2}>
+                  {form.contributions.map((item, index) => (
+                    <Paper key={`${item.referenceMonth}-${index}`} variant="outlined" sx={{ p: 2 }}>
+                      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                        <TextField
+                          label="Mês de referência"
+                          type="date"
+                          value={item.referenceMonth}
+                          onChange={(e) => updateContribution(index, 'referenceMonth', e.target.value)}
+                          InputLabelProps={{ shrink: true }}
+                          fullWidth
+                        />
+                        <TextField
+                          label="Vencimento"
+                          type="date"
+                          value={item.dueDate}
+                          onChange={(e) => updateContribution(index, 'dueDate', e.target.value)}
+                          InputLabelProps={{ shrink: true }}
+                          fullWidth
+                        />
+                        <TextField
+                          label="Valor"
+                          type="number"
+                          value={item.amount}
+                          onChange={(e) => updateContribution(index, 'amount', e.target.value)}
+                          inputProps={{ min: 0, step: 0.01 }}
+                          fullWidth
+                        />
+                        <FormControl fullWidth>
+                          <InputLabel>Status</InputLabel>
+                          <Select value={item.status} label="Status" onChange={(e) => updateContribution(index, 'status', Number(e.target.value))} sx={{ minHeight: 48 }}>
+                            <MenuItem value={ContributionPaymentStatus.Pending}>Pendente</MenuItem>
+                            <MenuItem value={ContributionPaymentStatus.Paid}>Pago</MenuItem>
+                          </Select>
+                        </FormControl>
+                        <TextField
+                          label="Pago em"
+                          type="date"
+                          value={item.paidAt}
+                          onChange={(e) => updateContribution(index, 'paidAt', e.target.value)}
+                          InputLabelProps={{ shrink: true }}
+                          fullWidth
+                          disabled={item.status !== ContributionPaymentStatus.Paid}
+                        />
+                        <Button color="error" onClick={() => removeContribution(index)} fullWidth={isXs}>
+                          Remover
+                        </Button>
+                      </Stack>
+                      <TextField
+                        label="Observações"
+                        value={item.notes}
+                        onChange={(e) => updateContribution(index, 'notes', e.target.value)}
+                        fullWidth
+                        multiline
+                        minRows={2}
+                        sx={{ mt: 2 }}
+                      />
+                    </Paper>
+                  ))}
+                </Stack>
+
+                <Alert severity="info">
+                  {`Mensalidades registradas: ${form.contributions.length} | Pagas: ${contributionSummary.paid} | Pendentes: ${contributionSummary.pending} | Total previsto: R$ ${contributionSummary.total.toFixed(2)}`}
+                </Alert>
+
+                {editingItem && (
+                  <FormControlLabel
+                    control={<Switch checked={form.isActive} onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))} />}
+                    label="Cadastro ativo"
+                  />
+                )}
+              </Stack>
             )}
-          </Stack>
+
+            {dialogTab === 1 && (
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  <TextField
+                    label="CEP"
+                    value={form.zipCode}
+                    onChange={(e) => setForm((prev) => ({ ...prev, zipCode: e.target.value }))}
+                    sx={{ minWidth: 160 }}
+                  />
+                  <TextField
+                    label="Logradouro"
+                    value={form.street}
+                    onChange={(e) => setForm((prev) => ({ ...prev, street: e.target.value }))}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Número"
+                    value={form.number}
+                    onChange={(e) => setForm((prev) => ({ ...prev, number: e.target.value }))}
+                    sx={{ minWidth: 120 }}
+                  />
+                </Stack>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  <TextField
+                    label="Complemento"
+                    value={form.complement}
+                    onChange={(e) => setForm((prev) => ({ ...prev, complement: e.target.value }))}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Bairro"
+                    value={form.district}
+                    onChange={(e) => setForm((prev) => ({ ...prev, district: e.target.value }))}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Cidade"
+                    value={form.city}
+                    onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
+                    fullWidth
+                  />
+                  <TextField
+                    label="UF"
+                    value={form.state}
+                    onChange={(e) => setForm((prev) => ({ ...prev, state: formatUf(e.target.value) }))}
+                    error={!!formErrors.state}
+                    helperText={formErrors.state}
+                    sx={{ minWidth: 100 }}
+                  />
+                </Stack>
+              </Stack>
+            )}
+
+            {dialogTab === 2 && (
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  <TextField
+                    label="Orixá de frente"
+                    value={form.headOrixaFront}
+                    onChange={(e) => setForm((prev) => ({ ...prev, headOrixaFront: e.target.value }))}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Orixá de costas"
+                    value={form.headOrixaBack}
+                    onChange={(e) => setForm((prev) => ({ ...prev, headOrixaBack: e.target.value }))}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Orixá de ronda"
+                    value={form.headOrixaRonda}
+                    onChange={(e) => setForm((prev) => ({ ...prev, headOrixaRonda: e.target.value }))}
+                    fullWidth
+                  />
+                </Stack>
+              </Stack>
+            )}
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancelar</Button>

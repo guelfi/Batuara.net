@@ -15,7 +15,7 @@ namespace Batuara.Domain.ValueObjects
         {
             ValidateEventDate(date, startTime, endTime);
             
-            Date = date.Date; // Ensure only date part
+            Date = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
             StartTime = startTime;
             EndTime = endTime;
         }
@@ -23,16 +23,16 @@ namespace Batuara.Domain.ValueObjects
         private static void ValidateEventDate(DateTime date, TimeSpan? startTime, TimeSpan? endTime)
         {
             if (date == default)
-                throw new ArgumentException("Event date cannot be default value", nameof(date));
+                throw new ArgumentException("A data não pode ser o valor padrão", nameof(date));
 
             if (startTime.HasValue && endTime.HasValue && startTime >= endTime)
-                throw new ArgumentException("Start time must be before end time");
+                throw new ArgumentException("O horário de início deve ser anterior ao horário de término");
 
             if (startTime.HasValue && (startTime.Value < TimeSpan.Zero || startTime.Value > TimeSpan.FromHours(24)))
-                throw new ArgumentException("Start time must be between 00:00 and 24:00");
+                throw new ArgumentException("O horário de início deve estar entre 00:00 e 24:00");
 
             if (endTime.HasValue && (endTime.Value < TimeSpan.Zero || endTime.Value > TimeSpan.FromHours(24)))
-                throw new ArgumentException("End time must be between 00:00 and 24:00");
+                throw new ArgumentException("O horário de término deve estar entre 00:00 e 24:00");
         }
 
         public bool IsAllDay => !StartTime.HasValue && !EndTime.HasValue;

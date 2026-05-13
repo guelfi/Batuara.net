@@ -30,6 +30,6 @@ namespace Batuara.Application.Events.Services
         Task<EventDto?> GetByIdAsync(int id);
         Task<(EventDto? Event, string[] Errors, bool Conflict)> CreateAsync(CreateEventRequest request);
         Task<(EventDto? Event, string[] Errors, bool Conflict)> UpdateAsync(int id, UpdateEventRequest request, bool isPatch);
-        Task<bool> SoftDeleteAsync(int id);
+        Task<(bool Deleted, string[] Errors)> SoftDeleteAsync(int id);
     }
 }

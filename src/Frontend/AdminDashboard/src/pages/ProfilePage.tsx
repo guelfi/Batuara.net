@@ -219,10 +219,10 @@ const ProfilePage: React.FC = () => {
         </Alert>
       )}
 
-      <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', lg: 'row' } }}>
+      <Box sx={{ display: 'flex', gap: { xs: 2, lg: 4 }, flexDirection: { xs: 'column', lg: 'row' } }}>
         {/* Informações do Perfil */}
         <Paper
-          sx={{ p: 3, flex: 1 }}
+          sx={{ p: { xs: 2, sm: 3 }, flex: 1 }}
           role="region"
           aria-labelledby="profile-info-heading"
         >
@@ -330,6 +330,7 @@ const ProfilePage: React.FC = () => {
               type="submit"
               variant="contained"
               disabled={loading}
+              fullWidth
               sx={{ mt: 3 }}
               aria-busy={loading}
             >
@@ -347,7 +348,7 @@ const ProfilePage: React.FC = () => {
 
         {/* Alteração de Senha */}
         <Paper
-          sx={{ p: 3, flex: 1 }}
+          sx={{ p: { xs: 2, sm: 3 }, flex: 1 }}
           role="region"
           aria-labelledby="change-password-heading"
         >
@@ -399,7 +400,7 @@ const ProfilePage: React.FC = () => {
                 },
               })}
               error={!!passwordErrors.currentPassword}
-              helperText={passwordErrors.currentPassword?.message}
+              helperText={passwordErrors.currentPassword?.message || 'Informe sua senha atual.'}
               aria-describedby="current-password-error"
               inputProps={{
                 'aria-required': 'true',
@@ -432,7 +433,7 @@ const ProfilePage: React.FC = () => {
                 },
               })}
               error={!!passwordErrors.newPassword}
-              helperText={passwordErrors.newPassword?.message}
+              helperText={passwordErrors.newPassword?.message || 'Mínimo de 6 caracteres.'}
               aria-describedby="new-password-error"
               inputProps={{
                 'aria-required': 'true',
@@ -463,7 +464,7 @@ const ProfilePage: React.FC = () => {
                   value === newPassword || 'As senhas não coincidem'
               })}
               error={!!passwordErrors.confirmPassword}
-              helperText={passwordErrors.confirmPassword?.message}
+              helperText={passwordErrors.confirmPassword?.message || 'Digite novamente para confirmar.'}
               aria-describedby="confirm-password-error"
               inputProps={{
                 'aria-required': 'true',
@@ -487,6 +488,7 @@ const ProfilePage: React.FC = () => {
               type="submit"
               variant="contained"
               disabled={passwordLoading}
+              fullWidth
               sx={{ mt: 3 }}
               aria-busy={passwordLoading}
             >
@@ -505,7 +507,7 @@ const ProfilePage: React.FC = () => {
 
       {/* Histórico de Atividades */}
       <Paper
-        sx={{ p: 3, mt: 4 }}
+        sx={{ p: { xs: 2, sm: 3 }, mt: { xs: 2, sm: 4 } }}
         role="region"
         aria-labelledby="activity-history-heading"
       >

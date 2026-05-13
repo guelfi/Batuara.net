@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Chip,
+  Drawer,
   Dialog,
   DialogActions,
   DialogContent,
@@ -19,12 +20,16 @@ import {
   Switch,
   TextField,
   Typography,
+  IconButton,
+  InputAdornment,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import type { SelectChangeEvent } from '@mui/material/Select';
+import { Add as AddIcon, Close as CloseIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import apiService from '../services/api';
+import GridPager from '../components/common/GridPager';
 import { UmbandaLine } from '../types';
 
 type UmbandaLineForm = {
@@ -65,6 +70,7 @@ const UmbandaLinesPage: React.FC = () => {
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [rows, setRows] = useState<UmbandaLine[]>([]);
   const [loading, setLoading] = useState(false);
+  const [gridError, setGridError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<UmbandaLine | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -75,6 +81,9 @@ const UmbandaLinesPage: React.FC = () => {
   const [entityFilter, setEntityFilter] = useState('');
   const [dayFilter, setDayFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'true' | 'false'>('all');
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsTitle, setDetailsTitle] = useState('');
+  const [detailsItems, setDetailsItems] = useState<string[]>([]);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [totalCount, setTotalCount] = useState(0);
   const [formErrors, setFormErrors] = useState<UmbandaLineFormErrors>({});
@@ -86,6 +95,7 @@ const UmbandaLinesPage: React.FC = () => {
 
   const loadLines = useCallback(async () => {
     setLoading(true);
+    setGridError(null);
     try {
       const response = await apiService.getUmbandaLines({
         q: query || undefined,
@@ -100,9 +110,13 @@ const UmbandaLinesPage: React.FC = () => {
       setRows(response.data);
       setTotalCount(response.totalCount);
     } catch (error: any) {
+      const message = error?.response?.data?.message || 'Não foi possível carregar as linhas de Umbanda.';
+      setRows([]);
+      setTotalCount(0);
+      setGridError(message);
       setFeedback({
         open: true,
-        message: error?.response?.data?.message || 'Não foi possível carregar as linhas de Umbanda.',
+        message,
         severity: 'error',
       });
     } finally {
@@ -114,46 +128,115 @@ const UmbandaLinesPage: React.FC = () => {
     loadLines();
   }, [loadLines]);
 
-  const columns: GridColDef[] = [
-      { field: 'displayOrder', headerName: 'Ordem', width: 90 },
-      { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180 },
-      {
-        field: 'entities',
-        headerName: 'Entidades',
-        flex: 1.2,
-        minWidth: 200,
-        renderCell: (params) => (
-          <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
-            {params.row.entities.slice(0, 2).map((entity: string) => (
-              <Chip key={entity} label={entity} size="small" />
-            ))}
-            {params.row.entities.length > 2 && <Chip label={`+${params.row.entities.length - 2}`} size="small" variant="outlined" />}
-          </Stack>
-        ),
-      },
-      {
-        field: 'workingDays',
-        headerName: 'Dias',
-        flex: 1,
-        minWidth: 180,
-        renderCell: (params) => params.row.workingDays.join(', ') || 'Não informado',
-      },
-      {
-        field: 'isActive',
-        headerName: 'Status',
-        width: 110,
-        renderCell: (params) => <Chip size="small" label={params.row.isActive ? 'Ativa' : 'Inativa'} color={params.row.isActive ? 'success' : 'default'} />,
-      },
-      {
-        field: 'actions',
-        type: 'actions',
-        width: 110,
-        getActions: (params) => [
-          <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-          <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
-        ],
-      },
-  ];
+  const openDetails = (title: string, items: string[]) => {
+    setDetailsTitle(title);
+    setDetailsItems(items);
+    setDetailsOpen(true);
+  };
+
+  const columns: GridColDef[] = isXs
+    ? [
+        {
+          field: 'summary',
+          headerName: 'Nome',
+          flex: 1,
+          minWidth: 140,
+          renderCell: (params) => (
+            <Stack spacing={0.25} sx={{ py: 1 }}>
+              <Typography variant="body2" sx={{ whiteSpace: 'normal', lineHeight: 1.25 }}>
+                {params.row.name}
+              </Typography>
+              <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
+                {params.row.entities?.[0] ? (
+                  <Chip label={params.row.entities[0]} size="small" />
+                ) : (
+                  <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                    —
+                  </Typography>
+                )}
+                {Array.isArray(params.row.entities) && params.row.entities.length > 1 && (
+                  <Chip
+                    label={`+${params.row.entities.length - 1}`}
+                    size="small"
+                    variant="outlined"
+                    clickable
+                    onClick={() => openDetails(`Entidades — ${params.row.name}`, params.row.entities)}
+                  />
+                )}
+              </Stack>
+            </Stack>
+          ),
+          sortable: false,
+          filterable: false,
+        },
+        {
+          field: 'isActive',
+          headerName: 'Status',
+          width: 80,
+          renderCell: (params) => (
+            <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
+              {params.row.isActive ? 'Ativa' : 'Inativa'}
+            </Typography>
+          ),
+        },
+        {
+          field: 'actions',
+          type: 'actions',
+          width: 104,
+          getActions: (params) => [
+            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
+            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
+          ],
+        },
+      ]
+    : [
+        { field: 'displayOrder', headerName: 'Ordem', width: 90 },
+        { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180 },
+        {
+          field: 'entities',
+          headerName: 'Entidades',
+          flex: 1.2,
+          minWidth: 200,
+          renderCell: (params) => (
+            <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
+              {params.row.entities.slice(0, 2).map((entity: string) => (
+                <Chip key={entity} label={entity} size="small" />
+              ))}
+              {params.row.entities.length > 2 && (
+                <Chip
+                  label={`+${params.row.entities.length - 2}`}
+                  size="small"
+                  variant="outlined"
+                  clickable
+                  onClick={() => openDetails(`Entidades — ${params.row.name}`, params.row.entities)}
+                />
+              )}
+            </Stack>
+          ),
+        },
+        {
+          field: 'workingDays',
+          headerName: 'Dias',
+          flex: 1,
+          minWidth: 180,
+          renderCell: (params) => params.row.workingDays.join(', ') || 'Não informado',
+        },
+        {
+          field: 'isActive',
+          headerName: 'Status',
+          width: 110,
+          renderCell: (params) => <Chip size="small" label={params.row.isActive ? 'Ativa' : 'Inativa'} color={params.row.isActive ? 'success' : 'default'} />,
+        },
+        {
+          field: 'actions',
+          type: 'actions',
+          width: 110,
+          getActions: (params) => [
+            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
+            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
+          ],
+        },
+      ];
 
   const handleOpenDialog = (item?: UmbandaLine) => {
     if (item) {
@@ -241,16 +324,7 @@ const UmbandaLinesPage: React.FC = () => {
 
     setDeactivating(true);
     try {
-      await apiService.updateUmbandaLine(String(confirmTarget.id), {
-        name: confirmTarget.name,
-        description: confirmTarget.description,
-        characteristics: confirmTarget.characteristics,
-        batuaraInterpretation: confirmTarget.batuaraInterpretation,
-        displayOrder: confirmTarget.displayOrder,
-        entities: confirmTarget.entities,
-        workingDays: confirmTarget.workingDays,
-        isActive: false,
-      });
+      await apiService.deleteUmbandaLine(String(confirmTarget.id));
 
       setFeedback({ open: true, message: 'Linha de Umbanda inativada com sucesso.', severity: 'success' });
       handleCloseConfirm();
@@ -273,34 +347,141 @@ const UmbandaLinesPage: React.FC = () => {
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
             Linhas de Umbanda
           </Typography>
-          <Typography color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-            Organize as linhas, entidades vinculadas, dias de trabalho e interpretação doutrinária da casa.
-          </Typography>
         </Box>
-        <Stack direction="row" spacing={1}>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()} fullWidth={isXs}>
             Nova linha
           </Button>
         </Stack>
       </Stack>
 
+      {gridError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {gridError}
+        </Alert>
+      )}
+
       <Paper sx={{ p: 2, mb: 2 }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-          <TextField label="Buscar" value={query} onChange={(e) => setQuery(e.target.value)} fullWidth />
-          <TextField label="Entidade" value={entityFilter} onChange={(e) => setEntityFilter(e.target.value)} fullWidth />
-          <TextField label="Dia de trabalho" value={dayFilter} onChange={(e) => setDayFilter(e.target.value)} fullWidth />
-          <FormControl sx={{ minWidth: 160 }}>
-            <InputLabel>Status</InputLabel>
-            <Select value={statusFilter} label="Status" onChange={(e) => setStatusFilter(e.target.value as 'all' | 'true' | 'false')}>
-              <MenuItem value="all">Todos</MenuItem>
-              <MenuItem value="true">Ativas</MenuItem>
-              <MenuItem value="false">Inativas</MenuItem>
-            </Select>
-          </FormControl>
-        </Stack>
+        {isXs ? (
+          <Stack spacing={1.5}>
+            <TextField
+              label="Buscar"
+              value={query}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setQuery(e.target.value)}
+              InputProps={{
+                endAdornment: query ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Limpar busca"
+                      size="small"
+                      onClick={() => {
+                        setQuery('');
+                        setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                      }}
+                      edge="end"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+              fullWidth
+            />
+          </Stack>
+        ) : (
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+            <TextField
+              label="Buscar"
+              value={query}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setQuery(e.target.value)}
+              InputProps={{
+                endAdornment: query ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Limpar busca"
+                      size="small"
+                      onClick={() => {
+                        setQuery('');
+                        setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                      }}
+                      edge="end"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+              fullWidth
+            />
+            <TextField
+              label="Entidade"
+              value={entityFilter}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setEntityFilter(e.target.value)}
+              InputProps={{
+                endAdornment: entityFilter ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Limpar entidade"
+                      size="small"
+                      onClick={() => {
+                        setEntityFilter('');
+                        setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                      }}
+                      edge="end"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+              fullWidth
+            />
+            <TextField
+              label="Dia de trabalho"
+              value={dayFilter}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDayFilter(e.target.value)}
+              InputProps={{
+                endAdornment: dayFilter ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Limpar dia de trabalho"
+                      size="small"
+                      onClick={() => {
+                        setDayFilter('');
+                        setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                      }}
+                      edge="end"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+              fullWidth
+            />
+            <FormControl sx={{ minWidth: 160 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={statusFilter}
+                label="Status"
+                onChange={(e: SelectChangeEvent) => setStatusFilter(e.target.value as 'all' | 'true' | 'false')}
+              >
+                <MenuItem value="all">Todos</MenuItem>
+                <MenuItem value="true">Ativas</MenuItem>
+                <MenuItem value="false">Inativas</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+        )}
       </Paper>
 
       <Paper sx={{ p: 1 }}>
+        <GridPager
+          page={paginationModel.page}
+          pageSize={paginationModel.pageSize}
+          totalCount={totalCount}
+          onPageChange={(page) => setPaginationModel((prev) => ({ ...prev, page }))}
+        />
         <DataGrid
           autoHeight
           rows={rows}
@@ -310,36 +491,117 @@ const UmbandaLinesPage: React.FC = () => {
           paginationMode="server"
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
-          pageSizeOptions={[5, 10, 20]}
+          pageSizeOptions={[10]}
+          hideFooter
           disableRowSelectionOnClick
-          columnVisibilityModel={{
-            displayOrder: !isXs,
-            workingDays: !isXs,
+          columnVisibilityModel={
+            isXs
+              ? undefined
+              : {
+                  displayOrder: !isXs,
+                  workingDays: !isXs,
+                }
+          }
+          getRowHeight={isXs ? () => 'auto' : undefined}
+          slots={{
+            noRowsOverlay: () => (
+              <Stack sx={{ height: 140 }} alignItems="center" justifyContent="center">
+                <Typography color="text.secondary">Nenhum registro encontrado.</Typography>
+              </Stack>
+            ),
           }}
-          sx={{ border: 0 }}
+          sx={{
+            border: 0,
+            '& .MuiDataGrid-actionsCell .MuiIconButton-root': {
+              width: 48,
+              height: 48,
+            },
+          }}
         />
       </Paper>
+
+      <Drawer
+        anchor="bottom"
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        PaperProps={{ sx: { p: 2, pb: 3, borderTopLeftRadius: 16, borderTopRightRadius: 16 } }}
+      >
+        <Stack spacing={2}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            {detailsTitle || 'Detalhes'}
+          </Typography>
+          {detailsItems.length > 0 ? (
+            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+              {detailsItems.map((item) => (
+                <Chip key={item} label={item} size="small" sx={{ mb: 1 }} />
+              ))}
+            </Stack>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              Nenhum item para exibir.
+            </Typography>
+          )}
+          <Button variant="contained" onClick={() => setDetailsOpen(false)} fullWidth>
+            Fechar
+          </Button>
+        </Stack>
+      </Drawer>
 
       <Dialog open={dialogOpen} onClose={handleCloseDialog} fullWidth maxWidth="md">
         <DialogTitle>{editingItem ? 'Editar linha de Umbanda' : 'Nova linha de Umbanda'}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField label="Nome" value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} error={!!formErrors.name} helperText={formErrors.name} fullWidth />
+              <TextField
+                label="Nome"
+                value={form.name}
+                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                  setForm((prev) => ({ ...prev, name: e.target.value }))
+                }
+                error={!!formErrors.name}
+                helperText={formErrors.name}
+                fullWidth
+              />
               <TextField
                 label="Ordem de exibição"
                 type="number"
                 value={form.displayOrder}
-                onChange={(e) => setForm((prev) => ({ ...prev, displayOrder: e.target.value }))}
+                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                  setForm((prev) => ({ ...prev, displayOrder: e.target.value }))
+                }
                 sx={{ minWidth: 160 }}
               />
             </Stack>
-            <TextField label="Descrição" value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} error={!!formErrors.description} helperText={formErrors.description} fullWidth multiline minRows={3} />
-            <TextField label="Características" value={form.characteristics} onChange={(e) => setForm((prev) => ({ ...prev, characteristics: e.target.value }))} error={!!formErrors.characteristics} helperText={formErrors.characteristics} fullWidth multiline minRows={2} />
+            <TextField
+              label="Descrição"
+              value={form.description}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                setForm((prev) => ({ ...prev, description: e.target.value }))
+              }
+              error={!!formErrors.description}
+              helperText={formErrors.description}
+              fullWidth
+              multiline
+              minRows={3}
+            />
+            <TextField
+              label="Características"
+              value={form.characteristics}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                setForm((prev) => ({ ...prev, characteristics: e.target.value }))
+              }
+              error={!!formErrors.characteristics}
+              helperText={formErrors.characteristics}
+              fullWidth
+              multiline
+              minRows={2}
+            />
             <TextField
               label="Interpretação Batuara"
               value={form.batuaraInterpretation}
-              onChange={(e) => setForm((prev) => ({ ...prev, batuaraInterpretation: e.target.value }))}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                setForm((prev) => ({ ...prev, batuaraInterpretation: e.target.value }))
+              }
               fullWidth
               multiline
               minRows={4}
@@ -347,19 +609,30 @@ const UmbandaLinesPage: React.FC = () => {
             <TextField
               label="Entidades (separadas por vírgula)"
               value={form.entities}
-              onChange={(e) => setForm((prev) => ({ ...prev, entities: e.target.value }))}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                setForm((prev) => ({ ...prev, entities: e.target.value }))
+              }
               error={!!formErrors.entities} helperText={formErrors.entities}
               fullWidth
             />
             <TextField
               label="Dias de trabalho (separados por vírgula)"
               value={form.workingDays}
-              onChange={(e) => setForm((prev) => ({ ...prev, workingDays: e.target.value }))}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                setForm((prev) => ({ ...prev, workingDays: e.target.value }))
+              }
               fullWidth
             />
             {editingItem && (
               <FormControlLabel
-                control={<Switch checked={form.isActive} onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))} />}
+                control={
+                  <Switch
+                    checked={form.isActive}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setForm((prev) => ({ ...prev, isActive: e.target.checked }))
+                    }
+                  />
+                }
                 label="Linha ativa"
               />
             )}
