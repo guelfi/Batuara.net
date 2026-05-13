@@ -134,7 +134,7 @@ const DashboardPage: React.FC = () => {
         setActivityItems(response.data.recentActivity || []);
         setActivityPage(1);
         setActivityTotalPages(1);
-        setActivityError('Não foi possível carregar o histórico completo de atividades.');
+        setActivityError(null);
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar dados do dashboard');

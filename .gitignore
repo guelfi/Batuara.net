@@ -220,6 +220,10 @@ connectionstrings.json
 # Cursor IDE
 .cursor/
 
+# Trae / Devin (local)
+.trae/
+.devin/
+
 # Local Environment Control
 .agents/
 .qoder/
