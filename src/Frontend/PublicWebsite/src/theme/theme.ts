@@ -148,6 +148,13 @@ export const batuaraTheme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        ':root': {
+          '--batuara-calendar-event-festa': '#fb8c00',
+          '--batuara-calendar-event-evento': '#1976d2',
+          '--batuara-calendar-event-celebracao': '#d81b60',
+          '--batuara-calendar-event-bazar': '#ef6c00',
+          '--batuara-calendar-event-palestra': '#1e88e5',
+        },
         html: {
           overflowX: 'hidden',
           scrollbarWidth: 'none',

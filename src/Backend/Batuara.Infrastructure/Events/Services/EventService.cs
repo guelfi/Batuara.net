@@ -221,11 +221,28 @@ namespace Batuara.Infrastructure.Events.Services
             var entity = await _dbContext.Events.FirstOrDefaultAsync(e => e.Id == id);
             if (entity == null)
             {
-                return (null, new[] { "Event not found" }, false);
+                return (null, new[] { "Evento não encontrado" }, false);
             }
 
             try
             {
+                var today = DateTime.Today;
+                var scheduledDate = entity.EventDate.Date.Date;
+                var daysUntil = (scheduledDate - today).Days;
+                if (daysUntil < 3)
+                {
+                    var when = scheduledDate.ToString("dd/MM/yyyy");
+                    if (scheduledDate < today)
+                    {
+                        return (null, new[] { $"Não é possível alterar este evento porque a data cadastrada já ocorreu em {when}." }, false);
+                    }
+
+                    return (null, new[] { $"Não é possível alterar este evento com menos de 3 dias de antecedência. Data cadastrada: {when}." }, false);
+                }
+
+                var scheduleChanging = request.Date.HasValue || request.StartTime.HasValue || request.EndTime.HasValue || request.Type.HasValue;
+                var shouldValidateScheduleAndConflicts = scheduleChanging || (request.IsActive.HasValue && request.IsActive.Value);
+
                 if (!isPatch || request.Title != null || request.Description != null || request.Location != null)
                 {
                     var title = request.Title ?? entity.Title;
@@ -266,23 +283,26 @@ namespace Batuara.Infrastructure.Events.Services
                     entity.UpdateEventDate(newEventDate);
                 }
 
-                var businessAfter = _eventDomainService.ValidateEventBusinessRules(entity, true);
-                if (!businessAfter.IsValid)
+                if (shouldValidateScheduleAndConflicts)
                 {
-                    return (null, businessAfter.Errors, false);
-                }
+                    var businessAfter = _eventDomainService.ValidateEventBusinessRules(entity, true);
+                    if (!businessAfter.IsValid)
+                    {
+                        return (null, businessAfter.Errors, false);
+                    }
 
-                var activeSameDay = (await _dbContext.Events
-                    .AsNoTracking()
-                    .Where(e => e.IsActive && e.Id != entity.Id)
-                    .ToListAsync())
-                    .Where(e => e.EventDate.Date.Date == entity.EventDate.Date.Date)
-                    .ToList();
+                    var activeSameDay = (await _dbContext.Events
+                        .AsNoTracking()
+                        .Where(e => e.IsActive && e.Id != entity.Id)
+                        .ToListAsync())
+                        .Where(e => e.EventDate.Date.Date == entity.EventDate.Date.Date)
+                        .ToList();
 
-                var hasConflict = entity.IsActive && activeSameDay.Any(existing => _eventDomainService.HasTimeConflict(existing, entity));
-                if (hasConflict)
-                {
-                    return (null, new[] { "Conflito de horário com outro evento ativo na mesma data" }, true);
+                    var hasConflict = entity.IsActive && activeSameDay.Any(existing => _eventDomainService.HasTimeConflict(existing, entity));
+                    if (hasConflict)
+                    {
+                        return (null, new[] { "Conflito de horário com outro evento ativo na mesma data" }, true);
+                    }
                 }
 
                 await _dbContext.SaveChangesAsync();
@@ -295,17 +315,31 @@ namespace Batuara.Infrastructure.Events.Services
             }
         }
 
-        public async Task<bool> SoftDeleteAsync(int id)
+        public async Task<(bool Deleted, string[] Errors)> SoftDeleteAsync(int id)
         {
             var entity = await _dbContext.Events.FirstOrDefaultAsync(e => e.Id == id);
             if (entity == null)
             {
-                return false;
+                return (false, new[] { "Evento não encontrado" });
+            }
+
+            var today = DateTime.Today;
+            var scheduledDate = entity.EventDate.Date.Date;
+            var daysUntil = (scheduledDate - today).Days;
+            if (daysUntil < 3)
+            {
+                var when = scheduledDate.ToString("dd/MM/yyyy");
+                if (scheduledDate < today)
+                {
+                    return (false, new[] { $"Não é possível alterar este evento porque a data cadastrada já ocorreu em {when}." });
+                }
+
+                return (false, new[] { $"Não é possível alterar este evento com menos de 3 dias de antecedência. Data cadastrada: {when}." });
             }
 
             entity.Deactivate();
             await _dbContext.SaveChangesAsync();
-            return true;
+            return (true, Array.Empty<string>());
         }
 
         private static EventDto MapToDto(Event e)

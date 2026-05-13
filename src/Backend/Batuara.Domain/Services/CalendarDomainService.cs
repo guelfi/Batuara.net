@@ -8,6 +8,21 @@ namespace Batuara.Domain.Services
 {
     public class CalendarDomainService : ICalendarDomainService
     {
+        private static string GetWeekdayPtBr(DayOfWeek dayOfWeek)
+        {
+            return dayOfWeek switch
+            {
+                DayOfWeek.Sunday => "domingo",
+                DayOfWeek.Monday => "segunda-feira",
+                DayOfWeek.Tuesday => "terça-feira",
+                DayOfWeek.Wednesday => "quarta-feira",
+                DayOfWeek.Thursday => "quinta-feira",
+                DayOfWeek.Friday => "sexta-feira",
+                DayOfWeek.Saturday => "sábado",
+                _ => dayOfWeek.ToString()
+            };
+        }
+
         public bool HasAttendanceConflict(CalendarAttendance existing, CalendarAttendance newAttendance)
         {
             if (!existing.IsActive || existing.Id == newAttendance.Id)
@@ -57,7 +72,8 @@ namespace Batuara.Domain.Services
             // Regra: Verificar se o dia é apropriado para o tipo de atendimento
             if (!IsAppropriateDay(attendance.Type, attendance.AttendanceDate.Date.DayOfWeek))
             {
-                errors.Add($"O dia {attendance.AttendanceDate.Date.DayOfWeek} não é apropriado para {attendance.GetTypeDisplayName()}");
+                var weekday = GetWeekdayPtBr(attendance.AttendanceDate.Date.DayOfWeek);
+                errors.Add($"O dia {weekday} não é apropriado para {attendance.GetTypeDisplayName()}");
             }
 
             // Regra: Horários devem estar dentro dos limites permitidos

@@ -102,10 +102,32 @@ export const adminTheme = createTheme({
     borderRadius: 8,
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        ':root': {
+          '--batuara-calendar-event-festa': '#fb8c00',
+          '--batuara-calendar-event-evento': '#1976d2',
+          '--batuara-calendar-event-celebracao': '#d81b60',
+          '--batuara-calendar-event-bazar': '#ef6c00',
+          '--batuara-calendar-event-palestra': '#1e88e5',
+        },
+      },
+    },
+    MuiButtonBase: {
+      styleOverrides: {
+        root: {
+          '&.Mui-focusVisible': {
+            outline: `2px solid ${batuaraColors.primary.main}`,
+            outlineOffset: 2,
+          },
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {
           borderRadius: 8,
+          minHeight: 48,
           padding: '8px 16px',
           fontWeight: 500,
         },
@@ -114,6 +136,27 @@ export const adminTheme = createTheme({
           '&:hover': {
             boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
           },
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          padding: 12,
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          minHeight: 48,
+        },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          minHeight: 48,
         },
       },
     },

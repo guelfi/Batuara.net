@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Batuara.Domain.Common;
 using Batuara.Domain.ValueObjects;
 using Batuara.Domain.Events;
@@ -36,26 +33,25 @@ namespace Batuara.Domain.Entities
         private static void ValidateEvent(string title, string description, EventDate eventDate)
         {
             if (string.IsNullOrWhiteSpace(title))
-                throw new ArgumentException("Event title cannot be empty", nameof(title));
+                throw new ArgumentException("O título do evento não pode ser vazio", nameof(title));
 
             if (title.Length > 200)
-                throw new ArgumentException("Event title cannot exceed 200 characters", nameof(title));
+                throw new ArgumentException("O título do evento não pode exceder 200 caracteres", nameof(title));
 
             if (string.IsNullOrWhiteSpace(description))
-                throw new ArgumentException("Event description cannot be empty", nameof(description));
+                throw new ArgumentException("A descrição do evento não pode ser vazia", nameof(description));
 
             if (description.Length > 2000)
-                throw new ArgumentException("Event description cannot exceed 2000 characters", nameof(description));
+                throw new ArgumentException("A descrição do evento não pode exceder 2000 caracteres", nameof(description));
 
-            if (eventDate == null)
-                throw new ArgumentNullException(nameof(eventDate), "Event date cannot be null");
+            ArgumentNullException.ThrowIfNull(eventDate);
         }
 
         public void UpdateDetails(string title, string description, string? location = null)
         {
             ValidateEvent(title, description, EventDate);
             
-            var changedProperties = new List<string>();
+            List<string> changedProperties = [];
             if (Title != title) changedProperties.Add(nameof(Title));
             if (Description != description) changedProperties.Add(nameof(Description));
             if (Location != location) changedProperties.Add(nameof(Location));
@@ -65,21 +61,20 @@ namespace Batuara.Domain.Entities
             Location = location;
             UpdateTimestamp();
 
-            if (changedProperties.Any())
+            if (changedProperties.Count != 0)
             {
-                AddDomainEvent(new EventUpdatedDomainEvent(this, changedProperties.ToArray()));
+                AddDomainEvent(new EventUpdatedDomainEvent(this, [.. changedProperties]));
             }
         }
 
         public void UpdateEventDate(EventDate newEventDate)
         {
-            if (newEventDate == null)
-                throw new ArgumentNullException(nameof(newEventDate));
+            ArgumentNullException.ThrowIfNull(newEventDate);
 
             EventDate = newEventDate;
             UpdateTimestamp();
             
-            AddDomainEvent(new EventUpdatedDomainEvent(this, new[] { nameof(EventDate) }));
+            AddDomainEvent(new EventUpdatedDomainEvent(this, [nameof(EventDate)]));
         }
 
         public void UpdateImage(string? imageUrl)
@@ -87,13 +82,13 @@ namespace Batuara.Domain.Entities
             ImageUrl = imageUrl;
             UpdateTimestamp();
             
-            AddDomainEvent(new EventUpdatedDomainEvent(this, new[] { nameof(ImageUrl) }));
+            AddDomainEvent(new EventUpdatedDomainEvent(this, [nameof(ImageUrl)]));
         }
 
         public void UpdateType(EventType type)
         {
             if (!Enum.IsDefined(typeof(EventType), type))
-                throw new ArgumentException("Invalid event type", nameof(type));
+                throw new ArgumentException("Tipo de evento inválido", nameof(type));
 
             if (Type == type)
                 return;
@@ -101,7 +96,7 @@ namespace Batuara.Domain.Entities
             Type = type;
             UpdateTimestamp();
 
-            AddDomainEvent(new EventUpdatedDomainEvent(this, new[] { nameof(Type) }));
+            AddDomainEvent(new EventUpdatedDomainEvent(this, [nameof(Type)]));
         }
 
         public bool IsUpcoming()

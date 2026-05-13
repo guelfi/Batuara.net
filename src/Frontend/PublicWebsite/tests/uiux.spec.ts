@@ -96,7 +96,7 @@ test.beforeEach(async ({ page }) => {
     }
   }, FIXED_NOW_ISO);
 
-  await page.route('**/batuara-api/api/**', async (route) => {
+  await page.route(/\/(batuara-api\/)?api\//, async (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname;
 

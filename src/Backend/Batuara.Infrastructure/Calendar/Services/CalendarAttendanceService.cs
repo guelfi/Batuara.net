@@ -122,11 +122,28 @@ namespace Batuara.Infrastructure.Calendar.Services
             var entity = await _db.CalendarAttendances.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null)
             {
-                return (null, new[] { "Attendance not found" }, false);
+                return (null, new[] { "Atendimento não encontrado" }, false);
             }
 
             try
             {
+                var today = DateTime.Today;
+                var scheduledDate = entity.AttendanceDate.Date.Date;
+                var daysUntil = (scheduledDate - today).Days;
+                if (daysUntil < 3)
+                {
+                    var when = scheduledDate.ToString("dd/MM/yyyy");
+                    if (scheduledDate < today)
+                    {
+                        return (null, new[] { $"Não é possível alterar este atendimento porque a data cadastrada já ocorreu em {when}." }, false);
+                    }
+
+                    return (null, new[] { $"Não é possível alterar este atendimento com menos de 3 dias de antecedência. Data cadastrada: {when}." }, false);
+                }
+
+                var scheduleChanging = request.Date.HasValue || request.StartTime.HasValue || request.EndTime.HasValue || request.Type.HasValue;
+                var shouldValidateScheduleAndConflicts = scheduleChanging || (request.IsActive.HasValue && request.IsActive.Value);
+
                 if (request.Date.HasValue || request.StartTime.HasValue || request.EndTime.HasValue)
                 {
                     var date = request.Date?.Date ?? entity.AttendanceDate.Date;
@@ -156,10 +173,13 @@ namespace Batuara.Infrastructure.Calendar.Services
                     else entity.Deactivate();
                 }
 
-                var validation = await ValidateBusinessAndConflictsAsync(entity, true);
-                if (validation.Errors.Length > 0)
+                if (shouldValidateScheduleAndConflicts)
                 {
-                    return (null, validation.Errors, validation.Conflict);
+                    var validation = await ValidateBusinessAndConflictsAsync(entity, true);
+                    if (validation.Errors.Length > 0)
+                    {
+                        return (null, validation.Errors, validation.Conflict);
+                    }
                 }
 
                 await _db.SaveChangesAsync();
@@ -171,17 +191,31 @@ namespace Batuara.Infrastructure.Calendar.Services
             }
         }
 
-        public async Task<bool> SoftDeleteAsync(int id)
+        public async Task<(bool Deleted, string[] Errors)> SoftDeleteAsync(int id)
         {
             var entity = await _db.CalendarAttendances.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null)
             {
-                return false;
+                return (false, new[] { "Atendimento não encontrado" });
+            }
+
+            var today = DateTime.Today;
+            var scheduledDate = entity.AttendanceDate.Date.Date;
+            var daysUntil = (scheduledDate - today).Days;
+            if (daysUntil < 3)
+            {
+                var when = scheduledDate.ToString("dd/MM/yyyy");
+                if (scheduledDate < today)
+                {
+                    return (false, new[] { $"Não é possível alterar este atendimento porque a data cadastrada já ocorreu em {when}." });
+                }
+
+                return (false, new[] { $"Não é possível alterar este atendimento com menos de 3 dias de antecedência. Data cadastrada: {when}." });
             }
 
             entity.Deactivate();
             await _db.SaveChangesAsync();
-            return true;
+            return (true, Array.Empty<string>());
         }
 
         private IQueryable<CalendarAttendance> BuildQuery(
@@ -206,13 +240,13 @@ namespace Batuara.Infrastructure.Calendar.Services
 
             if (fromDate.HasValue)
             {
-                var start = fromDate.Value.Date;
+                var start = DateTime.SpecifyKind(fromDate.Value.Date, DateTimeKind.Utc);
                 query = query.Where(x => x.AttendanceDate.Date.Date >= start);
             }
 
             if (toDate.HasValue)
             {
-                var end = toDate.Value.Date;
+                var end = DateTime.SpecifyKind(toDate.Value.Date, DateTimeKind.Utc);
                 query = query.Where(x => x.AttendanceDate.Date.Date <= end);
             }
 
