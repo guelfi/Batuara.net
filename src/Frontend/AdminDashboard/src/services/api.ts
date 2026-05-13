@@ -30,10 +30,16 @@ class ApiService {
 
     const isDev = process.env.NODE_ENV === 'development';
     const isBrowser = typeof window !== 'undefined';
-    const host = isBrowser ? window.location.hostname : '';
-    const isLocalhost = host === 'localhost' || host === '127.0.0.1';
 
-    if (isDev && isLocalhost) return 'http://localhost/batuara-api/api';
+    if (isDev && isBrowser) {
+      const host = window.location.hostname;
+      const port = window.location.port;
+      if (port === '3000' || port === '3001') {
+        return `${window.location.protocol}//${host}/batuara-api/api`;
+      }
+      return `${window.location.protocol}//${host}/batuara-api/api`;
+    }
+
     return '/batuara-api/api';
   }
 
@@ -56,13 +62,31 @@ class ApiService {
     return url.includes('/auth/refresh') || url.includes('/auth/login');
   }
 
+  private shouldLog(): boolean {
+    return process.env.NODE_ENV === 'development';
+  }
+
+  private buildLogInfo(config: InternalAxiosRequestConfig | undefined, status?: number) {
+    const method = config?.method?.toUpperCase() || 'GET';
+    const url = config?.url || '';
+    const baseURL = config?.baseURL || this.api.defaults.baseURL || '';
+    const fullUrl = url.startsWith('http') ? url : `${baseURL}${url}`;
+    const elapsedMs = typeof (config as any)?.metadata?.startTime === 'number' ? Date.now() - (config as any).metadata.startTime : undefined;
+    return { method, url: fullUrl, status, elapsedMs };
+  }
+
   private setupInterceptors() {
     // Request interceptor para adicionar token de autenticação
     this.api.interceptors.request.use(
       (config) => {
+        (config as any).metadata = { startTime: Date.now() };
         const token = localStorage.getItem('authToken');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
+        }
+        if (this.shouldLog()) {
+          const info = this.buildLogInfo(config);
+          console.log('[API]', info.method, info.url);
         }
         return config;
       },
@@ -73,12 +97,28 @@ class ApiService {
 
     // Response interceptor para tratar erros globalmente
     this.api.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        if (this.shouldLog()) {
+          const info = this.buildLogInfo(response.config, response.status);
+          console.log('[API]', info.method, info.url, info.status, info.elapsedMs != null ? `${info.elapsedMs}ms` : '');
+        }
+        return response;
+      },
       async (error: AxiosError) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+        const status = error.response?.status;
+
+        if (this.shouldLog()) {
+          const isAuth = this.isAuthEndpoint(originalRequest?.url);
+          if (isAuth || status !== 401) {
+            const info = this.buildLogInfo(originalRequest, status);
+            const apiMessage = (error.response?.data as any)?.message;
+            console.warn('[API]', info.method, info.url, info.status, info.elapsedMs != null ? `${info.elapsedMs}ms` : '', apiMessage || error.message);
+          }
+        }
 
         // Se o token expirou (skip auth endpoints to avoid deadlock)
-        if (error.response?.status === 401 && !originalRequest._retry && !this.isAuthEndpoint(originalRequest.url)) {
+        if (status === 401 && !originalRequest._retry && !this.isAuthEndpoint(originalRequest.url)) {
           if (this.isRefreshing) {
             // Se já estamos atualizando o token, enfileiramos a requisição
             return new Promise((resolve, reject) => {

@@ -1,4 +1,3 @@
-using System;
 using Batuara.Domain.Common;
 using Batuara.Domain.ValueObjects;
 using Batuara.Domain.Events;
@@ -39,17 +38,16 @@ namespace Batuara.Domain.Entities
 
         private static void ValidateAttendance(EventDate attendanceDate, AttendanceType type, int? maxCapacity)
         {
-            if (attendanceDate == null)
-                throw new ArgumentNullException(nameof(attendanceDate));
+            ArgumentNullException.ThrowIfNull(attendanceDate);
 
             if (!attendanceDate.HasTimeRange)
-                throw new ArgumentException("Attendance must have start and end time", nameof(attendanceDate));
+                throw new ArgumentException("O atendimento deve ter horário de início e término", nameof(attendanceDate));
 
             if (!Enum.IsDefined(typeof(AttendanceType), type))
-                throw new ArgumentException("Invalid attendance type", nameof(type));
+                throw new ArgumentException("Tipo de atendimento inválido", nameof(type));
 
             if (maxCapacity.HasValue && maxCapacity <= 0)
-                throw new ArgumentException("Max capacity must be greater than zero", nameof(maxCapacity));
+                throw new ArgumentException("A capacidade máxima deve ser maior que zero", nameof(maxCapacity));
         }
 
         public void UpdateDetails(string? description, string? observations)
@@ -62,7 +60,7 @@ namespace Batuara.Domain.Entities
         public void UpdateCapacity(int? maxCapacity, bool requiresRegistration)
         {
             if (maxCapacity.HasValue && maxCapacity <= 0)
-                throw new ArgumentException("Max capacity must be greater than zero", nameof(maxCapacity));
+                throw new ArgumentException("A capacidade máxima deve ser maior que zero", nameof(maxCapacity));
 
             MaxCapacity = maxCapacity;
             RequiresRegistration = requiresRegistration;
@@ -71,11 +69,10 @@ namespace Batuara.Domain.Entities
 
         public void RescheduleAttendance(EventDate newAttendanceDate)
         {
-            if (newAttendanceDate == null)
-                throw new ArgumentNullException(nameof(newAttendanceDate));
+            ArgumentNullException.ThrowIfNull(newAttendanceDate);
 
             if (!newAttendanceDate.HasTimeRange)
-                throw new ArgumentException("Attendance must have start and end time", nameof(newAttendanceDate));
+                throw new ArgumentException("O atendimento deve ter horário de início e término", nameof(newAttendanceDate));
 
             AttendanceDate = newAttendanceDate;
             UpdateTimestamp();
@@ -84,7 +81,7 @@ namespace Batuara.Domain.Entities
         public void UpdateType(AttendanceType type)
         {
             if (!Enum.IsDefined(typeof(AttendanceType), type))
-                throw new ArgumentException("Invalid attendance type", nameof(type));
+                throw new ArgumentException("Tipo de atendimento inválido", nameof(type));
 
             Type = type;
             UpdateTimestamp();

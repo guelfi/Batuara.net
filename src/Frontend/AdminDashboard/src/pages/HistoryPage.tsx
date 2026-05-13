@@ -9,6 +9,8 @@ import {
   Stack,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   FormatBold as BoldIcon,
@@ -80,9 +82,12 @@ const buildHistoryPayload = (form: SiteSettingsDto): Partial<SiteSettingsDto> =>
 };
 
 const HistoryPage: React.FC = () => {
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<SiteSettingsDto | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ title?: string; subtitle?: string }>({});
   const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -136,7 +141,7 @@ const HistoryPage: React.FC = () => {
     }
 
     editorRef.current.focus();
-    document.execCommand(command, false, value);
+    (document as any).execCommand(command, false, value);
     syncEditor();
   };
 
@@ -145,12 +150,22 @@ const HistoryPage: React.FC = () => {
       return;
     }
 
+    const nextErrors: { title?: string; subtitle?: string } = {};
+    if (!form.historyTitle?.trim()) nextErrors.title = 'Título é obrigatório.';
+    if (!form.historySubtitle?.trim()) nextErrors.subtitle = 'Subtítulo é obrigatório.';
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      setFeedback({ open: true, message: 'Revise os campos obrigatórios antes de salvar.', severity: 'error' });
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = buildHistoryPayload(form);
       setForm((prev) => (prev ? { ...prev, ...payload } : prev));
-      const response = await apiService.updateSiteSettings(payload);
-      setForm(normalizeHistoryForm(response.data));
+      await apiService.updateSiteSettings(payload);
+      const refreshed = await apiService.getSiteSettings();
+      setForm(normalizeHistoryForm(refreshed.data));
       setFeedback({ open: true, message: 'Seção Nossa História atualizada com sucesso.', severity: 'success' });
     } catch (error: any) {
       setFeedback({
@@ -172,7 +187,7 @@ const HistoryPage: React.FC = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ pb: { xs: 10, md: 0 } }}>
       <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
@@ -182,29 +197,35 @@ const HistoryPage: React.FC = () => {
             Edite o conteúdo institucional em tela cheia com formatação rica e salvamento direto.
           </Typography>
         </Box>
-        <Stack direction="row" spacing={1}>
-          <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave} disabled={saving}>
-            Salvar
-          </Button>
-        </Stack>
+        {!isXs && (
+          <Stack direction="row" spacing={1}>
+            <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave} disabled={saving}>
+              Salvar
+            </Button>
+          </Stack>
+        )}
       </Stack>
-
-      <Alert severity="info" sx={{ mb: 3 }}>
-        Use a área editável para aplicar negrito, itálico, listas, citações e links. A interface foi simplificada para focar apenas na edição textual da seção.
-      </Alert>
 
       <Paper sx={{ p: 2, mb: 3 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
           <TextField
             label="Título"
             value={form.historyTitle}
-            onChange={(e) => updateField('historyTitle', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+              updateField('historyTitle', e.target.value)
+            }
+            error={!!fieldErrors.title}
+            helperText={fieldErrors.title}
             fullWidth
           />
           <TextField
             label="Subtítulo"
             value={form.historySubtitle || ''}
-            onChange={(e) => updateField('historySubtitle', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+              updateField('historySubtitle', e.target.value)
+            }
+            error={!!fieldErrors.subtitle}
+            helperText={fieldErrors.subtitle}
             fullWidth
           />
         </Stack>
@@ -212,7 +233,9 @@ const HistoryPage: React.FC = () => {
           <TextField
             label="Missão da casa"
             value={form.historyMissionText || ''}
-            onChange={(e) => updateField('historyMissionText', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+              updateField('historyMissionText', e.target.value)
+            }
             fullWidth
             multiline
             minRows={4}
@@ -221,18 +244,72 @@ const HistoryPage: React.FC = () => {
       </Paper>
 
       <Paper sx={{ p: { xs: 2, md: 3 } }}>
-        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', mb: 2 }}>
-          <Button variant="outlined" size="small" startIcon={<BoldIcon />} onClick={() => runCommand('bold')}>
-            Negrito
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Use a área editável para aplicar negrito, itálico, listas, citações e links.
+        </Alert>
+
+        <Stack
+          direction="row"
+          spacing={0.75}
+          sx={{
+            flexWrap: 'nowrap',
+            mb: 2,
+            '& .MuiButton-root': {
+              flex: 1,
+              minWidth: 0,
+              py: 1,
+              px: 0.5,
+              lineHeight: 1.1,
+            },
+          }}
+        >
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => runCommand('bold')}
+            aria-label="Negrito"
+            title="Negrito"
+          >
+            <Stack spacing={0.25} alignItems="center">
+              <BoldIcon fontSize="small" />
+              <Typography variant="caption">Negrito</Typography>
+            </Stack>
           </Button>
-          <Button variant="outlined" size="small" startIcon={<ItalicIcon />} onClick={() => runCommand('italic')}>
-            Itálico
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => runCommand('italic')}
+            aria-label="Itálico"
+            title="Itálico"
+          >
+            <Stack spacing={0.25} alignItems="center">
+              <ItalicIcon fontSize="small" />
+              <Typography variant="caption">Itálico</Typography>
+            </Stack>
           </Button>
-          <Button variant="outlined" size="small" startIcon={<ListIcon />} onClick={() => runCommand('insertUnorderedList')}>
-            Lista
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => runCommand('insertUnorderedList')}
+            aria-label="Lista"
+            title="Lista"
+          >
+            <Stack spacing={0.25} alignItems="center">
+              <ListIcon fontSize="small" />
+              <Typography variant="caption">Lista</Typography>
+            </Stack>
           </Button>
-          <Button variant="outlined" size="small" startIcon={<QuoteIcon />} onClick={() => runCommand('formatBlock', 'blockquote')}>
-            Citação
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => runCommand('formatBlock', 'blockquote')}
+            aria-label="Citação"
+            title="Citação"
+          >
+            <Stack spacing={0.25} alignItems="center">
+              <QuoteIcon fontSize="small" />
+              <Typography variant="caption">Citação</Typography>
+            </Stack>
           </Button>
         </Stack>
         <Box
@@ -273,6 +350,24 @@ const HistoryPage: React.FC = () => {
           }}
         />
       </Paper>
+
+      {isXs && (
+        <Paper
+          elevation={8}
+          sx={{
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            p: 2,
+            zIndex: theme.zIndex.appBar - 1,
+          }}
+        >
+          <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave} disabled={saving} fullWidth>
+            Salvar
+          </Button>
+        </Paper>
+      )}
 
       <Snackbar open={feedback.open} autoHideDuration={4000} onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}>
         <Alert severity={feedback.severity} variant="filled" onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}>

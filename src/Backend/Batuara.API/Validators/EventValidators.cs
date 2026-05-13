@@ -28,7 +28,7 @@ namespace Batuara.API.Validators
 
             RuleFor(x => x)
                 .Must(x => !(x.StartTime.HasValue && x.EndTime.HasValue) || x.StartTime < x.EndTime)
-                .WithMessage("StartTime must be before EndTime");
+                .WithMessage("O horário de início deve ser anterior ao horário de término");
         }
     }
 
@@ -54,7 +54,7 @@ namespace Batuara.API.Validators
 
             RuleFor(x => x)
                 .Must(x => !(x.StartTime.HasValue && x.EndTime.HasValue) || x.StartTime < x.EndTime)
-                .WithMessage("StartTime must be before EndTime");
+                .WithMessage("O horário de início deve ser anterior ao horário de término");
         }
     }
 }

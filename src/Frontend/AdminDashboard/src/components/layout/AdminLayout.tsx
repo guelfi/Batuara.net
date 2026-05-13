@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   AppBar,
@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon,
+  ChevronLeft as ChevronLeftIcon,
   Dashboard as DashboardIcon,
   Event as EventIcon,
   CalendarToday as CalendarIcon,
@@ -63,14 +64,23 @@ const navigationItems: NavigationItem[] = [
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(true);
+
+  const firstNavItemRef = useRef<HTMLDivElement | null>(null);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+    setMobileOpen((prev) => !prev);
+  };
+
+  const handleDesktopToggle = () => {
+    setDesktopOpen((prev) => !prev);
   };
 
   const handleLogout = async () => {
@@ -84,6 +94,31 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       setMobileOpen(false);
     }
   };
+
+  useEffect(() => {
+    if (!isMobile || !mobileOpen) return;
+
+    const timer = window.setTimeout(() => {
+      firstNavItemRef.current?.focus();
+    }, 50);
+
+    return () => window.clearTimeout(timer);
+  }, [isMobile, mobileOpen]);
+
+  useEffect(() => {
+    if (!isMdUp || !desktopOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      setDesktopOpen(false);
+      window.setTimeout(() => {
+        menuButtonRef.current?.focus();
+      }, 0);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [desktopOpen, isMdUp]);
 
   // Sidebar inicia no topo (top: 0) para alinhar verticalmente com o HEADER em todas as resoluções.
   // O conteúdo principal mantém o espaçamento do AppBar via <Toolbar /> dentro do <main>.
@@ -109,9 +144,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
         <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
           <List>
-            {navigationItems.map((item) => (
+            {navigationItems.map((item, index) => (
               <React.Fragment key={item.text}>
                 <ListItemButton
+                  ref={index === 0 ? firstNavItemRef : undefined}
                   onClick={() => handleNavigation(item.path)}
                   selected={location.pathname === item.path}
                   sx={{
@@ -197,20 +233,21 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       <AppBar
         position="fixed"
         sx={{
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          ml: { md: `${drawerWidth}px` },
+          width: { md: desktopOpen ? `calc(100% - ${drawerWidth}px)` : '100%' },
+          ml: { md: desktopOpen ? `${drawerWidth}px` : 0 },
           borderRadius: 0,
         }}
       >
         <Toolbar sx={{ px: { xs: 1, md: 2 } }}>
           <IconButton
+            ref={menuButtonRef}
             color="inherit"
-            aria-label="open drawer"
+            aria-label={isMdUp ? (desktopOpen ? 'Fechar menu' : 'Abrir menu') : 'Abrir menu'}
             edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: 'none' } }}
+            onClick={isMdUp ? handleDesktopToggle : handleDrawerToggle}
+            sx={{ mr: 2, width: 48, height: 48 }}
           >
-            <MenuIcon />
+            {isMdUp && desktopOpen ? <ChevronLeftIcon /> : <MenuIcon />}
           </IconButton>
 
           <Box
@@ -262,13 +299,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
       <Box
         component="nav"
-        sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+        sx={{ width: { md: desktopOpen ? drawerWidth : 0 }, flexShrink: { md: 0 } }}
         aria-label="mailbox folders"
       >
         <Drawer
           variant="temporary"
           open={mobileOpen}
-          onClose={handleDrawerToggle}
+          onClose={() => setMobileOpen(false)}
           ModalProps={{
             keepMounted: true,
           }}
@@ -294,7 +331,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           variant="permanent"
           sx={{
             position: 'fixed',
-            display: { xs: 'none', md: 'block' },
+            display: { xs: 'none', md: desktopOpen ? 'block' : 'none' },
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
@@ -316,8 +353,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          width: { md: `calc(100% - ${drawerWidth}px)` },
+          minWidth: 0,
+          overflowX: 'hidden',
+          p: { xs: 1.5, sm: 2, md: 3 },
+          width: { md: desktopOpen ? `calc(100% - ${drawerWidth}px)` : '100%' },
           minHeight: '100vh',
           backgroundColor: 'background.default',
         }}
