@@ -202,8 +202,8 @@ const MembersPage: React.FC = () => {
         {
           field: 'fullName',
           headerName: 'Nome',
-          flex: 1,
-          minWidth: 140,
+          flex: 0.85,
+          minWidth: 80,
           renderCell: (params) => (
             <Typography variant="body2" sx={{ whiteSpace: 'normal', lineHeight: 1.25, py: 1 }}>
               {params.row.fullName}
@@ -213,7 +213,7 @@ const MembersPage: React.FC = () => {
         {
           field: 'mobilePhone',
           headerName: 'Celular',
-          width: 120,
+          width: 145,
           renderCell: (params) => (
             <Typography variant="body2" sx={{ whiteSpace: 'nowrap', py: 1 }}>
               {params.row.mobilePhone || '—'}
@@ -223,22 +223,9 @@ const MembersPage: React.FC = () => {
           filterable: false,
         },
         {
-          field: 'email',
-          headerName: 'E-mail',
-          flex: 1,
-          minWidth: 160,
-          renderCell: (params) => (
-            <Typography variant="body2" sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', py: 1 }}>
-              {params.row.email || '—'}
-            </Typography>
-          ),
-          sortable: false,
-          filterable: false,
-        },
-        {
           field: 'actions',
           type: 'actions',
-          width: 140,
+          width: 92,
           getActions: (params) => [
             <GridActionsCellItem icon={<EditIcon fontSize="small" />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
             <GridActionsCellItem icon={<DeleteIcon fontSize="small" />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
@@ -248,7 +235,6 @@ const MembersPage: React.FC = () => {
     : [
         { field: 'fullName', headerName: 'Nome', flex: 1.2, minWidth: 240 },
         { field: 'mobilePhone', headerName: 'Celular', width: 160 },
-        { field: 'email', headerName: 'E-mail', flex: 1.2, minWidth: 260 },
         {
           field: 'actions',
           type: 'actions',
@@ -651,10 +637,21 @@ const MembersPage: React.FC = () => {
           }}
           sx={{
             border: 0,
-            '& .MuiDataGrid-actionsCell .MuiIconButton-root': {
-              width: 48,
-              height: 48,
-            },
+            '& .MuiDataGrid-actionsCell': isXs
+              ? {
+                  justifyContent: 'flex-end',
+                  gap: 0.25,
+                }
+              : undefined,
+            '& .MuiDataGrid-actionsCell .MuiIconButton-root': isXs
+              ? {
+                  width: 40,
+                  height: 40,
+                }
+              : {
+                  width: 48,
+                  height: 48,
+                },
           }}
         />
       </Paper>
