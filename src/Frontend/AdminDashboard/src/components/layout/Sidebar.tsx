@@ -8,7 +8,6 @@ import {
   Divider,
   Box,
   Typography,
-  Toolbar,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -87,7 +86,10 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
           borderColor: 'divider',
           backgroundColor: 'background.paper',
           top: isTemporary ? 0 : appBarHeight,
-          height: isTemporary ? '100dvh' : `calc(100dvh - ${appBarHeight}px)`,
+          height: isTemporary ? '100vh' : `calc(100vh - ${appBarHeight}px)`,
+          '@supports (height: 100dvh)': {
+            height: isTemporary ? '100dvh' : `calc(100dvh - ${appBarHeight}px)`,
+          },
           display: 'flex',
           flexDirection: 'column',
           paddingBottom: 'env(safe-area-inset-bottom)',
