@@ -117,7 +117,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
                 selected={location.pathname === item.path}
                 sx={{
                   py: { xs: 0.5, md: 0.75 },
-                  minHeight: { xs: 38, md: 44 },
+                  minHeight: { xs: 33, md: 44 },
                   '&.Mui-selected': {
                     bgcolor: 'primary.light',
                     '&:hover': {
@@ -157,7 +157,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
               selected={location.pathname === '/profile'}
               sx={{
                 py: { xs: 0.5, md: 0.75 },
-                minHeight: { xs: 38, md: 44 },
+                minHeight: { xs: 33, md: 44 },
                 '&.Mui-selected': {
                   bgcolor: 'primary.light',
                   '&:hover': {
@@ -185,7 +185,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
               />
             </ListItemButton>
 
-            <ListItemButton onClick={handleLogout} sx={{ py: { xs: 0.5, md: 0.75 }, minHeight: { xs: 38, md: 44 } }}>
+            <ListItemButton onClick={handleLogout} sx={{ py: { xs: 0.5, md: 0.75 }, minHeight: { xs: 33, md: 44 } }}>
               <ListItemIcon sx={{ minWidth: { xs: 40, md: 52 } }}>
                 <LogoutIcon />
               </ListItemIcon>
