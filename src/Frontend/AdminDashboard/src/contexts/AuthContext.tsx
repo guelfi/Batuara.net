@@ -99,7 +99,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null);
       document.cookie = 'token=; Max-Age=0; path=/';
       document.cookie = 'session=; Max-Age=0; path=/';
-      window.location.href = '/batuara-admin/login';
+      window.location.href = '/admin/login';
     }
   };
 

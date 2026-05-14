@@ -2,7 +2,7 @@
   "name": "batuara-admin-dashboard",
   "version": "1.0.0",
   "private": true,
-  "homepage": "/batuara-admin/",
+  "homepage": "/admin/",
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",

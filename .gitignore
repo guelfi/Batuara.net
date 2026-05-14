@@ -185,6 +185,10 @@ results.sarif
 .dockerignore
 # Dockerfile* - COMENTADO para permitir Dockerfiles do projeto
 
+ssh-key-*.pem
+ssh-key-*.key
+ssh-key-*.ppk
+
 # Backup files
 *.bak
 *.backup
