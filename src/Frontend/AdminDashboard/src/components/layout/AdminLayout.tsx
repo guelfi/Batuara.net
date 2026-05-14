@@ -123,12 +123,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   // Sidebar inicia no topo (top: 0) para alinhar verticalmente com o HEADER em todas as resoluções.
   // O conteúdo principal mantém o espaçamento do AppBar via <Toolbar /> dentro do <main>.
   const drawer = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, overflow: 'hidden' }}>
         <Box
           sx={(theme) => ({
             ...theme.mixins.toolbar,
-            px: 2,
+            px: { xs: 1.5, md: 2 },
             bgcolor: 'primary.main',
             color: 'white',
             display: 'flex',
@@ -142,8 +142,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
         <Divider />
 
-        <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-          <List>
+        <Box sx={{ flexGrow: 1, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <List disablePadding>
             {navigationItems.map((item, index) => (
               <React.Fragment key={item.text}>
                 <ListItemButton
@@ -152,7 +152,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   selected={location.pathname === item.path}
                   sx={{
                     mx: 1,
-                    my: 0.5,
+                    my: { xs: 0.25, md: 0.5 },
+                    px: { xs: 1.5, md: 2 },
+                    py: { xs: 0.25, md: 0.75 },
+                    minHeight: { xs: 33, md: 44 },
                     borderRadius: 1.5,
                     '&.Mui-selected': {
                       bgcolor: 'primary.light',
@@ -165,6 +168,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 >
                   <ListItemIcon
                     sx={{
+                      minWidth: { xs: 36, md: 56 },
                       color: location.pathname === item.path ? 'primary.main' : 'inherit',
                     }}
                   >
@@ -175,6 +179,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                     primaryTypographyProps={{
                       sx: {
                         fontWeight: location.pathname === item.path ? 600 : 400,
+                        fontSize: { xs: 14, md: 16 },
                       },
                     }}
                   />
@@ -187,43 +192,52 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
         <Divider />
 
-        <List>
-          <ListItemButton
-            onClick={() => handleNavigation('/profile')}
-            selected={location.pathname === '/profile'}
-            sx={{
-              mx: 1,
-              my: 0.5,
-              borderRadius: 1.5,
-              '&.Mui-selected': {
-                bgcolor: 'primary.light',
+        <Box sx={{ flexShrink: 0, pb: 'calc(env(safe-area-inset-bottom) + 12px)' }}>
+          <List disablePadding>
+            <ListItemButton
+              onClick={() => handleNavigation('/profile')}
+              selected={location.pathname === '/profile'}
+              sx={{
+                mx: 1,
+                my: { xs: 0.25, md: 0.5 },
+                px: { xs: 1.5, md: 2 },
+                py: { xs: 0.25, md: 0.75 },
+                minHeight: { xs: 33, md: 44 },
                 borderRadius: 1.5,
-                '&:hover': {
+                '&.Mui-selected': {
                   bgcolor: 'primary.light',
-                },
-              },
-            }}
-          >
-            <ListItemIcon sx={{ color: location.pathname === '/profile' ? 'primary.main' : 'inherit' }}>
-              <ProfileIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary="Meu Perfil"
-              primaryTypographyProps={{
-                sx: {
-                  fontWeight: location.pathname === '/profile' ? 600 : 400,
+                  borderRadius: 1.5,
+                  '&:hover': {
+                    bgcolor: 'primary.light',
+                  },
                 },
               }}
-            />
-          </ListItemButton>
+            >
+              <ListItemIcon sx={{ minWidth: { xs: 36, md: 56 }, color: location.pathname === '/profile' ? 'primary.main' : 'inherit' }}>
+                <ProfileIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary="Meu Perfil"
+                primaryTypographyProps={{
+                  sx: {
+                    fontWeight: location.pathname === '/profile' ? 600 : 400,
+                    fontSize: { xs: 14, md: 16 },
+                  },
+                }}
+              />
+            </ListItemButton>
 
-          <ListItemButton onClick={handleLogout}>
-            <ListItemIcon>
-              <LogoutIcon />
-            </ListItemIcon>
-            <ListItemText primary="Sair" />
-          </ListItemButton>
-        </List>
+            <ListItemButton
+              onClick={handleLogout}
+              sx={{ mx: 1, my: { xs: 0.25, md: 0.5 }, px: { xs: 1.5, md: 2 }, py: { xs: 0.25, md: 0.75 }, minHeight: { xs: 33, md: 44 }, borderRadius: 1.5 }}
+            >
+              <ListItemIcon sx={{ minWidth: { xs: 36, md: 56 } }}>
+                <LogoutIcon />
+              </ListItemIcon>
+              <ListItemText primary="Sair" primaryTypographyProps={{ sx: { fontSize: { xs: 14, md: 16 } } }} />
+            </ListItemButton>
+          </List>
+        </Box>
       </Box>
     </Box>
   );
@@ -318,6 +332,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               top: 0,
               left: 0,
               height: '100vh',
+              '@supports (height: 100svh)': {
+                height: '100svh',
+              },
+              '@supports (height: 100dvh)': {
+                height: '100dvh',
+              },
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
               borderRight: '1px solid',
               borderColor: 'divider',
               backgroundColor: 'background.paper',
@@ -338,6 +361,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               top: 0,
               left: 0,
               height: '100vh',
+              '@supports (height: 100svh)': {
+                height: '100svh',
+              },
+              '@supports (height: 100dvh)': {
+                height: '100dvh',
+              },
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
               borderRight: '1px solid',
               borderColor: 'divider',
               backgroundColor: 'background.paper',
