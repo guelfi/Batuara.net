@@ -93,8 +93,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
     >
       <Toolbar />
 
-      <Box sx={{ overflow: 'auto' }}>
-        <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <Box sx={{ p: { xs: 1.5, md: 2 }, bgcolor: 'primary.main', color: 'white' }}>
           <Typography variant="h6" noWrap>
             Admin Dashboard
           </Typography>
@@ -105,13 +105,55 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
 
         <Divider />
 
-        <List>
-          {menuItems.map((item) => (
+        <Box sx={{ flex: 1, overflow: 'auto' }}>
+          <List sx={{ py: { xs: 0.5, md: 1 } }}>
+            {menuItems.map((item) => (
+              <ListItemButton
+                key={item.text}
+                onClick={() => handleItemClick(item.path)}
+                selected={location.pathname === item.path}
+                sx={{
+                  py: { xs: 0.75, md: 1 },
+                  minHeight: { xs: 42, md: 48 },
+                  '&.Mui-selected': {
+                    bgcolor: 'primary.light',
+                    '&:hover': {
+                      bgcolor: 'primary.light',
+                    },
+                  },
+                }}
+              >
+                <ListItemIcon
+                  sx={{
+                    minWidth: { xs: 40, md: 56 },
+                    color: location.pathname === item.path ? 'primary.main' : 'inherit',
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.text}
+                  primaryTypographyProps={{
+                    sx: {
+                      fontWeight: location.pathname === item.path ? 600 : 400,
+                    },
+                  }}
+                />
+              </ListItemButton>
+            ))}
+          </List>
+        </Box>
+
+        <Divider />
+
+        <Box sx={{ flexShrink: 0 }}>
+          <List sx={{ py: { xs: 0.5, md: 1 } }}>
             <ListItemButton
-              key={item.text}
-              onClick={() => handleItemClick(item.path)}
-              selected={location.pathname === item.path}
+              onClick={() => handleItemClick('/profile')}
+              selected={location.pathname === '/profile'}
               sx={{
+                py: { xs: 0.75, md: 1 },
+                minHeight: { xs: 42, md: 48 },
                 '&.Mui-selected': {
                   bgcolor: 'primary.light',
                   '&:hover': {
@@ -122,62 +164,30 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
             >
               <ListItemIcon
                 sx={{
-                  color: location.pathname === item.path ? 'primary.main' : 'inherit',
+                  minWidth: { xs: 40, md: 56 },
+                  color: location.pathname === '/profile' ? 'primary.main' : 'inherit',
                 }}
               >
-                {item.icon}
+                <ProfileIcon />
               </ListItemIcon>
               <ListItemText
-                primary={item.text}
+                primary="Meu Perfil"
                 primaryTypographyProps={{
                   sx: {
-                    fontWeight: location.pathname === item.path ? 600 : 400,
+                    fontWeight: location.pathname === '/profile' ? 600 : 400,
                   },
                 }}
               />
             </ListItemButton>
-          ))}
-        </List>
 
-        <Divider sx={{ mt: 'auto' }} />
-
-        <List>
-          <ListItemButton
-            onClick={() => handleItemClick('/profile')}
-            selected={location.pathname === '/profile'}
-            sx={{
-              '&.Mui-selected': {
-                bgcolor: 'primary.light',
-                '&:hover': {
-                  bgcolor: 'primary.light',
-                },
-              },
-            }}
-          >
-            <ListItemIcon
-              sx={{
-                color: location.pathname === '/profile' ? 'primary.main' : 'inherit',
-              }}
-            >
-              <ProfileIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary="Meu Perfil"
-              primaryTypographyProps={{
-                sx: {
-                  fontWeight: location.pathname === '/profile' ? 600 : 400,
-                },
-              }}
-            />
-          </ListItemButton>
-
-          <ListItemButton onClick={handleLogout}>
-            <ListItemIcon>
-              <LogoutIcon />
-            </ListItemIcon>
-            <ListItemText primary="Sair" />
-          </ListItemButton>
-        </List>
+            <ListItemButton onClick={handleLogout} sx={{ py: { xs: 0.75, md: 1 }, minHeight: { xs: 42, md: 48 } }}>
+              <ListItemIcon sx={{ minWidth: { xs: 40, md: 56 } }}>
+                <LogoutIcon />
+              </ListItemIcon>
+              <ListItemText primary="Sair" />
+            </ListItemButton>
+          </List>
+        </Box>
       </Box>
     </Drawer>
   );
