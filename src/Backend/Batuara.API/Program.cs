@@ -349,14 +349,11 @@ else
     app.UseHsts();
 }
 
-// Configure PathBase for Nginx Proxy
-app.UsePathBase("/batuara-api");
-
 // Enable Swagger in all environments
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/batuara-api/swagger/v1/swagger.json", "Batuara API V1");
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Batuara API V1");
     c.RoutePrefix = "swagger";
 });
 

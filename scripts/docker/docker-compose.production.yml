@@ -7,9 +7,9 @@ services:
       context: ../../
       dockerfile: Dockerfile.frontend
       args:
-        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-/api}
         - APP_PATH=src/Frontend/PublicWebsite
-        - WEB_BASE_PATH=/batuara-public
+        - WEB_BASE_PATH=/
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-public-website
     ports:
       - "${PUBLIC_WEBSITE_PORT:-3000}:80"
@@ -37,9 +37,9 @@ services:
       context: ../../
       dockerfile: Dockerfile.frontend
       args:
-        - REACT_APP_API_URL=${REACT_APP_API_URL:-/batuara-api/api}
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-/api}
         - APP_PATH=src/Frontend/AdminDashboard
-        - WEB_BASE_PATH=/batuara-admin
+        - WEB_BASE_PATH=/admin
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-admin-dashboard
     ports:
       - "${ADMIN_DASHBOARD_PORT:-3001}:80"

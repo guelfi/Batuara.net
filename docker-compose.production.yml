@@ -6,7 +6,7 @@ services:
     image: ghcr.io/guelfi/batuara.net-frontend:${IMAGE_TAG:-latest}
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-public-website
     environment:
-      - REACT_APP_API_URL=${REACT_APP_API_URL:-/batuara-api}
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-/api}
     ports:
       - "${PUBLIC_WEBSITE_PORT:-3000}:80"
     networks:
@@ -32,7 +32,7 @@ services:
     image: ghcr.io/guelfi/batuara.net-admin:${IMAGE_TAG:-latest}
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-admin-dashboard
     environment:
-      - REACT_APP_API_URL=${REACT_APP_API_URL:-/batuara-api/api}
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-/api}
     ports:
       - "${ADMIN_DASHBOARD_PORT:-3001}:80"
     networks:

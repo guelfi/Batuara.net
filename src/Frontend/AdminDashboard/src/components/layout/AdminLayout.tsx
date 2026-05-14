@@ -285,7 +285,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             title="Voltar ao Dashboard"
           >
             <img
-              src={`${process.env.PUBLIC_URL || '/batuara-admin'}/batuara_logo.png`}
+              src={`${process.env.PUBLIC_URL || '/admin'}/batuara_logo.png`}
               alt="Batuara Logo"
               style={{
                 height: isMobile ? '24px' : '32px',

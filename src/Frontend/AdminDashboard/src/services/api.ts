@@ -171,7 +171,7 @@ class ApiService {
             // Se falhar ao atualizar o token, limpar dados e redirecionar para login
             this.processQueue(refreshError, null);
             this.clearAuthData();
-            window.location.href = '/batuara-admin/login';
+            window.location.href = '/admin/login';
             return Promise.reject(refreshError);
           } finally {
             this.isRefreshing = false;
