@@ -87,17 +87,21 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
           backgroundColor: 'background.paper',
           top: isTemporary ? 0 : appBarHeight,
           height: isTemporary ? '100vh' : `calc(100vh - ${appBarHeight}px)`,
+          '@supports (height: 100svh)': {
+            height: isTemporary ? '100svh' : `calc(100svh - ${appBarHeight}px)`,
+          },
           '@supports (height: 100dvh)': {
             height: isTemporary ? '100dvh' : `calc(100dvh - ${appBarHeight}px)`,
           },
           display: 'flex',
           flexDirection: 'column',
-          paddingBottom: 'env(safe-area-inset-bottom)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
+          overflow: 'hidden',
         },
       }}
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-        <Box sx={{ p: { xs: 1.5, md: 2 }, bgcolor: 'primary.main', color: 'white' }}>
+        <Box sx={{ p: { xs: 1, md: 2 }, bgcolor: 'primary.main', color: 'white' }}>
           <Typography variant="h6" noWrap>
             Admin Dashboard
           </Typography>
@@ -116,7 +120,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
                 onClick={() => handleItemClick(item.path)}
                 selected={location.pathname === item.path}
                 sx={{
-                  py: { xs: 0.5, md: 0.75 },
+                  py: { xs: 0.25, md: 0.75 },
                   minHeight: { xs: 33, md: 44 },
                   '&.Mui-selected': {
                     bgcolor: 'primary.light',
@@ -128,7 +132,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
               >
                 <ListItemIcon
                   sx={{
-                    minWidth: { xs: 40, md: 52 },
+                    minWidth: { xs: 36, md: 52 },
                     color: location.pathname === item.path ? 'primary.main' : 'inherit',
                   }}
                 >
@@ -139,7 +143,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
                   primaryTypographyProps={{
                     sx: {
                       fontWeight: location.pathname === item.path ? 600 : 400,
-                      fontSize: { xs: 15, md: 16 },
+                      fontSize: { xs: 14, md: 16 },
                     },
                   }}
                 />
@@ -150,13 +154,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
 
         <Divider />
 
-        <Box sx={{ flexShrink: 0, pb: 'env(safe-area-inset-bottom)' }}>
+        <Box sx={{ flexShrink: 0, pb: 'calc(env(safe-area-inset-bottom) + 12px)' }}>
           <List sx={{ py: { xs: 0, md: 0.5 } }}>
             <ListItemButton
               onClick={() => handleItemClick('/profile')}
               selected={location.pathname === '/profile'}
               sx={{
-                py: { xs: 0.5, md: 0.75 },
+                py: { xs: 0.25, md: 0.75 },
                 minHeight: { xs: 33, md: 44 },
                 '&.Mui-selected': {
                   bgcolor: 'primary.light',
@@ -168,7 +172,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
             >
               <ListItemIcon
                 sx={{
-                  minWidth: { xs: 40, md: 52 },
+                  minWidth: { xs: 36, md: 52 },
                   color: location.pathname === '/profile' ? 'primary.main' : 'inherit',
                 }}
               >
@@ -179,17 +183,17 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
                 primaryTypographyProps={{
                   sx: {
                     fontWeight: location.pathname === '/profile' ? 600 : 400,
-                    fontSize: { xs: 15, md: 16 },
+                    fontSize: { xs: 14, md: 16 },
                   },
                 }}
               />
             </ListItemButton>
 
-            <ListItemButton onClick={handleLogout} sx={{ py: { xs: 0.5, md: 0.75 }, minHeight: { xs: 33, md: 44 } }}>
-              <ListItemIcon sx={{ minWidth: { xs: 40, md: 52 } }}>
+            <ListItemButton onClick={handleLogout} sx={{ py: { xs: 0.25, md: 0.75 }, minHeight: { xs: 33, md: 44 } }}>
+              <ListItemIcon sx={{ minWidth: { xs: 36, md: 52 } }}>
                 <LogoutIcon />
               </ListItemIcon>
-              <ListItemText primary="Sair" primaryTypographyProps={{ sx: { fontSize: { xs: 15, md: 16 } } }} />
+              <ListItemText primary="Sair" primaryTypographyProps={{ sx: { fontSize: { xs: 14, md: 16 } } }} />
             </ListItemButton>
           </List>
         </Box>
