@@ -247,6 +247,10 @@ if ! wait_for_healthy "$ADMIN_CONTAINER" "http://localhost:3001" 90; then
     log_warning "Admin Dashboard health check uncertain - container may still be starting"
 fi
 
+log_info "Removing obsolete Batuara containers (no DB changes)..."
+$COMPOSE_CMD --env-file .env.production -f "$COMPOSE_FILE" up -d --no-deps --remove-orphans api publicwebsite admindashboard > /dev/null 2>&1 || true
+docker container prune -f > /dev/null 2>&1 || true
+
 # --- Step 7: Connect nginx-proxy to application network ---
 DEPLOY_STATE="nginx"
 log_info "Step 7: Connecting nginx-proxy to application network..."
