@@ -152,10 +152,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   selected={location.pathname === item.path}
                   sx={{
                     mx: 1,
-                    my: { xs: 0.25, md: 0.5 },
+                    my: { xs: 0.4, md: 0.5 },
                     px: { xs: 1.5, md: 2 },
-                    py: { xs: 0.25, md: 0.75 },
-                    minHeight: { xs: 33, md: 44 },
+                    py: { xs: 0.5, md: 0.75 },
+                    minHeight: { xs: 36, md: 44 },
                     borderRadius: 1.5,
                     '&.Mui-selected': {
                       bgcolor: 'primary.light',
@@ -168,7 +168,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 >
                   <ListItemIcon
                     sx={{
-                      minWidth: { xs: 36, md: 56 },
+                      minWidth: { xs: 40, md: 56 },
                       color: location.pathname === item.path ? 'primary.main' : 'inherit',
                     }}
                   >
@@ -179,7 +179,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                     primaryTypographyProps={{
                       sx: {
                         fontWeight: location.pathname === item.path ? 600 : 400,
-                        fontSize: { xs: 14, md: 16 },
+                        fontSize: { xs: 15, md: 16 },
                       },
                     }}
                   />
@@ -199,10 +199,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               selected={location.pathname === '/profile'}
               sx={{
                 mx: 1,
-                my: { xs: 0.25, md: 0.5 },
+                my: { xs: 0.4, md: 0.5 },
                 px: { xs: 1.5, md: 2 },
-                py: { xs: 0.25, md: 0.75 },
-                minHeight: { xs: 33, md: 44 },
+                py: { xs: 0.5, md: 0.75 },
+                minHeight: { xs: 36, md: 44 },
                 borderRadius: 1.5,
                 '&.Mui-selected': {
                   bgcolor: 'primary.light',
@@ -213,7 +213,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 },
               }}
             >
-              <ListItemIcon sx={{ minWidth: { xs: 36, md: 56 }, color: location.pathname === '/profile' ? 'primary.main' : 'inherit' }}>
+              <ListItemIcon sx={{ minWidth: { xs: 40, md: 56 }, color: location.pathname === '/profile' ? 'primary.main' : 'inherit' }}>
                 <ProfileIcon />
               </ListItemIcon>
               <ListItemText
@@ -221,7 +221,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 primaryTypographyProps={{
                   sx: {
                     fontWeight: location.pathname === '/profile' ? 600 : 400,
-                    fontSize: { xs: 14, md: 16 },
+                    fontSize: { xs: 15, md: 16 },
                   },
                 }}
               />
@@ -229,12 +229,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
             <ListItemButton
               onClick={handleLogout}
-              sx={{ mx: 1, my: { xs: 0.25, md: 0.5 }, px: { xs: 1.5, md: 2 }, py: { xs: 0.25, md: 0.75 }, minHeight: { xs: 33, md: 44 }, borderRadius: 1.5 }}
+              sx={{ mx: 1, my: { xs: 0.4, md: 0.5 }, px: { xs: 1.5, md: 2 }, py: { xs: 0.5, md: 0.75 }, minHeight: { xs: 36, md: 44 }, borderRadius: 1.5 }}
             >
-              <ListItemIcon sx={{ minWidth: { xs: 36, md: 56 } }}>
+              <ListItemIcon sx={{ minWidth: { xs: 40, md: 56 } }}>
                 <LogoutIcon />
               </ListItemIcon>
-              <ListItemText primary="Sair" primaryTypographyProps={{ sx: { fontSize: { xs: 14, md: 16 } } }} />
+              <ListItemText primary="Sair" primaryTypographyProps={{ sx: { fontSize: { xs: 15, md: 16 } } }} />
             </ListItemButton>
           </List>
         </Box>
