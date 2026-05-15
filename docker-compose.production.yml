@@ -8,7 +8,7 @@ services:
     environment:
       - REACT_APP_API_URL=${REACT_APP_API_URL:-/api}
     ports:
-      - "${PUBLIC_WEBSITE_PORT:-3000}:80"
+      - "${PUBLIC_WEBSITE_BIND_IP:-0.0.0.0}:${PUBLIC_WEBSITE_PORT:-3000}:80"
     networks:
       - batuara-network
     restart: unless-stopped
@@ -17,7 +17,7 @@ services:
       - "project.name=${PROJECT_NAME:-batuara}"
       - "service.type=frontend"
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:80" ]
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:80 > /dev/null 2>&1 || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -34,7 +34,7 @@ services:
     environment:
       - REACT_APP_API_URL=${REACT_APP_API_URL:-/api}
     ports:
-      - "${ADMIN_DASHBOARD_PORT:-3001}:80"
+      - "${ADMIN_DASHBOARD_BIND_IP:-0.0.0.0}:${ADMIN_DASHBOARD_PORT:-3001}:80"
     networks:
       - batuara-network
     restart: unless-stopped
@@ -43,7 +43,7 @@ services:
       - "project.name=${PROJECT_NAME:-batuara}"
       - "service.type=frontend"
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:80" ]
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:80 > /dev/null 2>&1 || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -60,7 +60,7 @@ services:
     image: ghcr.io/guelfi/batuara.net-api:${IMAGE_TAG:-latest}
     container_name: ${COMPOSE_PROJECT_NAME:-batuara-net}-api
     ports:
-      - "${API_PORT:-3003}:8080"
+      - "${API_BIND_IP:-0.0.0.0}:${API_PORT:-3003}:8080"
     environment:
       - ConnectionStrings__DefaultConnection=Host=${COMPOSE_PROJECT_NAME:-batuara-net}-db;Database=${DB_NAME:-batuara_db};Username=${PROJECT_NAME:-batuara}_user;Password=${DB_PASSWORD}
       - JwtSettings__Secret=${JWT_SECRET}

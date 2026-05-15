@@ -87,8 +87,9 @@ jobs:
           SCP_CMD="scp -o StrictHostKeyChecking=no"
           SSH_CMD="ssh -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST}"
 
-          # Upload deploy script
+          # Upload deploy scripts
           $SCP_CMD scripts/ci/deploy-rolling.sh ${OCI_USER}@${OCI_HOST}:/tmp/deploy-rolling.sh
+          $SCP_CMD scripts/ci/deploy-rolling-staging.sh ${OCI_USER}@${OCI_HOST}:/tmp/deploy-rolling-staging.sh
 
           # Write secrets to a temporary env file and upload it (safer than shell interpolation)
           TMPENV=$(mktemp)
@@ -98,11 +99,12 @@ jobs:
           $SCP_CMD "$TMPENV" ${OCI_USER}@${OCI_HOST}:/tmp/deploy-env
           rm -f "$TMPENV"
 
-          # Execute deploy sourcing the env file
-          $SSH_CMD "chmod +x /tmp/deploy-rolling.sh && \
+          # Execute staging then production, sourcing the env file
+          $SSH_CMD "chmod +x /tmp/deploy-rolling-staging.sh /tmp/deploy-rolling.sh && \
             set -a && source /tmp/deploy-env && set +a && \
+            /tmp/deploy-rolling-staging.sh && \
             /tmp/deploy-rolling.sh; \
-            EXIT_CODE=\$?; rm -f /tmp/deploy-env /tmp/deploy-rolling.sh; exit \$EXIT_CODE"
+            EXIT_CODE=\$?; rm -f /tmp/deploy-env /tmp/deploy-rolling-staging.sh /tmp/deploy-rolling.sh; exit \$EXIT_CODE"
 
       - name: Verify deployment
         env:
@@ -113,6 +115,10 @@ jobs:
 
           echo "Waiting 60s for containers to stabilize..."
           sleep 60
+
+          echo "=== Staging Health Check ==="
+          $SSH_CMD "curl -sf http://localhost:3103/health || echo 'STAGING API health check failed'"
+          echo ""
 
           echo "=== Container Status ==="
           $SSH_CMD "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -i batuara || echo 'No batuara containers found'"

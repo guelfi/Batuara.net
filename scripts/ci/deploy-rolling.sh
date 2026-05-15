@@ -183,12 +183,17 @@ ASPNETCORE_ENVIRONMENT=Production
 COMPOSE_PROJECT_NAME=batuara-net
 PROJECT_NAME=batuara
 DOCKER_NETWORK=batuara-network
+DOCKER_SUBNET=172.20.0.0/16
 VOLUME_PREFIX=batuara
 IMAGE_TAG=${GITHUB_SHA:0:8}
 PUBLIC_WEBSITE_PORT=3000
+PUBLIC_WEBSITE_BIND_IP=0.0.0.0
 ADMIN_DASHBOARD_PORT=3001
+ADMIN_DASHBOARD_BIND_IP=0.0.0.0
 API_PORT=3003
+API_BIND_IP=0.0.0.0
 REACT_APP_API_URL=/batuara-api/api
+ENABLE_GLOBAL_PRUNE=false
 EOF
 
 log_success "Environment configured"
@@ -249,7 +254,12 @@ fi
 
 log_info "Removing obsolete Batuara containers (no DB changes)..."
 $COMPOSE_CMD --env-file .env.production -f "$COMPOSE_FILE" up -d --no-deps --remove-orphans api publicwebsite admindashboard > /dev/null 2>&1 || true
-docker container prune -f > /dev/null 2>&1 || true
+
+log_info "Cleaning up stopped Batuara containers only..."
+STOPPED_CONTAINERS=$(docker ps -a -q --filter "status=exited" --filter "label=com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}" || true)
+if [ -n "${STOPPED_CONTAINERS}" ]; then
+    docker rm ${STOPPED_CONTAINERS} > /dev/null 2>&1 || true
+fi
 
 # --- Step 7: Connect nginx-proxy to application network ---
 DEPLOY_STATE="nginx"
@@ -324,8 +334,11 @@ if docker ps --format '{{.Names}}' | grep -q "^${NGINX_CONTAINER}$"; then
 fi
 
 # --- Cleanup ---
-log_info "Cleaning up old Docker images..."
-docker image prune -f > /dev/null 2>&1 || true
+if [ "${ENABLE_GLOBAL_PRUNE:-false}" = "true" ]; then
+    log_warning "ENABLE_GLOBAL_PRUNE=true - running global Docker prune commands"
+    docker container prune -f > /dev/null 2>&1 || true
+    docker image prune -f > /dev/null 2>&1 || true
+fi
 
 echo ""
 echo "============================================="
