@@ -38,6 +38,7 @@ namespace Batuara.Domain.Entities
         public string? BankAccount { get; private set; }
         public string? BankAccountType { get; private set; }
         public string? CompanyDocument { get; private set; }
+        public string? PixQrCodeBase64 { get; private set; }
 
         private SiteSettings()
         {
@@ -141,7 +142,8 @@ namespace Batuara.Domain.Entities
             string? bankAgency,
             string? bankAccount,
             string? bankAccountType,
-            string? companyDocument = null)
+            string? companyDocument = null,
+            string? pixQrCodeBase64 = null)
         {
             PixKey = string.IsNullOrWhiteSpace(pixKey) ? null : pixKey.Trim();
             PixPayload = NormalizeOptional(pixPayload);
@@ -152,6 +154,7 @@ namespace Batuara.Domain.Entities
             BankAccount = NormalizeOptional(bankAccount);
             BankAccountType = NormalizeOptional(bankAccountType);
             CompanyDocument = NormalizeOptional(companyDocument);
+            PixQrCodeBase64 = NormalizeOptional(pixQrCodeBase64);
             UpdateTimestamp();
         }
 

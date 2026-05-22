@@ -131,6 +131,9 @@ namespace Batuara.Infrastructure.Data.Configurations
             builder.Property(s => s.CompanyDocument)
                 .HasMaxLength(30);
 
+            builder.Property(s => s.PixQrCodeBase64)
+                .HasColumnType("text");
+
             builder.OwnsOne(s => s.ContactInfo, ci =>
             {
                 ci.Property(p => p.Address)

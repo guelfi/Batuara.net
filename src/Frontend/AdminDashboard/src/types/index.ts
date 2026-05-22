@@ -65,6 +65,7 @@ export interface SiteSettingsDto {
   pixPayload?: string;
   pixRecipientName?: string;
   pixCity?: string;
+  pixQrCodeBase64?: string;
   bankName?: string;
   bankAgency?: string;
   bankAccount?: string;

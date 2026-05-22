@@ -48,7 +48,7 @@ const DonationsSection: React.FC = () => {
   };
 
   useEffect(() => {
-    if (showPixDialog && qrCodeRef.current && pixValue) {
+    if (showPixDialog && qrCodeRef.current && pixValue && !siteSettings?.pixQrCodeBase64) {
       setTimeout(() => {
         if (qrCodeRef.current) {
           const canvas = qrCodeRef.current;
@@ -67,7 +67,7 @@ const DonationsSection: React.FC = () => {
         }
       }, 100);
     }
-  }, [pixValue, showPixDialog, theme.palette.primary.main]);
+  }, [pixValue, showPixDialog, theme.palette.primary.main, siteSettings?.pixQrCodeBase64]);
 
   const handleCloseAlert = () => {
     setShowCopyAlert(false);
@@ -238,36 +238,85 @@ const DonationsSection: React.FC = () => {
           </DialogTitle>
           <DialogContent sx={{ textAlign: 'center' }}>
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
-              <Box sx={{ p: 2, backgroundColor: 'white', borderRadius: 2, boxShadow: 2 }}>
-                <canvas ref={qrCodeRef} />
+              <Box sx={{ p: 2, backgroundColor: 'white', borderRadius: 2, boxShadow: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {siteSettings?.pixQrCodeBase64 ? (
+                  <img
+                    src={siteSettings.pixQrCodeBase64}
+                    alt="QR Code PIX"
+                    style={{ width: 200, height: 200, objectFit: 'contain' }}
+                  />
+                ) : (
+                  <canvas ref={qrCodeRef} style={{ display: pixValue ? 'block' : 'none' }} />
+                )}
               </Box>
             </Box>
 
+            {siteSettings?.pixPayload && (
+              <Card sx={{ mb: 2, backgroundColor: 'action.hover' }}>
+                <CardContent sx={{ py: 1.5, px: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Typography variant="caption" color="text.secondary" align="left" sx={{ fontWeight: 600, display: 'block' }}>
+                    Pix Copia e Cola
+                  </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" sx={{ wordBreak: 'break-all', textAlign: 'left', fontSize: '0.8rem', color: 'text.primary', userSelect: 'all', fontFamily: 'monospace' }}>
+                      {siteSettings.pixPayload}
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleCopyToClipboard(siteSettings.pixPayload || '', 'Pix Copia e Cola')}
+                      sx={{ color: 'primary.main', flexShrink: 0 }}
+                    >
+                      <ContentCopyIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </CardContent>
+              </Card>
+            )}
+
             <Card sx={{ mb: 2, backgroundColor: 'primary.light' }}>
-              <CardContent sx={{ py: 2 }}>
+              <CardContent sx={{ py: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Box sx={{ textAlign: 'left' }}>
                     <Typography variant="subtitle2" sx={{ color: 'primary.contrastText', opacity: 0.8 }}>
-                      Chave PIX:
+                      Chave PIX (CNPJ):
                     </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.contrastText', wordBreak: 'break-all' }}>
-                      {siteSettings?.pixKey || 'Não informado'}
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.contrastText' }}>
+                      {siteSettings?.pixKey || '08.488.544/0001-56'}
                     </Typography>
                   </Box>
                   <IconButton
                     size="small"
-                    onClick={() => handleCopyToClipboard(siteSettings?.pixKey || '', 'Chave PIX')}
+                    onClick={() => handleCopyToClipboard(siteSettings?.pixKey || '08.488.544/0001-56', 'Chave PIX')}
                     sx={{ color: 'primary.contrastText' }}
-                    disabled={!siteSettings?.pixKey}
                   >
                     <ContentCopyIcon fontSize="small" />
                   </IconButton>
                 </Box>
+                
+                <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.2)', pt: 1, textAlign: 'left' }}>
+                  <Typography variant="subtitle2" sx={{ color: 'primary.contrastText', opacity: 0.8 }}>
+                    Beneficiário:
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.contrastText' }}>
+                    {siteSettings?.pixRecipientName || 'Casa de Caridade Batuara'}
+                  </Typography>
+                </Box>
+                
+                {siteSettings?.pixCity && (
+                  <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.2)', pt: 1, textAlign: 'left' }}>
+                    <Typography variant="subtitle2" sx={{ color: 'primary.contrastText', opacity: 0.8 }}>
+                      Cidade:
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.contrastText' }}>
+                      {siteSettings.pixCity}
+                    </Typography>
+                  </Box>
+                )}
               </CardContent>
             </Card>
 
             <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-              Escaneie o QR Code ou copie a chave PIX oficial da Casa Batuara
+              Escaneie o QR Code ou copie os dados do PIX oficial da Casa Batuara
             </Typography>
           </DialogContent>
           <DialogActions sx={{ p: 3, pt: 0 }}>

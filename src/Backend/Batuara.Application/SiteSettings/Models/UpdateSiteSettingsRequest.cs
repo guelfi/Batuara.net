@@ -37,6 +37,7 @@ namespace Batuara.Application.SiteSettings.Models
         public string? BankAccount { get; set; }
         public string? BankAccountType { get; set; }
         public string? CompanyDocument { get; set; }
+        public string? PixQrCodeBase64 { get; set; }
         public string? AboutText { get; set; }
     }
 }
