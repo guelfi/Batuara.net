@@ -137,14 +137,30 @@ namespace Batuara.Infrastructure.SiteSettings.Services
                 request.BankAgency != null ||
                 request.BankAccount != null ||
                 request.BankAccountType != null ||
-                request.CompanyDocument != null;
+                request.CompanyDocument != null ||
+                request.PixQrCodeBase64 != null;
 
             if (hasDonationChange)
             {
                 var pixKey = request.PixKey ?? entity.PixKey;
                 var pixRecipientName = request.PixRecipientName ?? entity.PixRecipientName ?? "Casa Batuara";
                 var pixCity = request.PixCity ?? entity.PixCity ?? entity.City;
-                var pixPayload = request.PixPayload ?? GeneratePixPayload(pixKey, pixRecipientName, pixCity);
+                
+                string? pixPayload = null;
+                if (request.PixPayload != null)
+                {
+                    pixPayload = string.IsNullOrWhiteSpace(request.PixPayload) ? null : request.PixPayload.Trim();
+                }
+                else
+                {
+                    pixPayload = (request.PixKey != null || request.PixRecipientName != null || request.PixCity != null)
+                        ? GeneratePixPayload(pixKey, pixRecipientName, pixCity)
+                        : entity.PixPayload;
+                }
+
+                string? pixQrCodeBase64 = request.PixQrCodeBase64 != null
+                    ? (string.IsNullOrWhiteSpace(request.PixQrCodeBase64) ? null : request.PixQrCodeBase64.Trim())
+                    : entity.PixQrCodeBase64;
 
                 entity.UpdateDonationInfo(
                     pixKey,
@@ -155,7 +171,8 @@ namespace Batuara.Infrastructure.SiteSettings.Services
                     request.BankAgency ?? entity.BankAgency,
                     request.BankAccount ?? entity.BankAccount,
                     request.BankAccountType ?? entity.BankAccountType,
-                    request.CompanyDocument ?? entity.CompanyDocument);
+                    request.CompanyDocument ?? entity.CompanyDocument,
+                    pixQrCodeBase64);
             }
 
             await _dbContext.SaveChangesAsync();
@@ -230,15 +247,16 @@ namespace Batuara.Infrastructure.SiteSettings.Services
                 null);
 
             siteSettings.UpdateDonationInfo(
-                "contato@casabatuara.org.br",
-                GeneratePixPayload("contato@casabatuara.org.br", "Casa Batuara", "Guarulhos"),
-                "Casa Batuara",
-                "Guarulhos",
+                "08.488.544/0001-56",
+                "00020126360014BR.GOV.BCB.PIX0114084885440001565204000053039865802BR5924Casa de Caridade Batuara6009Sao Paulo62070503***6304554C",
+                "Casa de Caridade Batuara",
+                "Sao Paulo",
                 "Banco do Brasil",
                 "1234-5",
                 "98765-4",
                 "Conta Corrente",
-                "00.000.000/0001-00");
+                "08.488.544/0001-56",
+                "data:image/png;base64,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q5587GUjlear2bF49Xp+LXa+QyElROAkChOAEKiOAEIKfx3iHuV7sk17/R49/BeVvydjrd0POt+b3zeeDQrPiue2vPhzd9SOj8WKx8PVk4AQqI4AQiJ4gQgpMXub+us65qVfs09dOKN13td8+bvHd9ixWcpzdcbf+14LVZ8pdctpfdbSuaTlROAkChOAEKiOAEIKfvnnKw9dttqj2/t6XX/1vjeM4LBnj+vtvO15tdSOz/N6t87P23PZ02snACERHECEBLFCUBIXfc5J80bvu6/NP3S/rxnBKW841n5Wf1pbc9P7Xi10vhL4y3Nxxu/xYqvBCsnACFRnACERHECENJid+ZUugdue/zS65o3Xq12/1Y+Fisezeq/0/FonZ4/re34S/sfCCsnACFRnACERHECEFLX/W2dxbtnt9qX9leq2+K3+vfyxq/Vzqft/kqva9Z8lY5vseIbCCsnACFRnACERHECENJi9x3iltJ0vXtyb7y1+/NqO59StefPq7S/tuer7fi0NueblROAkChOAEKiOAEIKfyZU9t7Zs0ar3RPXsoav+35Ks3HG79ub13XrHi9/de+rnnbWzqdn1YSPysnACFRnACERHECEFL4v63TSvfIltI9dNt79Nr9W/1ppfFbauen1c7XUjv+UtHmdyCsnACERHECEBLFCUBIXX/m1DZrT+7dg2ve/r39WWrP54stH80br6Xt8aznR/O2L8HKCUBIFCcAIVGcAIQUdd9npOnwS/fE3j2+NZ43Hy/veN750ErnR/POpoke3xvv9Fq+t1/t8b1lfs37uubt33p+tNb2fHrzL50PzWpfe79W/6z+WfkBiJgUJwAhUZwAhMSpk/N9TrX30F6bv+YdPz/e8Wpljdfifd3SdjxKecejefPxjle6v/bzuT8sXlZOAEKiOAEIieIEICS+z0kp7c+75257j++9XpuVv1Yajzd/S9vz643HMtj51sTKCUBIFCcAIVGcAIQUzhwpQHL8//L+vT8Wbf8Waf/2v1Z5Pj2fNY83q34vP4vVg5QQgJIoTgJAoTgBCCn/mVDqH+r33b11v/xafZcWn1e7fO541P0ttn7Xie1nt66aXxue9rsWKx8vKycoJQEgUJwAhUZwAhMSpk/N9TrX30F6bv+YdPz/e8Wpljdfifd3SdjxKecejefPxjle6v/bzuT8sXlZOAEKiOAEIieIEICS+z0kp7c+75257j++9XpuVv1Yajzd/S9vz643HMtj51sTKCUBIFCcAIVGcAIQEDhwpQHL8//L+vT8Wbf8Waf/2v1Z5Pj2fNY83q34vP4vVg5QQgJIoTgJAoTgBCCn/mVDqH+r33b11v/xafZcWn1e7fO541P0ttn7Xie1nt66aXxue9rsWKx8vKycoJQEgUJwAhUZwAhMSpk/N9TrX30F6bv+YdPz/e8Wpljdfifd3SdjxKecejefPxjle6v/bzuT8sXlZOAEKiOAEIieIEICS+z0kp7c+75257j++9XpuVv1Yajzd/S9vz643HMtj51sTKCUBIFCcAIVGcAIQEDhwB4FMoTgBCojgBCIniBCAkihOAkChOAEKiOAEIieIEICSKE4CQKE4AQqI4AQiJ4gQgJIoTgJAoTgBCojgBCIniBCAkihOAkChOAEKiOAEIieIEICSKE4CQKE4AQqI4AQiJ4gQgJIoTgJAoTgBCojgBCIniBCAkihOAkChOAEKiOAEIieIEICSKE4CQKE4AQqI4AQiJ4gQgJIoTgJAoTgBCojgBCIniBCCk/wP1N2f0R+xV/gAAAABJRU5ErkJggg==");
 
             return siteSettings;
         }
@@ -305,6 +323,7 @@ namespace Batuara.Infrastructure.SiteSettings.Services
                 BankAccount = entity.BankAccount,
                 BankAccountType = entity.BankAccountType,
                 CompanyDocument = entity.CompanyDocument,
+                PixQrCodeBase64 = entity.PixQrCodeBase64,
                 AboutText = string.IsNullOrWhiteSpace(entity.AboutText)
                     ? GetDefaultAboutText()
                     : entity.AboutText

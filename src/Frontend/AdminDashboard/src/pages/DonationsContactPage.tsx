@@ -222,8 +222,10 @@ const DonationsContactPage: React.FC = () => {
         whatsappNumber: settings.whatsappNumber,
         serviceHours: settings.serviceHours,
         pixKey: settings.pixKey,
+        pixPayload: settings.pixPayload,
         pixRecipientName: settings.pixRecipientName,
         pixCity: settings.pixCity,
+        pixQrCodeBase64: settings.pixQrCodeBase64,
         bankName: settings.bankName,
         bankAgency: settings.bankAgency,
         bankAccount: settings.bankAccount,
@@ -477,10 +479,73 @@ const DonationsContactPage: React.FC = () => {
                   helperText={settingsErrors.companyDocument}
                   fullWidth
                 />
+                <TextField
+                  label="Pix Copia e Cola"
+                  value={settings.pixPayload || ''}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixPayload: e.target.value } : prev))}
+                  multiline
+                  rows={3}
+                  fullWidth
+                />
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                    Imagem do QR Code (PIX)
+                  </Typography>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+                    {settings.pixQrCodeBase64 ? (
+                      <Box sx={{ position: 'relative', width: 140, height: 140, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden', bgcolor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <img
+                          src={settings.pixQrCodeBase64}
+                          alt="QR Code PIX"
+                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                        />
+                      </Box>
+                    ) : (
+                      <Box sx={{ width: 140, height: 140, border: '2px dashed', borderColor: 'divider', borderRadius: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: 'action.hover' }}>
+                        <Typography variant="caption" color="text.secondary">Sem imagem</Typography>
+                      </Box>
+                    )}
+                    <Stack spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        size="small"
+                        fullWidth
+                      >
+                        Fazer Upload
+                        <input
+                          type="file"
+                          accept="image/*"
+                          hidden
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const base64 = event.target?.result as string;
+                                setSettings((prev) => (prev ? { ...prev, pixQrCodeBase64: base64 } : prev));
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </Button>
+                      {settings.pixQrCodeBase64 && (
+                        <Button
+                          variant="text"
+                          color="error"
+                          size="small"
+                          onClick={() => setSettings((prev) => (prev ? { ...prev, pixQrCodeBase64: '' } : prev))}
+                          fullWidth
+                        >
+                          Remover Imagem
+                        </Button>
+                      )}
+                    </Stack>
+                  </Stack>
+                </Box>
                 <Alert severity="info">
-                  {settings.pixPayload
-                    ? 'O payload PIX será regenerado automaticamente no backend a cada atualização.'
-                    : 'Ao salvar uma chave PIX válida, o backend gera automaticamente o payload para QR Code.'}
+                  O payload 'Pix Copia e Cola' e o QR Code podem ser personalizados. Se o payload for deixado em branco, ele será gerado automaticamente a partir dos dados do PIX.
                 </Alert>
               </Stack>
             </AccordionDetails>
@@ -602,10 +667,71 @@ const DonationsContactPage: React.FC = () => {
                   helperText={settingsErrors.companyDocument}
                   fullWidth
                 />
+                <TextField
+                  label="Pix Copia e Cola"
+                  value={settings.pixPayload || ''}
+                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixPayload: e.target.value } : prev))}
+                  multiline
+                  rows={3}
+                  fullWidth
+                />
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                    Imagem do QR Code (PIX)
+                  </Typography>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+                    {settings.pixQrCodeBase64 ? (
+                      <Box sx={{ position: 'relative', width: 140, height: 140, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden', bgcolor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <img
+                          src={settings.pixQrCodeBase64}
+                          alt="QR Code PIX"
+                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                        />
+                      </Box>
+                    ) : (
+                      <Box sx={{ width: 140, height: 140, border: '2px dashed', borderColor: 'divider', borderRadius: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: 'action.hover' }}>
+                        <Typography variant="caption" color="text.secondary">Sem imagem</Typography>
+                      </Box>
+                    )}
+                    <Stack spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        size="small"
+                      >
+                        Fazer Upload
+                        <input
+                          type="file"
+                          accept="image/*"
+                          hidden
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const base64 = event.target?.result as string;
+                                setSettings((prev) => (prev ? { ...prev, pixQrCodeBase64: base64 } : prev));
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </Button>
+                      {settings.pixQrCodeBase64 && (
+                        <Button
+                          variant="text"
+                          color="error"
+                          size="small"
+                          onClick={() => setSettings((prev) => (prev ? { ...prev, pixQrCodeBase64: '' } : prev))}
+                        >
+                          Remover Imagem
+                        </Button>
+                      )}
+                    </Stack>
+                  </Stack>
+                </Box>
                 <Alert severity="info">
-                  {settings.pixPayload
-                    ? 'O payload PIX será regenerado automaticamente no backend a cada atualização.'
-                    : 'Ao salvar uma chave PIX válida, o backend gera automaticamente o payload para QR Code.'}
+                  O payload 'Pix Copia e Cola' e o QR Code podem ser personalizados. Se o payload for deixado em branco, ele será gerado automaticamente a partir dos dados do PIX.
                 </Alert>
               </Stack>
             </Paper>
