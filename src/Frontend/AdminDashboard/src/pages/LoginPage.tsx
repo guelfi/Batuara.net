@@ -91,16 +91,57 @@ const LoginPage: React.FC = () => {
             textAlign: 'center',
           }}
         >
-          <Typography
-            variant="h4"
+          <Box
             sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1.5,
               mb: 1,
-              fontWeight: 600,
-              color: 'primary.main',
             }}
           >
-            Casa de Caridade Batuara
-          </Typography>
+            <Box
+              component="a"
+              href="/"
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                textDecoration: 'none',
+                transition: 'transform 0.2s ease-in-out',
+                '&:hover': {
+                  transform: 'scale(1.05)',
+                },
+              }}
+            >
+              <Box
+                component="img"
+                src={`${process.env.PUBLIC_URL || '/admin'}/batuara_logo.png`}
+                alt="Logo Batuara"
+                sx={{
+                  height: { xs: 40, sm: 48 },
+                  width: { xs: 40, sm: 48 },
+                  objectFit: 'contain',
+                }}
+              />
+            </Box>
+            <Typography
+              variant="h4"
+              component="a"
+              href="/"
+              sx={{
+                fontWeight: 600,
+                color: 'primary.main',
+                textDecoration: 'none',
+                fontSize: { xs: '1.5rem', sm: '2rem' },
+                transition: 'color 0.2s ease-in-out',
+                '&:hover': {
+                  color: 'primary.dark',
+                },
+              }}
+            >
+              Casa de Caridade Batuara
+            </Typography>
+          </Box>
           <Typography
             variant="h6"
             sx={{
