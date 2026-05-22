@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS batuara."Events_backup_pre2026" AS
 
 -- ================================================================
 -- PARTE 1: CalendarAttendances
--- Total de registros: 103
+-- Total de registros: 105
 -- ================================================================
 TRUNCATE TABLE batuara."CalendarAttendances" RESTART IDENTITY CASCADE;
 
@@ -91,14 +91,16 @@ VALUES
   ('2026-04-17 03:00:00+00', '20:00:00', '22:00:00', 2, 'Gira Normal', NULL, false, NULL, true, NOW(), NOW()),
   ('2026-04-25 03:00:00+00', '20:00:00', '23:00:00', 5, 'Festa de Ogum / Iao', NULL, false, NULL, true, NOW(), NOW()),
   ('2026-05-01 03:00:00+00', '20:00:00', '22:00:00', 2, 'Gira Cancelada', 'Gira cancelada', false, NULL, false, NOW(), NOW()),
-  ('2026-05-08 03:00:00+00', '20:00:00', '22:00:00', 2, 'Gira Normal', NULL, false, NULL, true, NOW(), NOW()),
-  ('2026-05-15 03:00:00+00', '20:00:00', '23:00:00', 5, 'Festa dos Pretos Velhos', NULL, false, NULL, true, NOW(), NOW()),
+  ('2026-05-08 03:00:00+00', '20:00:00', '23:00:00', 5, 'Festa dos Pretos Velhos', NULL, false, NULL, true, NOW(), NOW()),
+  ('2026-05-15 03:00:00+00', '20:00:00', '22:00:00', 2, 'Gira Normal', NULL, false, NULL, true, NOW(), NOW()),
+  ('2026-05-16 03:00:00+00', '10:00:00', '18:00:00', 5, 'Bazar', NULL, false, NULL, true, NOW(), NOW()),
+  ('2026-05-17 03:00:00+00', '10:00:00', '18:00:00', 5, 'Bazar', NULL, false, NULL, true, NOW(), NOW()),
   ('2026-05-22 03:00:00+00', '20:00:00', '22:00:00', 2, 'Gira Normal', NULL, false, NULL, true, NOW(), NOW()),
-  ('2026-05-29 03:00:00+00', '20:00:00', '23:00:00', 5, 'Festa dos Ciganos', NULL, false, NULL, true, NOW(), NOW()),
+  ('2026-05-30 03:00:00+00', '20:00:00', '23:00:00', 5, 'Festa dos Ciganos', NULL, false, NULL, true, NOW(), NOW()),
   ('2026-06-05 03:00:00+00', '20:00:00', '22:00:00', 2, 'Gira Normal', NULL, false, NULL, true, NOW(), NOW()),
-  ('2026-06-13 03:00:00+00', '20:00:00', '23:00:00', 5, 'Festa de Esquerda', NULL, false, NULL, true, NOW(), NOW()),
-  ('2026-06-19 03:00:00+00', '20:00:00', '22:00:00', 2, 'Gira Normal', NULL, false, NULL, true, NOW(), NOW()),
-  ('2026-06-26 03:00:00+00', '20:00:00', '23:00:00', 5, 'Festa de Boiadeiro e Saudação a Xangô Menino', NULL, false, NULL, true, NOW(), NOW()),
+  ('2026-06-12 03:00:00+00', '20:00:00', '22:00:00', 2, 'Gira Normal', NULL, false, NULL, true, NOW(), NOW()),
+  ('2026-06-20 03:00:00+00', '20:00:00', '23:00:00', 5, 'Festa de Boiadeiro e Saudação a Xangô Menino', NULL, false, NULL, true, NOW(), NOW()),
+  ('2026-06-27 03:00:00+00', '20:00:00', '23:00:00', 5, 'Festa de Esquerda', NULL, false, NULL, true, NOW(), NOW()),
   ('2026-07-03 03:00:00+00', '20:00:00', '22:00:00', 2, 'Gira Normal', NULL, false, NULL, true, NOW(), NOW()),
   ('2026-07-10 03:00:00+00', '20:00:00', '23:00:00', 5, 'Festa dos Marinheiros', NULL, false, NULL, true, NOW(), NOW()),
   ('2026-07-17 03:00:00+00', '20:00:00', '22:00:00', 2, 'Gira Normal', NULL, false, NULL, true, NOW(), NOW()),
@@ -128,7 +130,7 @@ VALUES
 
 -- ================================================================
 -- PARTE 2: Events (Festas e Eventos - sem giras)
--- Total de registros: 21
+-- Total de registros: 23
 -- ================================================================
 TRUNCATE TABLE batuara."Events" RESTART IDENTITY CASCADE;
 
@@ -142,10 +144,12 @@ VALUES
   ('Festa dos Malandros', 'Celebração em homenagem aos Malandros da Umbanda.', '2026-03-13 03:00:00+00', NULL, NULL, 1, NULL, NULL, true, NOW(), NOW()),
   ('Sexta Santa', 'Cerimônia especial de Sexta Santa. Início às 15h00.', '2026-04-03 03:00:00+00', '15:00:00', '17:00:00', 3, NULL, NULL, true, NOW(), NOW()),
   ('Festa de Ogum / Iao', 'Celebração em homenagem ao Orixá Ogum e seus filhos.', '2026-04-25 03:00:00+00', NULL, NULL, 1, NULL, NULL, true, NOW(), NOW()),
-  ('Festa dos Pretos Velhos', 'Homenagem aos Pretos Velhos, mestres da sabedoria.', '2026-05-15 03:00:00+00', NULL, NULL, 1, NULL, NULL, true, NOW(), NOW()),
-  ('Festa dos Ciganos', 'Celebração em homenagem aos Ciganos da Umbanda.', '2026-05-29 03:00:00+00', NULL, NULL, 1, NULL, NULL, true, NOW(), NOW()),
-  ('Festa de Esquerda', 'Gira de Esquerda com os Exus e Pombas Giras.', '2026-06-13 03:00:00+00', NULL, NULL, 1, NULL, NULL, true, NOW(), NOW()),
-  ('Festa de Boiadeiro e Saudação a Xangô Menino', 'Celebração dos Boiadeiros e saudação a Xangô Menino.', '2026-06-26 03:00:00+00', NULL, NULL, 1, NULL, NULL, true, NOW(), NOW()),
+  ('Festa dos Pretos Velhos', 'Homenagem aos Pretos Velhos, mestres da sabedoria.', '2026-05-08 03:00:00+00', NULL, NULL, 1, NULL, NULL, true, NOW(), NOW()),
+  ('Bazar', 'Grande Bazar Beneficente da Batuara - Sábado.', '2026-05-16 03:00:00+00', '10:00:00', '18:00:00', 4, NULL, NULL, true, NOW(), NOW()),
+  ('Bazar', 'Grande Bazar Beneficente da Batuara - Domingo.', '2026-05-17 03:00:00+00', '10:00:00', '18:00:00', 4, NULL, NULL, true, NOW(), NOW()),
+  ('Festa dos Ciganos', 'Celebração em homenagem aos Ciganos da Umbanda.', '2026-05-30 03:00:00+00', NULL, NULL, 1, NULL, NULL, true, NOW(), NOW()),
+  ('Festa de Boiadeiro e Saudação a Xangô Menino', 'Celebração dos Boiadeiros e saudação a Xangô Menino.', '2026-06-20 03:00:00+00', NULL, NULL, 1, NULL, NULL, true, NOW(), NOW()),
+  ('Festa de Esquerda', 'Gira de Esquerda com os Exus e Pombas Giras.', '2026-06-27 03:00:00+00', NULL, NULL, 1, NULL, NULL, true, NOW(), NOW()),
   ('Festa dos Marinheiros', 'Celebração em homenagem aos Marinheiros da Umbanda.', '2026-07-10 03:00:00+00', NULL, NULL, 1, NULL, NULL, true, NOW(), NOW()),
   ('Festa de Nanã', 'Celebração em homenagem à Orixá Nanã Buruquê.', '2026-07-31 03:00:00+00', NULL, NULL, 1, NULL, NULL, true, NOW(), NOW()),
   ('Festa dos Baianos', 'Celebração em homenagem aos Baianos da Umbanda.', '2026-08-07 03:00:00+00', NULL, NULL, 1, NULL, NULL, true, NOW(), NOW()),
@@ -160,4 +164,4 @@ VALUES
 
 COMMIT;
 
--- Resumo: 103 registros em CalendarAttendances, 21 em Events
+-- Resumo: 105 registros em CalendarAttendances, 23 em Events
