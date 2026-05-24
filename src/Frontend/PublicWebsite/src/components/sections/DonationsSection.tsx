@@ -316,7 +316,7 @@ const DonationsSection: React.FC = () => {
             </Card>
 
             <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-              Escaneie o QR Code ou copie os dados do PIX oficial da Casa Batuara
+              Escaneie o QR Code ou copie os dados do PIX oficial da <br /> Casa Batuara
             </Typography>
           </DialogContent>
           <DialogActions sx={{ p: 3, pt: 0 }}>

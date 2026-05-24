@@ -91,20 +91,20 @@ namespace Batuara.Infrastructure.SiteSettings.Services
             if (hasInstitutionalChange)
             {
                 entity.UpdateInstitutionalInfo(
-                    request.InstitutionalEmail ?? entity.InstitutionalEmail,
-                    request.PrimaryPhone ?? entity.PrimaryPhone,
+                    request.InstitutionalEmail ?? (string.IsNullOrWhiteSpace(entity.InstitutionalEmail) ? GetDefaultInstitutionalEmail() : entity.InstitutionalEmail),
+                    request.PrimaryPhone ?? (string.IsNullOrWhiteSpace(entity.PrimaryPhone) ? entity.ContactInfo.Phone : entity.PrimaryPhone),
                     request.SecondaryPhone ?? entity.SecondaryPhone,
                     request.WhatsappNumber ?? entity.WhatsappNumber,
                     request.ServiceHours ?? entity.ServiceHours,
-                    request.Street ?? entity.Street,
-                    request.Number ?? entity.Number,
+                    request.Street ?? (string.IsNullOrWhiteSpace(entity.Street) ? GetDefaultStreet() : entity.Street),
+                    request.Number ?? (string.IsNullOrWhiteSpace(entity.Number) ? GetDefaultNumber() : entity.Number),
                     request.Complement ?? entity.Complement,
-                    request.District ?? entity.District,
-                    request.City ?? entity.City,
-                    request.State ?? entity.State,
-                    request.ZipCode ?? entity.ZipCode,
+                    request.District ?? (string.IsNullOrWhiteSpace(entity.District) ? GetDefaultDistrict() : entity.District),
+                    request.City ?? (string.IsNullOrWhiteSpace(entity.City) ? GetDefaultCity() : entity.City),
+                    request.State ?? (string.IsNullOrWhiteSpace(entity.State) ? GetDefaultState() : entity.State),
+                    request.ZipCode ?? (string.IsNullOrWhiteSpace(entity.ZipCode) ? GetDefaultZipCode() : entity.ZipCode),
                     request.ReferenceNotes ?? entity.ReferenceNotes,
-                    request.MapEmbedUrl ?? entity.MapEmbedUrl);
+                    request.MapEmbedUrl ?? (string.IsNullOrWhiteSpace(entity.MapEmbedUrl) ? GetDefaultMapEmbedUrl() : entity.MapEmbedUrl));
             }
 
             var hasLegacyContactChange =

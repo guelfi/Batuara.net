@@ -9,6 +9,10 @@ ARG APP_PATH
 ARG REACT_APP_API_URL
 ENV REACT_APP_API_URL=${REACT_APP_API_URL}
 
+# Argumento para o caminho base da web (ex: /batuara-public)
+ARG WEB_BASE_PATH=/
+ENV PUBLIC_URL=${WEB_BASE_PATH}
+
 # Copia arquivos de dependências
 COPY ${APP_PATH}/package*.json ./
 

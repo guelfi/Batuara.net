@@ -39,7 +39,7 @@ function App() {
       <ThemeProvider theme={adminTheme}>
         <CssBaseline />
         <AuthProvider>
-          <Router basename="/admin">
+          <Router basename={process.env.PUBLIC_URL || '/'}>
             <Routes>
               {/* Rota pública de login */}
               <Route path="/login" element={<LoginPage />} />

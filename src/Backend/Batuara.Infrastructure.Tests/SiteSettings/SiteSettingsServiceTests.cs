@@ -126,5 +126,41 @@ namespace Batuara.Infrastructure.Tests.SiteSettings
             updated.HistoryMissionText.Should().Be("Promover a caridade, o amor fraterno e a elevação espiritual através da Sabedoria Ancestral dos Orixás, Guias, Entidades e Mentores, oferecendo assistência espiritual gratuita a todos que buscam a LUZ.");
             updated.AboutText.Should().Be("Conteúdo atualizado da história");
         }
+
+        [Fact]
+        public async Task UpdateAsync_Should_Not_Throw_When_Db_Fields_Are_Empty_And_Request_Is_Partial()
+        {
+            var db = CreateInMemoryDb();
+            var entity = new Batuara.Domain.Entities.SiteSettings(
+                new ContactInfo("Endereco original", "contato@casabatuara.org.br", "(11) 1234-5678", "casadecaridade.batuara"),
+                "Texto institucional",
+                "https://www.instagram.com/casadecaridade.batuara");
+
+            // Simula dados vazios no banco de dados
+            SetPrivateStringProperty(entity, "Street", "");
+            SetPrivateStringProperty(entity, "Number", "");
+            SetPrivateStringProperty(entity, "District", "");
+            SetPrivateStringProperty(entity, "City", "");
+            SetPrivateStringProperty(entity, "State", "");
+            SetPrivateStringProperty(entity, "ZipCode", "");
+
+            db.SiteSettings.Add(entity);
+            await db.SaveChangesAsync();
+
+            var service = new SiteSettingsService(db, NullLogger<SiteSettingsService>.Instance);
+
+            // Chamada parcial de atualização institucional sem enviar campos de endereço
+            var updated = await service.UpdateAsync(new UpdateSiteSettingsRequest
+            {
+                InstitutionalEmail = "novoemail@casabatuara.org.br",
+                PrimaryPhone = "(11) 98765-4321"
+            });
+
+            updated.InstitutionalEmail.Should().Be("novoemail@casabatuara.org.br");
+            updated.PrimaryPhone.Should().Be("(11) 98765-4321");
+            updated.Street.Should().Be("Av. Brigadeiro Faria Lima"); // fallback seguro
+            updated.Number.Should().Be("2750"); // fallback seguro
+            updated.District.Should().Be("Jardim Cocaia"); // fallback seguro
+        }
     }
 }
