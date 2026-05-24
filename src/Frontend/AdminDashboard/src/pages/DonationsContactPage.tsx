@@ -83,7 +83,6 @@ const DonationsContactPage: React.FC = () => {
     primaryPhone?: string;
     secondaryPhone?: string;
     whatsappNumber?: string;
-    companyDocument?: string;
   }>({});
   const [messageFilter, setMessageFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | ContactMessageStatus>('all');
@@ -193,10 +192,7 @@ const DonationsContactPage: React.FC = () => {
       nextErrors.whatsappNumber = 'Informe um WhatsApp válido (DDD + número).';
     }
 
-    const cnpjDigits = onlyDigits(settings?.companyDocument || '');
-    if (settings?.companyDocument?.trim() && cnpjDigits.length !== 14) {
-      nextErrors.companyDocument = 'CNPJ deve conter 14 dígitos.';
-    }
+
 
     return nextErrors;
   };
@@ -427,58 +423,20 @@ const DonationsContactPage: React.FC = () => {
             </AccordionSummary>
             <AccordionDetails>
               <Stack spacing={2}>
-                <TextField
-                  label="Chave PIX"
-                  value={settings.pixKey || ''}
-                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixKey: e.target.value } : prev))}
-                  fullWidth
-                />
-                <TextField
-                  label="Favorecido PIX"
-                  value={settings.pixRecipientName || ''}
-                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixRecipientName: e.target.value } : prev))}
-                  fullWidth
-                />
-                <TextField
-                  label="Cidade PIX"
-                  value={settings.pixCity || ''}
-                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixCity: e.target.value } : prev))}
-                  fullWidth
-                />
-                <TextField
-                  label="Banco"
-                  value={settings.bankName || ''}
-                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankName: e.target.value } : prev))}
-                  fullWidth
-                />
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                   <TextField
-                    label="Agência"
-                    value={settings.bankAgency || ''}
-                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankAgency: e.target.value } : prev))}
+                    label="Chave PIX"
+                    value={settings.pixKey || ''}
+                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixKey: e.target.value } : prev))}
                     fullWidth
                   />
                   <TextField
-                    label="Conta"
-                    value={settings.bankAccount || ''}
-                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankAccount: e.target.value } : prev))}
+                    label="Favorecido PIX"
+                    value={settings.pixRecipientName || ''}
+                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixRecipientName: e.target.value } : prev))}
                     fullWidth
                   />
                 </Stack>
-                <TextField
-                  label="Tipo de conta"
-                  value={settings.bankAccountType || ''}
-                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankAccountType: e.target.value } : prev))}
-                  fullWidth
-                />
-                <TextField
-                  label="CNPJ"
-                  value={settings.companyDocument || ''}
-                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, companyDocument: formatCnpj(e.target.value) } : prev))}
-                  error={!!settingsErrors.companyDocument}
-                  helperText={settingsErrors.companyDocument}
-                  fullWidth
-                />
                 <TextField
                   label="Pix Copia e Cola"
                   value={settings.pixPayload || ''}
@@ -611,62 +569,20 @@ const DonationsContactPage: React.FC = () => {
                 Doações e PIX
               </Typography>
               <Stack spacing={2}>
-                <TextField
-                  label="Chave PIX"
-                  value={settings.pixKey || ''}
-                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixKey: e.target.value } : prev))}
-                  fullWidth
-                />
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  <TextField
+                    label="Chave PIX"
+                    value={settings.pixKey || ''}
+                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixKey: e.target.value } : prev))}
+                    fullWidth
+                  />
                   <TextField
                     label="Favorecido PIX"
                     value={settings.pixRecipientName || ''}
                     onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixRecipientName: e.target.value } : prev))}
                     fullWidth
                   />
-                  <TextField
-                    label="Cidade PIX"
-                    value={settings.pixCity || ''}
-                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, pixCity: e.target.value } : prev))}
-                    fullWidth
-                  />
                 </Stack>
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                  <TextField
-                    label="Banco"
-                    value={settings.bankName || ''}
-                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankName: e.target.value } : prev))}
-                    fullWidth
-                  />
-                  <TextField
-                    label="Agência"
-                    value={settings.bankAgency || ''}
-                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankAgency: e.target.value } : prev))}
-                    fullWidth
-                  />
-                </Stack>
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                  <TextField
-                    label="Conta"
-                    value={settings.bankAccount || ''}
-                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankAccount: e.target.value } : prev))}
-                    fullWidth
-                  />
-                  <TextField
-                    label="Tipo de conta"
-                    value={settings.bankAccountType || ''}
-                    onChange={(e) => setSettings((prev) => (prev ? { ...prev, bankAccountType: e.target.value } : prev))}
-                    fullWidth
-                  />
-                </Stack>
-                <TextField
-                  label="CNPJ"
-                  value={settings.companyDocument || ''}
-                  onChange={(e) => setSettings((prev) => (prev ? { ...prev, companyDocument: formatCnpj(e.target.value) } : prev))}
-                  error={!!settingsErrors.companyDocument}
-                  helperText={settingsErrors.companyDocument}
-                  fullWidth
-                />
                 <TextField
                   label="Pix Copia e Cola"
                   value={settings.pixPayload || ''}
