@@ -1,0 +1,65 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Source code - always LF in repo
+*.cs text eol=lf
+*.tsx text eol=lf
+*.ts text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.sql text eol=lf
+*.py text eol=lf
+*.toml text eol=lf
+*.conf text eol=lf
+*.http text eol=lf
+*.env text eol=lf
+*.example text eol=lf
+
+# .NET project files - always LF in repo
+*.csproj text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
+
+# Solution files - Visual Studio expects CRLF
+*.sln text eol=crlf
+
+# Shell scripts - always LF
+*.sh text eol=lf
+*.bash text eol=lf
+
+# PowerShell - CRLF for Windows compatibility
+*.ps1 text eol=crlf
+*.psm1 text eol=crlf
+
+# Docker
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
+docker-compose*.yml text eol=lf
+
+# Git config
+.gitattributes text eol=lf
+.gitignore text eol=lf
+.editorconfig text eol=lf
+
+# Binary files - no line ending conversion
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.pdf binary
+*.mp4 binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
