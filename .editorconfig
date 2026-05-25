@@ -1,0 +1,47 @@
+# EditorConfig - https://editorconfig.org
+root = true
+
+# Default: UTF-8, LF, trim trailing whitespace
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# C# files
+[*.cs]
+indent_size = 4
+
+# TypeScript / JavaScript / React
+[*.{ts,tsx,js,jsx}]
+indent_size = 2
+
+# JSON
+[*.json]
+indent_size = 2
+
+# YAML
+[*.{yml,yaml}]
+indent_size = 2
+
+# Markdown - trailing whitespace can be intentional
+[*.md]
+trim_trailing_whitespace = false
+
+# Solution files - Visual Studio requires CRLF
+[*.sln]
+end_of_line = crlf
+
+# PowerShell - Windows CRLF
+[*.{ps1,psm1}]
+end_of_line = crlf
+
+# Shell scripts - must be LF
+[*.{sh,bash}]
+end_of_line = lf
+
+# Docker
+[Dockerfile*]
+end_of_line = lf
