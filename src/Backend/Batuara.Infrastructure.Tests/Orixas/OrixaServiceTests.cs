@@ -29,8 +29,6 @@ namespace Batuara.Infrastructure.Tests.Orixas
             {
                 Name = "Oxalá",
                 Description = "Descrição",
-                Origin = "Tradição",
-                BatuaraTeaching = "Ensino",
                 Characteristics = { "Sabedoria" },
                 Colors = { "Branco" },
                 Elements = { "Ar" },

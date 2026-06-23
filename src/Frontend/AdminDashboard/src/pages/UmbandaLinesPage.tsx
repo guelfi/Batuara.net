@@ -32,8 +32,6 @@ import { UmbandaLine } from '../types';
 type UmbandaLineForm = {
   name: string;
   description: string;
-  characteristics: string;
-  batuaraInterpretation: string;
   displayOrder: string;
   entities: string;
   workingDays: string;
@@ -46,7 +44,6 @@ const validateUmbandaLineForm = (form: UmbandaLineForm): UmbandaLineFormErrors =
   const errors: UmbandaLineFormErrors = {};
   if (!form.name.trim()) errors.name = 'Nome é obrigatório.';
   if (!form.description.trim()) errors.description = 'Descrição é obrigatória.';
-  if (!form.characteristics.trim()) errors.characteristics = 'Características são obrigatórias.';
   if (!form.entities.trim()) errors.entities = 'Informe pelo menos uma entidade.';
   return errors;
 };
@@ -54,8 +51,6 @@ const validateUmbandaLineForm = (form: UmbandaLineForm): UmbandaLineFormErrors =
 const initialForm: UmbandaLineForm = {
   name: '',
   description: '',
-  characteristics: '',
-  batuaraInterpretation: '',
   displayOrder: '0',
   entities: '',
   workingDays: '',
@@ -221,8 +216,6 @@ const UmbandaLinesPage: React.FC = () => {
       setForm({
         name: item.name,
         description: item.description,
-        characteristics: item.characteristics,
-        batuaraInterpretation: item.batuaraInterpretation,
         displayOrder: String(item.displayOrder),
         entities: item.entities.join(', '),
         workingDays: item.workingDays.join(', '),
@@ -280,8 +273,6 @@ const UmbandaLinesPage: React.FC = () => {
     const payload = {
       name: form.name,
       description: form.description,
-      characteristics: form.characteristics,
-      batuaraInterpretation: form.batuaraInterpretation,
       displayOrder: Number(form.displayOrder || 0),
       entities: form.entities.split(',').map((item) => item.trim()).filter(Boolean),
       workingDays: form.workingDays.split(',').map((item) => item.trim()).filter(Boolean),
@@ -541,30 +532,7 @@ const UmbandaLinesPage: React.FC = () => {
               sx={formErrors.description ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
               fullWidth
               multiline
-              minRows={3}
-            />
-            <TextField
-              label="Características"
-              value={form.characteristics}
-              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                setForm((prev) => ({ ...prev, characteristics: e.target.value }))
-              }
-              error={!!formErrors.characteristics}
-              helperText={formErrors.characteristics}
-              sx={formErrors.characteristics ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
-              fullWidth
-              multiline
-              minRows={2}
-            />
-            <TextField
-              label="Interpretação Batuara"
-              value={form.batuaraInterpretation}
-              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                setForm((prev) => ({ ...prev, batuaraInterpretation: e.target.value }))
-              }
-              fullWidth
-              multiline
-              minRows={4}
+              minRows={8}
             />
             <TextField
               label="Entidades (separadas por vírgula)"

@@ -26,15 +26,7 @@ namespace Batuara.Infrastructure.Data.Configurations
 
             builder.Property(o => o.Description)
                 .IsRequired()
-                .HasMaxLength(5000);
-
-            builder.Property(o => o.Origin)
-                .IsRequired()
-                .HasMaxLength(1000);
-
-            builder.Property(o => o.BatuaraTeaching)
-                .IsRequired()
-                .HasMaxLength(5000);
+                .HasMaxLength(10000);
 
             builder.Property(o => o.ImageUrl)
                 .HasMaxLength(500);

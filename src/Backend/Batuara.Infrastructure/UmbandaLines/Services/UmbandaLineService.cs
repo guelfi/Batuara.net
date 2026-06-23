@@ -101,8 +101,6 @@ namespace Batuara.Infrastructure.UmbandaLines.Services
                 var entity = new UmbandaLine(
                     request.Name,
                     request.Description,
-                    request.Characteristics,
-                    request.BatuaraInterpretation,
                     request.Entities,
                     request.WorkingDays,
                     request.DisplayOrder);
@@ -127,18 +125,12 @@ namespace Batuara.Infrastructure.UmbandaLines.Services
 
             try
             {
-                if (request.Name != null || request.Description != null || request.Characteristics != null || request.DisplayOrder.HasValue)
+                if (request.Name != null || request.Description != null || request.DisplayOrder.HasValue)
                 {
                     entity.UpdateBasicInfo(
                         request.Name ?? entity.Name,
                         request.Description ?? entity.Description,
-                        request.Characteristics ?? entity.Characteristics,
                         request.DisplayOrder ?? entity.DisplayOrder);
-                }
-
-                if (request.BatuaraInterpretation != null)
-                {
-                    entity.UpdateBatuaraInterpretation(request.BatuaraInterpretation);
                 }
 
                 if (request.Entities != null)
@@ -214,9 +206,7 @@ namespace Batuara.Infrastructure.UmbandaLines.Services
                 var term = q.Trim().ToLower();
                 query = query.Where(x =>
                     x.Name.ToLower().Contains(term) ||
-                    x.Description.ToLower().Contains(term) ||
-                    x.Characteristics.ToLower().Contains(term) ||
-                    x.BatuaraInterpretation.ToLower().Contains(term));
+                    x.Description.ToLower().Contains(term));
             }
 
             return query;
@@ -278,8 +268,6 @@ namespace Batuara.Infrastructure.UmbandaLines.Services
                 Id = entity.Id,
                 Name = entity.Name,
                 Description = entity.Description,
-                Characteristics = entity.Characteristics,
-                BatuaraInterpretation = entity.BatuaraInterpretation,
                 DisplayOrder = entity.DisplayOrder,
                 Entities = entity.Entities,
                 WorkingDays = entity.WorkingDays,
