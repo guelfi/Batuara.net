@@ -95,7 +95,7 @@ namespace Batuara.Infrastructure.Tests.Events
         }
 
         [Fact]
-        public async Task Update_Should_Be_Denied_When_Less_Than_3_Days_Before_Scheduled_Date()
+        public async Task Update_Should_Be_Denied_When_Less_Than_3_Days_Before_Scheduled_Date_And_Schedule_Changing()
         {
             var db = CreateInMemoryDb();
             var service = new EventService(db, new EventDomainService());
@@ -111,7 +111,7 @@ namespace Batuara.Infrastructure.Tests.Events
 
             var request = new UpdateEventRequest
             {
-                Title = "Evento alterado"
+                Date = DateOnly.FromDateTime(eventDate.AddDays(1))
             };
 
             var (updated, errors, conflict) = await service.UpdateAsync(entity.Id, request, isPatch: true);
@@ -120,6 +120,35 @@ namespace Batuara.Infrastructure.Tests.Events
             conflict.Should().BeFalse();
             errors.Should().ContainSingle()
                 .Which.Should().Contain("menos de 3 dias");
+        }
+
+        [Fact]
+        public async Task Update_Should_Allow_NonSchedule_Changes_When_Less_Than_3_Days_Before_Scheduled_Date()
+        {
+            var db = CreateInMemoryDb();
+            var service = new EventService(db, new EventDomainService());
+            var eventDate = DateTime.SpecifyKind(DateTime.Today.AddDays(2), DateTimeKind.Utc);
+
+            var entity = new Event(
+                "Evento",
+                "Descricao",
+                new Domain.ValueObjects.EventDate(eventDate, TimeSpan.FromHours(15), TimeSpan.FromHours(16)),
+                EventType.Evento);
+            db.Events.Add(entity);
+            await db.SaveChangesAsync();
+
+            var request = new UpdateEventRequest
+            {
+                Title = "Evento alterado",
+                CardColor = "#ff0000"
+            };
+
+            var (updated, errors, conflict) = await service.UpdateAsync(entity.Id, request, isPatch: true);
+
+            updated.Should().NotBeNull();
+            conflict.Should().BeFalse();
+            errors.Should().BeEmpty();
+            updated!.Title.Should().Be("Evento alterado");
         }
 
         [Fact]
