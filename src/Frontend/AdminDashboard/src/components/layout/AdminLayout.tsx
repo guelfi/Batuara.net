@@ -98,7 +98,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   useEffect(() => {
     fetchUnreadCount();
     const interval = setInterval(fetchUnreadCount, 60000);
-    return () => clearInterval(interval);
+    window.addEventListener('unread-count-changed', fetchUnreadCount);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('unread-count-changed', fetchUnreadCount);
+    };
   }, [fetchUnreadCount]);
 
   const handleLogout = async () => {
