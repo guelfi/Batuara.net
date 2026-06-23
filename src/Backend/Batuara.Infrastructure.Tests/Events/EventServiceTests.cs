@@ -111,7 +111,7 @@ namespace Batuara.Infrastructure.Tests.Events
 
             var request = new UpdateEventRequest
             {
-                Date = DateOnly.FromDateTime(eventDate.AddDays(1))
+                Date = eventDate.AddDays(1)
             };
 
             var (updated, errors, conflict) = await service.UpdateAsync(entity.Id, request, isPatch: true);
