@@ -22,6 +22,7 @@ import {
   Timeline as LinesIcon,
   MusicNote as PrayersIcon,
   VolunteerActivism as DonationIcon,
+  Email as MessagesIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -44,6 +45,7 @@ const menuItems = [
   { text: 'Orações e Pontos', icon: <PrayersIcon />, path: '/spiritual-content' },
   { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members' },
   { text: 'Doações e Contato', icon: <DonationIcon />, path: '/donations-contact' },
+  { text: 'Contato e Mensagens', icon: <MessagesIcon />, path: '/contact-messages' },
   { text: 'Localização', icon: <LocationIcon />, path: '/location' },
 ];
 
