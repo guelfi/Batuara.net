@@ -228,20 +228,6 @@ namespace Batuara.Infrastructure.Events.Services
 
             try
             {
-                var today = DateTime.Today;
-                var scheduledDate = entity.EventDate.Date.Date;
-                var daysUntil = (scheduledDate - today).Days;
-                if (daysUntil < 3)
-                {
-                    var when = scheduledDate.ToString("dd/MM/yyyy");
-                    if (scheduledDate < today)
-                    {
-                        return (null, new[] { $"Não é possível alterar este evento porque a data cadastrada já ocorreu em {when}." }, false);
-                    }
-
-                    return (null, new[] { $"Não é possível alterar este evento com menos de 3 dias de antecedência. Data cadastrada: {when}." }, false);
-                }
-
                 var scheduleChanging = request.Date.HasValue || request.StartTime.HasValue || request.EndTime.HasValue || request.Type.HasValue;
                 var shouldValidateScheduleAndConflicts = scheduleChanging || (request.IsActive.HasValue && request.IsActive.Value);
 
@@ -276,6 +262,22 @@ namespace Batuara.Infrastructure.Events.Services
                     else
                     {
                         entity.Deactivate();
+                    }
+                }
+
+                if (scheduleChanging)
+                {
+                    var today = DateTime.Today;
+                    var scheduledDate = entity.EventDate.Date.Date;
+                    var daysUntil = (scheduledDate - today).Days;
+                    if (daysUntil < 3)
+                    {
+                        var when = scheduledDate.ToString("dd/MM/yyyy");
+                        if (scheduledDate < today)
+                        {
+                            return (null, new[] { $"Não é possível alterar data/horário/tipo de um evento que já ocorreu em {when}." }, false);
+                        }
+                        return (null, new[] { $"Não é possível alterar data/horário/tipo com menos de 3 dias de antecedência. Data: {when}." }, false);
                     }
                 }
 
