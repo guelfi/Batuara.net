@@ -776,36 +776,94 @@ const EventsPage: React.FC = () => {
                 fullWidth
               />
             </Stack>
-            <FormControl fullWidth>
-              <InputLabel>Cor do card (PublicWebsite)</InputLabel>
-              <Select
-                value={form.cardColor}
-                label="Cor do card (PublicWebsite)"
-                onChange={(e: SelectChangeEvent) =>
-                  setForm((prev) => ({ ...prev, cardColor: e.target.value }))
-                }
-                renderValue={(selected) => {
-                  const opt = CARD_COLOR_OPTIONS.find((o) => o.value === selected);
-                  return (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {selected && (
-                        <Box sx={{ width: 18, height: 18, borderRadius: '50%', backgroundColor: selected, border: '1px solid rgba(0,0,0,0.15)', flexShrink: 0 }} />
-                      )}
-                      <span>{opt?.label ?? 'Padrão (por tipo)'}</span>
+            <Stack direction="row" spacing={2} alignItems="flex-start">
+              <FormControl sx={{ minWidth: 200, flexShrink: 0 }}>
+                <InputLabel>Cor do card</InputLabel>
+                <Select
+                  value={form.cardColor}
+                  label="Cor do card"
+                  onChange={(e: SelectChangeEvent) =>
+                    setForm((prev) => ({ ...prev, cardColor: e.target.value }))
+                  }
+                  renderValue={(selected) => {
+                    const opt = CARD_COLOR_OPTIONS.find((o) => o.value === selected);
+                    return (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {selected && (
+                          <Box sx={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: selected, border: '1px solid rgba(0,0,0,0.15)', flexShrink: 0 }} />
+                        )}
+                        <span>{opt?.label ?? 'Padrão (por tipo)'}</span>
+                      </Box>
+                    );
+                  }}
+                >
+                  {CARD_COLOR_OPTIONS.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Box sx={{ width: 18, height: 18, borderRadius: '50%', backgroundColor: opt.value || '#e0e0e0', border: '1px solid rgba(0,0,0,0.15)', flexShrink: 0 }} />
+                        {opt.label}
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {/* Preview do card ao lado */}
+              {(() => {
+                const previewColor = form.cardColor || getEventTypeAccentColor(form.type);
+                const isWhite = form.cardColor === '#ffffff';
+                const textColor = isWhite ? '#1a1a1a' : '#fff';
+                const typeLabel = eventLabels[form.type as EventType] ?? 'Evento';
+                const previewDate = form.date
+                  ? formatDateOnlyPtBr(form.date)
+                  : formatDateOnlyPtBr(new Date().toISOString().slice(0, 10));
+                const startLabel = form.startTime || '00:00';
+                const endLabel = form.endTime || '';
+                return (
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                      Preview do card
+                    </Typography>
+                    <Box sx={{
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      boxShadow: 1,
+                    }}>
+                      <Box sx={{
+                        backgroundColor: previewColor,
+                        px: 1.5,
+                        py: 1,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                      }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: textColor, flex: 1, pr: 1, lineHeight: 1.3, fontSize: '0.75rem' }}>
+                          {form.title || 'Título do evento'}
+                        </Typography>
+                        <Box sx={{ backgroundColor: isWhite ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.25)', borderRadius: 10, px: 1, py: 0.2, flexShrink: 0 }}>
+                          <Typography variant="caption" sx={{ color: textColor, fontWeight: 600, fontSize: '0.65rem' }}>{typeLabel}</Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ px: 1.5, py: 1, backgroundColor: 'background.paper' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block', fontSize: '0.7rem' }}>
+                          {form.description ? (form.description.length > 60 ? form.description.slice(0, 60) + '…' : form.description) : 'Descrição'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.68rem' }}>📅 {previewDate}</Typography>
+                        {startLabel && (
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.8, fontSize: '0.68rem' }}>
+                            🕐 das {startLabel}{endLabel ? ` às ${endLabel}` : ''}
+                          </Typography>
+                        )}
+                        <Box sx={{ backgroundColor: previewColor, borderRadius: 1, py: 0.5, textAlign: 'center' }}>
+                          <Typography variant="caption" sx={{ color: textColor, fontWeight: 700, fontSize: '0.68rem' }}>Mais Informações</Typography>
+                        </Box>
+                      </Box>
                     </Box>
-                  );
-                }}
-              >
-                {CARD_COLOR_OPTIONS.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Box sx={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: opt.value || '#e0e0e0', border: '1px solid rgba(0,0,0,0.15)', flexShrink: 0 }} />
-                      {opt.label}
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                  </Box>
+                );
+              })()}
+            </Stack>
             <Alert severity="info">
               Os eventos alimentam diretamente o PublicWebsite, então alterações publicadas aparecem para os visitantes após a atualização da consulta.
             </Alert>
