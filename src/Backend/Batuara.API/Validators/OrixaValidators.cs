@@ -13,15 +13,7 @@ namespace Batuara.API.Validators
 
             RuleFor(x => x.Description)
                 .NotEmpty()
-                .MaximumLength(5000);
-
-            RuleFor(x => x.Origin)
-                .NotEmpty()
-                .MaximumLength(1000);
-
-            RuleFor(x => x.BatuaraTeaching)
-                .NotEmpty()
-                .MaximumLength(5000);
+                .MaximumLength(10000);
 
             RuleFor(x => x.Characteristics)
                 .NotEmpty();
@@ -47,16 +39,8 @@ namespace Batuara.API.Validators
                 .When(x => x.Name != null);
 
             RuleFor(x => x.Description)
-                .MaximumLength(5000)
+                .MaximumLength(10000)
                 .When(x => x.Description != null);
-
-            RuleFor(x => x.Origin)
-                .MaximumLength(1000)
-                .When(x => x.Origin != null);
-
-            RuleFor(x => x.BatuaraTeaching)
-                .MaximumLength(5000)
-                .When(x => x.BatuaraTeaching != null);
 
             RuleFor(x => x.ImageUrl)
                 .MaximumLength(500)
