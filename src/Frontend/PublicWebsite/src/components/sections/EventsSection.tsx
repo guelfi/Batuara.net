@@ -366,6 +366,7 @@ const EventsSection: React.FC = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     scrollSnapAlign: 'start',
+                    borderTop: `4px solid ${getEventColor(event)}`,
                     transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
                     '&:hover': {
                       transform: 'translateY(-4px)',
@@ -489,6 +490,7 @@ const EventsSection: React.FC = () => {
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
+                    borderTop: `4px solid ${getEventColor(event)}`,
                     transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
                     '&:hover': {
                       transform: 'translateY(-4px)',
