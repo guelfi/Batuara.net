@@ -25,7 +25,9 @@ const HeroSection: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [scrollPosition, setScrollPosition] = useState(0);
   const [maxScroll, setMaxScroll] = useState(0);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Use the custom hook to auto-scroll to home on page load
   useAutoScrollToHome();
@@ -127,6 +129,34 @@ const HeroSection: React.FC = () => {
         pb: { xs: 2, md: 6 }, // Reduzir padding bottom no mobile
       }}
     >
+      {/* Video background - carrega em segundo plano, só exibe quando pronto */}
+      <Box
+        component="video"
+        ref={videoRef}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        onCanPlayThrough={() => setVideoLoaded(true)}
+        sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          minWidth: '100%',
+          minHeight: '100%',
+          width: 'auto',
+          height: 'auto',
+          objectFit: 'cover',
+          zIndex: 0,
+          opacity: videoLoaded ? 1 : 0,
+          transition: 'opacity 1s ease-in',
+        }}
+      >
+        <source src={`${process.env.PUBLIC_URL}/bg.mp4`} type="video/mp4" />
+      </Box>
+
       {/* Dark overlay for better text contrast on all devices */}
       <Box
         sx={{
