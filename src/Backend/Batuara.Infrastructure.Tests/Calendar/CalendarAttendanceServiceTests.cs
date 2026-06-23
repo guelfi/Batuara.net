@@ -51,7 +51,36 @@ namespace Batuara.Infrastructure.Tests.Calendar
         }
 
         [Fact]
-        public async Task Update_Should_Be_Denied_When_Less_Than_3_Days_Before_Scheduled_Date()
+        public async Task Update_Should_Be_Denied_When_Less_Than_3_Days_Before_Scheduled_Date_And_Schedule_Changing()
+        {
+            await using var db = CreateInMemoryDb();
+            var attendanceDate = DateTime.Today.AddDays(2);
+            var entity = new CalendarAttendance(
+                new Domain.ValueObjects.EventDate(attendanceDate, TimeSpan.FromHours(19), TimeSpan.FromHours(21)),
+                AttendanceType.Palestra,
+                "Descrição",
+                "Obs",
+                false,
+                null);
+            db.CalendarAttendances.Add(entity);
+            await db.SaveChangesAsync();
+
+            var service = new CalendarAttendanceService(db, new CalendarDomainService());
+            var request = new UpdateCalendarAttendanceRequest
+            {
+                StartTime = TimeSpan.FromHours(20)
+            };
+
+            var (updated, errors, conflict) = await service.UpdateAsync(entity.Id, request);
+
+            updated.Should().BeNull();
+            conflict.Should().BeFalse();
+            errors.Should().ContainSingle()
+                .Which.Should().Contain("menos de 3 dias");
+        }
+
+        [Fact]
+        public async Task Update_Should_Allow_NonSchedule_Changes_When_Less_Than_3_Days_Before_Scheduled_Date()
         {
             await using var db = CreateInMemoryDb();
             var attendanceDate = DateTime.Today.AddDays(2);
@@ -73,10 +102,10 @@ namespace Batuara.Infrastructure.Tests.Calendar
 
             var (updated, errors, conflict) = await service.UpdateAsync(entity.Id, request);
 
-            updated.Should().BeNull();
+            updated.Should().NotBeNull();
             conflict.Should().BeFalse();
-            errors.Should().ContainSingle()
-                .Which.Should().Contain("menos de 3 dias");
+            errors.Should().BeEmpty();
+            updated!.Description.Should().Be("Nova descrição");
         }
 
         [Fact]
