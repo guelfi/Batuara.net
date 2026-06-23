@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Box,
   Container,
@@ -13,11 +13,13 @@ import {
   DialogContent,
   Button,
   Chip,
+  Divider,
 } from '@mui/material';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import InfoIcon from '@mui/icons-material/Info';
+import EventIcon from '@mui/icons-material/Event';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme, useMediaQuery } from '@mui/material';
 import publicApi from '../../services/api';
@@ -26,16 +28,12 @@ import { desktopMediaQuery } from '../../theme/theme';
 import {
   addMonths,
   subMonths,
-  eachDayOfInterval,
-  endOfMonth,
-  endOfWeek,
   format,
   isSameDay,
-  isSameMonth,
-  isToday,
   parseISO,
   startOfMonth,
-  startOfWeek,
+  endOfMonth,
+  eachDayOfInterval,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -70,20 +68,21 @@ const CalendarSection: React.FC = () => {
       .join(' ');
   };
 
+  const formatTime = (time: string | undefined): string | undefined => {
+    if (!time || time === '---') return undefined;
+    return time.length >= 5 ? time.slice(0, 5) : time;
+  };
+
   // Estado para navegação mensal
   const [selectedMonthDate, setSelectedMonthDate] = useState(() => new Date());
   const monthStart = useMemo(() => startOfMonth(selectedMonthDate), [selectedMonthDate]);
   const monthEnd = useMemo(() => endOfMonth(selectedMonthDate), [selectedMonthDate]);
 
-  const [selectedDate, setSelectedDate] = useState<Date>(() => startOfMonth(new Date()));
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [isDayDialogOpen, setIsDayDialogOpen] = useState(false);
 
-  const handleCloseDayDialog = (_event: unknown, reason?: 'backdropClick' | 'escapeKeyDown') => {
-    if (reason === 'backdropClick') return;
-    setIsDayDialogOpen(false);
-  };
+  const handleCloseDialog = () => setSelectedItem(null);
 
   const handlePrevMonth = () => {
     setSelectedMonthDate((prev: Date) => subMonths(prev, 1));
@@ -304,7 +303,7 @@ const CalendarSection: React.FC = () => {
       .map((a: CalendarAttendance) => ({
         ...a,
         displayTitle: a.description || getAttendanceLabel(a.type),
-        isEvent: false
+        isEvent: false,
       }));
 
     const events = (eventsData?.data ?? [])
@@ -313,13 +312,12 @@ const CalendarSection: React.FC = () => {
         ...e,
         displayTitle: e.title,
         isEvent: true,
-        startTime: e.startTime || '---'
+        startTime: e.startTime || '---',
       }));
 
-    // Priorizar Eventos sobre Atendimentos em caso de duplicidade (mesma data e nome)
     const combined = [...events, ...attendances];
     const seen = new Set();
-    const uniqueData = combined.filter(item => {
+    const uniqueData = combined.filter((item) => {
       const dateStr = item.date.split('T')[0];
       const key = `${dateStr}_${item.displayTitle.toLowerCase().trim()}`;
       if (seen.has(key)) return false;
@@ -334,119 +332,125 @@ const CalendarSection: React.FC = () => {
     });
   }, [attendancesData?.data, eventsData?.data]);
 
-  const firstItemDate = useMemo(() => (currentData.length > 0 ? currentData[0].date : undefined), [currentData]);
-
-  const monthDays = useMemo(() => {
-    const intervalStart = startOfWeek(monthStart, { locale: ptBR });
-    const intervalEnd = endOfWeek(monthEnd, { locale: ptBR });
-    return eachDayOfInterval({ start: intervalStart, end: intervalEnd });
-  }, [monthEnd, monthStart]);
-
-  useEffect(() => {
-    const nextDate = firstItemDate ? parseISO(firstItemDate) : monthStart;
-    setSelectedDate((prev) => (isSameDay(prev, nextDate) ? prev : nextDate));
-  }, [firstItemDate, monthStart]);
-
-  const eventsByDay = useMemo(() => {
-    return monthDays.map((day) => ({
-      day,
-      items: currentData.filter((attendance) => isSameDay(parseISO(attendance.date), day)),
-    }));
-  }, [currentData, monthDays]);
-
-  const selectedDayItems = useMemo(() => {
-    return currentData.filter((attendance) => isSameDay(parseISO(attendance.date), selectedDate));
-  }, [currentData, selectedDate]);
-
-  const selectedDayAccentColor = useMemo(() => {
-    const primaryItem = getPrimaryItem(selectedDayItems);
-    return primaryItem ? getItemColor(primaryItem) : theme.palette.primary.main;
-  }, [selectedDayItems, theme]);
+  // Agrupa itens por dia para o layout de lista
+  const itemsByDay = useMemo(() => {
+    const allDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    return allDays
+      .map((day) => ({
+        day,
+        items: currentData.filter((item) => isSameDay(parseISO(item.date), day)),
+      }))
+      .filter(({ items }) => items.length > 0);
+  }, [currentData, monthStart, monthEnd]);
 
   const monthLabel = useMemo(() => {
-    const raw = format(selectedMonthDate, "MMMM 'de' yyyy", { locale: ptBR });
+    const raw = format(selectedMonthDate, 'MMMM', { locale: ptBR });
     return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : raw;
   }, [selectedMonthDate]);
+
+  const yearLabel = useMemo(() => format(selectedMonthDate, 'yyyy'), [selectedMonthDate]);
 
   return (
     <Box
       id="calendario-atendimento"
       sx={{
         scrollMarginTop: { xs: 56, md: 64 },
-        minHeight: { xs: '100vh', md: 'auto' },
-        pt: { xs: 1.5, md: 2 },
-        pb: { xs: 4, md: 4 },
+        minHeight: { xs: 'calc(100vh - 56px)', md: 'calc(100vh - 64px)' },
+        pt: { xs: 1, md: 1.5 },
+        pb: { xs: 2, md: 3 },
         backgroundColor: 'background.default',
-        [desktopMediaQuery]: {
-          minHeight: 'calc(100vh - 88px)',
-          pb: 6,
-        },
-        '@media (min-width:1024px) and (max-height:800px)': {
-          pb: 3,
-        },
       }}
     >
-      <Container maxWidth="lg">
-        <Box
-          sx={{
-            textAlign: 'center',
-            mb: { xs: 1.5, md: 3 },
-            '@media (min-width:1024px) and (max-height:800px)': {
-              mb: 2,
-            },
-          }}
-        >
-          <Typography
-            variant="h2"
-            sx={{
-              fontSize: { xs: '1.5rem', md: '2.2rem' },
-              fontWeight: 600,
-              mb: { xs: 0.5, md: 1 },
-              color: 'primary.main',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: { xs: 1, md: 2 },
-            }}
+      <Container maxWidth="sm">
+        {/* Cabeçalho estilo Instagram: "CALENDÁRIO | junho" */}
+        <Box sx={{ mb: { xs: 0.5, md: 0.75 } }}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ mb: { xs: 0.5, md: 0.75 } }}
           >
-            <IconButton onClick={handlePrevMonth} color="primary" size="large" sx={{ p: { xs: 0.75, md: 1 } }}>
-              <ArrowBackIosIcon fontSize="inherit" />
+            <IconButton
+              onClick={handlePrevMonth}
+              color="primary"
+              size="medium"
+              aria-label="Mês anterior"
+            >
+              <ArrowBackIosIcon fontSize="small" />
             </IconButton>
-            <Box component="span" sx={{ minWidth: { xs: 170, md: 350 }, textAlign: 'center' }}>
-              {monthLabel}
+
+            <Box sx={{ textAlign: 'center' }}>
+              <Stack direction="row" alignItems="baseline" justifyContent="center" spacing={1}>
+                <Typography
+                  sx={{
+                    fontSize: { xs: '1.34rem', md: '1.61rem' },
+                    fontWeight: 900,
+                    color: 'text.primary',
+                    letterSpacing: '-0.5px',
+                    lineHeight: 1,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Calendário
+                </Typography>
+                <Box
+                  component="span"
+                  sx={{
+                    width: 3,
+                    height: { xs: 18, md: 24 },
+                    backgroundColor: theme.palette.primary.main,
+                    borderRadius: 1,
+                    display: 'inline-block',
+                    mx: 0.5,
+                    verticalAlign: 'middle',
+                  }}
+                />
+                <Typography
+                  sx={{
+                    fontSize: { xs: '1.18rem', md: '1.45rem' },
+                    fontWeight: 400,
+                    fontStyle: 'italic',
+                    color: theme.palette.primary.main,
+                    lineHeight: 1,
+                  }}
+                >
+                  {monthLabel}
+                </Typography>
+              </Stack>
+              <Typography
+                variant="caption"
+                sx={{ color: 'text.secondary', fontWeight: 500 }}
+              >
+                {yearLabel}
+              </Typography>
             </Box>
-            <IconButton onClick={handleNextMonth} color="primary" size="large" sx={{ p: { xs: 0.75, md: 1 } }}>
-              <ArrowForwardIosIcon fontSize="inherit" />
+
+            <IconButton
+              onClick={handleNextMonth}
+              color="primary"
+              size="medium"
+              aria-label="Próximo mês"
+            >
+              <ArrowForwardIosIcon fontSize="small" />
             </IconButton>
-          </Typography>
+          </Stack>
+
           <Alert
             severity="info"
-            icon={<InfoIcon />}
+            icon={<InfoIcon fontSize="small" />}
             sx={{
-              maxWidth: 900,
-              mx: 'auto',
-              mb: { xs: 1.25, md: 2 },
-              py: 0.5,
-              px: { xs: 1.25, md: 2 },
-              textAlign: 'left',
+              py: 0.25,
+              px: 1,
               '& .MuiAlert-message': { width: '100%' },
             }}
           >
-            <Typography
-              variant="body2"
-              title={IMPORTANT_INFO_TEXT}
-              sx={{
-                fontSize: { xs: '0.85rem', md: '0.95rem' },
-                lineHeight: 1.35,
-                whiteSpace: 'normal',
-                overflow: 'visible',
-              }}
-            >
+            <Typography variant="body2" sx={{ fontSize: { xs: '0.7rem', md: '0.8rem' }, lineHeight: 1.25 }}>
               {IMPORTANT_INFO_TEXT}
             </Typography>
           </Alert>
         </Box>
 
+        {/* Estados de carregamento / erro / vazio */}
         {isLoading ? (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <CircularProgress color="primary" />
@@ -455,394 +459,171 @@ const CalendarSection: React.FC = () => {
             </Typography>
           </Box>
         ) : isError ? (
-          <Alert severity="warning" sx={{ maxWidth: 640, mx: 'auto' }}>
+          <Alert severity="warning">
             Não foi possível carregar o calendário em tempo real. Tente novamente em instantes.
           </Alert>
-        ) : currentData.length === 0 ? (
+        ) : itemsByDay.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 8 }}>
-            <CalendarTodayIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+            <CalendarTodayIcon sx={{ fontSize: 56, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              Nenhum atendimento agendado
+              Nenhum atendimento agendado para este mês
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Aguarde novos horários serem publicados ou entre em contato conosco.
             </Typography>
           </Box>
         ) : (
-          <Stack spacing={3}>
-            <Paper
-              sx={{
-                p: { xs: 0.75, md: 1.5 },
-                borderRadius: 2,
-                maxWidth: 1200,
-                mx: 'auto',
-                boxShadow: 3,
-                overflow: 'hidden',
-                '@media (min-width:1024px) and (max-height:800px)': {
-                  p: 1,
-                },
-              }}
-            >
-              <Stack
-                direction="row"
-                spacing={1.5}
-                useFlexGap
-                flexWrap="wrap"
-                justifyContent="center"
-                sx={{ px: { xs: 0.5, md: 0 }, pb: { xs: 0.75, md: 1 } }}
-              >
-                {[
-                  { label: 'Giras', color: attendanceColors[AttendanceType.Umbanda] },
-                  { label: 'Kardec', color: attendanceColors[AttendanceType.Kardecismo] },
-                  { label: 'Festas', color: eventColors[EventType.Festa] },
-                  { label: 'Bazares', color: eventColors[EventType.Bazar] },
-                  { label: 'Cursos', color: attendanceColors[AttendanceType.Curso] },
-                ].map((item) => (
-                  <Stack key={item.label} direction="row" spacing={0.75} alignItems="center">
-                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: item.color }} />
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: { xs: '0.7rem', md: '0.75rem' } }}>
-                      {item.label}
-                    </Typography>
-                  </Stack>
-                ))}
-              </Stack>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-                  columnGap: { xs: 0.5, md: 0.75 },
-                  rowGap: { xs: 0.5, md: 0.75 },
-                  width: '100%',
-                  '@media (min-width:1024px) and (max-height:800px)': {
-                    columnGap: 0.5,
-                    rowGap: 0.5,
-                  },
-                }}
-              >
-                {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((label) => (
-                  <Box
-                    key={label}
-                    sx={{
-                      textAlign: 'center',
-                      py: { xs: 0.5, md: 0.75 },
-                      fontWeight: 700,
-                      color: 'text.secondary',
-                      fontSize: { xs: '0.65rem', md: '0.78rem' },
-                      userSelect: 'none',
-                    }}
-                  >
-                    {label}
-                  </Box>
-                ))}
+          /* Lista de dias estilo Instagram */
+          <Stack spacing={0} divider={<Divider sx={{ my: 0 }} />}>
+            {itemsByDay.map(({ day, items }) => {
+              const dayNum = format(day, 'dd.MM', { locale: ptBR });
+              const weekDay = toPtTitleCase(format(day, 'EEEE', { locale: ptBR }));
 
-                {eventsByDay.map(({ day, items }) => {
-                  const isSelected = isSameDay(day, selectedDate);
-                  const isCurrentMonth = isSameMonth(day, monthStart);
-                  const today = isToday(day);
-                  const primaryItem = getPrimaryItem(items);
-                  const accentColor = primaryItem ? getItemColor(primaryItem) : undefined;
-                  const primaryBadgeLabel = primaryItem
-                    ? (() => {
-                      const shortLabel = getItemShortLabel(primaryItem);
-                      if (shortLabel === 'Atendimento' || shortLabel === 'Evento') {
-                        return primaryItem.displayTitle || shortLabel;
-                      }
-                      return shortLabel;
-                    })()
-                    : '';
-
-                  return (
-                    <Box
-                      key={day.toISOString()}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`Selecionar dia ${format(day, "dd 'de' MMMM", { locale: ptBR })}`}
-                      onClick={() => {
-                        setSelectedDate(day);
-                        if (items.length > 0) setIsDayDialogOpen(true);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          setSelectedDate(day);
-                          if (items.length > 0) setIsDayDialogOpen(true);
-                        }
-                      }}
+              return (
+                <Box
+                  key={day.toISOString()}
+                  sx={{
+                    py: { xs: 0.75, md: 0.9 },
+                    px: { xs: 0.5, md: 1 },
+                  }}
+                >
+                  {/* Linha da data: ícone + data + dia da semana */}
+                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.25 }}>
+                    <EventIcon
                       sx={{
-                        minHeight: { xs: 50, md: 76 },
-                        borderRadius: 1,
-                        border: accentColor ? 2 : 1,
-                        borderColor: accentColor || (isSelected ? 'primary.main' : 'divider'),
-                        backgroundColor: isSelected
-                          ? 'rgba(25, 118, 210, 0.08)'
-                          : accentColor
-                            ? `${accentColor}1F`
-                            : 'background.paper',
-                        p: { xs: 0.5, md: 1 },
-                        cursor: 'pointer',
-                        opacity: isCurrentMonth ? 1 : 0.35,
-                        transition: 'all 0.2s ease',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        outline: 'none',
-                        '&:hover': { borderColor: 'primary.main', transform: { xs: 'none', md: 'translateY(-1px)' } },
-                        '&:focus-visible': { boxShadow: `0 0 0 3px ${theme.palette.primary.main}33` },
-                        '@media (min-width:1024px) and (max-height:800px)': {
-                          minHeight: 66,
-                          p: 0.75,
-                        },
+                        fontSize: { xs: 22, md: 26 },
+                        color: getItemColor(items[0]),
+                        flexShrink: 0,
                       }}
-                    >
+                    />
+                    <Box>
                       <Typography
-                        variant="body2"
                         sx={{
-                          fontWeight: today || isSelected ? 700 : 500,
-                          color: today ? 'primary.main' : 'text.primary',
-                          fontSize: { xs: '0.72rem', md: '0.8rem' },
-                          mb: 0.25,
+                          fontSize: { xs: '1.07rem', md: '1.18rem' },
+                          fontWeight: 900,
+                          lineHeight: 1.15,
+                          color: 'text.primary',
+                          letterSpacing: '-0.25px',
                         }}
                       >
-                        {format(day, 'd')}
+                        {dayNum} | {weekDay}
                       </Typography>
+                    </Box>
+                  </Stack>
 
-                      {isMobile ? (
-                        <>
-                          <Stack
-                            direction="row"
-                            spacing={0.4}
-                            justifyContent="center"
-                            flexWrap="wrap"
-                            sx={{ width: '100%', minHeight: 8 }}
+                  {/* Itens do dia */}
+                  <Stack spacing={0.1} sx={{ pl: { xs: 3.5, md: 4.5 } }}>
+                    {items.map((item: any) => {
+                      const color = getItemColor(item);
+                      const startT = formatTime(item.startTime);
+                      const endT = formatTime(item.endTime);
+                      const timeStr = startT
+                        ? endT && endT !== startT
+                          ? `${startT} – ${endT}`
+                          : startT
+                        : undefined;
+                      const label = getItemLabel(item);
+
+                      return (
+                        <Box key={`${item.isEvent ? 'ev' : 'at'}-${item.id}`}>
+                          <Typography
+                            sx={{
+                              fontSize: { xs: '0.94rem', md: '1.02rem' },
+                              fontWeight: 500,
+                              color: 'text.secondary',
+                              lineHeight: 1.3,
+                            }}
                           >
-                            {items.slice(0, 4).map((item) => (
-                              <Box
-                                key={item.id}
-                                sx={{
-                                  width: 6,
-                                  height: 6,
-                                  borderRadius: '50%',
-                                  backgroundColor: getItemColor(item),
-                                }}
-                              />
-                            ))}
-                          </Stack>
-                          {accentColor && (
                             <Box
-                              sx={{
-                                mt: 0.35,
-                                px: 0.6,
-                                py: 0.15,
-                                borderRadius: 0.75,
-                                border: `1px solid ${accentColor}80`,
-                                backgroundColor: `${accentColor}1A`,
-                                maxWidth: '100%',
-                              }}
+                              component="span"
+                              sx={{ color, fontWeight: 700 }}
                             >
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  display: 'block',
-                                  fontSize: '0.55rem',
-                                  fontWeight: 800,
-                                  color: accentColor,
-                                  lineHeight: 1.1,
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                }}
-                              >
-                                {primaryBadgeLabel}
-                              </Typography>
+                              {item.displayTitle !== label ? item.displayTitle : label}
                             </Box>
-                          )}
-                        </>
-                      ) : (
-                        <Stack spacing={0.5} sx={{ width: '100%' }}>
-                          {items.slice(0, 3).map((item) => (
-                            <Box
-                              key={item.id}
-                              sx={{
-                                px: 0.75,
-                                py: 0.35,
-                                borderRadius: 1,
-                                backgroundColor: `${getItemColor(item)}20`,
-                                borderLeft: `3px solid ${getItemColor(item)}`,
-                              }}
+                            {timeStr && (
+                              <Box component="span" sx={{ color: 'text.secondary', fontWeight: 400 }}>
+                                {' | '}{timeStr}
+                              </Box>
+                            )}
+                          </Typography>
+                          {item.observations && (
+                            <Typography
+                              variant="caption"
+                              sx={{ color: 'text.disabled', display: 'block', lineHeight: 1.3 }}
                             >
-                              <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, fontSize: '0.65rem' }}>
-                                {item.startTime}
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{
-                                  display: 'block',
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  fontSize: '0.65rem'
-                                }}
-                              >
-                                {(item as any).displayTitle}
-                              </Typography>
-                            </Box>
-                          ))}
-                          {items.length > 3 && (
-                            <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', fontSize: '0.6rem' }}>
-                              + {items.length - 3} mais
+                              {item.observations}
                             </Typography>
                           )}
-                        </Stack>
-                      )}
-                    </Box>
-                  );
-                })}
-              </Box>
-            </Paper>
-            {isMobile && (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-                Clique na data desejada para obter maiores informações sobre o atendimento
-              </Typography>
-            )}
+                        </Box>
+                      );
+                    })}
+                  </Stack>
+                </Box>
+              );
+            })}
           </Stack>
         )}
+      </Container>
 
-        <Dialog
-          open={isDayDialogOpen}
-          onClose={handleCloseDayDialog}
-          fullWidth
-          maxWidth="sm"
-          fullScreen={false}
-          PaperProps={{
-            sx: {
-              display: 'flex',
-              flexDirection: 'column',
-              width: { xs: 'calc(100% - 24px)', sm: '100%' },
-              m: { xs: 1.5, sm: 3 },
-            },
-          }}
-          BackdropProps={{
-            sx: {
-              backgroundColor: 'rgba(0,0,0,0.12)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-            },
-          }}
-        >
-          {!isMobile && (
-            <DialogTitle
-              sx={{
-                fontWeight: 800,
-                textAlign: 'center',
-                mt: 0.75,
-                fontSize: '1.25rem',
-              }}
-            >
-              {toPtTitleCase(format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR }))}
+      {/* Dialog de detalhes ao clicar num item (mantido para compatibilidade futura) */}
+      <Dialog
+        open={!!selectedItem}
+        onClose={handleCloseDialog}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{
+          sx: {
+            width: { xs: 'calc(100% - 24px)', sm: '100%' },
+            m: { xs: 1.5, sm: 3 },
+            borderRadius: 3,
+          },
+        }}
+        BackdropProps={{
+          sx: {
+            backgroundColor: 'rgba(0,0,0,0.12)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+          },
+        }}
+      >
+        {selectedItem && (
+          <>
+            <DialogTitle sx={{ fontWeight: 800, textAlign: 'center', pb: 0 }}>
+              {selectedItem.displayTitle}
             </DialogTitle>
-          )}
-          <DialogContent
-            sx={{
-              pt: isMobile ? 0 : 1.5,
-              pb: { xs: 2, sm: 2 },
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'flex-start',
-            }}
-          >
-            {isMobile && (
-              <Typography
-                sx={{
-                  fontWeight: 800,
-                  textAlign: 'center',
-                  mt: 0,
-                  mb: 2,
-                  fontSize: '1.2rem',
-                }}
-              >
-                {toPtTitleCase(format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR }))}
-              </Typography>
-            )}
-            <Paper
-              sx={{
-                width: '100%',
-                maxWidth: 560,
-                mx: 'auto',
-                p: { xs: 1.5, md: 2 },
-                borderRadius: 3,
-                border: `2px solid ${selectedDayAccentColor}`,
-                boxShadow: 3,
-              }}
-            >
-              <Stack spacing={1.25} sx={{ width: '100%' }}>
-                {selectedDayItems.map((item: any) => {
-                  const color = getItemColor(item);
-                  const label = getItemLabel(item);
-                  const time = item.startTime && item.startTime !== '---' ? item.startTime : undefined;
-                  const endTime = item.endTime && item.endTime !== '---' ? item.endTime : undefined;
-                  const timeLabel = time ? (endTime ? `${time} – ${endTime}` : time) : undefined;
-
+            <DialogContent sx={{ pt: 1 }}>
+              <Stack spacing={1.5}>
+                {(() => {
+                  const color = getItemColor(selectedItem);
+                  const startT = formatTime(selectedItem.startTime);
+                  const endT = formatTime(selectedItem.endTime);
+                  const timeStr = startT
+                    ? endT && endT !== startT
+                      ? `${startT} – ${endT}`
+                      : startT
+                    : undefined;
                   return (
-                    <Paper
-                      key={`${item.isEvent ? 'event' : 'attendance'}-${item.id}`}
-                      sx={{
-                        p: 1.5,
-                        borderRadius: 2,
-                        borderLeft: `4px solid ${color}`,
-                        backgroundColor: `${color}0D`,
-                        border: `1px solid ${color}40`,
-                      }}
-                    >
+                    <Paper sx={{ p: 1.5, borderRadius: 2, borderLeft: `4px solid ${color}`, backgroundColor: `${color}0D`, border: `1px solid ${color}40` }}>
                       <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
-                        <Box sx={{ minWidth: 0 }}>
-                          <Typography sx={{ fontWeight: 800, lineHeight: 1.25 }}>
-                            {item.displayTitle}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.35, mt: 0.25 }}>
-                            {timeLabel ? `${timeLabel} • ${label}` : label}
-                          </Typography>
+                        <Box>
+                          <Typography sx={{ fontWeight: 700 }}>{getItemLabel(selectedItem)}</Typography>
+                          {timeStr && <Typography variant="body2" color="text.secondary">{timeStr}</Typography>}
+                          {selectedItem.observations && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{selectedItem.observations}</Typography>}
                         </Box>
-                        <Chip
-                          label={getItemShortLabel(item)}
-                          size="small"
-                          variant="outlined"
-                          sx={{
-                            borderColor: color,
-                            color,
-                            fontWeight: 800,
-                            flexShrink: 0,
-                          }}
-                        />
+                        <Chip label={getItemShortLabel(selectedItem)} size="small" variant="outlined" sx={{ borderColor: color, color, fontWeight: 800, flexShrink: 0 }} />
                       </Stack>
                     </Paper>
                   );
-                })}
-
-                {selectedDayItems.length === 0 && (
-                  <Alert severity="info">Não há eventos/atendimentos cadastrados para esta data.</Alert>
-                )}
-
-                <Alert severity="info">
-                  Recomendamos chegar com 30 minutos de antecedência
-                </Alert>
-
-                <Button
-                  variant="contained"
-                  fullWidth
-                  onClick={() => handleCloseDayDialog(undefined)}
-                  sx={{ borderRadius: 2, fontWeight: 800, textTransform: 'none' }}
-                >
+                })()}
+                <Alert severity="info" sx={{ py: 0.5 }}>Recomendamos chegar com 30 minutos de antecedência</Alert>
+                <Button variant="contained" fullWidth onClick={handleCloseDialog} sx={{ borderRadius: 2, fontWeight: 800, textTransform: 'none' }}>
                   Fechar
                 </Button>
               </Stack>
-            </Paper>
-          </DialogContent>
-        </Dialog>
-
-
-      </Container>
+            </DialogContent>
+          </>
+        )}
+      </Dialog>
     </Box>
   );
 };

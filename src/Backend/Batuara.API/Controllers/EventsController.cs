@@ -173,7 +173,7 @@ namespace Batuara.API.Controllers
         {
             try
             {
-                var (deleted, errors) = await _eventService.SoftDeleteAsync(id);
+                var (deleted, errors) = await _eventService.HardDeleteAsync(id);
                 if (!deleted)
                 {
                     if (errors.Length == 1 && errors[0] == "Evento não encontrado")

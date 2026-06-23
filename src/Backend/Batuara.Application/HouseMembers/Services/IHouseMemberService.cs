@@ -17,5 +17,6 @@ namespace Batuara.Application.HouseMembers.Services
         Task<(HouseMemberDto? Member, string[] Errors, bool Conflict)> CreateAsync(CreateHouseMemberRequest request);
         Task<(HouseMemberDto? Member, string[] Errors, bool Conflict)> UpdateAsync(int id, UpdateHouseMemberRequest request);
         Task<bool> SoftDeleteAsync(int id);
+        Task<(bool Deleted, string[] Errors)> HardDeleteAsync(int id);
     }
 }

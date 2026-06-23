@@ -46,6 +46,7 @@ const colorMap: Record<string, string> = {
   rosa: '#e91e63',
   coral: '#ff7043',
   laranja: '#f57c00',
+  alaranjado: '#e65100',
   arcoíris: '#673ab7',
   'arco-íris': '#673ab7',
 };
@@ -149,14 +150,10 @@ const OrixasSection: React.FC = () => {
       id="orixas"
       sx={{
         scrollMarginTop: { xs: 56, md: 64 },
-        minHeight: { xs: '100vh', md: 'auto' },
+        minHeight: { xs: 'calc(100vh - 56px)', md: 'calc(100vh - 64px)' },
         pt: { xs: 1.5, md: 2 },
         pb: { xs: 4, md: 8 },
         backgroundColor: 'background.paper',
-        [desktopMediaQuery]: {
-          minHeight: 'calc(100vh - 88px)',
-          pb: 10,
-        },
       }}
     >
       <Container maxWidth="lg">
@@ -471,6 +468,50 @@ const OrixasSection: React.FC = () => {
                     {selectedOrixa.batuaraTeaching}
                   </Typography>
                 </Box>
+                {(selectedOrixa.saudacao || selectedOrixa.diaDaSemana || selectedOrixa.fruta || selectedOrixa.comida) && (
+                  <Box
+                    sx={{
+                      borderRadius: 2,
+                      border: `1px solid ${dialogAccentColor}30`,
+                      backgroundColor: `${dialogAccentColor}08`,
+                      p: 2,
+                    }}
+                  >
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: dialogTitleColor }}>
+                      Oferendas e Saudão
+                    </Typography>
+                    <Grid container spacing={1.5}>
+                      {selectedOrixa.saudacao && (
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Saudação:</strong> {selectedOrixa.saudacao}
+                          </Typography>
+                        </Grid>
+                      )}
+                      {selectedOrixa.diaDaSemana && (
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Dia:</strong> {selectedOrixa.diaDaSemana}
+                          </Typography>
+                        </Grid>
+                      )}
+                      {selectedOrixa.fruta && (
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Fruta:</strong> {selectedOrixa.fruta}
+                          </Typography>
+                        </Grid>
+                      )}
+                      {selectedOrixa.comida && (
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Comida:</strong> {selectedOrixa.comida}
+                          </Typography>
+                        </Grid>
+                      )}
+                    </Grid>
+                  </Box>
+                )}
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, md: 4 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>

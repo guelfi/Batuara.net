@@ -188,6 +188,19 @@ namespace Batuara.Infrastructure.UmbandaLines.Services
             return true;
         }
 
+        public async Task<(bool Deleted, string[] Errors)> HardDeleteAsync(int id)
+        {
+            var entity = await _db.UmbandaLines.FirstOrDefaultAsync(x => x.Id == id);
+            if (entity == null)
+            {
+                return (false, new[] { "Umbanda line not found" });
+            }
+
+            _db.UmbandaLines.Remove(entity);
+            await _db.SaveChangesAsync();
+            return (true, Array.Empty<string>());
+        }
+
         private IQueryable<UmbandaLine> BuildQuery(string? q, bool asNoTracking)
         {
             IQueryable<UmbandaLine> query = _db.UmbandaLines;

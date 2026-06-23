@@ -218,6 +218,17 @@ namespace Batuara.Infrastructure.Calendar.Services
             return (true, Array.Empty<string>());
         }
 
+        public async Task<(bool Deleted, string[] Errors)> HardDeleteAsync(int id)
+        {
+            var entity = await _db.CalendarAttendances.FindAsync(id);
+            if (entity == null)
+                return (false, new[] { "Atendimento não encontrado" });
+
+            _db.CalendarAttendances.Remove(entity);
+            await _db.SaveChangesAsync();
+            return (true, Array.Empty<string>());
+        }
+
         private IQueryable<CalendarAttendance> BuildQuery(
             string? q,
             AttendanceType? type,

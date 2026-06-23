@@ -8,14 +8,15 @@ namespace Batuara.API.Validators
         public CreateGuideRequestValidator()
         {
             RuleFor(x => x.Name).NotEmpty().MaximumLength(150);
-            RuleFor(x => x.Description).NotEmpty().MaximumLength(5000);
-            RuleFor(x => x.PhotoUrl).MaximumLength(500).When(x => x.PhotoUrl != null);
+            RuleFor(x => x.Description).NotEmpty().MaximumLength(8000);
             RuleFor(x => x.Specialties).NotEmpty();
             RuleForEach(x => x.Specialties).NotEmpty().MaximumLength(120);
             RuleFor(x => x.DisplayOrder).GreaterThan(0);
-            RuleFor(x => x.Email).EmailAddress().When(x => !string.IsNullOrWhiteSpace(x.Email));
-            RuleFor(x => x.Phone).MaximumLength(50).When(x => x.Phone != null);
-            RuleFor(x => x.Whatsapp).MaximumLength(50).When(x => x.Whatsapp != null);
+            RuleFor(x => x.Comida).MaximumLength(200).When(x => x.Comida != null);
+            RuleFor(x => x.Fruta).MaximumLength(200).When(x => x.Fruta != null);
+            RuleFor(x => x.DiaDaSemana).MaximumLength(200).When(x => x.DiaDaSemana != null);
+            RuleFor(x => x.Cor).MaximumLength(100).When(x => x.Cor != null);
+            RuleFor(x => x.Saudacao).MaximumLength(200).When(x => x.Saudacao != null);
         }
     }
 

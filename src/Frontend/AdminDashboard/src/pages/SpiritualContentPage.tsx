@@ -26,7 +26,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Add as AddIcon, Close as CloseIcon, Delete as DeleteIcon, Edit as EditIcon, Star as StarIcon } from '@mui/icons-material';
+import { Add as AddIcon, Close as CloseIcon, Edit as EditIcon, Star as StarIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import apiService from '../services/api';
 import GridPager from '../components/common/GridPager';
@@ -70,6 +70,45 @@ const categoryLabels: Record<SpiritualCategory, string> = {
   [SpiritualCategory.Orixas]: 'Orixás',
 };
 
+type SpiritualContentFormErrors = {
+  title?: string;
+  content?: string;
+};
+
+const validateSpiritualContentForm = (form: SpiritualContentForm): SpiritualContentFormErrors => {
+  const errors: SpiritualContentFormErrors = {};
+  if (!form.title.trim()) errors.title = 'Título é obrigatório.';
+  if (!form.content.trim()) errors.content = 'Conteúdo é obrigatório.';
+  return errors;
+};
+
+const typeNameToValue: Record<string, SpiritualContentType> = {
+  Prayer: SpiritualContentType.Prayer,
+  Teaching: SpiritualContentType.Teaching,
+  Doctrine: SpiritualContentType.Doctrine,
+  Hymn: SpiritualContentType.Hymn,
+  Ritual: SpiritualContentType.Ritual,
+};
+
+const categoryNameToValue: Record<string, SpiritualCategory> = {
+  Umbanda: SpiritualCategory.Umbanda,
+  Kardecismo: SpiritualCategory.Kardecismo,
+  General: SpiritualCategory.General,
+  Orixas: SpiritualCategory.Orixas,
+};
+
+const resolveType = (raw: unknown): SpiritualContentType => {
+  if (typeof raw === 'string' && raw in typeNameToValue) return typeNameToValue[raw];
+  const n = Number(raw);
+  return isNaN(n) ? SpiritualContentType.Prayer : n as SpiritualContentType;
+};
+
+const resolveCategory = (raw: unknown): SpiritualCategory => {
+  if (typeof raw === 'string' && raw in categoryNameToValue) return categoryNameToValue[raw];
+  const n = Number(raw);
+  return isNaN(n) ? SpiritualCategory.General : n as SpiritualCategory;
+};
+
 const escapeHtml = (value: string) =>
   value
     .replace(/&/g, '&amp;')
@@ -86,15 +125,15 @@ const SpiritualContentPage: React.FC = () => {
   const [gridError, setGridError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<SpiritualContent | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTarget, setConfirmTarget] = useState<SpiritualContent | null>(null);
-  const [deactivating, setDeactivating] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [dialogError, setDialogError] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<SpiritualContentFormErrors>({});
   const [form, setForm] = useState<SpiritualContentForm>(initialForm);
   const [dialogTab, setDialogTab] = useState(0);
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | SpiritualContentType>('all');
   const [categoryFilter, setCategoryFilter] = useState<'all' | SpiritualCategory>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'true' | 'false'>('all');
   const [featuredFilter, setFeaturedFilter] = useState<'all' | 'true' | 'false'>('all');
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [totalCount, setTotalCount] = useState(0);
@@ -113,7 +152,6 @@ const SpiritualContentPage: React.FC = () => {
         type: typeFilter === 'all' ? undefined : typeFilter,
         category: categoryFilter === 'all' ? undefined : categoryFilter,
         featured: featuredFilter === 'all' ? undefined : featuredFilter === 'true',
-        isActive: statusFilter === 'all' ? undefined : statusFilter === 'true',
         pageNumber: paginationModel.page + 1,
         pageSize: paginationModel.pageSize,
         sort: 'displayOrder:asc',
@@ -134,7 +172,7 @@ const SpiritualContentPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [categoryFilter, featuredFilter, paginationModel.page, paginationModel.pageSize, query, statusFilter, typeFilter]);
+  }, [categoryFilter, featuredFilter, paginationModel.page, paginationModel.pageSize, query, typeFilter]);
 
   useEffect(() => {
     loadContents();
@@ -142,6 +180,14 @@ const SpiritualContentPage: React.FC = () => {
 
   const columns: GridColDef<SpiritualContent>[] = isXs
     ? [
+        {
+          field: 'actions',
+          type: 'actions',
+          width: 60,
+          getActions: (params) => [
+            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
+          ],
+        },
         {
           field: 'summary',
           headerName: 'Conteúdo',
@@ -161,65 +207,39 @@ const SpiritualContentPage: React.FC = () => {
           sortable: false,
           filterable: false,
         },
-        {
-          field: 'isActive',
-          headerName: 'Status',
-          width: 80,
-          renderCell: (params) => (
-            <Typography variant="body2" sx={{ whiteSpace: 'nowrap', py: 1 }}>
-              {params.row.isActive ? 'Ativo' : 'Inativo'}
-            </Typography>
-          ),
-          sortable: false,
-          filterable: false,
-        },
+      ]
+    : [
         {
           field: 'actions',
           type: 'actions',
-          width: 104,
+          width: 60,
           getActions: (params) => [
             <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
           ],
         },
-      ]
-    : [
         { field: 'displayOrder', headerName: 'Ordem', width: 90 },
         { field: 'title', headerName: 'Título', flex: 1.4, minWidth: 220 },
         {
           field: 'type',
           headerName: 'Tipo',
+          type: 'string',
           flex: 0.8,
           minWidth: 140,
-          renderCell: (params) => <Chip size="small" label={typeLabels[params.row.type as SpiritualContentType]} color="primary" />,
+          valueGetter: (_value: any, row: SpiritualContent) => typeLabels[resolveType(row.type)] ?? String(row.type),
         },
         {
           field: 'category',
           headerName: 'Categoria',
+          type: 'string',
           flex: 0.8,
           minWidth: 140,
-          renderCell: (params) => <Chip size="small" label={categoryLabels[params.row.category as SpiritualCategory]} variant="outlined" />,
+          valueGetter: (_value: any, row: SpiritualContent) => categoryLabels[resolveCategory(row.category)] ?? String(row.category),
         },
         {
           field: 'isFeatured',
           headerName: 'Destaque',
           width: 120,
           renderCell: (params) => params.row.isFeatured ? <Chip size="small" icon={<StarIcon />} label="Destaque" color="warning" /> : '—',
-        },
-        {
-          field: 'isActive',
-          headerName: 'Status',
-          width: 110,
-          renderCell: (params) => <Chip size="small" label={params.row.isActive ? 'Ativo' : 'Inativo'} color={params.row.isActive ? 'success' : 'default'} />,
-        },
-        {
-          field: 'actions',
-          type: 'actions',
-          width: 110,
-          getActions: (params) => [
-            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
-          ],
         },
       ];
 
@@ -229,8 +249,8 @@ const SpiritualContentPage: React.FC = () => {
       setForm({
         title: item.title,
         content: item.content,
-        type: item.type,
-        category: item.category,
+        type: resolveType(item.type),
+        category: resolveCategory(item.category),
         source: item.source,
         displayOrder: String(item.displayOrder),
         isFeatured: item.isFeatured,
@@ -249,22 +269,44 @@ const SpiritualContentPage: React.FC = () => {
     setDialogOpen(false);
     setEditingItem(null);
     setForm(initialForm);
+    setFormErrors({});
+    setDialogError(null);
   };
 
-  const handleRequestDeactivate = (item: SpiritualContent) => {
-    setConfirmTarget(item);
-    setConfirmOpen(true);
+  const handleDeleteContent = () => {
+    if (!editingItem) return;
+    setConfirmDeleteOpen(true);
   };
 
-  const handleCloseConfirm = () => {
-    if (deactivating) {
-      return;
+  const handleConfirmDelete = async () => {
+    if (!editingItem) return;
+    setDeleting(true);
+    try {
+      await apiService.deleteSpiritualContent(String(editingItem.id));
+      setConfirmDeleteOpen(false);
+      setFeedback({ open: true, message: 'Conteúdo excluído com sucesso.', severity: 'success' });
+      handleCloseDialog();
+      await loadContents();
+    } catch (error: any) {
+      setConfirmDeleteOpen(false);
+      setFeedback({
+        open: true,
+        message: error?.response?.data?.message || 'Não foi possível excluir o conteúdo.',
+        severity: 'error',
+      });
+    } finally {
+      setDeleting(false);
     }
-    setConfirmOpen(false);
-    setConfirmTarget(null);
   };
 
   const handleSubmit = async () => {
+    const errors = validateSpiritualContentForm(form);
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      setDialogTab(0);
+      return;
+    }
+    setFormErrors({});
     const payload = {
       title: form.title,
       content: form.content,
@@ -276,6 +318,7 @@ const SpiritualContentPage: React.FC = () => {
       isActive: form.isActive,
     };
 
+    setDialogError(null);
     try {
       if (editingItem) {
         await apiService.updateSpiritualContent(String(editingItem.id), payload);
@@ -288,43 +331,9 @@ const SpiritualContentPage: React.FC = () => {
       handleCloseDialog();
       await loadContents();
     } catch (error: any) {
-      setFeedback({
-        open: true,
-        message: error?.response?.data?.message || 'Não foi possível salvar o conteúdo espiritual.',
-        severity: 'error',
-      });
-    }
-  };
-
-  const handleConfirmDeactivate = async () => {
-    if (!confirmTarget) {
-      return;
-    }
-
-    setDeactivating(true);
-    try {
-      await apiService.updateSpiritualContent(String(confirmTarget.id), {
-        title: confirmTarget.title,
-        content: confirmTarget.content,
-        type: confirmTarget.type,
-        category: confirmTarget.category,
-        source: confirmTarget.source,
-        displayOrder: confirmTarget.displayOrder,
-        isFeatured: confirmTarget.isFeatured,
-        isActive: false,
-      });
-
-      setFeedback({ open: true, message: 'Conteúdo espiritual inativado com sucesso.', severity: 'success' });
-      handleCloseConfirm();
-      await loadContents();
-    } catch (error: any) {
-      setFeedback({
-        open: true,
-        message: error?.response?.data?.message || 'Não foi possível inativar o conteúdo espiritual.',
-        severity: 'error',
-      });
-    } finally {
-      setDeactivating(false);
+      const msg = error?.response?.data?.message || 'Não foi possível salvar o conteúdo espiritual.';
+      setDialogError(msg);
+      setFeedback({ open: true, message: msg, severity: 'error' });
     }
   };
 
@@ -427,14 +436,6 @@ const SpiritualContentPage: React.FC = () => {
                 <MenuItem value="false">Sem destaque</MenuItem>
               </Select>
             </FormControl>
-            <FormControl sx={{ minWidth: 150 }}>
-              <InputLabel>Status</InputLabel>
-              <Select value={statusFilter} label="Status" onChange={(e) => setStatusFilter(e.target.value as 'all' | 'true' | 'false')}>
-                <MenuItem value="all">Todos</MenuItem>
-                <MenuItem value="true">Ativos</MenuItem>
-                <MenuItem value="false">Inativos</MenuItem>
-              </Select>
-            </FormControl>
           </Stack>
         )}
       </Paper>
@@ -491,7 +492,6 @@ const SpiritualContentPage: React.FC = () => {
           <Tabs value={dialogTab} onChange={(_, value) => setDialogTab(value)} variant="fullWidth">
             <Tab label="Conteúdo" />
             <Tab label="Metadados" />
-            <Tab label="Preview" />
           </Tabs>
 
           <Box sx={{ p: 2, pb: 2 }}>
@@ -501,12 +501,18 @@ const SpiritualContentPage: React.FC = () => {
                   label="Título"
                   value={form.title}
                   onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                  error={!!formErrors.title}
+                  helperText={formErrors.title}
+                  sx={formErrors.title ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
                   fullWidth
                 />
                 <TextField
                   label="Conteúdo"
                   value={form.content}
                   onChange={(e) => setForm((prev) => ({ ...prev, content: e.target.value }))}
+                  error={!!formErrors.content}
+                  helperText={formErrors.content}
+                  sx={formErrors.content ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
                   fullWidth
                   multiline
                   minRows={10}
@@ -562,53 +568,41 @@ const SpiritualContentPage: React.FC = () => {
                   control={<Switch checked={form.isFeatured} onChange={(e) => setForm((prev) => ({ ...prev, isFeatured: e.target.checked }))} />}
                   label="Exibir como destaque no portal"
                 />
-                {editingItem && (
-                  <FormControlLabel
-                    control={<Switch checked={form.isActive} onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))} />}
-                    label="Conteúdo ativo"
-                  />
-                )}
                 <Alert severity="info">
                   O backend sanitiza HTML potencialmente inseguro antes de persistir o conteúdo.
                 </Alert>
               </Stack>
             )}
 
-            {dialogTab === 2 && (
-              <Stack spacing={2} sx={{ mt: 1 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {form.title?.trim() || 'Sem título'}
-                </Typography>
-                <Paper variant="outlined" sx={{ p: 2 }}>
-                  <Typography
-                    component="div"
-                    sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
-                    dangerouslySetInnerHTML={{ __html: escapeHtml(form.content || '').replace(/\n/g, '<br />') }}
-                  />
-                </Paper>
-              </Stack>
-            )}
           </Box>
         </DialogContent>
-        <DialogActions>
+        {dialogError && (
+          <Alert severity="error" sx={{ mx: 3, mb: 1 }}>{dialogError}</Alert>
+        )}
+        <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleCloseDialog}>Cancelar</Button>
+          {editingItem && (
+            <Button variant="outlined" color="error" onClick={handleDeleteContent}>
+              Excluir
+            </Button>
+          )}
           <Button variant="contained" onClick={handleSubmit}>
             {editingItem ? 'Salvar alterações' : 'Criar conteúdo'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={confirmOpen} onClose={handleCloseConfirm} fullWidth maxWidth="sm">
-        <DialogTitle>Inativar conteúdo?</DialogTitle>
+      <Dialog open={confirmDeleteOpen} onClose={() => !deleting && setConfirmDeleteOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Excluir conteúdo</DialogTitle>
         <DialogContent>
-          <Alert severity="warning" sx={{ mt: 1 }}>
-            {confirmTarget ? `O conteúdo “${confirmTarget.title}” será marcado como inativo e deixará de aparecer no portal.` : 'Este conteúdo será marcado como inativo e deixará de aparecer no portal.'}
+          <Alert severity="error" sx={{ mt: 1 }}>
+            Esta ação é permanente. O conteúdo <strong>{editingItem?.title}</strong> será removido definitivamente.
           </Alert>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseConfirm} disabled={deactivating}>Cancelar</Button>
-          <Button variant="contained" color="warning" onClick={handleConfirmDeactivate} disabled={deactivating}>
-            Inativar
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={deleting}>Cancelar</Button>
+          <Button variant="contained" color="error" onClick={handleConfirmDelete} disabled={deleting}>
+            {deleting ? 'Excluindo...' : 'Excluir definitivamente'}
           </Button>
         </DialogActions>
       </Dialog>

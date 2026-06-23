@@ -5,13 +5,13 @@ namespace Batuara.Application.Guides.Models
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public string? PhotoUrl { get; set; }
         public List<string> Specialties { get; set; } = new();
-        public DateTime EntryDate { get; set; }
-        public string? Email { get; set; }
-        public string? Phone { get; set; }
-        public string? Whatsapp { get; set; }
         public int DisplayOrder { get; set; }
+        public string? Comida { get; set; }
+        public string? Fruta { get; set; }
+        public string? DiaDaSemana { get; set; }
+        public string? Cor { get; set; }
+        public string? Saudacao { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
@@ -21,17 +21,16 @@ namespace Batuara.Application.Guides.Models
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public string? PhotoUrl { get; set; }
         public List<string> Specialties { get; set; } = new();
-        public DateTime EntryDate { get; set; }
-        public string? Email { get; set; }
-        public string? Phone { get; set; }
-        public string? Whatsapp { get; set; }
         public int DisplayOrder { get; set; } = 1;
+        public string? Comida { get; set; }
+        public string? Fruta { get; set; }
+        public string? DiaDaSemana { get; set; }
+        public string? Cor { get; set; }
+        public string? Saudacao { get; set; }
     }
 
     public class UpdateGuideRequest : CreateGuideRequest
     {
-        public bool IsActive { get; set; } = true;
     }
 }

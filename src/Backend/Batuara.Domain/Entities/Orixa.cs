@@ -13,6 +13,10 @@ namespace Batuara.Domain.Entities
         public string BatuaraTeaching { get; private set; } = string.Empty;
         public string? ImageUrl { get; private set; }
         public int DisplayOrder { get; private set; }
+        public string? Comida { get; private set; }
+        public string? DiaDaSemana { get; private set; }
+        public string? Fruta { get; private set; }
+        public string? Saudacao { get; private set; }
 
         private readonly List<string> _characteristics = new();
         private readonly List<string> _colors = new();
@@ -155,6 +159,15 @@ namespace Batuara.Domain.Entities
         public void UpdateImage(string? imageUrl)
         {
             ImageUrl = imageUrl;
+            UpdateTimestamp();
+        }
+
+        public void UpdateExtendedInfo(string? comida, string? diaDaSemana, string? fruta, string? saudacao)
+        {
+            Comida = string.IsNullOrWhiteSpace(comida) ? null : comida.Trim();
+            DiaDaSemana = string.IsNullOrWhiteSpace(diaDaSemana) ? null : diaDaSemana.Trim();
+            Fruta = string.IsNullOrWhiteSpace(fruta) ? null : fruta.Trim();
+            Saudacao = string.IsNullOrWhiteSpace(saudacao) ? null : saudacao.Trim();
             UpdateTimestamp();
         }
 

@@ -78,14 +78,10 @@ const DonationsSection: React.FC = () => {
       id="doacoes"
       sx={{
         scrollMarginTop: { xs: 56, md: 64 },
-        minHeight: { xs: '100vh', md: 'auto' },
+        minHeight: { xs: 'calc(100vh - 56px)', md: 'calc(100vh - 64px)' },
         pt: { xs: 1.5, md: 2 },
         pb: { xs: 4, md: 8 },
         backgroundColor: 'background.paper',
-        [desktopMediaQuery]: {
-          minHeight: 'calc(100vh - 88px)',
-          pb: 10,
-        },
       }}
     >
       <Container maxWidth="lg">

@@ -28,5 +28,6 @@ namespace Batuara.Application.UmbandaLines.Services
         Task<(UmbandaLineDto? Line, string[] Errors, bool Conflict)> CreateAsync(CreateUmbandaLineRequest request);
         Task<(UmbandaLineDto? Line, string[] Errors, bool Conflict)> UpdateAsync(int id, UpdateUmbandaLineRequest request);
         Task<bool> SoftDeleteAsync(int id);
+        Task<(bool Deleted, string[] Errors)> HardDeleteAsync(int id);
     }
 }

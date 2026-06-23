@@ -63,49 +63,14 @@ namespace Batuara.Domain.Services
         {
             var errors = new List<string>();
 
-            // Regra: Atendimentos não podem ser no passado
-            if (!isUpdate && attendance.AttendanceDate.Date < DateTime.Today)
-            {
-                errors.Add("Atendimentos não podem ser agendados no passado");
-            }
-
-            // Regra: Verificar se o dia é apropriado para o tipo de atendimento
-            if (!IsAppropriateDay(attendance.Type, attendance.AttendanceDate.Date.DayOfWeek))
-            {
-                var weekday = GetWeekdayPtBr(attendance.AttendanceDate.Date.DayOfWeek);
-                errors.Add($"O dia {weekday} não é apropriado para {attendance.GetTypeDisplayName()}");
-            }
-
-            // Regra: Horários devem estar dentro dos limites permitidos
-            var (minStart, maxEnd) = GetAllowedTimeRange(attendance.Type);
-            if (attendance.AttendanceDate.StartTime < minStart || attendance.AttendanceDate.EndTime > maxEnd)
-            {
-                errors.Add($"Horário deve estar entre {minStart:hh\\:mm} e {maxEnd:hh\\:mm} para {attendance.GetTypeDisplayName()}");
-            }
-
-            // Regra: Duração mínima e máxima
-            var duration = attendance.AttendanceDate.EndTime!.Value - attendance.AttendanceDate.StartTime!.Value;
-            var (minDuration, maxDuration) = GetDurationLimits(attendance.Type);
-            
-            if (duration < minDuration)
-            {
-                errors.Add($"Duração mínima para {attendance.GetTypeDisplayName()} é {minDuration.TotalHours} horas");
-            }
-            
-            if (duration > maxDuration)
-            {
-                errors.Add($"Duração máxima para {attendance.GetTypeDisplayName()} é {maxDuration.TotalHours} horas");
-            }
-
-            // Regra: Capacidade deve ser razoável
             if (attendance.MaxCapacity.HasValue && attendance.MaxCapacity <= 0)
             {
                 errors.Add("Capacidade máxima deve ser maior que zero");
             }
 
-            if (attendance.MaxCapacity.HasValue && attendance.MaxCapacity > 200)
+            if (attendance.MaxCapacity.HasValue && attendance.MaxCapacity > 500)
             {
-                errors.Add("Capacidade máxima não pode exceder 200 pessoas");
+                errors.Add("Capacidade máxima não pode exceder 500 pessoas");
             }
 
             return (errors.Count == 0, errors.ToArray());

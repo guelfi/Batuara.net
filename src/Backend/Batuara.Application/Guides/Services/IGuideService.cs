@@ -17,6 +17,6 @@ namespace Batuara.Application.Guides.Services
         Task<GuideDto?> GetByIdAsync(int id);
         Task<(GuideDto? Guide, string[] Errors, bool Conflict)> CreateAsync(CreateGuideRequest request);
         Task<(GuideDto? Guide, string[] Errors, bool Conflict)> UpdateAsync(int id, UpdateGuideRequest request);
-        Task<bool> SoftDeleteAsync(int id);
+        Task<(bool Deleted, string[] Errors)> HardDeleteAsync(int id);
     }
 }

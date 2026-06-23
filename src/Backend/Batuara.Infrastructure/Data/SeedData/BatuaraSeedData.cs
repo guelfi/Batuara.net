@@ -15,6 +15,7 @@ namespace Batuara.Infrastructure.Data.SeedData
                 logger.LogInformation("Iniciando seed data da Casa de Caridade Batuara...");
 
                 await SeedOrixasAsync(context, logger);
+                await SeedGuidesAsync(context, logger);
                 await SeedUmbandaLinesAsync(context, logger);
                 await SeedSpiritualContentAsync(context, logger);
                 await SeedEventsAsync(context, logger);
@@ -38,58 +39,247 @@ namespace Batuara.Infrastructure.Data.SeedData
                 return;
             }
 
-            logger.LogInformation("Inserindo dados dos Orixás...");
+            logger.LogInformation("Inserindo dados dos Orixás (Apostila Batuara 2024)...");
 
-            var orixas = new[]
+            var orixas = new List<Orixa>
             {
                 new Orixa(
                     "Oxalá",
-                    "Oxalá é o maior dos Orixás, pai de todos os outros Orixás e de toda a humanidade. Representa a paz, a pureza, a sabedoria e a criação. É o Orixá da criação do mundo e dos seres humanos.",
-                    "Oxalá tem origem na tradição Yorubá da África, onde é conhecido como Obatalá. É considerado o criador da humanidade e o pai de todos os Orixás.",
-                    "Na Casa Batuara, Oxalá é reverenciado como o grande pai, aquele que nos ensina a humildade, a paciência e o amor incondicional. Seus ensinamentos nos mostram que através da paz interior e da pureza de coração podemos alcançar a elevação espiritual. Oxalá nos ensina que todos somos filhos de Deus e devemos nos tratar como irmãos.",
+                    "Tem origem na tradição Yorubá, onde é conhecido como Obatalá. Criador da humanidade e pai de todos os Orixás.",
+                    "Tradição Yorubá — África Ocidental. Conhecido como Obatalá, o criador da humanidade e pai de todos os Orixás.",
+                    "Reverenciado como o grande pai. Ensina humildade, paciência e amor incondicional. A paz interior e pureza de coração levam à elevação espiritual.",
                     new[] { "Paciência", "Sabedoria", "Pureza", "Paz", "Criação", "Paternidade", "Humildade", "Amor incondicional" },
-                    new[] { "Branco", "Azul claro" },
+                    new[] { "Branco" },
                     new[] { "Ar", "Éter", "Luz" },
                     1
                 ),
-
                 new Orixa(
-                    "Yemanjá",
-                    "Yemanjá é a mãe de todos os Orixás e rainha dos mares. Representa a maternidade, a fertilidade, a proteção e o amor maternal. É a grande mãe que acolhe e protege todos os seus filhos.",
-                    "Yemanjá tem origem na tradição Yorubá, onde é conhecida como Yemoja. É a divindade dos rios e mares, mãe de muitos Orixás e protetora das mulheres e crianças.",
-                    "A Casa Batuara tem especial devoção à Yemanjá, nossa mãe querida. Ela nos ensina o amor incondicional de mãe, a proteção aos necessitados e a importância da família espiritual. Yemanjá nos mostra que o amor maternal é a força mais poderosa do universo, capaz de curar, proteger e transformar. Em nossa casa, ela é celebrada como a mãe que nunca abandona seus filhos.",
+                    "Iemanjá",
+                    "Divindade dos rios e mares, mãe de muitos Orixás e protetora das mulheres e crianças.",
+                    "Tradição Yorubá — África Ocidental. Conhecida como Yemoja, divindade dos rios e mares.",
+                    "Amor incondicional de mãe, proteção aos necessitados e importância da família espiritual. Mãe que nunca abandona seus filhos.",
                     new[] { "Maternidade", "Proteção", "Fertilidade", "Amor maternal", "Cura", "Acolhimento", "Generosidade", "Compaixão" },
-                    new[] { "Azul", "Branco", "Azul marinho", "Prata" },
+                    new[] { "Azul" },
                     new[] { "Água", "Mar", "Rios", "Conchas" },
                     2
                 ),
-
                 new Orixa(
-                    "Iansã",
-                    "Iansã é a senhora dos ventos, tempestades e raios. Orixá guerreira, corajosa e determinada, que luta pela justiça e protege os oprimidos. É também a senhora dos eguns (espíritos dos mortos).",
-                    "Iansã, conhecida como Oyá na tradição Yorubá, é a divindade dos ventos e tempestades. É esposa de Xangô e uma das mais respeitadas guerreiras entre os Orixás.",
-                    "Na Casa Batuara, Iansã é reverenciada como a guerreira da luz, aquela que nos ensina a coragem para enfrentar as adversidades da vida. Ela nos mostra que devemos lutar pelos nossos ideais com determinação e justiça. Iansã nos ensina que a verdadeira força vem do coração puro e da fé inabalável. Ela também nos orienta no trabalho com os espíritos, ensinando-nos o respeito e a caridade para com aqueles que já partiram.",
-                    new[] { "Coragem", "Justiça", "Determinação", "Liderança", "Proteção", "Transformação", "Força", "Independência" },
-                    new[] { "Amarelo", "Vermelho", "Coral", "Dourado" },
-                    new[] { "Vento", "Tempestade", "Raio", "Fogo" },
+                    "Nanã",
+                    "Uma das mais antigas Orixás femininas. Senhora da sabedoria ancestral e dos mistérios da vida e morte.",
+                    "Uma das Orixás mais antigas da tradição Yorubá. Senhora da sabedoria ancestral, dos mistérios da vida e da morte.",
+                    "A anciã sábia. Guarda os segredos da vida e da morte, ensinando a respeitar todos os ciclos da existência.",
+                    new[] { "Sabedoria", "Tradição", "Paciência", "Mistério", "Respeito aos antepassados" },
+                    new[] { "Lilás" },
+                    new[] { "Água", "Lama", "Terra" },
                     3
                 ),
-
+                new Orixa(
+                    "Oxum",
+                    "Orixá das águas doces, rios e cachoeiras. Senhora do ouro e do amor.",
+                    "Tradição Yorubá — África Ocidental. Divindade das águas doces, senhora do ouro e do amor.",
+                    "Amor, beleza e fertilidade. Ensina a valorizar a doçura da vida e a beleza interior.",
+                    new[] { "Amor", "Beleza", "Fertilidade", "Doçura", "Prosperidade" },
+                    new[] { "Dourado" },
+                    new[] { "Água doce", "Ouro", "Rios" },
+                    4
+                ),
                 new Orixa(
                     "Ogum",
-                    "Ogum é o Orixá guerreiro, senhor do ferro, da tecnologia e dos caminhos. Representa o trabalho, a perseverança, a luta pelos objetivos e a abertura de novos caminhos na vida.",
-                    "Ogum é uma das divindades mais antigas da tradição Yorubá, conhecido como o senhor do ferro e da guerra. É o Orixá que ensina aos homens o uso dos metais e das ferramentas.",
-                    "A Casa Batuara ensina que Ogum é o grande trabalhador, aquele que nos mostra a importância do esforço e da dedicação para alcançar nossos objetivos. Ele nos ensina que através do trabalho honesto e da perseverança podemos vencer qualquer obstáculo. Ogum nos orienta a ser guerreiros da luz, lutando sempre pelo bem e pela justiça, mas sempre com amor no coração.",
+                    "Senhor do ferro e da guerra. Uma das divindades mais antigas da tradição Yorubá.",
+                    "Uma das divindades mais antigas da tradição Yorubá. Senhor do ferro e da guerra.",
+                    "O grande trabalhador. Importância do esforço e da dedicação para alcançar objetivos. Guerreiro da luz.",
                     new[] { "Trabalho", "Perseverança", "Coragem", "Determinação", "Proteção", "Liderança", "Honestidade", "Força de vontade" },
-                    new[] { "Azul escuro", "Vermelho", "Verde escuro" },
+                    new[] { "Vermelho" },
                     new[] { "Ferro", "Metal", "Terra", "Fogo" },
-                    4
+                    5
+                ),
+                new Orixa(
+                    "Oxóssi",
+                    "O Orixá caçador, senhor das matas e da fartura. Sabedoria e conexão com a natureza.",
+                    "Tradição Yorubá — senhor das matas, da caça e da fartura.",
+                    "O provedor. Ensina a buscar o conhecimento e viver em harmonia com a natureza.",
+                    new[] { "Sabedoria", "Conhecimento", "Prosperidade", "Caça", "Natureza", "Fartura" },
+                    new[] { "Verde" },
+                    new[] { "Mata", "Terra", "Arco" },
+                    6
+                ),
+                new Orixa(
+                    "Xangô",
+                    "Orixá da justiça, do fogo e do trovão. Rei poderoso que pune os injustos e protege os oprimidos.",
+                    "Tradição Yorubá — rei de Oyó. Orixá da justiça, do fogo e do trovão.",
+                    "Personificação da justiça divina. Toda ação tem consequências e a verdade sempre prevalece.",
+                    new[] { "Justiça", "Equilíbrio", "Autoridade", "Fogo", "Trovão", "Determinação" },
+                    new[] { "Marrom" },
+                    new[] { "Fogo", "Pedra", "Trovão" },
+                    7
+                ),
+                new Orixa(
+                    "Iansã",
+                    "Oyá na tradição Yorubá. Divindade dos ventos e tempestades. Esposa de Xangô.",
+                    "Conhecida como Oyá na tradição Yorubá. Divindade dos ventos, tempestades e esposa de Xangô.",
+                    "A guerreira da luz. Coragem para enfrentar as adversidades da vida.",
+                    new[] { "Coragem", "Justiça", "Determinação", "Liderança", "Proteção", "Transformação", "Força", "Independência" },
+                    new[] { "Alaranjado" },
+                    new[] { "Vento", "Tempestade", "Raio", "Fogo" },
+                    8
+                ),
+                new Orixa(
+                    "Obaluaê / Omolu",
+                    "Orixá da cura e das doenças. Na Casa Batuara, Obaluaê (aspecto mais velho) e Omolu (aspecto mais jovial) são tratados como complementares — o mesmo Orixá em dois momentos. Médico dos Orixás e senhor da vida e da morte.",
+                    "Tradição Yorubá — senhor das doenças e da cura. Também conhecido como Omolu.",
+                    "O grande curador. Saúde é o maior bem; cuidar do corpo e da alma.",
+                    new[] { "Cura", "Saúde", "Doenças", "Renovação", "Ciclo da vida" },
+                    new[] { "Roxo" },
+                    new[] { "Terra", "Lama", "Palha" },
+                    9
+                ),
+                new Orixa(
+                    "Ossain",
+                    "Orixá das folhas e ervas medicinais. Senhor do conhecimento das plantas curativas.",
+                    "Tradição Yorubá — senhor das folhas e ervas medicinais.",
+                    "O mestre das ervas. Propriedades medicinais das plantas e a cura natural.",
+                    new[] { "Cura", "Ervas", "Medicina", "Conhecimento ancestral", "Natureza" },
+                    new[] { "Verde" },
+                    new[] { "Ervas", "Terra", "Folhas" },
+                    10
+                ),
+                new Orixa(
+                    "Oxumarê",
+                    "Orixá da transformação, do movimento e da renovação. Representa o arco-íris e a serpente.",
+                    "Tradição Yorubá — representa o arco-íris e a serpente, símbolo da renovação e do movimento.",
+                    "O renovador. Toda situação pode ser transformada e a esperança sempre retorna.",
+                    new[] { "Renovação", "Transformação", "Movimento", "Esperança", "Equilíbrio" },
+                    new[] { "Arco-íris" },
+                    new[] { "Água", "Serpente", "Arco-íris" },
+                    11
                 )
             };
 
+            foreach (var orixa in orixas)
+            {
+                orixa.UpdateExtendedInfo(
+                    orixa.Name switch
+                    {
+                        "Oxalá"         => "Canjica",
+                        "Iemanjá"       => "Peixe (Água Salgada)",
+                        "Nanã"          => "Casquinha Siri",
+                        "Oxum"          => "Peixe água doce",
+                        "Ogum"          => "Feijoada",
+                        "Oxóssi"        => "Caça",
+                        "Xangô"         => "Rabada c/ guiabo",
+                        "Iansã"         => "Acarajé",
+                        "Obaluaê / Omolu" => "Carne de porco",
+                        _               => null
+                    },
+                    orixa.Name switch
+                    {
+                        "Oxalá"         => "Sexta",
+                        "Iemanjá"       => "Sábado",
+                        "Nanã"          => "Sábado",
+                        "Oxum"          => "Sábado",
+                        "Ogum"          => "Quinta",
+                        "Oxóssi"        => "Terça",
+                        "Xangô"         => "Quarta",
+                        "Iansã"         => "Quarta",
+                        "Obaluaê / Omolu" => "Segunda",
+                        _               => null
+                    },
+                    orixa.Name switch
+                    {
+                        "Oxalá"         => "Uva Branca",
+                        "Iemanjá"       => "Mamão Papaya",
+                        "Nanã"          => "Romã",
+                        "Oxum"          => "Melão",
+                        "Ogum"          => "Lima da Pérsia",
+                        "Oxóssi"        => "Goiaba",
+                        "Xangô"         => "Banana da terra",
+                        "Iansã"         => "Manga",
+                        "Obaluaê / Omolu" => "Pinha",
+                        _               => null
+                    },
+                    orixa.Name switch
+                    {
+                        "Oxalá"         => "Epa babá",
+                        "Iemanjá"       => "Odocya",
+                        "Nanã"          => "Salupa Nanã",
+                        "Oxum"          => "Aiê iê ô",
+                        "Ogum"          => "Ogunhê",
+                        "Oxóssi"        => "Oxossi ê",
+                        "Xangô"         => "Kao Kabecile",
+                        "Iansã"         => "Eparrey",
+                        "Obaluaê / Omolu" => "Atoto Obaluaê",
+                        _               => null
+                    }
+                );
+            }
+
             await context.Orixas.AddRangeAsync(orixas);
             await context.SaveChangesAsync();
-            logger.LogInformation($"Inseridos {orixas.Length} Orixás");
+            logger.LogInformation($"Inseridos {orixas.Count} Orixás");
+        }
+
+        private static async Task SeedGuidesAsync(BatuaraDbContext context, ILogger logger)
+        {
+            if (await context.Guides.AnyAsync())
+            {
+                logger.LogInformation("Guias e Entidades já existem no banco. Seed desta entidade ignorado.");
+                return;
+            }
+
+            logger.LogInformation("Inserindo dados dos Guias e Entidades (Apostila Batuara 2024)...");
+
+            var guides = new[]
+            {
+                new GuideEntity(
+                    "Exu",
+                    "Entidade mensageira, guardiã dos caminhos e das encruzilhadas. Na Casa Batuara é tratado como Entidade, não como Orixá.",
+                    new[] { "Comunicação", "Abertura de caminhos", "Guarda de encruzilhadas", "Movimento", "Equilíbrio" },
+                    1, "Fígado ou Miúdos de Frango", "Figo da Índia", "Segunda", "Vermelho", "Laroye Exu"),
+                new GuideEntity(
+                    "Pomba Gira",
+                    "Entidade feminina, guardiã das encruzilhadas e dos mistérios femininos. Na Casa Batuara é tratada como Entidade, não como Orixá.",
+                    new[] { "Mistério", "Feminilidade", "Amor", "Encantamento", "Dualidade" },
+                    2, "Fígado ou Miúdos de Frango", "Figo ou Pera", "Segunda", "Preto", "Laroye Pomba Gira"),
+                new GuideEntity(
+                    "Preto Velho",
+                    "Espíritos de anciãos africanos, símbolos de sabedoria, paciência e humildade.",
+                    new[] { "Sabedoria ancestral", "Paciência infinita", "Humildade profunda", "Conselhos valiosos", "Cura através da fé" },
+                    3, "Feijão Preto s/ pertences", "Caqui", "Segunda-feira", "Branco e Preto", "Adorei as Almas"),
+                new GuideEntity(
+                    "Baiano",
+                    "Entidades alegres e festeiras, vindas da Bahia. Conhecidos por sua sabedoria popular e humor.",
+                    new[] { "Alegria contagiante", "Sabedoria popular", "Gosto por festas", "Linguagem típica baiana", "Proteção através da alegria" },
+                    4, "Farofa", "Coco / Caju", "Quinta-feira", "Amarelo e Vermelho", "Salve Nosso Senhor do Bonfin"),
+                new GuideEntity(
+                    "Erês",
+                    "Espíritos de crianças, trazem alegria, pureza e inocência. Mensageiros da esperança.",
+                    new[] { "Pureza de coração", "Alegria contagiante", "Inocência genuína", "Brincadeiras e risos", "Proteção das crianças" },
+                    5, "Caruru", "Doces", "Domingo", "Rosa e Azul", "Aminbeijada"),
+                new GuideEntity(
+                    "Boiadeiro",
+                    "Espíritos de vaqueiros e trabalhadores rurais. Força e determinação.",
+                    new[] { "Força e coragem", "Determinação", "Simplicidade", "Proteção do gado", "Trabalho árduo" },
+                    6, "Arroz Carreteiro", "Laranja Pera", "Terça-feira", "Marrom e Bege", "Getruá seu Boiadeiro"),
+                new GuideEntity(
+                    "Marinheiro",
+                    "Espíritos dos mares, navegadores experientes que trazem proteção nas viagens.",
+                    new[] { "Conhecimento dos mares", "Proteção em viagens", "Aventura e coragem", "Histórias fascinantes", "Ligação com Iemanjá" },
+                    7, "Peixe frito", "Carambola", "Sábado", "Azul e Branco", "Salve Nossa Sernhora dos Navegantes"),
+                new GuideEntity(
+                    "Cigano",
+                    "Espíritos nômades, conhecedores dos mistérios, da magia e da leitura do destino.",
+                    new[] { "Conhecimento místico", "Leitura do destino", "Liberdade de espírito", "Magia e encantamentos", "Proteção em viagens" },
+                    8, "Pernil", "Maçã", "Sexta-feira", "Dourado e Roxo", "É de Ouro e Oriente"),
+                new GuideEntity(
+                    "Malandro",
+                    "Espíritos urbanos, conhecedores da vida nas ruas. Trazem proteção e esperteza.",
+                    new[] { "Esperteza urbana", "Proteção nas ruas", "Jogo de cintura", "Conhecimento da vida", "Humor e malandragem" },
+                    9, "Buteco", "Abacaxi", "Quarta-feira", "Preto e Branco", "Salve a Malandragem")
+            };
+
+            await context.Guides.AddRangeAsync(guides);
+            await context.SaveChangesAsync();
+            logger.LogInformation($"Inseridos {guides.Length} Guias e Entidades");
         }
 
         private static async Task SeedUmbandaLinesAsync(BatuaraDbContext context, ILogger logger)

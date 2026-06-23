@@ -22,24 +22,24 @@ namespace Batuara.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(8000);
 
-            builder.Property(x => x.PhotoUrl)
-                .HasMaxLength(500);
-
-            builder.Property(x => x.Email)
-                .HasMaxLength(150);
-
-            builder.Property(x => x.Phone)
-                .HasMaxLength(40);
-
-            builder.Property(x => x.Whatsapp)
-                .HasMaxLength(40);
-
             builder.Property(x => x.DisplayOrder)
                 .IsRequired()
                 .HasDefaultValue(1);
 
-            builder.Property(x => x.EntryDate)
-                .IsRequired();
+            builder.Property(x => x.Comida)
+                .HasMaxLength(200);
+
+            builder.Property(x => x.Fruta)
+                .HasMaxLength(200);
+
+            builder.Property(x => x.DiaDaSemana)
+                .HasMaxLength(200);
+
+            builder.Property(x => x.Cor)
+                .HasMaxLength(100);
+
+            builder.Property(x => x.Saudacao)
+                .HasMaxLength(200);
 
             builder.Property(x => x.Specialties)
                 .HasConversion(

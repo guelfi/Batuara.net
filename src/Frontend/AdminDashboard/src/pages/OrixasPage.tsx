@@ -9,14 +9,12 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
-  FormControlLabel,
   InputLabel,
   MenuItem,
   Paper,
   Select,
   Snackbar,
   Stack,
-  Switch,
   TextField,
   Typography,
   IconButton,
@@ -24,8 +22,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material/Select';
-import { Add as AddIcon, Close as CloseIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Add as AddIcon, Close as CloseIcon, Edit as EditIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import apiService from '../services/api';
 import GridPager from '../components/common/GridPager';
@@ -40,8 +37,10 @@ type OrixaFormState = {
   characteristics: string;
   colors: string;
   elements: string;
-  imageUrl: string;
-  isActive: boolean;
+  saudacao: string;
+  fruta: string;
+  comida: string;
+  diaDaSemana: string;
 };
 
 type OrixaFormErrors = Partial<Record<keyof OrixaFormState, string>>;
@@ -65,8 +64,10 @@ const initialFormState: OrixaFormState = {
   characteristics: '',
   colors: '',
   elements: '',
-  imageUrl: '',
-  isActive: true,
+  saudacao: '',
+  fruta: '',
+  comida: '',
+  diaDaSemana: '',
 };
 
 const splitCsv = (value: string) => value.split(',').map((item) => item.trim()).filter(Boolean);
@@ -116,12 +117,11 @@ const OrixasPage: React.FC = () => {
   const [gridError, setGridError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Orixa | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTarget, setConfirmTarget] = useState<Orixa | null>(null);
-  const [deactivating, setDeactivating] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [dialogError, setDialogError] = useState<string | null>(null);
   const [form, setForm] = useState<OrixaFormState>(initialFormState);
   const [query, setQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'true' | 'false'>('all');
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [totalCount, setTotalCount] = useState(0);
   const [formErrors, setFormErrors] = useState<OrixaFormErrors>({});
@@ -137,7 +137,6 @@ const OrixasPage: React.FC = () => {
     try {
       const response = await apiService.getOrixas({
         q: query || undefined,
-        isActive: statusFilter === 'all' ? undefined : statusFilter === 'true',
         pageNumber: paginationModel.page + 1,
         pageSize: paginationModel.pageSize,
         sort: 'displayOrder:asc',
@@ -158,7 +157,7 @@ const OrixasPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [paginationModel.page, paginationModel.pageSize, query, statusFilter]);
+  }, [paginationModel.page, paginationModel.pageSize, query]);
 
   useEffect(() => {
     loadOrixas();
@@ -167,6 +166,14 @@ const OrixasPage: React.FC = () => {
   const columns: GridColDef[] = isXs
     ? [
         {
+          field: 'actions',
+          type: 'actions',
+          width: 60,
+          getActions: (params) => [
+            <GridActionsCellItem icon={<EditIcon fontSize="small" />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
+          ],
+        },
+        {
           field: 'summary',
           headerName: 'Orixá',
           flex: 1,
@@ -174,18 +181,6 @@ const OrixasPage: React.FC = () => {
           renderCell: (params) => (
             <Typography variant="body2" sx={{ whiteSpace: 'normal', lineHeight: 1.25, py: 1 }}>
               {params.row.name}
-            </Typography>
-          ),
-          sortable: false,
-          filterable: false,
-        },
-        {
-          field: 'isActive',
-          headerName: 'Status',
-          width: 90,
-          renderCell: (params) => (
-            <Typography variant="body2" sx={{ whiteSpace: 'nowrap', py: 1 }}>
-              {params.row.isActive ? 'Ativo' : 'Inativo'}
             </Typography>
           ),
           sortable: false,
@@ -216,31 +211,18 @@ const OrixasPage: React.FC = () => {
           sortable: false,
           filterable: false,
         },
+      ]
+    : [
         {
           field: 'actions',
           type: 'actions',
-          width: 140,
+          width: 60,
           getActions: (params) => [
-            <GridActionsCellItem icon={<EditIcon fontSize="small" />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-            <GridActionsCellItem icon={<DeleteIcon fontSize="small" />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
+            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
           ],
         },
-      ]
-    : [
         { field: 'displayOrder', headerName: 'Ordem', width: 90 },
         { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180 },
-        {
-          field: 'isActive',
-          headerName: 'Status',
-          width: 110,
-          renderCell: (params) => (
-            <Chip
-              size="small"
-              label={params.row.isActive ? 'Ativo' : 'Inativo'}
-              color={params.row.isActive ? 'success' : 'default'}
-            />
-          ),
-        },
         {
           field: 'colors',
           headerName: 'Cores',
@@ -278,15 +260,6 @@ const OrixasPage: React.FC = () => {
           minWidth: 180,
           renderCell: (params) => params.row.elements.join(', '),
         },
-        {
-          field: 'actions',
-          type: 'actions',
-          width: 110,
-          getActions: (params) => [
-            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
-          ],
-        },
       ];
 
   const handleOpenDialog = (item?: Orixa) => {
@@ -301,8 +274,10 @@ const OrixasPage: React.FC = () => {
         characteristics: item.characteristics.join(', '),
         colors: item.colors.join(', '),
         elements: item.elements.join(', '),
-        imageUrl: item.imageUrl || '',
-        isActive: item.isActive,
+        saudacao: item.saudacao || '',
+        fruta: item.fruta || '',
+        comida: item.comida || '',
+        diaDaSemana: item.diaDaSemana || '',
       });
     } else {
       setEditingItem(null);
@@ -317,19 +292,33 @@ const OrixasPage: React.FC = () => {
     setEditingItem(null);
     setForm(initialFormState);
     setFormErrors({});
+    setDialogError(null);
   };
 
-  const handleRequestDeactivate = (item: Orixa) => {
-    setConfirmTarget(item);
-    setConfirmOpen(true);
+  const handleDeleteOrixa = () => {
+    if (!editingItem) return;
+    setConfirmDeleteOpen(true);
   };
 
-  const handleCloseConfirm = () => {
-    if (deactivating) {
-      return;
+  const handleConfirmDelete = async () => {
+    if (!editingItem) return;
+    setDeleting(true);
+    try {
+      await apiService.deleteOrixa(String(editingItem.id));
+      setConfirmDeleteOpen(false);
+      setFeedback({ open: true, message: 'Orixá excluído com sucesso.', severity: 'success' });
+      handleCloseDialog();
+      await loadOrixas();
+    } catch (error: any) {
+      setConfirmDeleteOpen(false);
+      setFeedback({
+        open: true,
+        message: error?.response?.data?.message || 'Não foi possível excluir o Orixá.',
+        severity: 'error',
+      });
+    } finally {
+      setDeleting(false);
     }
-    setConfirmOpen(false);
-    setConfirmTarget(null);
   };
 
   const handleSubmit = async () => {
@@ -339,6 +328,7 @@ const OrixasPage: React.FC = () => {
       return;
     }
     setFormErrors({});
+    setDialogError(null);
     const payload = {
       name: form.name,
       description: form.description,
@@ -348,8 +338,10 @@ const OrixasPage: React.FC = () => {
       characteristics: splitCsv(form.characteristics),
       colors: splitCsv(form.colors),
       elements: splitCsv(form.elements),
-      imageUrl: form.imageUrl || undefined,
-      isActive: form.isActive,
+      saudacao: form.saudacao || null,
+      fruta: form.fruta || null,
+      comida: form.comida || null,
+      diaDaSemana: form.diaDaSemana || null,
     };
 
     try {
@@ -364,36 +356,12 @@ const OrixasPage: React.FC = () => {
       handleCloseDialog();
       await loadOrixas();
     } catch (error: any) {
-      setFeedback({
-        open: true,
-        message: error?.response?.data?.message || 'Não foi possível salvar o Orixá.',
-        severity: 'error',
-      });
+      const msg = error?.response?.data?.message || 'Não foi possível salvar o Orixá.';
+      setDialogError(msg);
+      setFeedback({ open: true, message: msg, severity: 'error' });
     }
   };
 
-  const handleConfirmDeactivate = async () => {
-    if (!confirmTarget) {
-      return;
-    }
-
-    setDeactivating(true);
-    try {
-      await apiService.deleteOrixa(String(confirmTarget.id));
-
-      setFeedback({ open: true, message: 'Orixá inativado com sucesso.', severity: 'success' });
-      handleCloseConfirm();
-      await loadOrixas();
-    } catch (error: any) {
-      setFeedback({
-        open: true,
-        message: error?.response?.data?.message || 'Não foi possível inativar o Orixá.',
-        severity: 'error',
-      });
-    } finally {
-      setDeactivating(false);
-    }
-  };
 
   return (
     <Box>
@@ -468,18 +436,6 @@ const OrixasPage: React.FC = () => {
               }}
               fullWidth
             />
-            <FormControl sx={{ minWidth: 160 }}>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={statusFilter}
-                label="Status"
-                onChange={(e: SelectChangeEvent) => setStatusFilter(e.target.value as 'all' | 'true' | 'false')}
-              >
-                <MenuItem value="all">Todos</MenuItem>
-                <MenuItem value="true">Ativos</MenuItem>
-                <MenuItem value="false">Inativos</MenuItem>
-              </Select>
-            </FormControl>
           </Stack>
         )}
       </Paper>
@@ -526,7 +482,7 @@ const OrixasPage: React.FC = () => {
         <DialogContent>
             <Stack spacing={2} sx={{ mt: 1 }}>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField label="Nome" value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} error={!!formErrors.name} helperText={formErrors.name} fullWidth />
+              <TextField label="Nome" value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} error={!!formErrors.name} helperText={formErrors.name} sx={formErrors.name ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}} fullWidth />
               <TextField
                 label="Ordem de exibição"
                 type="number"
@@ -541,6 +497,7 @@ const OrixasPage: React.FC = () => {
               value={form.description}
               onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
               error={!!formErrors.description} helperText={formErrors.description}
+              sx={formErrors.description ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
               fullWidth multiline minRows={3}
             />
             <TextField
@@ -548,6 +505,7 @@ const OrixasPage: React.FC = () => {
               value={form.origin}
               onChange={(e) => setForm((prev) => ({ ...prev, origin: e.target.value }))}
               error={!!formErrors.origin} helperText={formErrors.origin}
+              sx={formErrors.origin ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
               fullWidth multiline minRows={3}
             />
             <TextField
@@ -555,6 +513,7 @@ const OrixasPage: React.FC = () => {
               value={form.batuaraTeaching}
               onChange={(e) => setForm((prev) => ({ ...prev, batuaraTeaching: e.target.value }))}
               error={!!formErrors.batuaraTeaching} helperText={formErrors.batuaraTeaching}
+              sx={formErrors.batuaraTeaching ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
               fullWidth multiline minRows={4}
             />
             <TextField
@@ -569,6 +528,7 @@ const OrixasPage: React.FC = () => {
                 value={form.colors}
                 onChange={(e) => setForm((prev) => ({ ...prev, colors: e.target.value }))}
                 error={!!formErrors.colors} helperText={formErrors.colors}
+                sx={formErrors.colors ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
                 fullWidth
               />
               <TextField
@@ -578,42 +538,67 @@ const OrixasPage: React.FC = () => {
                 fullWidth
               />
             </Stack>
-            <TextField
-              label="URL da imagem"
-              value={form.imageUrl}
-              onChange={(e) => setForm((prev) => ({ ...prev, imageUrl: e.target.value }))}
-              fullWidth
-            />
-            {editingItem && (
-              <FormControlLabel
-                control={<Switch checked={form.isActive} onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))} />}
-                label="Orixá ativo"
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+              <TextField
+                label="Saudação"
+                value={form.saudacao}
+                onChange={(e) => setForm((prev) => ({ ...prev, saudacao: e.target.value }))}
+                fullWidth
               />
-            )}
+              <TextField
+                label="Dia da Semana"
+                value={form.diaDaSemana}
+                onChange={(e) => setForm((prev) => ({ ...prev, diaDaSemana: e.target.value }))}
+                fullWidth
+              />
+            </Stack>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+              <TextField
+                label="Fruta"
+                value={form.fruta}
+                onChange={(e) => setForm((prev) => ({ ...prev, fruta: e.target.value }))}
+                fullWidth
+              />
+              <TextField
+                label="Comida"
+                value={form.comida}
+                onChange={(e) => setForm((prev) => ({ ...prev, comida: e.target.value }))}
+                fullWidth
+              />
+            </Stack>
             <Alert severity="info">
               Os textos cadastrados aqui abastecem a seção pública de Orixás, então a consistência editorial impacta diretamente o PublicWebsite.
             </Alert>
           </Stack>
         </DialogContent>
-        <DialogActions>
+        {dialogError && (
+          <Alert severity="error" sx={{ mx: 3, mb: 1 }}>{dialogError}</Alert>
+        )}
+        <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleCloseDialog}>Cancelar</Button>
+          {editingItem && (
+            <Button variant="outlined" color="error" onClick={handleDeleteOrixa}>
+              Excluir
+            </Button>
+          )}
           <Button variant="contained" onClick={handleSubmit}>
             {editingItem ? 'Salvar alterações' : 'Criar Orixá'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={confirmOpen} onClose={handleCloseConfirm} fullWidth maxWidth="sm">
-        <DialogTitle>Inativar Orixá?</DialogTitle>
+      <Dialog open={confirmDeleteOpen} onClose={() => !deleting && setConfirmDeleteOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Excluir Orixá</DialogTitle>
         <DialogContent>
-          <Alert severity="warning" sx={{ mt: 1 }}>
-            {confirmTarget ? `O Orixá “${confirmTarget.name}” será marcado como inativo e deixará de aparecer no portal.` : 'Este Orixá será marcado como inativo e deixará de aparecer no portal.'}
+          <Alert severity="error" sx={{ mt: 1 }}>
+            Esta ação é permanente e não pode ser desfeita. O Orixá{' '}
+            <strong>{editingItem?.name}</strong> será removido definitivamente.
           </Alert>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseConfirm} disabled={deactivating}>Cancelar</Button>
-          <Button variant="contained" color="warning" onClick={handleConfirmDeactivate} disabled={deactivating}>
-            Inativar
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={deleting}>Cancelar</Button>
+          <Button variant="contained" color="error" onClick={handleConfirmDelete} disabled={deleting}>
+            {deleting ? 'Excluindo...' : 'Excluir definitivamente'}
           </Button>
         </DialogActions>
       </Dialog>

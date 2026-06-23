@@ -12,10 +12,11 @@ namespace Batuara.Domain.Entities
         public EventType Type { get; private set; }
         public string? ImageUrl { get; private set; }
         public string? Location { get; private set; }
+        public string? CardColor { get; private set; }
 
         private Event() { } // For EF Core
 
-        public Event(string title, string description, EventDate eventDate, EventType type, string? location = null, string? imageUrl = null)
+        public Event(string title, string description, EventDate eventDate, EventType type, string? location = null, string? imageUrl = null, string? cardColor = null)
         {
             ValidateEvent(title, description, eventDate);
             
@@ -25,6 +26,7 @@ namespace Batuara.Domain.Entities
             Type = type;
             Location = location;
             ImageUrl = imageUrl;
+            CardColor = cardColor;
 
             // Disparar domain event
             AddDomainEvent(new EventCreatedDomainEvent(this));
@@ -83,6 +85,12 @@ namespace Batuara.Domain.Entities
             UpdateTimestamp();
             
             AddDomainEvent(new EventUpdatedDomainEvent(this, [nameof(ImageUrl)]));
+        }
+
+        public void UpdateCardColor(string? cardColor)
+        {
+            CardColor = cardColor;
+            UpdateTimestamp();
         }
 
         public void UpdateType(EventType type)

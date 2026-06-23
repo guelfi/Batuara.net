@@ -29,7 +29,6 @@ import {
   ArrowBackIos as ArrowBackIosIcon,
   ArrowForwardIos as ArrowForwardIosIcon,
   Close as CloseIcon,
-  Delete as DeleteIcon,
   Edit as EditIcon,
 } from '@mui/icons-material';
 import { addMonths, subMonths, format } from 'date-fns';
@@ -118,6 +117,32 @@ const toIsoDateOnly = (value: Date) => {
   return `${value.getFullYear()}-${pad2(value.getMonth() + 1)}-${pad2(value.getDate())}`;
 };
 
+const attendanceTypeColors: Record<AttendanceType, string> = {
+  [AttendanceType.Kardecismo]: '#1976d2',
+  [AttendanceType.Umbanda]: '#7b1fa2',
+  [AttendanceType.Palestra]: '#0288d1',
+  [AttendanceType.Curso]: '#388e3c',
+  [AttendanceType.Festa]: '#f57c00',
+};
+
+const normalizeAttendanceType = (value: unknown): AttendanceType => {
+  if (typeof value === 'number') return value as AttendanceType;
+  const nameMap: Record<string, AttendanceType> = {
+    Kardecismo: AttendanceType.Kardecismo,
+    Umbanda: AttendanceType.Umbanda,
+    Palestra: AttendanceType.Palestra,
+    Curso: AttendanceType.Curso,
+    Festa: AttendanceType.Festa,
+  };
+  if (typeof value === 'string' && nameMap[value] !== undefined) return nameMap[value];
+  return AttendanceType.Kardecismo;
+};
+
+const getAttendanceTypeColor = (type: unknown): string => {
+  const normalized = normalizeAttendanceType(type);
+  return attendanceTypeColors[normalized] ?? '#1976d2';
+};
+
 const CalendarPage: React.FC = () => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
@@ -127,9 +152,8 @@ const CalendarPage: React.FC = () => {
   const [gridError, setGridError] = React.useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editingItem, setEditingItem] = React.useState<CalendarAttendance | null>(null);
-  const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [confirmTarget, setConfirmTarget] = React.useState<CalendarAttendance | null>(null);
-  const [deactivating, setDeactivating] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false);
   const [form, setForm] = React.useState<CalendarFormState>(initialFormState);
   const [formErrors, setFormErrors] = React.useState<{
     description?: string;
@@ -195,6 +219,14 @@ const CalendarPage: React.FC = () => {
   const columns: GridColDef<CalendarAttendance>[] = isXs
     ? [
         {
+          field: 'actions',
+          type: 'actions',
+          width: 56,
+          getActions: (params) => [
+            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
+          ],
+        },
+        {
           field: 'summary',
           headerName: 'Atendimento',
           flex: 1,
@@ -221,43 +253,56 @@ const CalendarPage: React.FC = () => {
         {
           field: 'isActive',
           headerName: 'Status',
-          width: 80,
+          width: 90,
           renderCell: (params) => (
-            <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
-              {params.row.isActive ? 'Ativo' : 'Inativo'}
-            </Typography>
+            <Chip size="small" label={params.row.isActive ? 'Ativo' : 'Cancelado'} color={params.row.isActive ? 'success' : 'error'} />
           ),
-        },
-        {
-          field: 'actions',
-          type: 'actions',
-          width: 80,
-          getActions: (params) => [
-            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
-          ],
         },
       ]
     : [
         {
+          field: 'actions',
+          type: 'actions',
+          width: 56,
+          getActions: (params) => [
+            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
+          ],
+        },
+        {
           field: 'date',
           headerName: 'Data',
-          flex: 1,
-          minWidth: 120,
+          flex: 0.8,
+          minWidth: 110,
           renderCell: (params) => formatDateOnlyPtBr(params.row.date),
         },
         {
           field: 'type',
           headerName: 'Tipo',
-          flex: 1,
-          minWidth: 140,
-          renderCell: (params) => <Chip size="small" color="primary" label={attendanceLabels[params.row.type as AttendanceType]} />,
+          minWidth: 130,
+          flex: 0.9,
+          renderCell: (params) => {
+            const normalized = normalizeAttendanceType(params.row.type);
+            const color = getAttendanceTypeColor(params.row.type);
+            return (
+              <Chip
+                size="small"
+                variant="outlined"
+                label={attendanceLabels[normalized]}
+                sx={{
+                  color,
+                  borderColor: `color-mix(in srgb, ${color} 50%, transparent)`,
+                  backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)`,
+                  fontWeight: 700,
+                }}
+              />
+            );
+          },
         },
         {
           field: 'schedule',
           headerName: 'Horário',
-          flex: 1,
-          minWidth: 130,
+          flex: 0.8,
+          minWidth: 120,
           valueGetter: (_, row) => `${(row.startTime || '').slice(0, 5)} - ${(row.endTime || '').slice(0, 5)}`,
         },
         {
@@ -270,8 +315,8 @@ const CalendarPage: React.FC = () => {
         {
           field: 'requiresRegistration',
           headerName: 'Inscrição',
-          flex: 0.9,
-          minWidth: 120,
+          flex: 0.7,
+          minWidth: 110,
           renderCell: (params) => (
             <Chip
               size="small"
@@ -283,21 +328,11 @@ const CalendarPage: React.FC = () => {
         {
           field: 'isActive',
           headerName: 'Status',
-          flex: 0.8,
+          flex: 0.7,
           minWidth: 110,
           renderCell: (params) => (
-            <Chip size="small" label={params.row.isActive ? 'Ativo' : 'Inativo'} color={params.row.isActive ? 'success' : 'default'} />
+            <Chip size="small" label={params.row.isActive ? 'Ativo' : 'Cancelado'} color={params.row.isActive ? 'success' : 'error'} />
           ),
-        },
-        {
-          field: 'actions',
-          type: 'actions',
-          headerName: 'Ações',
-          width: 110,
-          getActions: (params) => [
-            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
-          ],
         },
       ];
 
@@ -321,7 +356,7 @@ const CalendarPage: React.FC = () => {
         date: item.date.slice(0, 10),
         startTime: (item.startTime || '').slice(0, 5),
         endTime: (item.endTime || '').slice(0, 5),
-        type: item.type,
+        type: normalizeAttendanceType(item.type),
         description: item.description || '',
         observations: item.observations || '',
         requiresRegistration: item.requiresRegistration,
@@ -341,17 +376,30 @@ const CalendarPage: React.FC = () => {
     setFormErrors({});
   };
 
-  const handleRequestDeactivate = (item: CalendarAttendance) => {
-    setConfirmTarget(item);
-    setConfirmOpen(true);
+  const handleDeleteAttendance = () => {
+    if (!editingItem) return;
+    setConfirmDeleteOpen(true);
   };
 
-  const handleCloseConfirm = () => {
-    if (deactivating) {
-      return;
+  const handleConfirmDelete = async () => {
+    if (!editingItem) return;
+    setDeleting(true);
+    try {
+      await apiService.deleteAttendance(String(editingItem.id));
+      setConfirmDeleteOpen(false);
+      setFeedback({ open: true, message: 'Atendimento excluído com sucesso.', severity: 'success' });
+      handleCloseDialog();
+      await loadAttendances();
+    } catch (error: any) {
+      setConfirmDeleteOpen(false);
+      setFeedback({
+        open: true,
+        message: error?.response?.data?.message || 'Não foi possível excluir o atendimento.',
+        severity: 'error',
+      });
+    } finally {
+      setDeleting(false);
     }
-    setConfirmOpen(false);
-    setConfirmTarget(null);
   };
 
   const validateForm = (): typeof formErrors => {
@@ -409,9 +457,7 @@ const CalendarPage: React.FC = () => {
         const nextMaxCapacity = form.maxCapacity ? Number(form.maxCapacity) : null;
         if (nextMaxCapacity !== originalMaxCapacity) payload.maxCapacity = nextMaxCapacity;
 
-        if (form.isActive !== !!editingItem.isActive) payload.isActive = form.isActive;
-
-        await apiService.updateAttendance(String(editingItem.id), payload);
+            await apiService.updateAttendance(String(editingItem.id), payload);
         setFeedback({ open: true, message: 'Atendimento atualizado com sucesso.', severity: 'success' });
       } else {
         const payload = {
@@ -440,27 +486,6 @@ const CalendarPage: React.FC = () => {
     }
   };
 
-  const handleConfirmDeactivate = async () => {
-    if (!confirmTarget) {
-      return;
-    }
-
-    setDeactivating(true);
-    try {
-      await apiService.deleteAttendance(String(confirmTarget.id));
-      setFeedback({ open: true, message: 'Atendimento inativado com sucesso.', severity: 'success' });
-      handleCloseConfirm();
-      await loadAttendances();
-    } catch (error: any) {
-      setFeedback({
-        open: true,
-        message: error?.response?.data?.message || 'Não foi possível inativar o atendimento.',
-        severity: 'error',
-      });
-    } finally {
-      setDeactivating(false);
-    }
-  };
 
   return (
     <Box>
@@ -652,6 +677,7 @@ const CalendarPage: React.FC = () => {
               error={!!formErrors.description}
               helperText={formErrors.description}
               fullWidth
+              sx={formErrors.description ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
             />
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
               <DatePicker
@@ -669,6 +695,7 @@ const CalendarPage: React.FC = () => {
                     fullWidth: true,
                     error: !!formErrors.date,
                     helperText: formErrors.date,
+                    sx: formErrors.date ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {},
                   },
                 }}
               />
@@ -687,6 +714,7 @@ const CalendarPage: React.FC = () => {
                     fullWidth: true,
                     error: !!formErrors.startTime,
                     helperText: formErrors.startTime,
+                    sx: formErrors.startTime ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {},
                   },
                 }}
               />
@@ -705,6 +733,7 @@ const CalendarPage: React.FC = () => {
                     fullWidth: true,
                     error: !!formErrors.endTime,
                     helperText: formErrors.endTime,
+                    sx: formErrors.endTime ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {},
                   },
                 }}
               />
@@ -734,6 +763,7 @@ const CalendarPage: React.FC = () => {
                 error={!!formErrors.maxCapacity}
                 helperText={formErrors.maxCapacity}
                 fullWidth
+                sx={formErrors.maxCapacity ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
               />
             </Stack>
             <TextField
@@ -757,19 +787,6 @@ const CalendarPage: React.FC = () => {
               }
               label="Exige inscrição prévia"
             />
-            {editingItem && (
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={form.isActive}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setForm((prev: CalendarFormState) => ({ ...prev, isActive: e.target.checked }))
-                    }
-                  />
-                }
-                label="Atendimento ativo"
-              />
-            )}
             {(form.type === AttendanceType.Festa || form.type === AttendanceType.Curso || form.type === AttendanceType.Palestra) && (
               <Alert severity="warning">
                 Atenção: Para eventos especiais como Festas, Bazares ou Cursos, recomendamos utilizar a seção{' '}
@@ -801,10 +818,20 @@ const CalendarPage: React.FC = () => {
                 <Button onClick={handleCloseDialog} fullWidth>
                   Cancelar
                 </Button>
+                {editingItem && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={handleDeleteAttendance}
+                    disabled={deleting}
+                    fullWidth
+                  >
+                    Excluir
+                  </Button>
+                )}
                 <Button
                   variant="contained"
                   onClick={handleSubmit}
-                  disabled={editingItem !== null && (form.type === AttendanceType.Festa || form.type === AttendanceType.Curso)}
                   fullWidth
                 >
                   {editingItem ? 'Salvar' : 'Criar'}
@@ -814,10 +841,19 @@ const CalendarPage: React.FC = () => {
           ) : (
             <DialogActions>
               <Button onClick={handleCloseDialog}>Cancelar</Button>
+              {editingItem && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={handleDeleteAttendance}
+                  disabled={deleting}
+                >
+                  Excluir
+                </Button>
+              )}
               <Button
                 variant="contained"
                 onClick={handleSubmit}
-                disabled={editingItem !== null && (form.type === AttendanceType.Festa || form.type === AttendanceType.Curso)}
               >
                 {editingItem ? 'Salvar alterações' : 'Criar atendimento'}
               </Button>
@@ -826,17 +862,20 @@ const CalendarPage: React.FC = () => {
         </Dialog>
       </LocalizationProvider>
 
-      <Dialog open={confirmOpen} onClose={handleCloseConfirm} fullWidth maxWidth="sm">
-        <DialogTitle>Inativar atendimento?</DialogTitle>
+      <Dialog open={confirmDeleteOpen} onClose={() => !deleting && setConfirmDeleteOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Excluir atendimento</DialogTitle>
         <DialogContent>
-          <Alert severity="warning" sx={{ mt: 1 }}>
-            {confirmTarget ? `O atendimento de ${formatDateOnlyPtBr(confirmTarget.date)} será marcado como inativo e não ficará disponível para visitantes.` : 'Este atendimento será marcado como inativo e não ficará disponível para visitantes.'}
+          <Alert severity="error" sx={{ mt: 1 }}>
+            Esta ação é permanente e não pode ser desfeita. O atendimento de{' '}
+            <strong>{editingItem ? formatDateOnlyPtBr(editingItem.date) : ''}</strong> será removido definitivamente.
           </Alert>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseConfirm} disabled={deactivating}>Cancelar</Button>
-          <Button variant="contained" color="warning" onClick={handleConfirmDeactivate} disabled={deactivating}>
-            Inativar
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={deleting}>
+            Cancelar
+          </Button>
+          <Button variant="contained" color="error" onClick={handleConfirmDelete} disabled={deleting}>
+            {deleting ? 'Excluindo...' : 'Excluir definitivamente'}
           </Button>
         </DialogActions>
       </Dialog>

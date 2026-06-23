@@ -13,5 +13,6 @@ namespace Batuara.Application.Events.Models
         public EventType Type { get; set; }
         public string? Location { get; set; }
         public string? ImageUrl { get; set; }
+        public string? CardColor { get; set; }
     }
 }

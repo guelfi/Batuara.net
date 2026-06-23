@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Batuara.Domain.Entities;
 using System.Text.Json;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Batuara.Infrastructure.Data.Configurations
 {
@@ -40,6 +43,18 @@ namespace Batuara.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasDefaultValue(0);
 
+            builder.Property(o => o.Comida)
+                .HasMaxLength(200);
+
+            builder.Property(o => o.DiaDaSemana)
+                .HasMaxLength(200);
+
+            builder.Property(o => o.Fruta)
+                .HasMaxLength(200);
+
+            builder.Property(o => o.Saudacao)
+                .HasMaxLength(200);
+
             // Audit Fields
             builder.Property(o => o.CreatedAt)
                 .IsRequired()
@@ -54,26 +69,34 @@ namespace Batuara.Infrastructure.Data.Configurations
                 .HasDefaultValue(true);
 
             // Collection Properties - Store as JSON
+            var stringListComparer = new ValueComparer<IReadOnlyList<string>>(
+                (a, b) => a != null && b != null && a.SequenceEqual(b),
+                v => v.Aggregate(0, (h, s) => HashCode.Combine(h, s.GetHashCode())),
+                v => (IReadOnlyList<string>)v.ToList());
+
             builder.Property(o => o.Characteristics)
                 .HasConversion(
                     v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
+                    v => (IReadOnlyList<string>)(JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>()))
                 .HasColumnType("jsonb")
-                .HasColumnName("Characteristics");
+                .HasColumnName("Characteristics")
+                .Metadata.SetValueComparer(stringListComparer);
 
             builder.Property(o => o.Colors)
                 .HasConversion(
                     v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
+                    v => (IReadOnlyList<string>)(JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>()))
                 .HasColumnType("jsonb")
-                .HasColumnName("Colors");
+                .HasColumnName("Colors")
+                .Metadata.SetValueComparer(stringListComparer);
 
             builder.Property(o => o.Elements)
                 .HasConversion(
                     v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
+                    v => (IReadOnlyList<string>)(JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>()))
                 .HasColumnType("jsonb")
-                .HasColumnName("Elements");
+                .HasColumnName("Elements")
+                .Metadata.SetValueComparer(stringListComparer);
 
             // Indexes
             builder.HasIndex(o => o.Name)

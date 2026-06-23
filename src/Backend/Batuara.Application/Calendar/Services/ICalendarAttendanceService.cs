@@ -33,5 +33,6 @@ namespace Batuara.Application.Calendar.Services
         Task<(CalendarAttendanceDto? Attendance, string[] Errors, bool Conflict)> CreateAsync(CreateCalendarAttendanceRequest request);
         Task<(CalendarAttendanceDto? Attendance, string[] Errors, bool Conflict)> UpdateAsync(int id, UpdateCalendarAttendanceRequest request);
         Task<(bool Deleted, string[] Errors)> SoftDeleteAsync(int id);
+        Task<(bool Deleted, string[] Errors)> HardDeleteAsync(int id);
     }
 }

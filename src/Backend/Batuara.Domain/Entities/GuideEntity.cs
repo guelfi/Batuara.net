@@ -6,13 +6,13 @@ namespace Batuara.Domain.Entities
     {
         public string Name { get; private set; } = string.Empty;
         public string Description { get; private set; } = string.Empty;
-        public string? PhotoUrl { get; private set; }
         public List<string> Specialties { get; private set; } = new();
-        public DateTime EntryDate { get; private set; }
-        public string? Email { get; private set; }
-        public string? Phone { get; private set; }
-        public string? Whatsapp { get; private set; }
         public int DisplayOrder { get; private set; }
+        public string? Comida { get; private set; }
+        public string? Fruta { get; private set; }
+        public string? DiaDaSemana { get; private set; }
+        public string? Cor { get; private set; }
+        public string? Saudacao { get; private set; }
 
         private GuideEntity()
         {
@@ -22,24 +22,22 @@ namespace Batuara.Domain.Entities
             string name,
             string description,
             IEnumerable<string> specialties,
-            DateTime entryDate,
             int displayOrder,
-            string? photoUrl = null,
-            string? email = null,
-            string? phone = null,
-            string? whatsapp = null)
+            string? comida = null,
+            string? fruta = null,
+            string? diaDaSemana = null,
+            string? cor = null,
+            string? saudacao = null)
         {
-            UpdateContent(name, description, specialties, displayOrder, photoUrl);
-            UpdateContacts(email, phone, whatsapp);
-            EntryDate = NormalizeDate(entryDate);
+            UpdateContent(name, description, specialties, displayOrder);
+            UpdateExtendedInfo(comida, fruta, diaDaSemana, cor, saudacao);
         }
 
         public void UpdateContent(
             string name,
             string description,
             IEnumerable<string> specialties,
-            int displayOrder,
-            string? photoUrl = null)
+            int displayOrder)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Guide name cannot be empty", nameof(name));
@@ -63,21 +61,16 @@ namespace Batuara.Domain.Entities
             Description = description.Trim();
             Specialties = normalizedSpecialties;
             DisplayOrder = displayOrder;
-            PhotoUrl = string.IsNullOrWhiteSpace(photoUrl) ? null : photoUrl.Trim();
             UpdateTimestamp();
         }
 
-        public void UpdateEntryDate(DateTime entryDate)
+        public void UpdateExtendedInfo(string? comida, string? fruta, string? diaDaSemana, string? cor, string? saudacao)
         {
-            EntryDate = NormalizeDate(entryDate);
-            UpdateTimestamp();
-        }
-
-        public void UpdateContacts(string? email, string? phone, string? whatsapp)
-        {
-            Email = NormalizeOptional(email);
-            Phone = NormalizeOptional(phone);
-            Whatsapp = NormalizeOptional(whatsapp);
+            Comida = string.IsNullOrWhiteSpace(comida) ? null : comida.Trim();
+            Fruta = string.IsNullOrWhiteSpace(fruta) ? null : fruta.Trim();
+            DiaDaSemana = string.IsNullOrWhiteSpace(diaDaSemana) ? null : diaDaSemana.Trim();
+            Cor = string.IsNullOrWhiteSpace(cor) ? null : cor.Trim();
+            Saudacao = string.IsNullOrWhiteSpace(saudacao) ? null : saudacao.Trim();
             UpdateTimestamp();
         }
 
@@ -90,16 +83,6 @@ namespace Batuara.Domain.Entities
         public void Deactivate()
         {
             SetInactive();
-        }
-
-        private static string? NormalizeOptional(string? value)
-        {
-            return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-        }
-
-        private static DateTime NormalizeDate(DateTime value)
-        {
-            return DateTime.SpecifyKind(value.Date, DateTimeKind.Utc);
         }
     }
 }

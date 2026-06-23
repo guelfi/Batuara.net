@@ -10,14 +10,12 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
-  FormControlLabel,
   InputLabel,
   MenuItem,
   Paper,
   Select,
   Snackbar,
   Stack,
-  Switch,
   TextField,
   Typography,
   IconButton,
@@ -25,8 +23,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material/Select';
-import { Add as AddIcon, Close as CloseIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Add as AddIcon, Close as CloseIcon, Edit as EditIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import apiService from '../services/api';
 import GridPager from '../components/common/GridPager';
@@ -73,14 +70,13 @@ const UmbandaLinesPage: React.FC = () => {
   const [gridError, setGridError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<UmbandaLine | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTarget, setConfirmTarget] = useState<UmbandaLine | null>(null);
-  const [deactivating, setDeactivating] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [dialogError, setDialogError] = useState<string | null>(null);
   const [form, setForm] = useState<UmbandaLineForm>(initialForm);
   const [query, setQuery] = useState('');
   const [entityFilter, setEntityFilter] = useState('');
   const [dayFilter, setDayFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'true' | 'false'>('all');
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [detailsTitle, setDetailsTitle] = useState('');
   const [detailsItems, setDetailsItems] = useState<string[]>([]);
@@ -101,7 +97,6 @@ const UmbandaLinesPage: React.FC = () => {
         q: query || undefined,
         entity: entityFilter || undefined,
         workingDay: dayFilter || undefined,
-        isActive: statusFilter === 'all' ? undefined : statusFilter === 'true',
         pageNumber: paginationModel.page + 1,
         pageSize: paginationModel.pageSize,
         sort: 'displayOrder:asc',
@@ -122,7 +117,7 @@ const UmbandaLinesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [dayFilter, entityFilter, paginationModel.page, paginationModel.pageSize, query, statusFilter]);
+  }, [dayFilter, entityFilter, paginationModel.page, paginationModel.pageSize, query]);
 
   useEffect(() => {
     loadLines();
@@ -136,6 +131,14 @@ const UmbandaLinesPage: React.FC = () => {
 
   const columns: GridColDef[] = isXs
     ? [
+        {
+          field: 'actions',
+          type: 'actions',
+          width: 60,
+          getActions: (params) => [
+            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
+          ],
+        },
         {
           field: 'summary',
           headerName: 'Nome',
@@ -169,27 +172,16 @@ const UmbandaLinesPage: React.FC = () => {
           sortable: false,
           filterable: false,
         },
-        {
-          field: 'isActive',
-          headerName: 'Status',
-          width: 80,
-          renderCell: (params) => (
-            <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
-              {params.row.isActive ? 'Ativa' : 'Inativa'}
-            </Typography>
-          ),
-        },
+      ]
+    : [
         {
           field: 'actions',
           type: 'actions',
-          width: 104,
+          width: 60,
           getActions: (params) => [
             <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
           ],
         },
-      ]
-    : [
         { field: 'displayOrder', headerName: 'Ordem', width: 90 },
         { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180 },
         {
@@ -221,21 +213,6 @@ const UmbandaLinesPage: React.FC = () => {
           minWidth: 180,
           renderCell: (params) => params.row.workingDays.join(', ') || 'Não informado',
         },
-        {
-          field: 'isActive',
-          headerName: 'Status',
-          width: 110,
-          renderCell: (params) => <Chip size="small" label={params.row.isActive ? 'Ativa' : 'Inativa'} color={params.row.isActive ? 'success' : 'default'} />,
-        },
-        {
-          field: 'actions',
-          type: 'actions',
-          width: 110,
-          getActions: (params) => [
-            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
-          ],
-        },
       ];
 
   const handleOpenDialog = (item?: UmbandaLine) => {
@@ -264,19 +241,33 @@ const UmbandaLinesPage: React.FC = () => {
     setEditingItem(null);
     setForm(initialForm);
     setFormErrors({});
+    setDialogError(null);
   };
 
-  const handleRequestDeactivate = (item: UmbandaLine) => {
-    setConfirmTarget(item);
-    setConfirmOpen(true);
+  const handleDeleteLine = () => {
+    if (!editingItem) return;
+    setConfirmDeleteOpen(true);
   };
 
-  const handleCloseConfirm = () => {
-    if (deactivating) {
-      return;
+  const handleConfirmDelete = async () => {
+    if (!editingItem) return;
+    setDeleting(true);
+    try {
+      await apiService.deleteUmbandaLine(String(editingItem.id));
+      setConfirmDeleteOpen(false);
+      setFeedback({ open: true, message: 'Linha de Umbanda excluída com sucesso.', severity: 'success' });
+      handleCloseDialog();
+      await loadLines();
+    } catch (error: any) {
+      setConfirmDeleteOpen(false);
+      setFeedback({
+        open: true,
+        message: error?.response?.data?.message || 'Não foi possível excluir a linha de Umbanda.',
+        severity: 'error',
+      });
+    } finally {
+      setDeleting(false);
     }
-    setConfirmOpen(false);
-    setConfirmTarget(null);
   };
 
   const handleSubmit = async () => {
@@ -317,28 +308,6 @@ const UmbandaLinesPage: React.FC = () => {
     }
   };
 
-  const handleConfirmDeactivate = async () => {
-    if (!confirmTarget) {
-      return;
-    }
-
-    setDeactivating(true);
-    try {
-      await apiService.deleteUmbandaLine(String(confirmTarget.id));
-
-      setFeedback({ open: true, message: 'Linha de Umbanda inativada com sucesso.', severity: 'success' });
-      handleCloseConfirm();
-      await loadLines();
-    } catch (error: any) {
-      setFeedback({
-        open: true,
-        message: error?.response?.data?.message || 'Não foi possível inativar a linha de Umbanda.',
-        severity: 'error',
-      });
-    } finally {
-      setDeactivating(false);
-    }
-  };
 
   return (
     <Box>
@@ -459,18 +428,6 @@ const UmbandaLinesPage: React.FC = () => {
               }}
               fullWidth
             />
-            <FormControl sx={{ minWidth: 160 }}>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={statusFilter}
-                label="Status"
-                onChange={(e: SelectChangeEvent) => setStatusFilter(e.target.value as 'all' | 'true' | 'false')}
-              >
-                <MenuItem value="all">Todos</MenuItem>
-                <MenuItem value="true">Ativas</MenuItem>
-                <MenuItem value="false">Inativas</MenuItem>
-              </Select>
-            </FormControl>
           </Stack>
         )}
       </Paper>
@@ -560,6 +517,7 @@ const UmbandaLinesPage: React.FC = () => {
                 }
                 error={!!formErrors.name}
                 helperText={formErrors.name}
+                sx={formErrors.name ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
                 fullWidth
               />
               <TextField
@@ -580,6 +538,7 @@ const UmbandaLinesPage: React.FC = () => {
               }
               error={!!formErrors.description}
               helperText={formErrors.description}
+              sx={formErrors.description ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
               fullWidth
               multiline
               minRows={3}
@@ -592,6 +551,7 @@ const UmbandaLinesPage: React.FC = () => {
               }
               error={!!formErrors.characteristics}
               helperText={formErrors.characteristics}
+              sx={formErrors.characteristics ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
               fullWidth
               multiline
               minRows={2}
@@ -613,6 +573,7 @@ const UmbandaLinesPage: React.FC = () => {
                 setForm((prev) => ({ ...prev, entities: e.target.value }))
               }
               error={!!formErrors.entities} helperText={formErrors.entities}
+              sx={formErrors.entities ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
               fullWidth
             />
             <TextField
@@ -623,43 +584,38 @@ const UmbandaLinesPage: React.FC = () => {
               }
               fullWidth
             />
-            {editingItem && (
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={form.isActive}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setForm((prev) => ({ ...prev, isActive: e.target.checked }))
-                    }
-                  />
-                }
-                label="Linha ativa"
-              />
-            )}
             <Alert severity="info">
               Use o mesmo vocabulário doutrinário adotado no portal público para manter consistência editorial e semântica.
             </Alert>
           </Stack>
         </DialogContent>
-        <DialogActions>
+        {dialogError && (
+          <Alert severity="error" sx={{ mx: 3, mb: 1 }}>{dialogError}</Alert>
+        )}
+        <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleCloseDialog}>Cancelar</Button>
+          {editingItem && (
+            <Button variant="outlined" color="error" onClick={handleDeleteLine}>
+              Excluir
+            </Button>
+          )}
           <Button variant="contained" onClick={handleSubmit}>
             {editingItem ? 'Salvar alterações' : 'Criar linha'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={confirmOpen} onClose={handleCloseConfirm} fullWidth maxWidth="sm">
-        <DialogTitle>Inativar linha de Umbanda?</DialogTitle>
+      <Dialog open={confirmDeleteOpen} onClose={() => !deleting && setConfirmDeleteOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Excluir linha de Umbanda</DialogTitle>
         <DialogContent>
-          <Alert severity="warning" sx={{ mt: 1 }}>
-            {confirmTarget ? `A linha “${confirmTarget.name}” será marcada como inativa e deixará de aparecer no portal.` : 'Esta linha será marcada como inativa e deixará de aparecer no portal.'}
+          <Alert severity="error" sx={{ mt: 1 }}>
+            Esta ação é permanente. A linha <strong>{editingItem?.name}</strong> será removida definitivamente.
           </Alert>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseConfirm} disabled={deactivating}>Cancelar</Button>
-          <Button variant="contained" color="warning" onClick={handleConfirmDeactivate} disabled={deactivating}>
-            Inativar
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={deleting}>Cancelar</Button>
+          <Button variant="contained" color="error" onClick={handleConfirmDelete} disabled={deleting}>
+            {deleting ? 'Excluindo...' : 'Excluir definitivamente'}
           </Button>
         </DialogActions>
       </Dialog>
