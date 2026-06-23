@@ -9,8 +9,6 @@ namespace Batuara.Domain.Entities
     {
         public string Name { get; private set; } = string.Empty;
         public string Description { get; private set; } = string.Empty;
-        public string Origin { get; private set; } = string.Empty;
-        public string BatuaraTeaching { get; private set; } = string.Empty;
         public string? ImageUrl { get; private set; }
         public int DisplayOrder { get; private set; }
         public string? Comida { get; private set; }
@@ -31,20 +29,16 @@ namespace Batuara.Domain.Entities
         public Orixa(
             string name, 
             string description, 
-            string origin, 
-            string batuaraTeaching,
             IEnumerable<string> characteristics,
             IEnumerable<string> colors,
             IEnumerable<string> elements,
             int displayOrder = 0,
             string? imageUrl = null)
         {
-            ValidateOrixa(name, description, origin, batuaraTeaching, characteristics, colors, elements);
+            ValidateOrixa(name, description, characteristics, colors, elements);
             
             Name = name;
             Description = description;
-            Origin = origin;
-            BatuaraTeaching = batuaraTeaching;
             DisplayOrder = displayOrder;
             ImageUrl = imageUrl;
             
@@ -56,8 +50,6 @@ namespace Batuara.Domain.Entities
         private static void ValidateOrixa(
             string name, 
             string description, 
-            string origin, 
-            string batuaraTeaching,
             IEnumerable<string> characteristics,
             IEnumerable<string> colors,
             IEnumerable<string> elements)
@@ -71,20 +63,8 @@ namespace Batuara.Domain.Entities
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentException("Orixa description cannot be empty", nameof(description));
 
-            if (description.Length > 5000)
-                throw new ArgumentException("Orixa description cannot exceed 5000 characters", nameof(description));
-
-            if (string.IsNullOrWhiteSpace(origin))
-                throw new ArgumentException("Orixa origin cannot be empty", nameof(origin));
-
-            if (origin.Length > 1000)
-                throw new ArgumentException("Orixa origin cannot exceed 1000 characters", nameof(origin));
-
-            if (string.IsNullOrWhiteSpace(batuaraTeaching))
-                throw new ArgumentException("Batuara teaching cannot be empty", nameof(batuaraTeaching));
-
-            if (batuaraTeaching.Length > 5000)
-                throw new ArgumentException("Batuara teaching cannot exceed 5000 characters", nameof(batuaraTeaching));
+            if (description.Length > 10000)
+                throw new ArgumentException("Orixa description cannot exceed 10000 characters", nameof(description));
 
             if (characteristics == null || !characteristics.Any())
                 throw new ArgumentException("Orixa must have at least one characteristic", nameof(characteristics));
@@ -96,7 +76,7 @@ namespace Batuara.Domain.Entities
                 throw new ArgumentException("Orixa must have at least one element", nameof(elements));
         }
 
-        public void UpdateBasicInfo(string name, string description, string origin, int displayOrder)
+        public void UpdateBasicInfo(string name, string description, int displayOrder)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Orixa name cannot be empty", nameof(name));
@@ -104,25 +84,9 @@ namespace Batuara.Domain.Entities
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentException("Orixa description cannot be empty", nameof(description));
 
-            if (string.IsNullOrWhiteSpace(origin))
-                throw new ArgumentException("Orixa origin cannot be empty", nameof(origin));
-
             Name = name;
             Description = description;
-            Origin = origin;
             DisplayOrder = displayOrder;
-            UpdateTimestamp();
-        }
-
-        public void UpdateBatuaraTeaching(string batuaraTeaching)
-        {
-            if (string.IsNullOrWhiteSpace(batuaraTeaching))
-                throw new ArgumentException("Batuara teaching cannot be empty", nameof(batuaraTeaching));
-
-            if (batuaraTeaching.Length > 5000)
-                throw new ArgumentException("Batuara teaching cannot exceed 5000 characters", nameof(batuaraTeaching));
-
-            BatuaraTeaching = batuaraTeaching;
             UpdateTimestamp();
         }
 

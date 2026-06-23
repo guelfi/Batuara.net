@@ -30,8 +30,6 @@ namespace Batuara.Infrastructure.Tests.UmbandaLines
             {
                 Name = "Linha de Oxóssi",
                 Description = "Descrição",
-                Characteristics = "Caça, expansão e direcionamento",
-                BatuaraInterpretation = "Interpretação",
                 DisplayOrder = 1,
                 Entities = { "Caboclos", "Boiadeiros" },
                 WorkingDays = { "Sexta-feira" }

@@ -23,15 +23,7 @@ namespace Batuara.Infrastructure.Data.Configurations
 
             builder.Property(ul => ul.Description)
                 .IsRequired()
-                .HasMaxLength(5000);
-
-            builder.Property(ul => ul.Characteristics)
-                .IsRequired()
-                .HasMaxLength(3000);
-
-            builder.Property(ul => ul.BatuaraInterpretation)
-                .IsRequired()
-                .HasMaxLength(5000);
+                .HasMaxLength(15000);
 
             builder.Property(ul => ul.DisplayOrder)
                 .IsRequired()

@@ -31,8 +31,6 @@ import { Orixa } from '../types';
 type OrixaFormState = {
   name: string;
   description: string;
-  origin: string;
-  batuaraTeaching: string;
   displayOrder: string;
   characteristics: string;
   colors: string;
@@ -49,8 +47,6 @@ const validateOrixaForm = (form: OrixaFormState): OrixaFormErrors => {
   const errors: OrixaFormErrors = {};
   if (!form.name.trim()) errors.name = 'Nome é obrigatório.';
   if (!form.description.trim()) errors.description = 'Descrição é obrigatória.';
-  if (!form.origin.trim()) errors.origin = 'Origem é obrigatória.';
-  if (!form.batuaraTeaching.trim()) errors.batuaraTeaching = 'Ensinamento Batuara é obrigatório.';
   if (!form.colors.trim()) errors.colors = 'Informe pelo menos uma cor.';
   return errors;
 };
@@ -58,8 +54,6 @@ const validateOrixaForm = (form: OrixaFormState): OrixaFormErrors => {
 const initialFormState: OrixaFormState = {
   name: '',
   description: '',
-  origin: '',
-  batuaraTeaching: '',
   displayOrder: '1',
   characteristics: '',
   colors: '',
@@ -268,8 +262,6 @@ const OrixasPage: React.FC = () => {
       setForm({
         name: item.name,
         description: item.description,
-        origin: item.origin,
-        batuaraTeaching: item.batuaraTeaching,
         displayOrder: String(item.displayOrder),
         characteristics: item.characteristics.join(', '),
         colors: item.colors.join(', '),
@@ -332,8 +324,6 @@ const OrixasPage: React.FC = () => {
     const payload = {
       name: form.name,
       description: form.description,
-      origin: form.origin,
-      batuaraTeaching: form.batuaraTeaching,
       displayOrder: Math.max(1, Number(form.displayOrder || 1)),
       characteristics: splitCsv(form.characteristics),
       colors: splitCsv(form.colors),
@@ -498,23 +488,7 @@ const OrixasPage: React.FC = () => {
               onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
               error={!!formErrors.description} helperText={formErrors.description}
               sx={formErrors.description ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
-              fullWidth multiline minRows={3}
-            />
-            <TextField
-              label="Origem"
-              value={form.origin}
-              onChange={(e) => setForm((prev) => ({ ...prev, origin: e.target.value }))}
-              error={!!formErrors.origin} helperText={formErrors.origin}
-              sx={formErrors.origin ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
-              fullWidth multiline minRows={3}
-            />
-            <TextField
-              label="Ensinamento Batuara"
-              value={form.batuaraTeaching}
-              onChange={(e) => setForm((prev) => ({ ...prev, batuaraTeaching: e.target.value }))}
-              error={!!formErrors.batuaraTeaching} helperText={formErrors.batuaraTeaching}
-              sx={formErrors.batuaraTeaching ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
-              fullWidth multiline minRows={4}
+              fullWidth multiline minRows={6}
             />
             <TextField
               label="Características (separadas por vírgula)"

@@ -137,11 +137,9 @@ export interface Orixa {
   id: number;
   name: string;
   description: string;
-  origin: string;
   colors: string[];
   elements: string[];
   characteristics: string[];
-  batuaraTeaching: string;
   imageUrl?: string;
   displayOrder: number;
   saudacao?: string;
@@ -223,10 +221,8 @@ export interface UmbandaLine {
   id: number;
   name: string;
   description: string;
-  characteristics: string;
   entities: string[];
   workingDays: string[];
-  batuaraInterpretation: string;
   displayOrder: number;
   isActive: boolean;
   createdAt: string;

@@ -367,7 +367,7 @@ const OrixasSection: React.FC = () => {
                             overflow: 'hidden',
                           }}
                         >
-                          {orixa.batuaraTeaching}
+                          {orixa.characteristics?.slice(0, 3).join(' · ')}
                         </Typography>
                       </CardContent>
                     </Card>
@@ -449,25 +449,9 @@ const OrixasSection: React.FC = () => {
           <DialogContent>
             {selectedOrixa && (
               <Stack spacing={3} sx={{ mt: 1 }}>
-                <Typography variant="body1" color="text.secondary">
+                <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
                   {selectedOrixa.description}
                 </Typography>
-                <Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
-                    Origem e fundamento
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {selectedOrixa.origin}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
-                    Ensinamento na Casa Batuara
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
-                    {selectedOrixa.batuaraTeaching}
-                  </Typography>
-                </Box>
                 {(selectedOrixa.saudacao || selectedOrixa.diaDaSemana || selectedOrixa.fruta || selectedOrixa.comida) && (
                   <Box
                     sx={{

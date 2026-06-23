@@ -87,7 +87,7 @@ const UmbandaSection: React.FC = () => {
   };
 
   const getAccentColorFromLinha = (linha: UmbandaLine, index: number): string => {
-    const text = `${linha.name} ${linha.description} ${linha.characteristics} ${linha.batuaraInterpretation} ${linha.entities.join(' ')}`.toLowerCase();
+    const text = `${linha.name} ${linha.description} ${linha.entities.join(' ')}`.toLowerCase();
     const hex = text.match(/#(?:[0-9a-f]{3}|[0-9a-f]{6})\b/i)?.[0];
     if (hex) return hex;
 
@@ -389,18 +389,19 @@ const UmbandaSection: React.FC = () => {
                 </Box>
 
                 <Box>
-                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, fontSize: '0.8rem' }}>
-                    Atuação:
-                  </Typography>
                   <Typography
                     variant="body2"
                     sx={{
                       color: 'text.secondary',
                       fontSize: { xs: '0.82rem', md: '0.83rem' },
                       lineHeight: 1.35,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
                     }}
                   >
-                    {linha.characteristics}
+                    {linha.description}
                   </Typography>
                 </Box>
               </CardContent>
@@ -499,25 +500,9 @@ const UmbandaSection: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'grid', gap: 2, py: 1 }}>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
               {selectedLinha?.description}
             </Typography>
-            <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
-                Características
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {selectedLinha?.characteristics}
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
-                Interpretação Batuara
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {selectedLinha?.batuaraInterpretation}
-              </Typography>
-            </Box>
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
                 Entidades

@@ -93,8 +93,6 @@ namespace Batuara.Infrastructure.Orixas.Services
                 var entity = new Orixa(
                     request.Name,
                     request.Description,
-                    request.Origin,
-                    request.BatuaraTeaching,
                     request.Characteristics,
                     request.Colors,
                     request.Elements,
@@ -123,18 +121,12 @@ namespace Batuara.Infrastructure.Orixas.Services
 
             try
             {
-                if (request.Name != null || request.Description != null || request.Origin != null || request.DisplayOrder.HasValue)
+                if (request.Name != null || request.Description != null || request.DisplayOrder.HasValue)
                 {
                     var name = request.Name ?? entity.Name;
                     var description = request.Description ?? entity.Description;
-                    var origin = request.Origin ?? entity.Origin;
                     var displayOrder = request.DisplayOrder ?? entity.DisplayOrder;
-                    entity.UpdateBasicInfo(name, description, origin, displayOrder);
-                }
-
-                if (request.BatuaraTeaching != null)
-                {
-                    entity.UpdateBatuaraTeaching(request.BatuaraTeaching);
+                    entity.UpdateBasicInfo(name, description, displayOrder);
                 }
 
                 if (request.Characteristics != null)
@@ -184,8 +176,6 @@ namespace Batuara.Infrastructure.Orixas.Services
                 Id = o.Id,
                 Name = o.Name,
                 Description = o.Description,
-                Origin = o.Origin,
-                BatuaraTeaching = o.BatuaraTeaching,
                 ImageUrl = o.ImageUrl,
                 DisplayOrder = o.DisplayOrder,
                 Characteristics = o.Characteristics,

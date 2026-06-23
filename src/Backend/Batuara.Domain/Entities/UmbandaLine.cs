@@ -9,8 +9,6 @@ namespace Batuara.Domain.Entities
     {
         public string Name { get; private set; } = string.Empty;
         public string Description { get; private set; } = string.Empty;
-        public string Characteristics { get; private set; } = string.Empty;
-        public string BatuaraInterpretation { get; private set; } = string.Empty;
         public int DisplayOrder { get; private set; }
 
         private readonly List<string> _entities = new();
@@ -24,18 +22,14 @@ namespace Batuara.Domain.Entities
         public UmbandaLine(
             string name,
             string description,
-            string characteristics,
-            string batuaraInterpretation,
             IEnumerable<string> entities,
             IEnumerable<string>? workingDays = null,
             int displayOrder = 0)
         {
-            ValidateUmbandaLine(name, description, characteristics, batuaraInterpretation, entities);
+            ValidateUmbandaLine(name, description, entities);
             
             Name = name;
             Description = description;
-            Characteristics = characteristics;
-            BatuaraInterpretation = batuaraInterpretation;
             DisplayOrder = displayOrder;
             
             _entities.AddRange(entities);
@@ -46,8 +40,6 @@ namespace Batuara.Domain.Entities
         private static void ValidateUmbandaLine(
             string name,
             string description,
-            string characteristics,
-            string batuaraInterpretation,
             IEnumerable<string> entities)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -59,26 +51,14 @@ namespace Batuara.Domain.Entities
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentException("Umbanda line description cannot be empty", nameof(description));
 
-            if (description.Length > 5000)
-                throw new ArgumentException("Umbanda line description cannot exceed 5000 characters", nameof(description));
-
-            if (string.IsNullOrWhiteSpace(characteristics))
-                throw new ArgumentException("Umbanda line characteristics cannot be empty", nameof(characteristics));
-
-            if (characteristics.Length > 3000)
-                throw new ArgumentException("Umbanda line characteristics cannot exceed 3000 characters", nameof(characteristics));
-
-            if (string.IsNullOrWhiteSpace(batuaraInterpretation))
-                throw new ArgumentException("Batuara interpretation cannot be empty", nameof(batuaraInterpretation));
-
-            if (batuaraInterpretation.Length > 5000)
-                throw new ArgumentException("Batuara interpretation cannot exceed 5000 characters", nameof(batuaraInterpretation));
+            if (description.Length > 15000)
+                throw new ArgumentException("Umbanda line description cannot exceed 15000 characters", nameof(description));
 
             if (entities == null || !entities.Any())
                 throw new ArgumentException("Umbanda line must have at least one entity", nameof(entities));
         }
 
-        public void UpdateBasicInfo(string name, string description, string characteristics, int displayOrder)
+        public void UpdateBasicInfo(string name, string description, int displayOrder)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Umbanda line name cannot be empty", nameof(name));
@@ -86,25 +66,9 @@ namespace Batuara.Domain.Entities
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentException("Umbanda line description cannot be empty", nameof(description));
 
-            if (string.IsNullOrWhiteSpace(characteristics))
-                throw new ArgumentException("Umbanda line characteristics cannot be empty", nameof(characteristics));
-
             Name = name;
             Description = description;
-            Characteristics = characteristics;
             DisplayOrder = displayOrder;
-            UpdateTimestamp();
-        }
-
-        public void UpdateBatuaraInterpretation(string batuaraInterpretation)
-        {
-            if (string.IsNullOrWhiteSpace(batuaraInterpretation))
-                throw new ArgumentException("Batuara interpretation cannot be empty", nameof(batuaraInterpretation));
-
-            if (batuaraInterpretation.Length > 5000)
-                throw new ArgumentException("Batuara interpretation cannot exceed 5000 characters", nameof(batuaraInterpretation));
-
-            BatuaraInterpretation = batuaraInterpretation;
             UpdateTimestamp();
         }
 
