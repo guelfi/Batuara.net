@@ -63,6 +63,14 @@ namespace Batuara.Domain.Services
         {
             var errors = new List<string>();
 
+            var appropriateDays = GetAppropriateDays(attendance.Type);
+            var dayOfWeek = attendance.AttendanceDate.Date.DayOfWeek;
+            if (!appropriateDays.Contains(dayOfWeek))
+            {
+                var dayName = GetWeekdayPtBr(dayOfWeek);
+                errors.Add($"O tipo '{attendance.Type}' não é permitido em {dayName}.");
+            }
+
             if (attendance.MaxCapacity.HasValue && attendance.MaxCapacity <= 0)
             {
                 errors.Add("Capacidade máxima deve ser maior que zero");
