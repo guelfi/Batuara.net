@@ -45,9 +45,7 @@ namespace Batuara.Infrastructure.Data.SeedData
             {
                 new Orixa(
                     "Oxalá",
-                    "Tem origem na tradição Yorubá, onde é conhecido como Obatalá. Criador da humanidade e pai de todos os Orixás.",
-                    "Tradição Yorubá — África Ocidental. Conhecido como Obatalá, o criador da humanidade e pai de todos os Orixás.",
-                    "Reverenciado como o grande pai. Ensina humildade, paciência e amor incondicional. A paz interior e pureza de coração levam à elevação espiritual.",
+                    "Tem origem na tradição Yorubá, onde é conhecido como Obatalá. Criador da humanidade e pai de todos os Orixás.\n\nTradição Yorubá — África Ocidental. Conhecido como Obatalá, o criador da humanidade e pai de todos os Orixás.\n\nReverenciado como o grande pai. Ensina humildade, paciência e amor incondicional. A paz interior e pureza de coração levam à elevação espiritual.",
                     new[] { "Paciência", "Sabedoria", "Pureza", "Paz", "Criação", "Paternidade", "Humildade", "Amor incondicional" },
                     new[] { "Branco" },
                     new[] { "Ar", "Éter", "Luz" },
@@ -55,9 +53,7 @@ namespace Batuara.Infrastructure.Data.SeedData
                 ),
                 new Orixa(
                     "Iemanjá",
-                    "Divindade dos rios e mares, mãe de muitos Orixás e protetora das mulheres e crianças.",
-                    "Tradição Yorubá — África Ocidental. Conhecida como Yemoja, divindade dos rios e mares.",
-                    "Amor incondicional de mãe, proteção aos necessitados e importância da família espiritual. Mãe que nunca abandona seus filhos.",
+                    "Divindade dos rios e mares, mãe de muitos Orixás e protetora das mulheres e crianças.\n\nTradição Yorubá — África Ocidental. Conhecida como Yemoja, divindade dos rios e mares.\n\nAmor incondicional de mãe, proteção aos necessitados e importância da família espiritual. Mãe que nunca abandona seus filhos.",
                     new[] { "Maternidade", "Proteção", "Fertilidade", "Amor maternal", "Cura", "Acolhimento", "Generosidade", "Compaixão" },
                     new[] { "Azul" },
                     new[] { "Água", "Mar", "Rios", "Conchas" },
@@ -65,9 +61,7 @@ namespace Batuara.Infrastructure.Data.SeedData
                 ),
                 new Orixa(
                     "Nanã",
-                    "Uma das mais antigas Orixás femininas. Senhora da sabedoria ancestral e dos mistérios da vida e morte.",
-                    "Uma das Orixás mais antigas da tradição Yorubá. Senhora da sabedoria ancestral, dos mistérios da vida e da morte.",
-                    "A anciã sábia. Guarda os segredos da vida e da morte, ensinando a respeitar todos os ciclos da existência.",
+                    "Uma das mais antigas Orixás femininas. Senhora da sabedoria ancestral e dos mistérios da vida e morte.\n\nUma das Orixás mais antigas da tradição Yorubá. Senhora da sabedoria ancestral, dos mistérios da vida e da morte.\n\nA anciã sábia. Guarda os segredos da vida e da morte, ensinando a respeitar todos os ciclos da existência.",
                     new[] { "Sabedoria", "Tradição", "Paciência", "Mistério", "Respeito aos antepassados" },
                     new[] { "Lilás" },
                     new[] { "Água", "Lama", "Terra" },
@@ -75,9 +69,7 @@ namespace Batuara.Infrastructure.Data.SeedData
                 ),
                 new Orixa(
                     "Oxum",
-                    "Orixá das águas doces, rios e cachoeiras. Senhora do ouro e do amor.",
-                    "Tradição Yorubá — África Ocidental. Divindade das águas doces, senhora do ouro e do amor.",
-                    "Amor, beleza e fertilidade. Ensina a valorizar a doçura da vida e a beleza interior.",
+                    "Orixá das águas doces, rios e cachoeiras. Senhora do ouro e do amor.\n\nTradição Yorubá — África Ocidental. Divindade das águas doces, senhora do ouro e do amor.\n\nAmor, beleza e fertilidade. Ensina a valorizar a doçura da vida e a beleza interior.",
                     new[] { "Amor", "Beleza", "Fertilidade", "Doçura", "Prosperidade" },
                     new[] { "Dourado" },
                     new[] { "Água doce", "Ouro", "Rios" },
@@ -85,9 +77,7 @@ namespace Batuara.Infrastructure.Data.SeedData
                 ),
                 new Orixa(
                     "Ogum",
-                    "Senhor do ferro e da guerra. Uma das divindades mais antigas da tradição Yorubá.",
-                    "Uma das divindades mais antigas da tradição Yorubá. Senhor do ferro e da guerra.",
-                    "O grande trabalhador. Importância do esforço e da dedicação para alcançar objetivos. Guerreiro da luz.",
+                    "Senhor do ferro e da guerra. Uma das divindades mais antigas da tradição Yorubá.\n\nUma das divindades mais antigas da tradição Yorubá. Senhor do ferro e da guerra.\n\nO grande trabalhador. Importância do esforço e da dedicação para alcançar objetivos. Guerreiro da luz.",
                     new[] { "Trabalho", "Perseverança", "Coragem", "Determinação", "Proteção", "Liderança", "Honestidade", "Força de vontade" },
                     new[] { "Vermelho" },
                     new[] { "Ferro", "Metal", "Terra", "Fogo" },
@@ -95,9 +85,7 @@ namespace Batuara.Infrastructure.Data.SeedData
                 ),
                 new Orixa(
                     "Oxóssi",
-                    "O Orixá caçador, senhor das matas e da fartura. Sabedoria e conexão com a natureza.",
-                    "Tradição Yorubá — senhor das matas, da caça e da fartura.",
-                    "O provedor. Ensina a buscar o conhecimento e viver em harmonia com a natureza.",
+                    "O Orixá caçador, senhor das matas e da fartura. Sabedoria e conexão com a natureza.\n\nTradição Yorubá — senhor das matas, da caça e da fartura.\n\nO provedor. Ensina a buscar o conhecimento e viver em harmonia com a natureza.",
                     new[] { "Sabedoria", "Conhecimento", "Prosperidade", "Caça", "Natureza", "Fartura" },
                     new[] { "Verde" },
                     new[] { "Mata", "Terra", "Arco" },
@@ -105,9 +93,7 @@ namespace Batuara.Infrastructure.Data.SeedData
                 ),
                 new Orixa(
                     "Xangô",
-                    "Orixá da justiça, do fogo e do trovão. Rei poderoso que pune os injustos e protege os oprimidos.",
-                    "Tradição Yorubá — rei de Oyó. Orixá da justiça, do fogo e do trovão.",
-                    "Personificação da justiça divina. Toda ação tem consequências e a verdade sempre prevalece.",
+                    "Orixá da justiça, do fogo e do trovão. Rei poderoso que pune os injustos e protege os oprimidos.\n\nTradição Yorubá — rei de Oyó. Orixá da justiça, do fogo e do trovão.\n\nPersonificação da justiça divina. Toda ação tem consequências e a verdade sempre prevalece.",
                     new[] { "Justiça", "Equilíbrio", "Autoridade", "Fogo", "Trovão", "Determinação" },
                     new[] { "Marrom" },
                     new[] { "Fogo", "Pedra", "Trovão" },
@@ -115,9 +101,7 @@ namespace Batuara.Infrastructure.Data.SeedData
                 ),
                 new Orixa(
                     "Iansã",
-                    "Oyá na tradição Yorubá. Divindade dos ventos e tempestades. Esposa de Xangô.",
-                    "Conhecida como Oyá na tradição Yorubá. Divindade dos ventos, tempestades e esposa de Xangô.",
-                    "A guerreira da luz. Coragem para enfrentar as adversidades da vida.",
+                    "Oyá na tradição Yorubá. Divindade dos ventos e tempestades. Esposa de Xangô.\n\nConhecida como Oyá na tradição Yorubá. Divindade dos ventos, tempestades e esposa de Xangô.\n\nA guerreira da luz. Coragem para enfrentar as adversidades da vida.",
                     new[] { "Coragem", "Justiça", "Determinação", "Liderança", "Proteção", "Transformação", "Força", "Independência" },
                     new[] { "Alaranjado" },
                     new[] { "Vento", "Tempestade", "Raio", "Fogo" },
@@ -125,9 +109,7 @@ namespace Batuara.Infrastructure.Data.SeedData
                 ),
                 new Orixa(
                     "Obaluaê / Omolu",
-                    "Orixá da cura e das doenças. Na Casa Batuara, Obaluaê (aspecto mais velho) e Omolu (aspecto mais jovial) são tratados como complementares — o mesmo Orixá em dois momentos. Médico dos Orixás e senhor da vida e da morte.",
-                    "Tradição Yorubá — senhor das doenças e da cura. Também conhecido como Omolu.",
-                    "O grande curador. Saúde é o maior bem; cuidar do corpo e da alma.",
+                    "Orixá da cura e das doenças. Na Casa Batuara, Obaluaê (aspecto mais velho) e Omolu (aspecto mais jovial) são tratados como complementares — o mesmo Orixá em dois momentos. Médico dos Orixás e senhor da vida e da morte.\n\nTradição Yorubá — senhor das doenças e da cura. Também conhecido como Omolu.\n\nO grande curador. Saúde é o maior bem; cuidar do corpo e da alma.",
                     new[] { "Cura", "Saúde", "Doenças", "Renovação", "Ciclo da vida" },
                     new[] { "Roxo" },
                     new[] { "Terra", "Lama", "Palha" },
@@ -135,9 +117,7 @@ namespace Batuara.Infrastructure.Data.SeedData
                 ),
                 new Orixa(
                     "Ossain",
-                    "Orixá das folhas e ervas medicinais. Senhor do conhecimento das plantas curativas.",
-                    "Tradição Yorubá — senhor das folhas e ervas medicinais.",
-                    "O mestre das ervas. Propriedades medicinais das plantas e a cura natural.",
+                    "Orixá das folhas e ervas medicinais. Senhor do conhecimento das plantas curativas.\n\nTradição Yorubá — senhor das folhas e ervas medicinais.\n\nO mestre das ervas. Propriedades medicinais das plantas e a cura natural.",
                     new[] { "Cura", "Ervas", "Medicina", "Conhecimento ancestral", "Natureza" },
                     new[] { "Verde" },
                     new[] { "Ervas", "Terra", "Folhas" },
@@ -145,9 +125,7 @@ namespace Batuara.Infrastructure.Data.SeedData
                 ),
                 new Orixa(
                     "Oxumarê",
-                    "Orixá da transformação, do movimento e da renovação. Representa o arco-íris e a serpente.",
-                    "Tradição Yorubá — representa o arco-íris e a serpente, símbolo da renovação e do movimento.",
-                    "O renovador. Toda situação pode ser transformada e a esperança sempre retorna.",
+                    "Orixá da transformação, do movimento e da renovação. Representa o arco-íris e a serpente.\n\nTradição Yorubá — representa o arco-íris e a serpente, símbolo da renovação e do movimento.\n\nO renovador. Toda situação pode ser transformada e a esperança sempre retorna.",
                     new[] { "Renovação", "Transformação", "Movimento", "Esperança", "Equilíbrio" },
                     new[] { "Arco-íris" },
                     new[] { "Água", "Serpente", "Arco-íris" },
@@ -296,9 +274,7 @@ namespace Batuara.Infrastructure.Data.SeedData
             {
                 new UmbandaLine(
                     "Linha de Oxalá",
-                    "A Linha de Oxalá é a linha da paz, da fé e da elevação espiritual. Trabalha com a energia da criação, da purificação e da conexão com o divino.",
-                    "Entidades desta linha trabalham com energias de paz, harmonia, fé, purificação espiritual e elevação da consciência. São espíritos de grande luz que auxiliam na cura espiritual e no desenvolvimento mediúnico.",
-                    "Na Casa Batuara, a Linha de Oxalá é considerada a linha mestra, aquela que rege todas as outras. Nossos guias desta linha nos ensinam que a verdadeira força está na humildade e no amor. Eles trabalham principalmente na cura espiritual, no desenvolvimento da mediunidade e na orientação para a evolução espiritual. São espíritos de grande elevação que nos ajudam a compreender os ensinamentos de Jesus.",
+                    "A Linha de Oxalá é a linha da paz, da fé e da elevação espiritual. Trabalha com a energia da criação, da purificação e da conexão com o divino.\n\nEntidades desta linha trabalham com energias de paz, harmonia, fé, purificação espiritual e elevação da consciência. São espíritos de grande luz que auxiliam na cura espiritual e no desenvolvimento mediúnico.\n\nNa Casa Batuara, a Linha de Oxalá é considerada a linha mestra, aquela que rege todas as outras. Nossos guias desta linha nos ensinam que a verdadeira força está na humildade e no amor. Eles trabalham principalmente na cura espiritual, no desenvolvimento da mediunidade e na orientação para a evolução espiritual. São espíritos de grande elevação que nos ajudam a compreender os ensinamentos de Jesus.",
                     new[] { "Pai João de Oxalá", "Vovô Benedito", "Pai Francisco", "Vovó Maria Conga", "Caboclo Pena Branca" },
                     new[] { "Domingo", "Quinta-feira" },
                     1
@@ -306,9 +282,7 @@ namespace Batuara.Infrastructure.Data.SeedData
 
                 new UmbandaLine(
                     "Linha de Yemanjá",
-                    "A Linha de Yemanjá trabalha com as energias do amor maternal, da proteção, da cura emocional e da purificação através das águas.",
-                    "Entidades desta linha são conhecidas por seu amor maternal, proteção às famílias, cura de traumas emocionais e limpeza espiritual. Trabalham especialmente com mulheres, crianças e questões familiares.",
-                    "Na Casa Batuara, a Linha de Yemanjá é muito querida e respeitada. Nossos guias desta linha são verdadeiras mães espirituais que acolhem a todos com amor incondicional. Eles trabalham principalmente na cura emocional, na proteção das famílias e na orientação para as mães. Ensinam-nos que o amor de mãe é a força mais poderosa para a cura e transformação.",
+                    "A Linha de Yemanjá trabalha com as energias do amor maternal, da proteção, da cura emocional e da purificação através das águas.\n\nEntidades desta linha são conhecidas por seu amor maternal, proteção às famílias, cura de traumas emocionais e limpeza espiritual. Trabalham especialmente com mulheres, crianças e questões familiares.\n\nNa Casa Batuara, a Linha de Yemanjá é muito querida e respeitada. Nossos guias desta linha são verdadeiras mães espirituais que acolhem a todos com amor incondicional. Eles trabalham principalmente na cura emocional, na proteção das famílias e na orientação para as mães. Ensinam-nos que o amor de mãe é a força mais poderosa para a cura e transformação.",
                     new[] { "Mãe Yara", "Sereia do Mar", "Cabocla Jurema", "Vovó Cambinda", "Mãe Oxum" },
                     new[] { "Sábado", "Segunda-feira" },
                     2
@@ -316,9 +290,7 @@ namespace Batuara.Infrastructure.Data.SeedData
 
                 new UmbandaLine(
                     "Linha dos Caboclos",
-                    "A Linha dos Caboclos trabalha com as energias da natureza, da cura através das ervas, da força e da conexão com os elementos naturais.",
-                    "Os Caboclos são espíritos de índios que trabalham com a força da natureza, conhecimento das ervas medicinais, proteção e cura. São guerreiros da luz que defendem a justiça e protegem os necessitados.",
-                    "Na Casa Batuara, os Caboclos são nossos grandes protetores e curadores. Eles nos ensinam o respeito pela natureza e o uso das plantas para a cura. Nossos Caboclos trabalham com muita força e determinação, sempre prontos a defender seus filhos e a promover a justiça. Eles nos orientam sobre a importância de viver em harmonia com a natureza e de usar seus recursos com sabedoria e gratidão.",
+                    "A Linha dos Caboclos trabalha com as energias da natureza, da cura através das ervas, da força e da conexão com os elementos naturais.\n\nOs Caboclos são espíritos de índios que trabalham com a força da natureza, conhecimento das ervas medicinais, proteção e cura. São guerreiros da luz que defendem a justiça e protegem os necessitados.\n\nNa Casa Batuara, os Caboclos são nossos grandes protetores e curadores. Eles nos ensinam o respeito pela natureza e o uso das plantas para a cura. Nossos Caboclos trabalham com muita força e determinação, sempre prontos a defender seus filhos e a promover a justiça. Eles nos orientam sobre a importância de viver em harmonia com a natureza e de usar seus recursos com sabedoria e gratidão.",
                     new[] { "Caboclo Pena Verde", "Cabocla Jurema", "Caboclo Sete Flechas", "Cabocla Jandira", "Caboclo Tupinambá" },
                     new[] { "Terça-feira", "Quinta-feira" },
                     3
