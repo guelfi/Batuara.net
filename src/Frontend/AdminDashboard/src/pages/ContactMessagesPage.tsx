@@ -130,6 +130,11 @@ const ContactMessagesPage: React.FC = () => {
     loadMessages();
   }, [loadUnreadCount, loadMessages]);
 
+  const closeDialog = async () => {
+    setDialogOpen(false);
+    await loadUnreadCount();
+  };
+
   const openDialog = async (msg: ContactMessage) => {
     setSelectedMessage(msg);
     setDialogOpen(true);
@@ -180,9 +185,8 @@ const ContactMessagesPage: React.FC = () => {
         adminNotes: selectedMessage.adminNotes || undefined,
       });
       setFeedback({ open: true, message: 'Status da mensagem atualizado.', severity: 'success' });
-      setDialogOpen(false);
+      await closeDialog();
       await loadMessages();
-      await loadUnreadCount();
     } catch (error: any) {
       setFeedback({
         open: true,
@@ -508,7 +512,7 @@ const ContactMessagesPage: React.FC = () => {
         </MenuItem>
       </Menu>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="md" fullScreen={isXs}>
+      <Dialog open={dialogOpen} onClose={closeDialog} fullWidth maxWidth="md" fullScreen={isXs}>
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span>Atendimento da mensagem</span>
@@ -583,7 +587,7 @@ const ContactMessagesPage: React.FC = () => {
             }}
           >
             <Stack direction="row" spacing={1}>
-              <Button onClick={() => setDialogOpen(false)} fullWidth>
+              <Button onClick={closeDialog} fullWidth>
                 Cancelar
               </Button>
               <Button variant="contained" onClick={handleSaveMessage} fullWidth>
@@ -593,7 +597,7 @@ const ContactMessagesPage: React.FC = () => {
           </Box>
         ) : (
           <DialogActions>
-            <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={closeDialog}>Cancelar</Button>
             <Button variant="contained" onClick={handleSaveMessage}>
               Salvar atendimento
             </Button>
