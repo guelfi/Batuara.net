@@ -46,14 +46,20 @@ type EventFormState = {
 
 const CARD_COLOR_OPTIONS: { label: string; value: string }[] = [
   { label: 'Padrão (por tipo)', value: '' },
+  { label: 'Branco', value: '#ffffff' },
   { label: 'Verde escuro', value: '#2e7d32' },
   { label: 'Azul', value: '#1565c0' },
+  { label: 'Azul claro', value: '#0288d1' },
   { label: 'Roxo', value: '#6a1b9a' },
+  { label: 'Lilás', value: '#9c27b0' },
   { label: 'Laranja', value: '#e65100' },
   { label: 'Vermelho', value: '#b71c1c' },
   { label: 'Verde água', value: '#00695c' },
   { label: 'Rosa', value: '#880e4f' },
   { label: 'Dourado', value: '#f57f17' },
+  { label: 'Amarelo', value: '#f9a825' },
+  { label: 'Marrom', value: '#4e342e' },
+  { label: 'Preto', value: '#212121' },
 ];
 
 const initialFormState: EventFormState = {
