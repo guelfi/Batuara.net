@@ -777,7 +777,7 @@ const EventsPage: React.FC = () => {
               />
             </Stack>
             <Stack direction="row" spacing={2} alignItems="flex-start">
-              <FormControl sx={{ minWidth: 200, flexShrink: 0 }}>
+              <FormControl sx={{ flex: 1, minWidth: 0 }}>
                 <InputLabel>Cor do card</InputLabel>
                 <Select
                   value={form.cardColor}
