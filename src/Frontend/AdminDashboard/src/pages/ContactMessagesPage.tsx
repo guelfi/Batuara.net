@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
+  Badge,
   Box,
   Button,
   Chip,
@@ -21,6 +22,9 @@ import {
   Snackbar,
   Stack,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -30,6 +34,8 @@ import {
   Edit as EditIcon,
   Close as CloseIcon,
   FilterList as FilterListIcon,
+  MarkEmailRead as MarkReadIcon,
+  MarkEmailUnread as MarkUnreadIcon,
   MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
 import apiService from '../services/api';
@@ -69,9 +75,11 @@ const ContactMessagesPage: React.FC = () => {
 
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [messagesError, setMessagesError] = useState<string | null>(null);
   const [messageFilter, setMessageFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | ContactMessageStatus>('all');
+  const [readFilter, setReadFilter] = useState<'all' | 'unread' | 'read'>('all');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [totalCount, setTotalCount] = useState(0);
@@ -85,6 +93,13 @@ const ContactMessagesPage: React.FC = () => {
     severity: 'success',
   });
 
+  const loadUnreadCount = useCallback(async () => {
+    try {
+      const count = await apiService.getContactMessagesUnreadCount();
+      setUnreadCount(count);
+    } catch (_) {}
+  }, []);
+
   const loadMessages = useCallback(async () => {
     setLoading(true);
     setMessagesError(null);
@@ -92,6 +107,7 @@ const ContactMessagesPage: React.FC = () => {
       const response = await apiService.getContactMessages({
         q: messageFilter || undefined,
         status: statusFilter === 'all' ? undefined : statusFilter,
+        isRead: readFilter === 'all' ? undefined : readFilter === 'read',
         pageNumber: paginationModel.page + 1,
         pageSize: paginationModel.pageSize,
         sort: 'receivedAt:desc',
@@ -107,15 +123,23 @@ const ContactMessagesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [messageFilter, paginationModel.page, paginationModel.pageSize, statusFilter]);
+  }, [messageFilter, paginationModel.page, paginationModel.pageSize, statusFilter, readFilter]);
 
   useEffect(() => {
+    loadUnreadCount();
     loadMessages();
-  }, [loadMessages]);
+  }, [loadUnreadCount, loadMessages]);
 
-  const openDialog = (msg: ContactMessage) => {
+  const openDialog = async (msg: ContactMessage) => {
     setSelectedMessage(msg);
     setDialogOpen(true);
+    if (!msg.isRead) {
+      try {
+        await apiService.markContactMessageAsRead(String(msg.id), true);
+        setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, isRead: true } : m)));
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      } catch (_) {}
+    }
   };
 
   const openMenu = (event: React.MouseEvent<HTMLElement>, row: ContactMessage) => {
@@ -132,6 +156,21 @@ const ContactMessagesPage: React.FC = () => {
     setSelectedMessage((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
 
+  const handleToggleRead = async (msg: ContactMessage) => {
+    const newRead = !msg.isRead;
+    try {
+      await apiService.markContactMessageAsRead(String(msg.id), newRead);
+      setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, isRead: newRead } : m)));
+      setUnreadCount((prev) => (newRead ? Math.max(0, prev - 1) : prev + 1));
+    } catch (error: any) {
+      setFeedback({
+        open: true,
+        message: error?.response?.data?.message || 'Não foi possível atualizar a mensagem.',
+        severity: 'error',
+      });
+    }
+  };
+
   const handleSaveMessage = async () => {
     if (!selectedMessage) return;
     try {
@@ -142,6 +181,7 @@ const ContactMessagesPage: React.FC = () => {
       setFeedback({ open: true, message: 'Status da mensagem atualizado.', severity: 'success' });
       setDialogOpen(false);
       await loadMessages();
+      await loadUnreadCount();
     } catch (error: any) {
       setFeedback({
         open: true,
@@ -153,7 +193,22 @@ const ContactMessagesPage: React.FC = () => {
 
   const columns: GridColDef[] = isXs
     ? [
-        { field: 'name', headerName: 'Nome', flex: 1, minWidth: 160 },
+        {
+          field: 'name',
+          headerName: 'Nome',
+          flex: 1,
+          minWidth: 160,
+          renderCell: (params) => (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {!params.row.isRead && (
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0 }} />
+              )}
+              <Typography variant="body2" sx={{ fontWeight: params.row.isRead ? 400 : 700 }}>
+                {params.row.name}
+              </Typography>
+            </Box>
+          ),
+        },
         { field: 'subject', headerName: 'Assunto', flex: 1.2, minWidth: 180 },
         {
           field: 'status',
@@ -183,8 +238,33 @@ const ContactMessagesPage: React.FC = () => {
         },
       ]
     : [
-        { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180 },
-        { field: 'subject', headerName: 'Assunto', flex: 1, minWidth: 220 },
+        {
+          field: 'name',
+          headerName: 'Nome',
+          flex: 1,
+          minWidth: 180,
+          renderCell: (params) => (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {!params.row.isRead && (
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0 }} />
+              )}
+              <Typography variant="body2" sx={{ fontWeight: params.row.isRead ? 400 : 700 }}>
+                {params.row.name}
+              </Typography>
+            </Box>
+          ),
+        },
+        {
+          field: 'subject',
+          headerName: 'Assunto',
+          flex: 1,
+          minWidth: 220,
+          renderCell: (params) => (
+            <Typography variant="body2" sx={{ fontWeight: params.row.isRead ? 400 : 600 }}>
+              {params.row.subject}
+            </Typography>
+          ),
+        },
         { field: 'email', headerName: 'E-mail', flex: 1, minWidth: 220 },
         {
           field: 'receivedAt',
@@ -203,8 +283,17 @@ const ContactMessagesPage: React.FC = () => {
         {
           field: 'actions',
           type: 'actions',
-          width: 90,
+          width: 120,
           getActions: (params) => [
+            <GridActionsCellItem
+              icon={
+                <Tooltip title={params.row.isRead ? 'Marcar como não lida' : 'Marcar como lida'}>
+                  {params.row.isRead ? <MarkUnreadIcon /> : <MarkReadIcon />}
+                </Tooltip>
+              }
+              label={params.row.isRead ? 'Marcar como não lida' : 'Marcar como lida'}
+              onClick={() => handleToggleRead(params.row)}
+            />,
             <GridActionsCellItem icon={<EditIcon />} label="Atender" onClick={() => openDialog(params.row)} />,
           ],
         },
@@ -212,11 +301,21 @@ const ContactMessagesPage: React.FC = () => {
 
   return (
     <Box sx={{ pb: { xs: 10, md: 0 } }}>
-      <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
+      <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'flex-start' }} spacing={2} sx={{ mb: 3 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 600 }}>
-            Contato e Mensagens
-          </Typography>
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Typography variant="h4" sx={{ fontWeight: 600 }}>
+              Contato e Mensagens
+            </Typography>
+            {unreadCount > 0 && (
+              <Chip
+                label={`${unreadCount} não ${unreadCount === 1 ? 'lida' : 'lidas'}`}
+                color="primary"
+                size="small"
+                sx={{ fontWeight: 700 }}
+              />
+            )}
+          </Stack>
           <Typography color="text.secondary">
             Gerencie as mensagens recebidas pelo formulário de contato do site.
           </Typography>
@@ -224,7 +323,23 @@ const ContactMessagesPage: React.FC = () => {
       </Stack>
 
       <Paper sx={{ p: 2, mb: 2 }}>
-        {isXs ? (
+        <Stack spacing={2}>
+          <ToggleButtonGroup
+            value={readFilter}
+            exclusive
+            onChange={(_e, val) => { if (val !== null) { setReadFilter(val); setPaginationModel((prev) => ({ ...prev, page: 0 })); } }}
+            size="small"
+          >
+            <ToggleButton value="all">Todas</ToggleButton>
+            <ToggleButton value="unread">
+              <Badge badgeContent={unreadCount} color="primary" max={99}>
+                <Box sx={{ pr: unreadCount > 0 ? 1 : 0 }}>Não lidas</Box>
+              </Badge>
+            </ToggleButton>
+            <ToggleButton value="read">Lidas</ToggleButton>
+          </ToggleButtonGroup>
+
+          {isXs ? (
           <Stack spacing={1.5}>
             <TextField
               label="Buscar mensagem"
@@ -299,6 +414,7 @@ const ContactMessagesPage: React.FC = () => {
             </FormControl>
           </Stack>
         )}
+        </Stack>
       </Paper>
 
       <Drawer

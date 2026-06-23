@@ -11,6 +11,7 @@ namespace Batuara.Application.ContactMessages.Models
         public string Subject { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
         public ContactMessageStatus Status { get; set; }
+        public bool IsRead { get; set; }
         public string? AdminNotes { get; set; }
         public DateTime ReceivedAt { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -30,5 +31,10 @@ namespace Batuara.Application.ContactMessages.Models
     {
         public ContactMessageStatus Status { get; set; }
         public string? AdminNotes { get; set; }
+    }
+
+    public class MarkContactMessageReadRequest
+    {
+        public bool IsRead { get; set; } = true;
     }
 }

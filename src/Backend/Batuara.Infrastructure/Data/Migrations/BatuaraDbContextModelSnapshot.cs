@@ -101,6 +101,11 @@ namespace Batuara.Infrastructure.Data.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasMaxLength(4000)
@@ -136,6 +141,8 @@ namespace Batuara.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Email");
+
+                    b.HasIndex("IsRead");
 
                     b.HasIndex("Status", "ReceivedAt");
 

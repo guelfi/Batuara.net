@@ -21,6 +21,7 @@ namespace Batuara.Infrastructure.ContactMessages.Services
         public async Task<PaginatedResponse<ContactMessageDto>> GetAdminAsync(
             string? q,
             ContactMessageStatus? status,
+            bool? isRead,
             DateTime? fromDate,
             DateTime? toDate,
             int pageNumber,
@@ -43,6 +44,11 @@ namespace Batuara.Infrastructure.ContactMessages.Services
             if (status.HasValue)
             {
                 query = query.Where(x => x.Status == status.Value);
+            }
+
+            if (isRead.HasValue)
+            {
+                query = query.Where(x => x.IsRead == isRead.Value);
             }
 
             if (fromDate.HasValue)
@@ -106,6 +112,28 @@ namespace Batuara.Infrastructure.ContactMessages.Services
             return (MapToDto(entity), Array.Empty<string>());
         }
 
+        public async Task<int> GetUnreadCountAsync()
+        {
+            return await _db.ContactMessages.CountAsync(x => !x.IsRead);
+        }
+
+        public async Task<(ContactMessageDto? Message, string[] Errors)> MarkAsReadAsync(int id, bool isRead)
+        {
+            var entity = await _db.ContactMessages.FirstOrDefaultAsync(x => x.Id == id);
+            if (entity == null)
+            {
+                return (null, new[] { "Contact message not found" });
+            }
+
+            if (isRead)
+                entity.MarkAsRead();
+            else
+                entity.MarkAsUnread();
+
+            await _db.SaveChangesAsync();
+            return (MapToDto(entity), Array.Empty<string>());
+        }
+
         private static ContactMessageDto MapToDto(ContactMessage entity)
         {
             return new ContactMessageDto
@@ -117,6 +145,7 @@ namespace Batuara.Infrastructure.ContactMessages.Services
                 Subject = entity.Subject,
                 Message = entity.Message,
                 Status = entity.Status,
+                IsRead = entity.IsRead,
                 AdminNotes = entity.AdminNotes,
                 ReceivedAt = entity.ReceivedAt,
                 CreatedAt = entity.CreatedAt,
