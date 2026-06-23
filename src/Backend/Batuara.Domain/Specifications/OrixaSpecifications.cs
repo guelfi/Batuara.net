@@ -48,8 +48,7 @@ namespace Batuara.Domain.Specifications
         public OrixasSearchSpecification(string searchTerm) 
             : base(o => o.IsActive && 
                        (o.Name.ToLower().Contains(searchTerm.ToLower()) ||
-                        o.Description.ToLower().Contains(searchTerm.ToLower()) ||
-                        o.BatuaraTeaching.ToLower().Contains(searchTerm.ToLower())))
+                        o.Description.ToLower().Contains(searchTerm.ToLower())))
         {
         }
     }

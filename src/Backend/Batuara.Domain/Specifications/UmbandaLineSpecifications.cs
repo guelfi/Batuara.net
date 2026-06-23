@@ -48,9 +48,7 @@ namespace Batuara.Domain.Specifications
         public UmbandaLinesSearchSpecification(string searchTerm) 
             : base(ul => ul.IsActive && 
                         (ul.Name.ToLower().Contains(searchTerm.ToLower()) ||
-                         ul.Description.ToLower().Contains(searchTerm.ToLower()) ||
-                         ul.Characteristics.ToLower().Contains(searchTerm.ToLower()) ||
-                         ul.BatuaraInterpretation.ToLower().Contains(searchTerm.ToLower())))
+                         ul.Description.ToLower().Contains(searchTerm.ToLower())))
         {
         }
     }
