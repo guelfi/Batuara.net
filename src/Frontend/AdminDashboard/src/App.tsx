@@ -19,6 +19,7 @@ import LocationPage from './pages/LocationPage';
 import UmbandaLinesPage from './pages/UmbandaLinesPage';
 import SpiritualContentPage from './pages/SpiritualContentPage';
 import ProfilePage from './pages/ProfilePage';
+import ContactMessagesPage from './pages/ContactMessagesPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -66,6 +67,7 @@ function App() {
                         <Route path="/spiritual-content" element={<SpiritualContentPage />} />
                         <Route path="/members" element={<MembersPage />} />
                         <Route path="/donations-contact" element={<DonationsContactPage />} />
+                        <Route path="/contact-messages" element={<ContactMessagesPage />} />
                         <Route path="/location" element={<LocationPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="*" element={<NotFoundPage />} />

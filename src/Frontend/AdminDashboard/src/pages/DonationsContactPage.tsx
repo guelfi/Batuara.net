@@ -6,22 +6,9 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   CircularProgress,
-  Drawer,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControl,
   Grid,
-  IconButton,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Menu,
   Paper,
-  Select,
   Snackbar,
   Stack,
   TextField,
@@ -29,54 +16,19 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import {
-  Edit as EditIcon,
-  Close as CloseIcon,
   ExpandMore as ExpandMoreIcon,
-  FilterList as FilterListIcon,
-  MoreVert as MoreVertIcon,
   Save as SaveIcon,
 } from '@mui/icons-material';
 import apiService from '../services/api';
-import { ContactMessage, ContactMessageStatus, SiteSettingsDto } from '../types';
+import { SiteSettingsDto } from '../types';
 
-const getStatusLabel = (status: ContactMessageStatus) => {
-  switch (status) {
-    case ContactMessageStatus.New:
-      return 'Nova';
-    case ContactMessageStatus.InProgress:
-      return 'Em atendimento';
-    case ContactMessageStatus.Resolved:
-      return 'Resolvida';
-    case ContactMessageStatus.Archived:
-      return 'Arquivada';
-    default:
-      return 'Nova';
-  }
-};
-
-const getStatusColor = (status: ContactMessageStatus): 'default' | 'warning' | 'info' | 'success' => {
-  switch (status) {
-    case ContactMessageStatus.New:
-      return 'warning';
-    case ContactMessageStatus.InProgress:
-      return 'info';
-    case ContactMessageStatus.Resolved:
-      return 'success';
-    default:
-      return 'default';
-  }
-};
 
 const DonationsContactPage: React.FC = () => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [settings, setSettings] = useState<SiteSettingsDto | null>(null);
-  const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [loadingSettings, setLoadingSettings] = useState(true);
-  const [loadingMessages, setLoadingMessages] = useState(false);
-  const [messagesError, setMessagesError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [settingsErrors, setSettingsErrors] = useState<{
     institutionalEmail?: string;
@@ -84,15 +36,6 @@ const DonationsContactPage: React.FC = () => {
     secondaryPhone?: string;
     whatsappNumber?: string;
   }>({});
-  const [messageFilter, setMessageFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | ContactMessageStatus>('all');
-  const [mobileMessageFiltersOpen, setMobileMessageFiltersOpen] = useState(false);
-  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
-  const [totalCount, setTotalCount] = useState(0);
-  const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
-  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
-  const [messageMenuAnchorEl, setMessageMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [messageMenuRow, setMessageMenuRow] = useState<ContactMessage | null>(null);
   const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -115,41 +58,9 @@ const DonationsContactPage: React.FC = () => {
     }
   }, []);
 
-  const loadMessages = useCallback(async () => {
-    setLoadingMessages(true);
-    setMessagesError(null);
-    try {
-      const response = await apiService.getContactMessages({
-        q: messageFilter || undefined,
-        status: statusFilter === 'all' ? undefined : statusFilter,
-        pageNumber: paginationModel.page + 1,
-        pageSize: paginationModel.pageSize,
-        sort: 'receivedAt:desc',
-      });
-      setMessages(response.data);
-      setTotalCount(response.totalCount);
-    } catch (error: any) {
-      const message = error?.response?.data?.message || 'Não foi possível carregar as mensagens recebidas.';
-      setMessages([]);
-      setTotalCount(0);
-      setMessagesError(message);
-      setFeedback({
-        open: true,
-        message,
-        severity: 'error',
-      });
-    } finally {
-      setLoadingMessages(false);
-    }
-  }, [messageFilter, paginationModel.page, paginationModel.pageSize, statusFilter]);
-
   useEffect(() => {
     loadSettings();
   }, [loadSettings]);
-
-  useEffect(() => {
-    loadMessages();
-  }, [loadMessages]);
 
   const onlyDigits = (value: string) => value.replace(/\D/g, '');
 
@@ -241,104 +152,6 @@ const DonationsContactPage: React.FC = () => {
     }
   };
 
-  const openMessageDialog = (message: ContactMessage) => {
-    setSelectedMessage(message);
-    setMessageDialogOpen(true);
-  };
-
-  const openMessageMenu = (event: React.MouseEvent<HTMLElement>, row: ContactMessage) => {
-    setMessageMenuAnchorEl(event.currentTarget);
-    setMessageMenuRow(row);
-  };
-
-  const closeMessageMenu = () => {
-    setMessageMenuAnchorEl(null);
-    setMessageMenuRow(null);
-  };
-
-  const columns: GridColDef[] = isXs
-    ? [
-        { field: 'name', headerName: 'Nome', flex: 1, minWidth: 160 },
-        { field: 'subject', headerName: 'Assunto', flex: 1.2, minWidth: 180 },
-        {
-          field: 'status',
-          headerName: 'Status',
-          width: 130,
-          renderCell: (params) => (
-            <Chip size="small" label={getStatusLabel(params.row.status)} color={getStatusColor(params.row.status)} />
-          ),
-        },
-        {
-          field: 'receivedAt',
-          headerName: 'Data',
-          width: 150,
-          valueFormatter: (value) => new Date(value).toLocaleDateString('pt-BR'),
-        },
-        {
-          field: 'actions',
-          headerName: '',
-          width: 64,
-          sortable: false,
-          filterable: false,
-          renderCell: (params) => (
-            <IconButton aria-label="Ações da mensagem" onClick={(e) => openMessageMenu(e, params.row)}>
-              <MoreVertIcon />
-            </IconButton>
-          ),
-        },
-      ]
-    : [
-        { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180 },
-        { field: 'subject', headerName: 'Assunto', flex: 1, minWidth: 220 },
-        { field: 'email', headerName: 'E-mail', flex: 1, minWidth: 220 },
-        {
-          field: 'receivedAt',
-          headerName: 'Recebida em',
-          width: 170,
-          valueFormatter: (value) => new Date(value).toLocaleString('pt-BR'),
-        },
-        {
-          field: 'status',
-          headerName: 'Status',
-          width: 150,
-          renderCell: (params) => (
-            <Chip size="small" label={getStatusLabel(params.row.status)} color={getStatusColor(params.row.status)} />
-          ),
-        },
-        {
-          field: 'actions',
-          type: 'actions',
-          width: 90,
-          getActions: (params) => [<GridActionsCellItem icon={<EditIcon />} label="Atender" onClick={() => openMessageDialog(params.row)} />],
-        },
-      ];
-
-  const updateMessageField = (field: keyof ContactMessage, value: string | number) => {
-    setSelectedMessage((prev) => (prev ? { ...prev, [field]: value } : prev));
-  };
-
-  const handleSaveMessage = async () => {
-    if (!selectedMessage) {
-      return;
-    }
-
-    try {
-      await apiService.updateContactMessageStatus(String(selectedMessage.id), {
-        status: selectedMessage.status,
-        adminNotes: selectedMessage.adminNotes || undefined,
-      });
-      setFeedback({ open: true, message: 'Status da mensagem atualizado.', severity: 'success' });
-      setMessageDialogOpen(false);
-      await loadMessages();
-    } catch (error: any) {
-      setFeedback({
-        open: true,
-        message: error?.response?.data?.message || 'Não foi possível atualizar a mensagem.',
-        severity: 'error',
-      });
-    }
-  };
-
   if (loadingSettings || !settings) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
@@ -355,7 +168,7 @@ const DonationsContactPage: React.FC = () => {
             Doações e Contato
           </Typography>
           <Typography color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-            Administre os dados bancários, PIX, canais institucionais e a fila de mensagens recebidas pelo PublicWebsite.
+            Administre os dados bancários, PIX e canais institucionais da Casa.
           </Typography>
         </Box>
         {!isXs && (
@@ -655,257 +468,6 @@ const DonationsContactPage: React.FC = () => {
         </Grid>
       )}
 
-      <Paper sx={{ p: 2, mt: 3, mb: 2 }}>
-        {isXs ? (
-          <Stack spacing={1.5}>
-            <TextField
-              label="Buscar mensagem"
-              value={messageFilter}
-              onChange={(e) => setMessageFilter(e.target.value)}
-              InputProps={{
-                endAdornment: messageFilter ? (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="Limpar busca"
-                      size="small"
-                      onClick={() => {
-                        setMessageFilter('');
-                        setPaginationModel((prev) => ({ ...prev, page: 0 }));
-                      }}
-                      edge="end"
-                    >
-                      <CloseIcon fontSize="small" />
-                    </IconButton>
-                  </InputAdornment>
-                ) : undefined,
-              }}
-              fullWidth
-            />
-            <Button
-              variant="outlined"
-              startIcon={<FilterListIcon />}
-              onClick={() => setMobileMessageFiltersOpen(true)}
-              fullWidth
-            >
-              Filtrar
-            </Button>
-          </Stack>
-        ) : (
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-            <TextField
-              label="Buscar mensagem"
-              value={messageFilter}
-              onChange={(e) => setMessageFilter(e.target.value)}
-              InputProps={{
-                endAdornment: messageFilter ? (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="Limpar busca"
-                      size="small"
-                      onClick={() => {
-                        setMessageFilter('');
-                        setPaginationModel((prev) => ({ ...prev, page: 0 }));
-                      }}
-                      edge="end"
-                    >
-                      <CloseIcon fontSize="small" />
-                    </IconButton>
-                  </InputAdornment>
-                ) : undefined,
-              }}
-              fullWidth
-            />
-            <FormControl sx={{ minWidth: 220 }}>
-              <InputLabel>Status</InputLabel>
-              <Select value={statusFilter} label="Status" onChange={(e) => setStatusFilter(e.target.value as 'all' | ContactMessageStatus)}>
-                <MenuItem value="all">Todos</MenuItem>
-                <MenuItem value={ContactMessageStatus.New}>Nova</MenuItem>
-                <MenuItem value={ContactMessageStatus.InProgress}>Em atendimento</MenuItem>
-                <MenuItem value={ContactMessageStatus.Resolved}>Resolvida</MenuItem>
-                <MenuItem value={ContactMessageStatus.Archived}>Arquivada</MenuItem>
-              </Select>
-            </FormControl>
-          </Stack>
-        )}
-      </Paper>
-
-      <Drawer
-        anchor="bottom"
-        open={mobileMessageFiltersOpen}
-        onClose={() => setMobileMessageFiltersOpen(false)}
-        PaperProps={{ sx: { p: 2, pb: 3, borderTopLeftRadius: 16, borderTopRightRadius: 16 } }}
-      >
-        <Stack spacing={2}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Filtros
-          </Typography>
-          <FormControl fullWidth>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={statusFilter}
-              label="Status"
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | ContactMessageStatus)}
-              sx={{ minHeight: 48 }}
-            >
-              <MenuItem value="all">Todos</MenuItem>
-              <MenuItem value={ContactMessageStatus.New}>Nova</MenuItem>
-              <MenuItem value={ContactMessageStatus.InProgress}>Em atendimento</MenuItem>
-              <MenuItem value={ContactMessageStatus.Resolved}>Resolvida</MenuItem>
-              <MenuItem value={ContactMessageStatus.Archived}>Arquivada</MenuItem>
-            </Select>
-          </FormControl>
-          <Stack direction="row" spacing={1}>
-            <Button
-              variant="text"
-              onClick={() => {
-                setStatusFilter('all');
-                setMobileMessageFiltersOpen(false);
-              }}
-              fullWidth
-            >
-              Limpar
-            </Button>
-            <Button variant="contained" onClick={() => setMobileMessageFiltersOpen(false)} fullWidth>
-              Aplicar
-            </Button>
-          </Stack>
-        </Stack>
-      </Drawer>
-
-      {messagesError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {messagesError}
-        </Alert>
-      )}
-
-      <Paper sx={{ p: 1 }}>
-        <DataGrid
-          autoHeight
-          rows={messages}
-          columns={columns}
-          rowCount={totalCount}
-          loading={loadingMessages}
-          paginationMode="server"
-          paginationModel={paginationModel}
-          onPaginationModelChange={setPaginationModel}
-          pageSizeOptions={[5, 10, 20]}
-          disableRowSelectionOnClick
-          getRowHeight={isXs ? () => 'auto' : undefined}
-          slots={{
-            noRowsOverlay: () => (
-              <Stack sx={{ height: 140 }} alignItems="center" justifyContent="center">
-                <Typography color="text.secondary">Nenhum registro encontrado.</Typography>
-              </Stack>
-            ),
-          }}
-          sx={{
-            border: 0,
-            '& .MuiDataGrid-columnHeaders': {
-              backgroundColor: 'action.hover',
-            },
-            '& .MuiDataGrid-cell .MuiIconButton-root': {
-              width: 48,
-              height: 48,
-            },
-          }}
-        />
-      </Paper>
-
-      <Menu
-        anchorEl={messageMenuAnchorEl}
-        open={Boolean(messageMenuAnchorEl)}
-        onClose={closeMessageMenu}
-      >
-        <MenuItem
-          onClick={() => {
-            if (messageMenuRow) {
-              openMessageDialog(messageMenuRow);
-            }
-            closeMessageMenu();
-          }}
-        >
-          Atender
-        </MenuItem>
-      </Menu>
-
-      <Dialog
-        open={messageDialogOpen}
-        onClose={() => setMessageDialogOpen(false)}
-        fullWidth
-        maxWidth="md"
-        fullScreen={isXs}
-      >
-        <DialogTitle>Atendimento da mensagem</DialogTitle>
-        <DialogContent sx={{ pb: isXs ? 12 : 2 }}>
-          {selectedMessage && (
-            <Stack spacing={2} sx={{ mt: 1 }}>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField label="Nome" value={selectedMessage.name} fullWidth InputProps={{ readOnly: true }} />
-                <TextField label="E-mail" value={selectedMessage.email} fullWidth InputProps={{ readOnly: true }} />
-              </Stack>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField label="Telefone" value={selectedMessage.phone || ''} fullWidth InputProps={{ readOnly: true }} />
-                <TextField label="Assunto" value={selectedMessage.subject} fullWidth InputProps={{ readOnly: true }} />
-              </Stack>
-              <TextField label="Mensagem" value={selectedMessage.message} multiline minRows={5} fullWidth InputProps={{ readOnly: true }} />
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <FormControl fullWidth>
-                  <InputLabel>Status</InputLabel>
-                  <Select value={selectedMessage.status} label="Status" onChange={(e) => updateMessageField('status', Number(e.target.value))}>
-                    <MenuItem value={ContactMessageStatus.New}>Nova</MenuItem>
-                    <MenuItem value={ContactMessageStatus.InProgress}>Em atendimento</MenuItem>
-                    <MenuItem value={ContactMessageStatus.Resolved}>Resolvida</MenuItem>
-                    <MenuItem value={ContactMessageStatus.Archived}>Arquivada</MenuItem>
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="Recebida em"
-                  value={new Date(selectedMessage.receivedAt).toLocaleString('pt-BR')}
-                  fullWidth
-                  InputProps={{ readOnly: true }}
-                />
-              </Stack>
-              <TextField
-                label="Notas administrativas"
-                value={selectedMessage.adminNotes || ''}
-                onChange={(e) => updateMessageField('adminNotes', e.target.value)}
-                multiline
-                minRows={4}
-                fullWidth
-              />
-            </Stack>
-          )}
-        </DialogContent>
-        {isXs ? (
-          <Box
-            sx={{
-              position: 'fixed',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              p: 2,
-              bgcolor: 'background.paper',
-              borderTop: '1px solid',
-              borderColor: 'divider',
-            }}
-          >
-            <Stack direction="row" spacing={1}>
-              <Button onClick={() => setMessageDialogOpen(false)} fullWidth>
-                Cancelar
-              </Button>
-              <Button variant="contained" onClick={handleSaveMessage} fullWidth>
-                Salvar
-              </Button>
-            </Stack>
-          </Box>
-        ) : (
-          <DialogActions>
-            <Button onClick={() => setMessageDialogOpen(false)}>Cancelar</Button>
-            <Button variant="contained" onClick={handleSaveMessage}>Salvar atendimento</Button>
-          </DialogActions>
-        )}
-      </Dialog>
-
       {isXs && (
         <Box
           sx={{
@@ -930,7 +492,7 @@ const DonationsContactPage: React.FC = () => {
         open={feedback.open}
         autoHideDuration={4000}
         onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: messageDialogOpen ? 'top' : 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert severity={feedback.severity} variant="filled" onClose={() => setFeedback((prev) => ({ ...prev, open: false }))}>
           {feedback.message}
