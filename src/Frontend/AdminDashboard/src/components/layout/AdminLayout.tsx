@@ -170,10 +170,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   selected={location.pathname === item.path}
                   sx={{
                     mx: 1,
-                    my: { xs: 0.4, md: 0.5 },
+                    my: 0.25,
                     px: { xs: 1.5, md: 2 },
-                    py: { xs: 0.5, md: 0.75 },
-                    minHeight: { xs: 36, md: 44 },
+                    py: { xs: 0.4, md: 0.5 },
+                    minHeight: { xs: 34, md: 40 },
                     borderRadius: 1.5,
                     '&.Mui-selected': {
                       bgcolor: 'primary.light',
