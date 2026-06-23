@@ -218,6 +218,36 @@ else
     wait_for_healthy "$DB_CONTAINER" "" 60
 fi
 
+# --- Step 3.5: Apply pending database migrations ---
+DEPLOY_STATE="migrations"
+log_info "Step 3.5: Applying pending database migrations..."
+
+DB_CONTAINER="${COMPOSE_PROJECT_NAME:-batuara-net}-db"
+DB_USER="${PROJECT_NAME:-batuara}_user"
+DB_NAME="${DB_NAME:-batuara_db}"
+
+apply_migration() {
+    local migration_id=$1
+    local sql=$2
+    # Check if migration already applied
+    ALREADY=$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -tAc \
+        "SELECT COUNT(*) FROM batuara.\"__EFMigrationsHistory\" WHERE \"MigrationId\"='${migration_id}';" 2>/dev/null || echo "0")
+    if [ "${ALREADY:-0}" = "0" ]; then
+        log_info "  Applying migration: $migration_id"
+        docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "$sql" > /dev/null 2>&1
+        docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c \
+            "INSERT INTO batuara.\"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ('${migration_id}', '8.0.0') ON CONFLICT DO NOTHING;" > /dev/null 2>&1
+        log_success "  Migration applied: $migration_id"
+    else
+        log_info "  Migration already applied: $migration_id (skipping)"
+    fi
+}
+
+apply_migration "20260623140000_AddIsReadToContactMessages" \
+    "ALTER TABLE batuara.\"ContactMessages\" ADD COLUMN IF NOT EXISTS \"IsRead\" boolean NOT NULL DEFAULT false; CREATE INDEX IF NOT EXISTS \"IX_ContactMessages_IsRead\" ON batuara.\"ContactMessages\" (\"IsRead\");"
+
+log_success "Database migrations complete"
+
 # --- Step 4: Rolling update - API first ---
 DEPLOY_STATE="api"
 log_info "Step 4: Rebuilding and restarting API (rolling)..."
