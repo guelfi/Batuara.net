@@ -184,15 +184,11 @@ const UmbandaSection: React.FC = () => {
       id="linhas-da-umbanda"
       sx={{
         scrollMarginTop: { xs: 56, md: 64 },
-        minHeight: { xs: '100vh', md: 'auto' },
+        minHeight: { xs: 'calc(100vh - 56px)', md: 'calc(100vh - 64px)' },
         pt: { xs: 1.5, md: 2 },
         pb: { xs: 4, md: 6 },
         px: { xs: 1.5, md: 2 },
         backgroundColor: 'background.default',
-        [desktopMediaQuery]: {
-          minHeight: 'calc(100vh - 88px)',
-          pb: 6,
-        },
       }}
     >
       <Box sx={{ maxWidth: 1200, mx: 'auto' }}>

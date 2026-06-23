@@ -10,14 +10,12 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
-  FormControlLabel,
   InputLabel,
   MenuItem,
   Paper,
   Select,
   Snackbar,
   Stack,
-  Switch,
   TextField,
   Typography,
   IconButton,
@@ -25,8 +23,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material/Select';
-import { Add as AddIcon, Close as CloseIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Add as AddIcon, Close as CloseIcon, Edit as EditIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import apiService from '../services/api';
 import GridPager from '../components/common/GridPager';
@@ -35,13 +32,13 @@ import { Guide } from '../types';
 type GuideFormState = {
   name: string;
   description: string;
-  photoUrl: string;
   specialties: string;
-  entryDate: string;
-  email: string;
-  phone: string;
-  whatsapp: string;
   displayOrder: string;
+  comida: string;
+  fruta: string;
+  diaDaSemana: string;
+  cor: string;
+  saudacao: string;
   isActive: boolean;
 };
 
@@ -51,7 +48,6 @@ const validateGuideForm = (form: GuideFormState): GuideFormErrors => {
   const errors: GuideFormErrors = {};
   if (!form.name.trim()) errors.name = 'Nome é obrigatório.';
   if (!form.description.trim()) errors.description = 'Descrição é obrigatória.';
-  if (!form.entryDate) errors.entryDate = 'Data de entrada é obrigatória.';
   if (!form.specialties.trim()) errors.specialties = 'Informe pelo menos uma especialidade.';
   return errors;
 };
@@ -59,13 +55,13 @@ const validateGuideForm = (form: GuideFormState): GuideFormErrors => {
 const initialFormState: GuideFormState = {
   name: '',
   description: '',
-  photoUrl: '',
   specialties: '',
-  entryDate: '',
-  email: '',
-  phone: '',
-  whatsapp: '',
   displayOrder: '1',
+  comida: '',
+  fruta: '',
+  diaDaSemana: '',
+  cor: '',
+  saudacao: '',
   isActive: true,
 };
 
@@ -79,13 +75,11 @@ const GuidesPage: React.FC = () => {
   const [gridError, setGridError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Guide | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTarget, setConfirmTarget] = useState<Guide | null>(null);
-  const [deactivating, setDeactivating] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState<GuideFormState>(initialFormState);
   const [query, setQuery] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'true' | 'false'>('all');
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [detailsTitle, setDetailsTitle] = useState('');
   const [detailsItems, setDetailsItems] = useState<string[]>([]);
@@ -105,7 +99,6 @@ const GuidesPage: React.FC = () => {
       const response = await apiService.getGuides({
         q: query || undefined,
         specialty: specialtyFilter || undefined,
-        isActive: statusFilter === 'all' ? undefined : statusFilter === 'true',
         pageNumber: paginationModel.page + 1,
         pageSize: paginationModel.pageSize,
         sort: 'displayOrder:asc',
@@ -126,7 +119,7 @@ const GuidesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [paginationModel.page, paginationModel.pageSize, query, specialtyFilter, statusFilter]);
+  }, [paginationModel.page, paginationModel.pageSize, query, specialtyFilter]);
 
   useEffect(() => {
     loadGuides();
@@ -140,6 +133,14 @@ const GuidesPage: React.FC = () => {
 
   const columns: GridColDef[] = isXs
     ? [
+        {
+          field: 'actions',
+          type: 'actions',
+          width: 60,
+          getActions: (params) => [
+            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
+          ],
+        },
         {
           field: 'summary',
           headerName: 'Nome',
@@ -173,27 +174,16 @@ const GuidesPage: React.FC = () => {
           sortable: false,
           filterable: false,
         },
-        {
-          field: 'isActive',
-          headerName: 'Status',
-          width: 80,
-          renderCell: (params) => (
-            <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
-              {params.row.isActive ? 'Ativo' : 'Inativo'}
-            </Typography>
-          ),
-        },
+      ]
+    : [
         {
           field: 'actions',
           type: 'actions',
-          width: 104,
+          width: 60,
           getActions: (params) => [
             <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
           ],
         },
-      ]
-    : [
         { field: 'displayOrder', headerName: 'Ordem', width: 90 },
         { field: 'name', headerName: 'Nome', flex: 1, minWidth: 200 },
         {
@@ -218,23 +208,6 @@ const GuidesPage: React.FC = () => {
             </Stack>
           ),
         },
-        { field: 'entryDate', headerName: 'Entrada', width: 130, valueFormatter: (value) => new Date(value).toLocaleDateString('pt-BR') },
-        { field: 'email', headerName: 'E-mail', flex: 1, minWidth: 200 },
-        {
-          field: 'isActive',
-          headerName: 'Status',
-          width: 120,
-          renderCell: (params) => <Chip size="small" label={params.row.isActive ? 'Ativo' : 'Inativo'} color={params.row.isActive ? 'success' : 'default'} />,
-        },
-        {
-          field: 'actions',
-          type: 'actions',
-          width: 110,
-          getActions: (params) => [
-            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
-          ],
-        },
       ];
 
   const handleOpenDialog = (item?: Guide) => {
@@ -243,13 +216,13 @@ const GuidesPage: React.FC = () => {
       setForm({
         name: item.name,
         description: item.description,
-        photoUrl: item.photoUrl || '',
         specialties: item.specialties.join(', '),
-        entryDate: item.entryDate.slice(0, 10),
-        email: item.email || '',
-        phone: item.phone || '',
-        whatsapp: item.whatsapp || '',
         displayOrder: String(item.displayOrder),
+        comida: item.comida || '',
+        fruta: item.fruta || '',
+        diaDaSemana: item.diaDaSemana || '',
+        cor: item.cor || '',
+        saudacao: item.saudacao || '',
         isActive: item.isActive,
       });
     } else {
@@ -267,17 +240,30 @@ const GuidesPage: React.FC = () => {
     setFormErrors({});
   };
 
-  const handleRequestDeactivate = (item: Guide) => {
-    setConfirmTarget(item);
-    setConfirmOpen(true);
+  const handleDeleteGuide = () => {
+    if (!editingItem) return;
+    setConfirmDeleteOpen(true);
   };
 
-  const handleCloseConfirm = () => {
-    if (deactivating) {
-      return;
+  const handleConfirmDelete = async () => {
+    if (!editingItem) return;
+    setDeleting(true);
+    try {
+      await apiService.deleteGuide(String(editingItem.id));
+      setConfirmDeleteOpen(false);
+      setFeedback({ open: true, message: 'Guia ou entidade excluído com sucesso.', severity: 'success' });
+      handleCloseDialog();
+      await loadGuides();
+    } catch (error: any) {
+      setConfirmDeleteOpen(false);
+      setFeedback({
+        open: true,
+        message: error?.response?.data?.message || 'Não foi possível excluir o guia ou entidade.',
+        severity: 'error',
+      });
+    } finally {
+      setDeleting(false);
     }
-    setConfirmOpen(false);
-    setConfirmTarget(null);
   };
 
   const handleSubmit = async () => {
@@ -290,13 +276,13 @@ const GuidesPage: React.FC = () => {
     const payload = {
       name: form.name,
       description: form.description,
-      photoUrl: form.photoUrl || undefined,
       specialties: splitCsv(form.specialties),
-      entryDate: form.entryDate,
-      email: form.email || undefined,
-      phone: form.phone || undefined,
-      whatsapp: form.whatsapp || undefined,
       displayOrder: Math.max(1, Number(form.displayOrder || 1)),
+      comida: form.comida || undefined,
+      fruta: form.fruta || undefined,
+      diaDaSemana: form.diaDaSemana || undefined,
+      cor: form.cor || undefined,
+      saudacao: form.saudacao || undefined,
       isActive: form.isActive,
     };
 
@@ -320,28 +306,6 @@ const GuidesPage: React.FC = () => {
     }
   };
 
-  const handleConfirmDeactivate = async () => {
-    if (!confirmTarget) {
-      return;
-    }
-
-    setDeactivating(true);
-    try {
-      await apiService.deleteGuide(String(confirmTarget.id));
-
-      setFeedback({ open: true, message: 'Cadastro inativado com sucesso.', severity: 'success' });
-      handleCloseConfirm();
-      await loadGuides();
-    } catch (error: any) {
-      setFeedback({
-        open: true,
-        message: error?.response?.data?.message || 'Não foi possível inativar o cadastro.',
-        severity: 'error',
-      });
-    } finally {
-      setDeactivating(false);
-    }
-  };
 
   return (
     <Box>
@@ -439,18 +403,6 @@ const GuidesPage: React.FC = () => {
               }}
               fullWidth
             />
-            <FormControl sx={{ minWidth: 160 }}>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={statusFilter}
-                label="Status"
-                onChange={(e: SelectChangeEvent) => setStatusFilter(e.target.value as 'all' | 'true' | 'false')}
-              >
-                <MenuItem value="all">Todos</MenuItem>
-                <MenuItem value="true">Ativos</MenuItem>
-                <MenuItem value="false">Inativos</MenuItem>
-              </Select>
-            </FormControl>
           </Stack>
         )}
       </Paper>
@@ -479,8 +431,6 @@ const GuidesPage: React.FC = () => {
               ? undefined
               : {
                   displayOrder: !isXs,
-                  entryDate: !isXs,
-                  email: !isXs,
                 }
           }
           getRowHeight={isXs ? () => 'auto' : undefined}
@@ -541,6 +491,7 @@ const GuidesPage: React.FC = () => {
                 }
                 error={!!formErrors.name}
                 helperText={formErrors.name}
+                sx={formErrors.name ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
                 fullWidth
               />
               <TextField
@@ -561,102 +512,91 @@ const GuidesPage: React.FC = () => {
                 setForm((prev) => ({ ...prev, description: e.target.value }))
               }
               error={!!formErrors.description} helperText={formErrors.description}
+              sx={formErrors.description ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
               fullWidth multiline minRows={4}
             />
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField
-                label="Especialidades"
-                helperText={formErrors.specialties || 'Separe por vírgula'}
-                value={form.specialties}
-                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                  setForm((prev) => ({ ...prev, specialties: e.target.value }))
-                }
-                error={!!formErrors.specialties}
-                fullWidth
-              />
-              <TextField
-                label="Data de entrada"
-                type="date"
-                value={form.entryDate}
-                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                  setForm((prev) => ({ ...prev, entryDate: e.target.value }))
-                }
-                InputLabelProps={{ shrink: true }}
-                error={!!formErrors.entryDate} helperText={formErrors.entryDate}
-                fullWidth
-              />
-            </Stack>
             <TextField
-              label="Foto"
-              value={form.photoUrl}
+              label="Especialidades"
+              helperText={formErrors.specialties || 'Separe por vírgula'}
+              value={form.specialties}
               onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                setForm((prev) => ({ ...prev, photoUrl: e.target.value }))
+                setForm((prev) => ({ ...prev, specialties: e.target.value }))
               }
+              error={!!formErrors.specialties}
+              sx={formErrors.specialties ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
               fullWidth
             />
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
               <TextField
-                label="E-mail"
-                value={form.email}
+                label="Saudação"
+                value={form.saudacao}
                 onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                  setForm((prev) => ({ ...prev, email: e.target.value }))
+                  setForm((prev) => ({ ...prev, saudacao: e.target.value }))
                 }
                 fullWidth
               />
               <TextField
-                label="Telefone"
-                value={form.phone}
+                label="Dia da Semana"
+                value={form.diaDaSemana}
                 onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                  setForm((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                fullWidth
-              />
-              <TextField
-                label="WhatsApp"
-                value={form.whatsapp}
-                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                  setForm((prev) => ({ ...prev, whatsapp: e.target.value }))
+                  setForm((prev) => ({ ...prev, diaDaSemana: e.target.value }))
                 }
                 fullWidth
               />
             </Stack>
-            {editingItem && (
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={form.isActive}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setForm((prev) => ({ ...prev, isActive: e.target.checked }))
-                    }
-                  />
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+              <TextField
+                label="Fruta"
+                value={form.fruta}
+                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                  setForm((prev) => ({ ...prev, fruta: e.target.value }))
                 }
-                label="Cadastro ativo"
+                fullWidth
               />
-            )}
-            <Alert severity="info">
-              Utilize especialidades consistentes para melhorar a busca e os filtros operacionais do dashboard.
-            </Alert>
+              <TextField
+                label="Comida"
+                value={form.comida}
+                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                  setForm((prev) => ({ ...prev, comida: e.target.value }))
+                }
+                fullWidth
+              />
+            </Stack>
+            <TextField
+              label="Cor"
+              value={form.cor}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                setForm((prev) => ({ ...prev, cor: e.target.value }))
+              }
+              helperText="Separe múltiplas cores por vírgula (ex: Vermelho, Preto)"
+              fullWidth
+            />
           </Stack>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleCloseDialog}>Cancelar</Button>
+          {editingItem && (
+            <Button variant="outlined" color="error" onClick={handleDeleteGuide}>
+              Excluir
+            </Button>
+          )}
           <Button variant="contained" onClick={handleSubmit}>
             {editingItem ? 'Salvar alterações' : 'Criar cadastro'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={confirmOpen} onClose={handleCloseConfirm} fullWidth maxWidth="sm">
-        <DialogTitle>Inativar cadastro?</DialogTitle>
+      <Dialog open={confirmDeleteOpen} onClose={() => !deleting && setConfirmDeleteOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Excluir guia ou entidade</DialogTitle>
         <DialogContent>
-          <Alert severity="warning" sx={{ mt: 1 }}>
-            {confirmTarget ? `O cadastro “${confirmTarget.name}” será marcado como inativo e deixará de aparecer no portal.` : 'Este cadastro será marcado como inativo e deixará de aparecer no portal.'}
+          <Alert severity="error" sx={{ mt: 1 }}>
+            Esta ação é permanente. O cadastro <strong>{editingItem?.name}</strong> será removido definitivamente.
           </Alert>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseConfirm} disabled={deactivating}>Cancelar</Button>
-          <Button variant="contained" color="warning" onClick={handleConfirmDeactivate} disabled={deactivating}>
-            Inativar
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={deleting}>Cancelar</Button>
+          <Button variant="contained" color="error" onClick={handleConfirmDelete} disabled={deleting}>
+            {deleting ? 'Excluindo...' : 'Excluir definitivamente'}
           </Button>
         </DialogActions>
       </Dialog>

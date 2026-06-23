@@ -83,12 +83,12 @@ namespace Batuara.Infrastructure.Guides.Services
                     request.Name,
                     request.Description,
                     request.Specialties,
-                    NormalizeDateOnlyUtc(request.EntryDate),
                     request.DisplayOrder,
-                    request.PhotoUrl,
-                    request.Email,
-                    request.Phone,
-                    request.Whatsapp);
+                    request.Comida,
+                    request.Fruta,
+                    request.DiaDaSemana,
+                    request.Cor,
+                    request.Saudacao);
 
                 _db.Guides.Add(entity);
                 await _db.SaveChangesAsync();
@@ -121,19 +121,13 @@ namespace Batuara.Infrastructure.Guides.Services
                     request.Name,
                     request.Description,
                     request.Specialties,
-                    request.DisplayOrder,
-                    request.PhotoUrl);
-                entity.UpdateEntryDate(NormalizeDateOnlyUtc(request.EntryDate));
-                entity.UpdateContacts(request.Email, request.Phone, request.Whatsapp);
-
-                if (request.IsActive)
-                {
-                    entity.Activate();
-                }
-                else
-                {
-                    entity.Deactivate();
-                }
+                    request.DisplayOrder);
+                entity.UpdateExtendedInfo(
+                    request.Comida,
+                    request.Fruta,
+                    request.DiaDaSemana,
+                    request.Cor,
+                    request.Saudacao);
 
                 await _db.SaveChangesAsync();
                 return (MapToDto(entity), Array.Empty<string>(), false);
@@ -144,17 +138,17 @@ namespace Batuara.Infrastructure.Guides.Services
             }
         }
 
-        public async Task<bool> SoftDeleteAsync(int id)
+        public async Task<(bool Deleted, string[] Errors)> HardDeleteAsync(int id)
         {
             var entity = await _db.Guides.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null)
             {
-                return false;
+                return (false, new[] { "Guide not found" });
             }
 
-            entity.Deactivate();
+            _db.Guides.Remove(entity);
             await _db.SaveChangesAsync();
-            return true;
+            return (true, Array.Empty<string>());
         }
 
         private static IQueryable<GuideEntity> BuildFilterQuery(IQueryable<GuideEntity> query, string? q)
@@ -164,9 +158,7 @@ namespace Batuara.Infrastructure.Guides.Services
                 var term = q.Trim().ToLower();
                 query = query.Where(x =>
                     x.Name.ToLower().Contains(term) ||
-                    x.Description.ToLower().Contains(term) ||
-                    (x.Email != null && x.Email.ToLower().Contains(term)) ||
-                    (x.Phone != null && x.Phone.ToLower().Contains(term)));
+                    x.Description.ToLower().Contains(term));
             }
 
             return query;
@@ -181,9 +173,7 @@ namespace Batuara.Infrastructure.Guides.Services
                 var term = q.Trim().ToLower();
                 query = query.Where(x => x.Specialties.Any(item => item.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
                     x.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                    x.Description.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                    (!string.IsNullOrWhiteSpace(x.Email) && x.Email.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                    (!string.IsNullOrWhiteSpace(x.Phone) && x.Phone.Contains(term, StringComparison.OrdinalIgnoreCase)));
+                    x.Description.Contains(term, StringComparison.OrdinalIgnoreCase));
             }
 
             if (!string.IsNullOrWhiteSpace(specialty))
@@ -201,13 +191,13 @@ namespace Batuara.Infrastructure.Guides.Services
                 Id = entity.Id,
                 Name = entity.Name,
                 Description = entity.Description,
-                PhotoUrl = entity.PhotoUrl,
                 Specialties = entity.Specialties,
-                EntryDate = NormalizeDateOnlyUtc(entity.EntryDate),
-                Email = entity.Email,
-                Phone = entity.Phone,
-                Whatsapp = entity.Whatsapp,
                 DisplayOrder = entity.DisplayOrder,
+                Comida = entity.Comida,
+                Fruta = entity.Fruta,
+                DiaDaSemana = entity.DiaDaSemana,
+                Cor = entity.Cor,
+                Saudacao = entity.Saudacao,
                 IsActive = entity.IsActive,
                 CreatedAt = entity.CreatedAt,
                 UpdatedAt = entity.UpdatedAt
@@ -228,7 +218,6 @@ namespace Batuara.Infrastructure.Guides.Services
             return field switch
             {
                 "name" => asc ? query.OrderBy(x => x.Name) : query.OrderByDescending(x => x.Name),
-                "entrydate" => asc ? query.OrderBy(x => x.EntryDate) : query.OrderByDescending(x => x.EntryDate),
                 "createdat" => asc ? query.OrderBy(x => x.CreatedAt) : query.OrderByDescending(x => x.CreatedAt),
                 "updatedat" => asc ? query.OrderBy(x => x.UpdatedAt) : query.OrderByDescending(x => x.UpdatedAt),
                 _ => asc ? query.OrderBy(x => x.DisplayOrder).ThenBy(x => x.Name) : query.OrderByDescending(x => x.DisplayOrder).ThenBy(x => x.Name)
@@ -247,9 +236,5 @@ namespace Batuara.Infrastructure.Guides.Services
             return (page, size);
         }
 
-        private static DateTime NormalizeDateOnlyUtc(DateTime value)
-        {
-            return DateTime.SpecifyKind(value.Date, DateTimeKind.Utc);
-        }
     }
 }

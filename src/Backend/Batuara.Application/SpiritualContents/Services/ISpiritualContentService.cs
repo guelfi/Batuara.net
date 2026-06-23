@@ -31,5 +31,6 @@ namespace Batuara.Application.SpiritualContents.Services
         Task<(SpiritualContentDto? Content, string[] Errors, bool Conflict)> CreateAsync(CreateSpiritualContentRequest request);
         Task<(SpiritualContentDto? Content, string[] Errors, bool Conflict)> UpdateAsync(int id, UpdateSpiritualContentRequest request);
         Task<bool> SoftDeleteAsync(int id);
+        Task<(bool Deleted, string[] Errors)> HardDeleteAsync(int id);
     }
 }

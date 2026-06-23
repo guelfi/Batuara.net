@@ -96,6 +96,7 @@ export interface Event {
   location?: string;
   type: EventType;
   imageUrl?: string;
+  cardColor?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -143,6 +144,10 @@ export interface Orixa {
   batuaraTeaching: string;
   imageUrl?: string;
   displayOrder: number;
+  saudacao?: string;
+  fruta?: string;
+  comida?: string;
+  diaDaSemana?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -152,13 +157,13 @@ export interface Guide {
   id: number;
   name: string;
   description: string;
-  photoUrl?: string;
   specialties: string[];
-  entryDate: string;
-  email?: string;
-  phone?: string;
-  whatsapp?: string;
   displayOrder: number;
+  comida?: string;
+  fruta?: string;
+  diaDaSemana?: string;
+  cor?: string;
+  saudacao?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

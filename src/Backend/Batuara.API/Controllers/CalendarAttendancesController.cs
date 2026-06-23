@@ -148,7 +148,7 @@ namespace Batuara.API.Controllers
         {
             try
             {
-                var (deleted, errors) = await _service.SoftDeleteAsync(id);
+                var (deleted, errors) = await _service.HardDeleteAsync(id);
                 if (!deleted)
                 {
                     if (errors.Length == 1 && errors[0] == "Atendimento não encontrado")

@@ -1,20 +1,21 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Batuara.Infrastructure.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddReasonRevokedToRefreshToken : Migration
+    public partial class AddCardColorToEvents : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
-                name: "ReasonRevoked",
+                name: "card_color",
                 schema: "batuara",
-                table: "refresh_tokens",
-                type: "text",
+                table: "events",
+                type: "character varying(30)",
+                maxLength: 30,
                 nullable: true);
         }
 
@@ -22,9 +23,9 @@ namespace Batuara.Infrastructure.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "ReasonRevoked",
+                name: "card_color",
                 schema: "batuara",
-                table: "refresh_tokens");
+                table: "events");
         }
     }
 }

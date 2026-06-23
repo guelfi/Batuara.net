@@ -28,7 +28,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Add as AddIcon, Close as CloseIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Add as AddIcon, Close as CloseIcon, Edit as EditIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import apiService from '../services/api';
 import GridPager from '../components/common/GridPager';
@@ -98,6 +98,15 @@ const initialFormState: MemberFormState = {
   contributions: [buildEmptyContribution()],
 };
 
+const resolveContributionStatus = (raw: unknown): ContributionPaymentStatus => {
+  if (typeof raw === 'string') {
+    if (raw === 'Paid') return ContributionPaymentStatus.Paid;
+    return ContributionPaymentStatus.Pending;
+  }
+  const n = Number(raw);
+  return isNaN(n) ? ContributionPaymentStatus.Pending : n as ContributionPaymentStatus;
+};
+
 const getContributionStatusLabel = (status?: ContributionPaymentStatus) => {
   if (status === ContributionPaymentStatus.Paid) {
     return 'Pago';
@@ -130,9 +139,9 @@ const MembersPage: React.FC = () => {
   const [gridError, setGridError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<HouseMember | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTarget, setConfirmTarget] = useState<HouseMember | null>(null);
-  const [deactivating, setDeactivating] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [dialogError, setDialogError] = useState<string | null>(null);
   const [form, setForm] = useState<MemberFormState>(initialFormState);
   const [dialogTab, setDialogTab] = useState(0);
   const [formErrors, setFormErrors] = useState<{
@@ -200,6 +209,14 @@ const MembersPage: React.FC = () => {
   const columns: GridColDef[] = isXs
     ? [
         {
+          field: 'actions',
+          type: 'actions',
+          width: 52,
+          getActions: (params) => [
+            <GridActionsCellItem icon={<EditIcon fontSize="small" />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
+          ],
+        },
+        {
           field: 'fullName',
           headerName: 'Nome',
           flex: 0.85,
@@ -222,28 +239,18 @@ const MembersPage: React.FC = () => {
           sortable: false,
           filterable: false,
         },
-        {
-          field: 'actions',
-          type: 'actions',
-          width: 92,
-          getActions: (params) => [
-            <GridActionsCellItem icon={<EditIcon fontSize="small" />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-            <GridActionsCellItem icon={<DeleteIcon fontSize="small" />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
-          ],
-        },
       ]
     : [
-        { field: 'fullName', headerName: 'Nome', flex: 1.2, minWidth: 240 },
-        { field: 'mobilePhone', headerName: 'Celular', width: 160 },
         {
           field: 'actions',
           type: 'actions',
-          width: 110,
+          width: 60,
           getActions: (params) => [
             <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
           ],
         },
+        { field: 'fullName', headerName: 'Nome', flex: 1.2, minWidth: 240 },
+        { field: 'mobilePhone', headerName: 'Celular', width: 160 },
       ];
 
   const mapContribution = (contribution: HouseMemberContribution): ContributionFormState => ({
@@ -251,7 +258,7 @@ const MembersPage: React.FC = () => {
     referenceMonth: contribution.referenceMonth.slice(0, 10),
     dueDate: contribution.dueDate.slice(0, 10),
     amount: String(contribution.amount),
-    status: contribution.status,
+    status: resolveContributionStatus(contribution.status),
     paidAt: contribution.paidAt ? contribution.paidAt.slice(0, 10) : '',
     notes: contribution.notes || '',
   });
@@ -293,19 +300,33 @@ const MembersPage: React.FC = () => {
     setEditingItem(null);
     setForm(initialFormState);
     setFormErrors({});
+    setDialogError(null);
   };
 
-  const handleRequestDeactivate = (item: HouseMember) => {
-    setConfirmTarget(item);
-    setConfirmOpen(true);
+  const handleDeleteMember = () => {
+    if (!editingItem) return;
+    setConfirmDeleteOpen(true);
   };
 
-  const handleCloseConfirm = () => {
-    if (deactivating) {
-      return;
+  const handleConfirmDelete = async () => {
+    if (!editingItem) return;
+    setDeleting(true);
+    try {
+      await apiService.deleteHouseMember(String(editingItem.id));
+      setConfirmDeleteOpen(false);
+      setFeedback({ open: true, message: 'Cadastro excluído com sucesso.', severity: 'success' });
+      handleCloseDialog();
+      await loadMembers();
+    } catch (error: any) {
+      setConfirmDeleteOpen(false);
+      setFeedback({
+        open: true,
+        message: error?.response?.data?.message || 'Não foi possível excluir o cadastro.',
+        severity: 'error',
+      });
+    } finally {
+      setDeleting(false);
     }
-    setConfirmOpen(false);
-    setConfirmTarget(null);
   };
 
   const contributionSummary = useMemo(() => {
@@ -370,10 +391,11 @@ const MembersPage: React.FC = () => {
       return;
     }
 
+    const today = new Date().toISOString().slice(0, 10);
     const payload = {
       fullName: form.fullName.trim(),
       birthDate: form.birthDate,
-      entryDate: form.entryDate,
+      entryDate: form.entryDate || today,
       headOrixaFront: form.headOrixaFront,
       headOrixaBack: form.headOrixaBack,
       headOrixaRonda: form.headOrixaRonda,
@@ -410,63 +432,9 @@ const MembersPage: React.FC = () => {
       handleCloseDialog();
       await loadMembers();
     } catch (error: any) {
-      setFeedback({
-        open: true,
-        message: error?.response?.data?.message || 'Não foi possível salvar o cadastro.',
-        severity: 'error',
-      });
-    }
-  };
-
-  const handleConfirmDeactivate = async () => {
-    if (!confirmTarget) {
-      return;
-    }
-
-    setDeactivating(true);
-    try {
-      const response = await apiService.getHouseMember(String(confirmTarget.id));
-      const member = response.data;
-
-      await apiService.updateHouseMember(String(confirmTarget.id), {
-        fullName: member.fullName,
-        birthDate: member.birthDate.slice(0, 10),
-        entryDate: member.entryDate.slice(0, 10),
-        headOrixaFront: member.headOrixaFront,
-        headOrixaBack: member.headOrixaBack,
-        headOrixaRonda: member.headOrixaRonda,
-        email: member.email,
-        mobilePhone: member.mobilePhone,
-        zipCode: member.zipCode,
-        street: member.street,
-        number: member.number,
-        complement: member.complement || undefined,
-        district: member.district,
-        city: member.city,
-        state: member.state,
-        isActive: false,
-        contributions: member.contributions.map((item) => ({
-          id: item.id,
-          referenceMonth: item.referenceMonth.slice(0, 10),
-          dueDate: item.dueDate.slice(0, 10),
-          amount: item.amount,
-          status: item.status,
-          paidAt: item.status === ContributionPaymentStatus.Paid && item.paidAt ? item.paidAt.slice(0, 10) : undefined,
-          notes: item.notes || undefined,
-        })),
-      });
-
-      setFeedback({ open: true, message: 'Cadastro inativado com sucesso.', severity: 'success' });
-      handleCloseConfirm();
-      await loadMembers();
-    } catch (error: any) {
-      setFeedback({
-        open: true,
-        message: error?.response?.data?.message || 'Não foi possível inativar o cadastro.',
-        severity: 'error',
-      });
-    } finally {
-      setDeactivating(false);
+      const msg = error?.response?.data?.message || 'Não foi possível salvar o cadastro.';
+      setDialogError(msg);
+      setFeedback({ open: true, message: msg, severity: 'error' });
     }
   };
 
@@ -702,6 +670,7 @@ const MembersPage: React.FC = () => {
                     onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
                     error={!!formErrors.fullName}
                     helperText={formErrors.fullName}
+                    sx={formErrors.fullName ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
                     fullWidth
                   />
                   <TextField
@@ -710,6 +679,7 @@ const MembersPage: React.FC = () => {
                     onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
                     error={!!formErrors.email}
                     helperText={formErrors.email}
+                    sx={formErrors.email ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
                     fullWidth
                   />
                   <TextField
@@ -718,6 +688,7 @@ const MembersPage: React.FC = () => {
                     onChange={(e) => setForm((prev) => ({ ...prev, mobilePhone: formatPhoneBr(e.target.value) }))}
                     error={!!formErrors.mobilePhone}
                     helperText={formErrors.mobilePhone}
+                    sx={formErrors.mobilePhone ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
                     fullWidth
                   />
                 </Stack>
@@ -879,7 +850,7 @@ const MembersPage: React.FC = () => {
                     onChange={(e) => setForm((prev) => ({ ...prev, state: formatUf(e.target.value) }))}
                     error={!!formErrors.state}
                     helperText={formErrors.state}
-                    sx={{ minWidth: 100 }}
+                    sx={{ minWidth: 100, ...(formErrors.state ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}) }}
                   />
                 </Stack>
               </Stack>
@@ -911,25 +882,33 @@ const MembersPage: React.FC = () => {
             )}
           </Box>
         </DialogContent>
-        <DialogActions>
+        {dialogError && (
+          <Alert severity="error" sx={{ mx: 3, mb: 1 }}>{dialogError}</Alert>
+        )}
+        <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleCloseDialog}>Cancelar</Button>
+          {editingItem && (
+            <Button variant="outlined" color="error" onClick={handleDeleteMember}>
+              Excluir
+            </Button>
+          )}
           <Button variant="contained" onClick={handleSubmit}>
             {editingItem ? 'Salvar alterações' : 'Criar cadastro'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={confirmOpen} onClose={handleCloseConfirm} fullWidth maxWidth="sm">
-        <DialogTitle>Inativar cadastro?</DialogTitle>
+      <Dialog open={confirmDeleteOpen} onClose={() => !deleting && setConfirmDeleteOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Excluir cadastro</DialogTitle>
         <DialogContent>
-          <Alert severity="warning" sx={{ mt: 1 }}>
-            {confirmTarget ? `O cadastro “${confirmTarget.fullName}” será marcado como inativo e não ficará disponível como membro ativo.` : 'Este cadastro será marcado como inativo e não ficará disponível como membro ativo.'}
+          <Alert severity="error" sx={{ mt: 1 }}>
+            Esta ação é permanente. O cadastro de <strong>{editingItem?.fullName}</strong> e todas as suas mensalidades serão removidos definitivamente.
           </Alert>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseConfirm} disabled={deactivating}>Cancelar</Button>
-          <Button variant="contained" color="warning" onClick={handleConfirmDeactivate} disabled={deactivating}>
-            Inativar
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={deleting}>Cancelar</Button>
+          <Button variant="contained" color="error" onClick={handleConfirmDelete} disabled={deleting}>
+            {deleting ? 'Excluindo...' : 'Excluir definitivamente'}
           </Button>
         </DialogActions>
       </Dialog>

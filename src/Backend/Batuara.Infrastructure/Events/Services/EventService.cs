@@ -76,7 +76,8 @@ namespace Batuara.Infrastructure.Events.Services
                     EndTime = e.EventDate.EndTime,
                     Type = e.Type,
                     Location = e.Location,
-                    ImageUrl = e.ImageUrl
+                    ImageUrl = e.ImageUrl,
+                    CardColor = e.CardColor
                 })
                 .ToListAsync();
 
@@ -184,7 +185,8 @@ namespace Batuara.Infrastructure.Events.Services
                     eventDate,
                     request.Type,
                     request.Location,
-                    request.ImageUrl);
+                    request.ImageUrl,
+                    request.CardColor);
 
                 var activeSameDay = (await _dbContext.Events
                     .AsNoTracking()
@@ -253,6 +255,11 @@ namespace Batuara.Infrastructure.Events.Services
                 if (request.ImageUrl != null)
                 {
                     entity.UpdateImage(request.ImageUrl);
+                }
+
+                if (request.CardColor != null || isPatch)
+                {
+                    entity.UpdateCardColor(request.CardColor);
                 }
 
                 if (request.Type.HasValue)
@@ -342,6 +349,19 @@ namespace Batuara.Infrastructure.Events.Services
             return (true, Array.Empty<string>());
         }
 
+        public async Task<(bool Deleted, string[] Errors)> HardDeleteAsync(int id)
+        {
+            var entity = await _dbContext.Events.FirstOrDefaultAsync(e => e.Id == id);
+            if (entity == null)
+            {
+                return (false, new[] { "Evento não encontrado" });
+            }
+
+            _dbContext.Events.Remove(entity);
+            await _dbContext.SaveChangesAsync();
+            return (true, Array.Empty<string>());
+        }
+
         private static EventDto MapToDto(Event e)
         {
             return new EventDto
@@ -355,6 +375,7 @@ namespace Batuara.Infrastructure.Events.Services
                 Type = e.Type,
                 Location = e.Location,
                 ImageUrl = e.ImageUrl,
+                CardColor = e.CardColor,
                 IsActive = e.IsActive,
                 CreatedAt = e.CreatedAt,
                 UpdatedAt = e.UpdatedAt

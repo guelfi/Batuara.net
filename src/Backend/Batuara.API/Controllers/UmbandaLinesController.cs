@@ -140,10 +140,10 @@ namespace Batuara.API.Controllers
         {
             try
             {
-                var deleted = await _service.SoftDeleteAsync(id);
+                var (deleted, errors) = await _service.HardDeleteAsync(id);
                 if (!deleted)
                 {
-                    return NotFound(new { success = false, message = "Umbanda line not found" });
+                    return NotFound(new { success = false, message = errors.Length > 0 ? errors[0] : "Umbanda line not found" });
                 }
 
                 return NoContent();

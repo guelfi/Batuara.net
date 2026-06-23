@@ -198,6 +198,19 @@ namespace Batuara.Infrastructure.SpiritualContents.Services
             return true;
         }
 
+        public async Task<(bool Deleted, string[] Errors)> HardDeleteAsync(int id)
+        {
+            var entity = await _db.SpiritualContents.FirstOrDefaultAsync(x => x.Id == id);
+            if (entity == null)
+            {
+                return (false, new[] { "Spiritual content not found" });
+            }
+
+            _db.SpiritualContents.Remove(entity);
+            await _db.SaveChangesAsync();
+            return (true, Array.Empty<string>());
+        }
+
         private IQueryable<SpiritualContent> BuildQuery(
             string? q,
             SpiritualContentType? type,

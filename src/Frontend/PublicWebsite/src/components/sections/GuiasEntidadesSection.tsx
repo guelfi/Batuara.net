@@ -8,8 +8,8 @@ import {
   DialogContent,
   DialogTitle,
   Fade,
+  Grid,
   IconButton,
-  Link,
   Stack,
   Typography,
   Card,
@@ -27,19 +27,18 @@ import { useQuery } from '@tanstack/react-query';
 import NavigationDots from '../common/NavigationDots';
 import publicApi from '../../services/api';
 import { Guide } from '../../types';
-import { desktopMediaQuery } from '../../theme/theme';
 
 type DisplayGuide = {
   id: string | number;
   name: string;
   description: string;
   highlight: string;
-  metadata: Array<{ label: string; value: string }>;
+  cor?: string;
   tags: string[];
-  email?: string;
-  phone?: string;
-  whatsapp?: string;
-  photoUrl?: string;
+  saudacao?: string;
+  diaDaSemana?: string;
+  fruta?: string;
+  comida?: string;
 };
 
 const colorMap: Record<string, string> = {
@@ -95,31 +94,23 @@ const GuiasEntidadesSection: React.FC = () => {
         name: item.name,
         description: item.description,
         highlight: 'Guia da Casa Batuara',
-        metadata: [
-          { label: 'Especialidades', value: item.specialties.join(' • ') || 'Não informado' },
-          ...(item.whatsapp || item.phone || item.email
-            ? [{ label: 'Contato', value: item.whatsapp || item.phone || item.email || '' }]
-            : []),
-        ],
+        cor: item.cor,
         tags: item.specialties,
-        email: item.email,
-        phone: item.phone,
-        whatsapp: item.whatsapp,
-        photoUrl: item.photoUrl,
+        saudacao: item.saudacao,
+        diaDaSemana: item.diaDaSemana,
+        fruta: item.fruta,
+        comida: item.comida,
       }));
   }, [data]);
 
   const getAccentColorFromGuide = (guia: DisplayGuide): string => {
-    const text = `${guia.name} ${guia.highlight} ${guia.description} ${guia.tags.join(' ')}`.toLowerCase();
-    const hex = text.match(/#(?:[0-9a-f]{3}|[0-9a-f]{6})\b/i)?.[0];
-    if (hex) return hex;
-
-    for (const key of colorKeys) {
-      if (text.includes(key)) {
-        return colorMap[key];
+    if (guia.cor) {
+      const corLower = guia.cor.toLowerCase().trim();
+      if (colorMap[corLower]) return colorMap[corLower];
+      for (const key of colorKeys) {
+        if (corLower.includes(key)) return colorMap[key];
       }
     }
-
     return theme.palette.primary.main;
   };
 
@@ -195,14 +186,10 @@ const GuiasEntidadesSection: React.FC = () => {
       id="guias-entidades"
       sx={{
         scrollMarginTop: { xs: 56, md: 64 },
-        minHeight: { xs: '100vh', md: 'auto' },
+        minHeight: { xs: 'calc(100vh - 56px)', md: 'calc(100vh - 64px)' },
         pt: { xs: 1.5, md: 2 },
         pb: { xs: 4, md: 8 },
         backgroundColor: 'background.default',
-        [desktopMediaQuery]: {
-          minHeight: 'calc(100vh - 88px)',
-          pb: 10,
-        },
       }}
     >
       <Container maxWidth="lg">
@@ -331,15 +318,10 @@ const GuiasEntidadesSection: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            overflow: 'hidden',
                             flexShrink: 0,
                           }}
                         >
-                          {guia.photoUrl ? (
-                            <Box component="img" src={guia.photoUrl} alt={guia.name} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            <PeopleIcon sx={{ fontSize: 34, color: 'white' }} />
-                          )}
+                          <PeopleIcon sx={{ fontSize: 34, color: 'white' }} />
                         </Box>
                         <Box>
                           <Typography variant="h6" sx={{ fontWeight: 800, color: accentText }}>
@@ -357,7 +339,7 @@ const GuiasEntidadesSection: React.FC = () => {
                         sx={{
                           lineHeight: 1.7,
                           display: '-webkit-box',
-                          WebkitLineClamp: 4,
+                          WebkitLineClamp: 3,
                           WebkitBoxOrient: 'vertical',
                           overflow: 'hidden',
                           mb: 2,
@@ -366,12 +348,27 @@ const GuiasEntidadesSection: React.FC = () => {
                         {guia.description}
                       </Typography>
 
-                      <Stack spacing={1.2} sx={{ mb: 2 }}>
-                        {guia.metadata.slice(0, 4).map((item) => (
-                          <Typography key={`${guia.id}-${item.label}`} variant="body2" color="text.secondary">
-                            <strong>{item.label}:</strong> {item.value}
+                      <Stack spacing={0.75} sx={{ mb: 2 }}>
+                        {guia.saudacao && (
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Saudação:</strong> {guia.saudacao}
                           </Typography>
-                        ))}
+                        )}
+                        {guia.diaDaSemana && (
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Dia:</strong> {guia.diaDaSemana}
+                          </Typography>
+                        )}
+                        {guia.fruta && (
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Fruta:</strong> {guia.fruta}
+                          </Typography>
+                        )}
+                        {guia.comida && (
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Comida:</strong> {guia.comida}
+                          </Typography>
+                        )}
                       </Stack>
 
                       <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
@@ -446,33 +443,57 @@ const GuiasEntidadesSection: React.FC = () => {
               </DialogTitle>
               <DialogContent>
                 {selectedGuia && (
-                  <Stack spacing={2}>
-                    {!!selectedGuia.photoUrl && (
-                      <Box
-                        component="img"
-                        src={selectedGuia.photoUrl}
-                        alt={selectedGuia.name}
-                        sx={{ width: '100%', maxHeight: 280, objectFit: 'cover', borderRadius: 3 }}
-                      />
-                    )}
+                  <Stack spacing={2} sx={{ mt: 1 }}>
                     <Typography variant="body1" sx={{ lineHeight: 1.8 }}>
                       {selectedGuia.description}
                     </Typography>
+                    {(selectedGuia.saudacao || selectedGuia.diaDaSemana || selectedGuia.fruta || selectedGuia.comida) && (
+                      <Box
+                        sx={{
+                          borderRadius: 2,
+                          border: `1px solid ${dialogAccentColor}30`,
+                          backgroundColor: `${dialogAccentColor}08`,
+                          p: 2,
+                        }}
+                      >
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: dialogTitleColor }}>
+                          Oferendas e Saudação
+                        </Typography>
+                        <Grid container spacing={1.5}>
+                          {selectedGuia.saudacao && (
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Saudação:</strong> {selectedGuia.saudacao}
+                              </Typography>
+                            </Grid>
+                          )}
+                          {selectedGuia.diaDaSemana && (
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Dia:</strong> {selectedGuia.diaDaSemana}
+                              </Typography>
+                            </Grid>
+                          )}
+                          {selectedGuia.fruta && (
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Fruta:</strong> {selectedGuia.fruta}
+                              </Typography>
+                            </Grid>
+                          )}
+                          {selectedGuia.comida && (
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Comida:</strong> {selectedGuia.comida}
+                              </Typography>
+                            </Grid>
+                          )}
+                        </Grid>
+                      </Box>
+                    )}
                     <Box>
                       <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                        Detalhes
-                      </Typography>
-                      <Stack spacing={1}>
-                        {selectedGuia.metadata.map((item) => (
-                          <Typography key={`${selectedGuia.id}-${item.label}`} variant="body2" color="text.secondary">
-                            <strong>{item.label}:</strong> {item.value}
-                          </Typography>
-                        ))}
-                      </Stack>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                        Características
+                        Especialidades
                       </Typography>
                       <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
                         {selectedGuia.tags.map((specialty) => (
@@ -490,21 +511,6 @@ const GuiasEntidadesSection: React.FC = () => {
                         ))}
                       </Stack>
                     </Box>
-                    {!!selectedGuia.email && (
-                      <Typography variant="body2" color="text.secondary">
-                        E-mail: <Link href={`mailto:${selectedGuia.email}`}>{selectedGuia.email}</Link>
-                      </Typography>
-                    )}
-                    {!!selectedGuia.phone && (
-                      <Typography variant="body2" color="text.secondary">
-                        Telefone: {selectedGuia.phone}
-                      </Typography>
-                    )}
-                    {!!selectedGuia.whatsapp && (
-                      <Typography variant="body2" color="text.secondary">
-                        WhatsApp: {selectedGuia.whatsapp}
-                      </Typography>
-                    )}
                   </Stack>
                 )}
               </DialogContent>

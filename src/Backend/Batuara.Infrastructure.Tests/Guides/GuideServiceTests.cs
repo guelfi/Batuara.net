@@ -32,9 +32,8 @@ namespace Batuara.Infrastructure.Tests.Guides
                 Name = "Caboclo Sete Flechas",
                 Description = "Guia de proteção e direcionamento",
                 Specialties = new List<string> { "Proteção", "Direcionamento" },
-                EntryDate = DateTime.UtcNow.Date,
                 DisplayOrder = 1,
-                Email = "guia@batuara.org.br"
+                Saudacao = "Ora Yê Yê"
             };
 
             var (created, errors, conflict) = await service.CreateAsync(request);
@@ -59,7 +58,6 @@ namespace Batuara.Infrastructure.Tests.Guides
                 Name = "Preto Velho Pai Joaquim",
                 Description = "Atendimento fraterno",
                 Specialties = new List<string> { "Aconselhamento" },
-                EntryDate = DateTime.UtcNow.Date,
                 DisplayOrder = 1
             });
 
@@ -68,7 +66,6 @@ namespace Batuara.Infrastructure.Tests.Guides
                 Name = "Preto Velho Pai Joaquim",
                 Description = "Outro texto",
                 Specialties = new List<string> { "Passe" },
-                EntryDate = DateTime.UtcNow.Date,
                 DisplayOrder = 2
             });
 

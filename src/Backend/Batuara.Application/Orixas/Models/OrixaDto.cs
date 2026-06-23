@@ -12,6 +12,10 @@ namespace Batuara.Application.Orixas.Models
         public IReadOnlyList<string> Characteristics { get; set; } = Array.Empty<string>();
         public IReadOnlyList<string> Colors { get; set; } = Array.Empty<string>();
         public IReadOnlyList<string> Elements { get; set; } = Array.Empty<string>();
+        public string? Comida { get; set; }
+        public string? DiaDaSemana { get; set; }
+        public string? Fruta { get; set; }
+        public string? Saudacao { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }

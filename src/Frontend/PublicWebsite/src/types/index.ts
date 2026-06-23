@@ -10,6 +10,7 @@ export interface Event {
   type: EventType | keyof typeof EventType | string;
   imageUrl?: string;
   location?: string;
+  cardColor?: string;
   isActive?: boolean;
 }
 
@@ -53,6 +54,10 @@ export interface Orixa {
   characteristics: string[];
   colors: string[];
   elements: string[];
+  saudacao?: string;
+  fruta?: string;
+  comida?: string;
+  diaDaSemana?: string;
   isActive: boolean;
 }
 
@@ -177,13 +182,13 @@ export interface Guide {
   id: number;
   name: string;
   description: string;
-  photoUrl?: string;
   specialties: string[];
-  entryDate: string;
-  email?: string;
-  phone?: string;
-  whatsapp?: string;
   displayOrder: number;
+  comida?: string;
+  fruta?: string;
+  diaDaSemana?: string;
+  cor?: string;
+  saudacao?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

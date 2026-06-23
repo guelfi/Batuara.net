@@ -198,6 +198,19 @@ namespace Batuara.Infrastructure.HouseMembers.Services
             return true;
         }
 
+        public async Task<(bool Deleted, string[] Errors)> HardDeleteAsync(int id)
+        {
+            var entity = await _db.HouseMembers.FirstOrDefaultAsync(x => x.Id == id);
+            if (entity == null)
+            {
+                return (false, new[] { "House member not found" });
+            }
+
+            _db.HouseMembers.Remove(entity);
+            await _db.SaveChangesAsync();
+            return (true, Array.Empty<string>());
+        }
+
         private static void SyncContributions(HouseMember entity, IReadOnlyCollection<HouseMemberContributionInput> requested)
         {
             var requestedIds = requested.Where(x => x.Id.HasValue).Select(x => x.Id!.Value).ToHashSet();

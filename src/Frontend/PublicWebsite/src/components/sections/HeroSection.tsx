@@ -256,7 +256,7 @@ const HeroSection: React.FC = () => {
                     },
                   }}
                 >
-                  Ver Horários
+                  Calendário
                 </Button>
               </Box>
             </Box>

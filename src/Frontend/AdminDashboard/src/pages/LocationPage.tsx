@@ -162,28 +162,6 @@ const LocationPage: React.FC = () => {
               <TextField label="WhatsApp" value={settings.whatsappUrl || ''} onChange={(e) => updateField('whatsappUrl', e.target.value)} fullWidth />
             </Stack>
           </Paper>
-
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Preview do rodapé
-            </Typography>
-            <Stack spacing={1}>
-              <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                {`${settings.street}, ${settings.number}${settings.complement ? ` - ${settings.complement}` : ''}`}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {`${settings.district} • ${settings.city}/${settings.state} • ${settings.zipCode}`}
-              </Typography>
-              {!!settings.referenceNotes && (
-                <Typography variant="body2" color="text.secondary">
-                  {settings.referenceNotes}
-                </Typography>
-              )}
-              <Alert severity="info" sx={{ mt: 1 }}>
-                Links cadastrados aqui alimentam os ícones dinâmicos do site público e o rodapé institucional.
-              </Alert>
-            </Stack>
-          </Paper>
         </Grid>
       </Grid>
 

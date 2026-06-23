@@ -93,6 +93,9 @@ const EventsSection: React.FC = () => {
     }
   };
 
+  const getEventColor = (event: BatuaraEvent): string =>
+    event.cardColor || getEventTypeColor(event.type);
+
   const getEventTypeColor = (type: EventType | string): string => {
     switch (normalizeEventType(type)) {
       case EventType.Festa:
@@ -194,14 +197,10 @@ const EventsSection: React.FC = () => {
       id="eventos-e-festas"
       sx={{
         scrollMarginTop: { xs: 56, md: 64 },
-        minHeight: { xs: '100vh', md: 'auto' },
+        minHeight: { xs: 'calc(100vh - 56px)', md: 'calc(100vh - 64px)' },
         pt: { xs: 1.5, md: 2 },
         pb: { xs: 4, md: 8 },
         backgroundColor: 'background.paper',
-        [desktopMediaQuery]: {
-          minHeight: 'calc(100vh - 88px)',
-          pb: 10,
-        },
       }}
     >
       <Container maxWidth="lg">
@@ -383,7 +382,7 @@ const EventsSection: React.FC = () => {
                         label={getEventTypeLabel(event.type)}
                         size="small"
                         sx={{
-                          backgroundColor: getEventTypeColor(event.type),
+                          backgroundColor: getEventColor(event),
                           color: 'white',
                           fontWeight: 500,
                           fontSize: '0.75rem',
@@ -433,9 +432,9 @@ const EventsSection: React.FC = () => {
                       fullWidth
                       size="small"
                       sx={{
-                        backgroundColor: getEventTypeColor(event.type),
+                        backgroundColor: getEventColor(event),
                         '&:hover': {
-                          backgroundColor: getEventTypeColor(event.type),
+                          backgroundColor: getEventColor(event),
                           filter: 'brightness(0.9)',
                         },
                       }}
@@ -506,7 +505,7 @@ const EventsSection: React.FC = () => {
                         label={getEventTypeLabel(event.type)}
                         size="small"
                         sx={{
-                          backgroundColor: getEventTypeColor(event.type),
+                          backgroundColor: getEventColor(event),
                           color: 'white',
                           fontWeight: 500,
                         }}
@@ -554,9 +553,9 @@ const EventsSection: React.FC = () => {
                       variant="contained"
                       fullWidth
                       sx={{
-                        backgroundColor: getEventTypeColor(event.type),
+                        backgroundColor: getEventColor(event),
                         '&:hover': {
-                          backgroundColor: getEventTypeColor(event.type),
+                          backgroundColor: getEventColor(event),
                           filter: 'brightness(0.9)',
                         },
                       }}

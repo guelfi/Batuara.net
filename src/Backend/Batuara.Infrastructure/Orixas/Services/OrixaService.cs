@@ -102,6 +102,7 @@ namespace Batuara.Infrastructure.Orixas.Services
                     request.ImageUrl
                 );
 
+                entity.UpdateExtendedInfo(request.Comida, request.DiaDaSemana, request.Fruta, request.Saudacao);
                 _db.Orixas.Add(entity);
                 await _db.SaveChangesAsync();
                 return (MapToDto(entity), Array.Empty<string>(), false);
@@ -156,17 +157,7 @@ namespace Batuara.Infrastructure.Orixas.Services
                     entity.UpdateImage(request.ImageUrl);
                 }
 
-                if (request.IsActive.HasValue)
-                {
-                    if (!request.IsActive.Value)
-                    {
-                        entity.Deactivate();
-                    }
-                    else
-                    {
-                        entity.Activate();
-                    }
-                }
+                entity.UpdateExtendedInfo(request.Comida, request.DiaDaSemana, request.Fruta, request.Saudacao);
 
                 await _db.SaveChangesAsync();
                 return (MapToDto(entity), Array.Empty<string>(), false);
@@ -181,7 +172,7 @@ namespace Batuara.Infrastructure.Orixas.Services
         {
             var entity = await _db.Orixas.FirstOrDefaultAsync(o => o.Id == id);
             if (entity == null) return false;
-            entity.Deactivate();
+            _db.Orixas.Remove(entity);
             await _db.SaveChangesAsync();
             return true;
         }
@@ -200,6 +191,10 @@ namespace Batuara.Infrastructure.Orixas.Services
                 Characteristics = o.Characteristics,
                 Colors = o.Colors,
                 Elements = o.Elements,
+                Comida = o.Comida,
+                DiaDaSemana = o.DiaDaSemana,
+                Fruta = o.Fruta,
+                Saudacao = o.Saudacao,
                 IsActive = o.IsActive,
                 CreatedAt = o.CreatedAt,
                 UpdatedAt = o.UpdatedAt

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -9,14 +9,12 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
-  FormControlLabel,
   InputLabel,
   MenuItem,
   Paper,
   Select,
   Snackbar,
   Stack,
-  Switch,
   TextField,
   Typography,
   InputAdornment,
@@ -24,7 +22,7 @@ import {
   useTheme,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import { Add as AddIcon, ArrowBackIos as ArrowBackIosIcon, ArrowForwardIos as ArrowForwardIosIcon, Close as CloseIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Add as AddIcon, ArrowBackIos as ArrowBackIosIcon, ArrowForwardIos as ArrowForwardIosIcon, Close as CloseIcon, Edit as EditIcon } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import { DatePicker, LocalizationProvider, TimePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -43,9 +41,20 @@ type EventFormState = {
   endTime: string;
   type: EventType;
   location: string;
-  imageUrl: string;
-  isActive: boolean;
+  cardColor: string;
 };
+
+const CARD_COLOR_OPTIONS: { label: string; value: string }[] = [
+  { label: 'Padrão (por tipo)', value: '' },
+  { label: 'Verde escuro', value: '#2e7d32' },
+  { label: 'Azul', value: '#1565c0' },
+  { label: 'Roxo', value: '#6a1b9a' },
+  { label: 'Laranja', value: '#e65100' },
+  { label: 'Vermelho', value: '#b71c1c' },
+  { label: 'Verde água', value: '#00695c' },
+  { label: 'Rosa', value: '#880e4f' },
+  { label: 'Dourado', value: '#f57f17' },
+];
 
 const initialFormState: EventFormState = {
   title: '',
@@ -55,8 +64,7 @@ const initialFormState: EventFormState = {
   endTime: '21:00',
   type: EventType.Evento,
   location: '',
-  imageUrl: '',
-  isActive: true,
+  cardColor: '',
 };
 
 const eventLabels: Record<EventType, string> = {
@@ -65,6 +73,15 @@ const eventLabels: Record<EventType, string> = {
   [EventType.Celebracao]: 'Celebração',
   [EventType.Bazar]: 'Bazar',
   [EventType.Palestra]: 'Palestra',
+};
+
+const eventTypeNameMap: Record<string, EventType> = {
+  Festa: EventType.Festa,
+  Evento: EventType.Evento,
+  Celebracao: EventType.Celebracao,
+  Celebração: EventType.Celebracao,
+  Bazar: EventType.Bazar,
+  Palestra: EventType.Palestra,
 };
 
 const normalizeEventType = (type: unknown): EventType | undefined => {
@@ -171,15 +188,14 @@ const EventsPage: React.FC = () => {
   const [gridError, setGridError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<BatuaraEvent | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTarget, setConfirmTarget] = useState<BatuaraEvent | null>(null);
-  const [deactivating, setDeactivating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [form, setForm] = useState<EventFormState>(initialFormState);
   const [formErrors, setFormErrors] = useState<{
     title?: string;
     date?: string;
+    startTime?: string;
     endTime?: string;
-    imageUrl?: string;
   }>({});
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | EventType>('all');
@@ -249,6 +265,14 @@ const EventsPage: React.FC = () => {
   const columns: GridColDef[] = isXs
     ? [
         {
+          field: 'actions',
+          type: 'actions',
+          width: 56,
+          getActions: (params) => [
+            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
+          ],
+        },
+        {
           field: 'summary',
           headerName: 'Evento',
           flex: 1,
@@ -259,43 +283,25 @@ const EventsPage: React.FC = () => {
               !params.row.startTime && !params.row.endTime
                 ? 'Dia inteiro'
                 : `${(params.row.startTime || '').slice(0, 5)} - ${(params.row.endTime || '').slice(0, 5)}`;
-
             return (
               <Stack spacing={0.25} sx={{ py: 1 }}>
-                <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
-                  {dateLabel}
-                </Typography>
-                <Typography variant="body2" sx={{ whiteSpace: 'normal', lineHeight: 1.25 }}>
-                  {params.row.title}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-                  {scheduleLabel}
-                </Typography>
+                <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>{dateLabel}</Typography>
+                <Typography variant="body2" sx={{ whiteSpace: 'normal', lineHeight: 1.25 }}>{params.row.title}</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>{scheduleLabel}</Typography>
               </Stack>
             );
           },
         },
-        {
-          field: 'isActive',
-          headerName: 'Status',
-          width: 80,
-          renderCell: (params) => (
-            <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
-              {params.row.isActive ? 'Ativo' : 'Inativo'}
-            </Typography>
-          ),
-        },
+      ]
+    : [
         {
           field: 'actions',
           type: 'actions',
-          width: 80,
+          width: 56,
           getActions: (params) => [
             <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
           ],
         },
-      ]
-    : [
         {
           field: 'date',
           headerName: 'Data',
@@ -315,12 +321,13 @@ const EventsPage: React.FC = () => {
           minWidth: 140,
           flex: 0.9,
           renderCell: (params) => {
+            const normalized = normalizeEventType(params.row.type);
             const accentColor = getEventTypeAccentColor(params.row.type);
             return (
               <Chip
                 size="small"
                 variant="outlined"
-                label={eventLabels[params.row.type as EventType]}
+                label={normalized !== undefined ? eventLabels[normalized] : String(params.row.type)}
                 sx={{
                   color: accentColor,
                   borderColor: `color-mix(in srgb, ${accentColor} 50%, transparent)`,
@@ -337,10 +344,7 @@ const EventsPage: React.FC = () => {
           minWidth: 130,
           flex: 0.9,
           valueGetter: (_, row) => {
-            if (!row.startTime && !row.endTime) {
-              return 'Dia inteiro';
-            }
-
+            if (!row.startTime && !row.endTime) return 'Dia inteiro';
             return `${(row.startTime || '').slice(0, 5)} - ${(row.endTime || '').slice(0, 5)}`;
           },
         },
@@ -350,23 +354,6 @@ const EventsPage: React.FC = () => {
           minWidth: 180,
           flex: 1,
           renderCell: (params) => params.row.location || 'Não informado',
-        },
-        {
-          field: 'isActive',
-          headerName: 'Status',
-          minWidth: 110,
-          flex: 0.7,
-          renderCell: (params) => <Chip size="small" label={params.row.isActive ? 'Ativo' : 'Inativo'} color={params.row.isActive ? 'success' : 'default'} />,
-        },
-        {
-          field: 'actions',
-          type: 'actions',
-          headerName: 'Ações',
-          width: 110,
-          getActions: (params) => [
-            <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
-            <GridActionsCellItem icon={<DeleteIcon />} label="Inativar" onClick={() => handleRequestDeactivate(params.row)} />,
-          ],
         },
       ];
 
@@ -378,16 +365,16 @@ const EventsPage: React.FC = () => {
   const handleOpenDialog = (item?: BatuaraEvent) => {
     if (item) {
       setEditingItem(item);
+      const normalized = normalizeEventType(item.type);
       setForm({
         title: item.title,
         description: item.description,
         date: item.date.slice(0, 10),
         startTime: (item.startTime || '').slice(0, 5),
         endTime: (item.endTime || '').slice(0, 5),
-        type: item.type,
+        type: normalized !== undefined ? normalized : EventType.Evento,
         location: item.location || '',
-        imageUrl: item.imageUrl || '',
-        isActive: item.isActive,
+        cardColor: item.cardColor || '',
       });
     } else {
       resetForm();
@@ -402,27 +389,7 @@ const EventsPage: React.FC = () => {
     setFormErrors({});
   };
 
-  function handleRequestDeactivate(item: BatuaraEvent) {
-    setConfirmTarget(item);
-    setConfirmOpen(true);
-  }
-
-  function handleCloseConfirm() {
-    if (deactivating) {
-      return;
-    }
-    setConfirmOpen(false);
-    setConfirmTarget(null);
-  }
-
-  const isValidHttpUrl = (value: string) => {
-    try {
-      const url = new URL(value);
-      return url.protocol === 'http:' || url.protocol === 'https:';
-    } catch {
-      return false;
-    }
-  };
+  const isValidTime = (value: string) => /^([01]\d|2[0-3]):([0-5]\d)$/.test(value);
 
   const validateForm = (): typeof formErrors => {
     const nextErrors: typeof formErrors = {};
@@ -430,13 +397,12 @@ const EventsPage: React.FC = () => {
     if (!form.title.trim()) nextErrors.title = 'Título é obrigatório.';
     if (!form.date) nextErrors.date = 'Data é obrigatória.';
     if (form.date && Number.isNaN(new Date(form.date).getTime())) nextErrors.date = 'Informe uma data válida.';
-
-    if (form.startTime && form.endTime && form.startTime >= form.endTime) {
+    if (!form.startTime) nextErrors.startTime = 'Horário de início é obrigatório.';
+    else if (!isValidTime(form.startTime)) nextErrors.startTime = 'Formato inválido. Use HH:MM.';
+    if (!form.endTime) nextErrors.endTime = 'Horário de fim é obrigatório.';
+    else if (!isValidTime(form.endTime)) nextErrors.endTime = 'Formato inválido. Use HH:MM.';
+    if (form.startTime && form.endTime && isValidTime(form.startTime) && isValidTime(form.endTime) && form.startTime >= form.endTime) {
       nextErrors.endTime = 'Horário de término deve ser maior que o horário de início.';
-    }
-
-    if (form.imageUrl.trim() && !isValidHttpUrl(form.imageUrl.trim())) {
-      nextErrors.imageUrl = 'Informe uma URL válida (http/https).';
     }
 
     return nextErrors;
@@ -460,21 +426,14 @@ const EventsPage: React.FC = () => {
 
         const nextTitle = form.title.trim();
         if (nextTitle !== (editingItem.title || '')) payload.title = nextTitle;
-
         if ((form.description || '') !== (editingItem.description || '')) payload.description = form.description || null;
-
         if (form.date && form.date !== originalDate) payload.date = form.date;
-        if (form.startTime && form.startTime !== originalStart) payload.startTime = form.startTime;
-        if (form.endTime && form.endTime !== originalEnd) payload.endTime = form.endTime;
-        if (form.type !== editingItem.type) payload.type = form.type;
-
+        if (form.startTime !== originalStart) payload.startTime = form.startTime;
+        if (form.endTime !== originalEnd) payload.endTime = form.endTime;
+        const normalizedType = normalizeEventType(editingItem.type);
+        if (form.type !== normalizedType) payload.type = form.type;
         if ((form.location || '') !== (editingItem.location || '')) payload.location = form.location ? form.location : null;
-
-        const nextImageUrl = form.imageUrl.trim();
-        const originalImageUrl = (editingItem.imageUrl || '').trim();
-        if (nextImageUrl !== originalImageUrl) payload.imageUrl = nextImageUrl ? nextImageUrl : null;
-
-        if (form.isActive !== !!editingItem.isActive) payload.isActive = form.isActive;
+        if ((form.cardColor || '') !== (editingItem.cardColor || '')) payload.cardColor = form.cardColor || null;
 
         await apiService.updateEvent(String(editingItem.id), payload);
         setFeedback({ open: true, message: 'Evento atualizado com sucesso.', severity: 'success' });
@@ -483,12 +442,11 @@ const EventsPage: React.FC = () => {
           title: form.title.trim(),
           description: form.description,
           date: form.date,
-          startTime: form.startTime || undefined,
-          endTime: form.endTime || undefined,
+          startTime: form.startTime,
+          endTime: form.endTime,
           type: form.type,
           location: form.location || undefined,
-          imageUrl: form.imageUrl.trim() ? form.imageUrl.trim() : undefined,
-          isActive: form.isActive,
+          cardColor: form.cardColor || undefined,
         };
         await apiService.createEvent(payload);
         setFeedback({ open: true, message: 'Evento criado com sucesso.', severity: 'success' });
@@ -505,28 +463,31 @@ const EventsPage: React.FC = () => {
     }
   };
 
-  async function handleConfirmDeactivate() {
-    if (!confirmTarget) {
-      return;
-    }
+  const handleDeleteEvent = () => {
+    if (!editingItem) return;
+    setConfirmDeleteOpen(true);
+  };
 
-    setDeactivating(true);
+  const handleConfirmDelete = async () => {
+    if (!editingItem) return;
+    setDeleting(true);
     try {
-      await apiService.deleteEvent(String(confirmTarget.id));
-
-      setFeedback({ open: true, message: 'Evento inativado com sucesso.', severity: 'success' });
-      handleCloseConfirm();
+      await apiService.deleteEvent(String(editingItem.id));
+      setConfirmDeleteOpen(false);
+      setFeedback({ open: true, message: 'Evento excluído com sucesso.', severity: 'success' });
+      handleCloseDialog();
       await loadEvents();
     } catch (error: any) {
+      setConfirmDeleteOpen(false);
       setFeedback({
         open: true,
-        message: error?.response?.data?.message || 'Não foi possível inativar o evento.',
+        message: error?.response?.data?.message || 'Não foi possível excluir o evento.',
         severity: 'error',
       });
     } finally {
-      setDeactivating(false);
+      setDeleting(false);
     }
-  }
+  };
 
   return (
     <Box>
@@ -680,7 +641,6 @@ const EventsPage: React.FC = () => {
               : {
                   type: !isXs,
                   location: !isXs,
-                  isActive: !isXs,
                 }
           }
           getRowHeight={isXs ? () => 'auto' : undefined}
@@ -718,6 +678,7 @@ const EventsPage: React.FC = () => {
               error={!!formErrors.title}
               helperText={formErrors.title}
               fullWidth
+              sx={formErrors.title ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
             />
             <TextField
               label="Descrição"
@@ -731,13 +692,10 @@ const EventsPage: React.FC = () => {
             />
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
               <DatePicker
-                label="Data"
+                label="Data *"
                 value={form.date ? parseIsoDateOnlyToDate(form.date) : null}
                 onChange={(value) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    date: value ? toIsoDateOnly(value) : '',
-                  }))
+                  setForm((prev) => ({ ...prev, date: value ? toIsoDateOnly(value) : '' }))
                 }
                 format="dd/MM/yyyy"
                 slotProps={{
@@ -745,54 +703,61 @@ const EventsPage: React.FC = () => {
                     fullWidth: true,
                     error: !!formErrors.date,
                     helperText: formErrors.date,
-                  },
-                }}
-              />
-              <TimePicker
-                label="Início"
-                value={form.startTime ? parseTimeToDate(form.startTime) : null}
-                onChange={(value) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    startTime: value ? format(value, 'HH:mm') : '',
-                  }))
-                }
-                ampm={false}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                  },
-                }}
-              />
-              <TimePicker
-                label="Fim"
-                value={form.endTime ? parseTimeToDate(form.endTime) : null}
-                onChange={(value) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    endTime: value ? format(value, 'HH:mm') : '',
-                  }))
-                }
-                ampm={false}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    error: !!formErrors.endTime,
-                    helperText: formErrors.endTime,
+                    sx: formErrors.date ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {},
                   },
                 }}
               />
             </Stack>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+              <FormControl fullWidth error={!!formErrors.startTime}>
+                <TimePicker
+                  label="Início *"
+                  value={form.startTime ? parseTimeToDate(form.startTime) : null}
+                  onChange={(value) =>
+                    setForm((prev) => ({ ...prev, startTime: value ? format(value, 'HH:mm') : '' }))
+                  }
+                  ampm={false}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      error: !!formErrors.startTime,
+                      helperText: formErrors.startTime,
+                      sx: formErrors.startTime ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {},
+                    },
+                  }}
+                />
+              </FormControl>
+              <FormControl fullWidth error={!!formErrors.endTime}>
+                <TimePicker
+                  label="Fim *"
+                  value={form.endTime ? parseTimeToDate(form.endTime) : null}
+                  onChange={(value) =>
+                    setForm((prev) => ({ ...prev, endTime: value ? format(value, 'HH:mm') : '' }))
+                  }
+                  ampm={false}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      error: !!formErrors.endTime,
+                      helperText: formErrors.endTime,
+                      sx: formErrors.endTime ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {},
+                    },
+                  }}
+                />
+              </FormControl>
+            </Stack>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
               <FormControl fullWidth>
                 <InputLabel>Tipo</InputLabel>
-                <Select value={String(form.type)} label="Tipo" onChange={(e: SelectChangeEvent) =>
-                  setForm((prev) => ({ ...prev, type: Number(e.target.value) as EventType }))
-                } sx={{ minHeight: 48 }}>
+                <Select
+                  value={String(form.type)}
+                  label="Tipo"
+                  onChange={(e: SelectChangeEvent) =>
+                    setForm((prev) => ({ ...prev, type: Number(e.target.value) as EventType }))
+                  }
+                >
                   {Object.entries(eventLabels).map(([value, label]) => (
-                    <MenuItem key={value} value={Number(value)}>
-                      {label}
-                    </MenuItem>
+                    <MenuItem key={value} value={value}>{label}</MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -805,36 +770,48 @@ const EventsPage: React.FC = () => {
                 fullWidth
               />
             </Stack>
-            <TextField
-              label="URL da imagem"
-              value={form.imageUrl}
-              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                setForm((prev) => ({ ...prev, imageUrl: e.target.value }))
-              }
-              error={!!formErrors.imageUrl}
-              helperText={formErrors.imageUrl}
-              fullWidth
-            />
-            {editingItem && (
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={form.isActive}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setForm((prev) => ({ ...prev, isActive: e.target.checked }))
-                    }
-                  />
+            <FormControl fullWidth>
+              <InputLabel>Cor do card (PublicWebsite)</InputLabel>
+              <Select
+                value={form.cardColor}
+                label="Cor do card (PublicWebsite)"
+                onChange={(e: SelectChangeEvent) =>
+                  setForm((prev) => ({ ...prev, cardColor: e.target.value }))
                 }
-                label="Evento ativo"
-              />
-            )}
+                renderValue={(selected) => {
+                  const opt = CARD_COLOR_OPTIONS.find((o) => o.value === selected);
+                  return (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {selected && (
+                        <Box sx={{ width: 18, height: 18, borderRadius: '50%', backgroundColor: selected, border: '1px solid rgba(0,0,0,0.15)', flexShrink: 0 }} />
+                      )}
+                      <span>{opt?.label ?? 'Padrão (por tipo)'}</span>
+                    </Box>
+                  );
+                }}
+              >
+                {CARD_COLOR_OPTIONS.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Box sx={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: opt.value || '#e0e0e0', border: '1px solid rgba(0,0,0,0.15)', flexShrink: 0 }} />
+                      {opt.label}
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <Alert severity="info">
               Os eventos alimentam diretamente o PublicWebsite, então alterações publicadas aparecem para os visitantes após a atualização da consulta.
             </Alert>
             </Stack>
           </DialogContent>
-          <DialogActions>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={handleCloseDialog}>Cancelar</Button>
+            {editingItem && (
+              <Button variant="outlined" color="error" onClick={handleDeleteEvent}>
+                Excluir
+              </Button>
+            )}
             <Button variant="contained" onClick={handleSubmit}>
               {editingItem ? 'Salvar alterações' : 'Criar evento'}
             </Button>
@@ -842,17 +819,18 @@ const EventsPage: React.FC = () => {
         </Dialog>
       </LocalizationProvider>
 
-      <Dialog open={confirmOpen} onClose={handleCloseConfirm} fullWidth maxWidth="sm">
-        <DialogTitle>Inativar evento?</DialogTitle>
+      <Dialog open={confirmDeleteOpen} onClose={() => !deleting && setConfirmDeleteOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Excluir evento</DialogTitle>
         <DialogContent>
-          <Alert severity="warning" sx={{ mt: 1 }}>
-            {confirmTarget ? `O evento “${confirmTarget.title}” será marcado como inativo e deixará de aparecer no portal.` : 'Este evento será marcado como inativo e deixará de aparecer no portal.'}
+          <Alert severity="error" sx={{ mt: 1 }}>
+            Esta ação é permanente e não pode ser desfeita. O evento{' '}
+            <strong>{editingItem?.title}</strong> será removido definitivamente.
           </Alert>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseConfirm} disabled={deactivating}>Cancelar</Button>
-          <Button variant="contained" color="warning" onClick={handleConfirmDeactivate} disabled={deactivating}>
-            Inativar
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={deleting}>Cancelar</Button>
+          <Button variant="contained" color="error" onClick={handleConfirmDelete} disabled={deleting}>
+            {deleting ? 'Excluindo...' : 'Excluir definitivamente'}
           </Button>
         </DialogActions>
       </Dialog>
