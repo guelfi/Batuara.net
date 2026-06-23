@@ -161,6 +161,7 @@ const ContactMessagesPage: React.FC = () => {
     try {
       await apiService.markContactMessageAsRead(String(msg.id), newRead);
       setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, isRead: newRead } : m)));
+      setSelectedMessage((prev) => (prev && prev.id === msg.id ? { ...prev, isRead: newRead } : prev));
       setUnreadCount((prev) => (newRead ? Math.max(0, prev - 1) : prev + 1));
     } catch (error: any) {
       setFeedback({
@@ -239,6 +240,14 @@ const ContactMessagesPage: React.FC = () => {
       ]
     : [
         {
+          field: 'actions',
+          type: 'actions',
+          width: 56,
+          getActions: (params) => [
+            <GridActionsCellItem icon={<EditIcon />} label="Atender" onClick={() => openDialog(params.row)} />,
+          ],
+        },
+        {
           field: 'name',
           headerName: 'Nome',
           flex: 1,
@@ -279,23 +288,6 @@ const ContactMessagesPage: React.FC = () => {
           renderCell: (params) => (
             <Chip size="small" label={getStatusLabel(params.row.status)} color={getStatusColor(params.row.status)} />
           ),
-        },
-        {
-          field: 'actions',
-          type: 'actions',
-          width: 120,
-          getActions: (params) => [
-            <GridActionsCellItem
-              icon={
-                <Tooltip title={params.row.isRead ? 'Marcar como não lida' : 'Marcar como lida'}>
-                  {params.row.isRead ? <MarkUnreadIcon /> : <MarkReadIcon />}
-                </Tooltip>
-              }
-              label={params.row.isRead ? 'Marcar como não lida' : 'Marcar como lida'}
-              onClick={() => handleToggleRead(params.row)}
-            />,
-            <GridActionsCellItem icon={<EditIcon />} label="Atender" onClick={() => openDialog(params.row)} />,
-          ],
         },
       ];
 
@@ -517,7 +509,22 @@ const ContactMessagesPage: React.FC = () => {
       </Menu>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="md" fullScreen={isXs}>
-        <DialogTitle>Atendimento da mensagem</DialogTitle>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>Atendimento da mensagem</span>
+            {selectedMessage && (
+              <Tooltip title={selectedMessage.isRead ? 'Marcar como não lida' : 'Marcar como lida'}>
+                <IconButton
+                  size="small"
+                  onClick={() => handleToggleRead(selectedMessage)}
+                  color={selectedMessage.isRead ? 'default' : 'primary'}
+                >
+                  {selectedMessage.isRead ? <MarkUnreadIcon /> : <MarkReadIcon />}
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
+        </DialogTitle>
         <DialogContent sx={{ pb: isXs ? 12 : 2 }}>
           {selectedMessage && (
             <Stack spacing={2} sx={{ mt: 1 }}>
