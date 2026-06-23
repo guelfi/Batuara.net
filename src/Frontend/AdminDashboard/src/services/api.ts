@@ -379,6 +379,15 @@ class ApiService {
     return this.patch<ContactMessage>(`/contact-messages/${id}/status`, data);
   }
 
+  async markContactMessageAsRead(id: string, isRead: boolean) {
+    return this.patch<ContactMessage>(`/contact-messages/${id}/read`, { isRead });
+  }
+
+  async getContactMessagesUnreadCount(): Promise<number> {
+    const resp = await this.get<{ count: number }>('/contact-messages/unread-count');
+    return resp.data?.count ?? 0;
+  }
+
   // Métodos para Linhas de Umbanda
   async getUmbandaLines(params?: any) {
     return this.getPaginated<UmbandaLine>('/umbanda-lines', params);

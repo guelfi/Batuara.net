@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Badge,
   Box,
   AppBar,
   Drawer,
@@ -34,6 +35,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import apiService from '../../services/api';
 
 const drawerWidth = 320;
 
@@ -73,6 +75,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(true);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   const firstNavItemRef = useRef<HTMLDivElement | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -84,6 +87,19 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const handleDesktopToggle = () => {
     setDesktopOpen((prev) => !prev);
   };
+
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const count = await apiService.getContactMessagesUnreadCount();
+      setUnreadMessages(count);
+    } catch (_) {}
+  }, []);
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 60000);
+    return () => clearInterval(interval);
+  }, [fetchUnreadCount]);
 
   const handleLogout = async () => {
     await logout();
@@ -174,7 +190,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                       color: location.pathname === item.path ? 'primary.main' : 'inherit',
                     }}
                   >
-                    {item.icon}
+                    {item.path === '/contact-messages' ? (
+                      <Badge badgeContent={unreadMessages} color="error" max={99}>
+                        {item.icon}
+                      </Badge>
+                    ) : item.icon}
                   </ListItemIcon>
                   <ListItemText
                     primary={item.text}

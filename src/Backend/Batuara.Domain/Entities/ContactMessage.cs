@@ -11,6 +11,7 @@ namespace Batuara.Domain.Entities
         public string Subject { get; private set; } = string.Empty;
         public string Message { get; private set; } = string.Empty;
         public ContactMessageStatus Status { get; private set; } = ContactMessageStatus.New;
+        public bool IsRead { get; private set; } = false;
         public string? AdminNotes { get; private set; }
         public DateTime ReceivedAt { get; private set; }
 
@@ -34,6 +35,24 @@ namespace Batuara.Domain.Entities
             Status = status;
             AdminNotes = string.IsNullOrWhiteSpace(adminNotes) ? null : adminNotes.Trim();
             UpdateTimestamp();
+        }
+
+        public void MarkAsRead()
+        {
+            if (!IsRead)
+            {
+                IsRead = true;
+                UpdateTimestamp();
+            }
+        }
+
+        public void MarkAsUnread()
+        {
+            if (IsRead)
+            {
+                IsRead = false;
+                UpdateTimestamp();
+            }
         }
 
         private static string Require(string value, string paramName)

@@ -211,6 +211,7 @@ export interface ContactMessage {
   subject: string;
   message: string;
   status: ContactMessageStatus;
+  isRead: boolean;
   adminNotes?: string;
   receivedAt: string;
   createdAt: string;
