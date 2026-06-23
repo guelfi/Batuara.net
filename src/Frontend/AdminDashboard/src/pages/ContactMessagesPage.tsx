@@ -143,6 +143,7 @@ const ContactMessagesPage: React.FC = () => {
         await apiService.markContactMessageAsRead(String(msg.id), true);
         setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, isRead: true } : m)));
         setUnreadCount((prev) => Math.max(0, prev - 1));
+        window.dispatchEvent(new CustomEvent('unread-count-changed'));
       } catch (_) {}
     }
   };
@@ -168,6 +169,7 @@ const ContactMessagesPage: React.FC = () => {
       setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, isRead: newRead } : m)));
       setSelectedMessage((prev) => (prev && prev.id === msg.id ? { ...prev, isRead: newRead } : prev));
       setUnreadCount((prev) => (newRead ? Math.max(0, prev - 1) : prev + 1));
+      window.dispatchEvent(new CustomEvent('unread-count-changed'));
     } catch (error: any) {
       setFeedback({
         open: true,
