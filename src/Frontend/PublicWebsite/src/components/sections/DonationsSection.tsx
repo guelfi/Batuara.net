@@ -15,6 +15,7 @@ import {
   IconButton,
   Snackbar,
   Typography,
+  useMediaQuery,
   useTheme,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -30,6 +31,7 @@ import { desktopMediaQuery } from '../../theme/theme';
 
 const DonationsSection: React.FC = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { data: siteSettings, isLoading, isError } = useQuery({
     queryKey: ['siteSettings', 'public'],
     queryFn: () => publicApi.getSiteSettings(),
@@ -220,6 +222,7 @@ const DonationsSection: React.FC = () => {
           onClose={() => setShowPixDialog(false)}
           maxWidth="xs"
           fullWidth
+          fullScreen={isMobile}
         >
           <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -232,17 +235,17 @@ const DonationsSection: React.FC = () => {
               <CloseIcon />
             </IconButton>
           </DialogTitle>
-          <DialogContent sx={{ textAlign: 'center' }}>
+          <DialogContent sx={{ textAlign: 'center', overflowY: 'auto', pb: isMobile ? 10 : 2 }}>
             <Box sx={{ mb: { xs: 1.5, sm: 3 }, display: 'flex', justifyContent: 'center' }}>
-              <Box sx={{ p: 2, backgroundColor: 'white', borderRadius: 2, boxShadow: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Box sx={{ p: { xs: 1, sm: 2 }, backgroundColor: 'white', borderRadius: 2, boxShadow: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {siteSettings?.pixQrCodeBase64 ? (
                   <img
                     src={siteSettings.pixQrCodeBase64}
                     alt="QR Code PIX"
-                    style={{ width: 200, height: 200, objectFit: 'contain' }}
+                    style={{ width: isMobile ? 160 : 200, height: isMobile ? 160 : 200, objectFit: 'contain' }}
                   />
                 ) : (
-                  <canvas ref={qrCodeRef} style={{ display: pixValue ? 'block' : 'none' }} />
+                  <canvas ref={qrCodeRef} style={{ display: pixValue ? 'block' : 'none', width: isMobile ? 160 : 200, height: isMobile ? 160 : 200 }} />
                 )}
               </Box>
             </Box>
@@ -304,7 +307,18 @@ const DonationsSection: React.FC = () => {
               Escaneie o QR Code ou copie os dados do PIX oficial da <br /> Casa Batuara
             </Typography>
           </DialogContent>
-          <DialogActions sx={{ p: 3, pt: 0 }}>
+          <DialogActions
+            sx={isMobile ? {
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              p: 2,
+              bgcolor: 'background.paper',
+              borderTop: '1px solid',
+              borderColor: 'divider',
+            } : { p: 3, pt: 0 }}
+          >
             <Button onClick={() => setShowPixDialog(false)} variant="outlined" fullWidth>
               Fechar
             </Button>
