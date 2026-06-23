@@ -170,10 +170,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   selected={location.pathname === item.path}
                   sx={{
                     mx: 1,
-                    my: 0.25,
+                    my: 0.15,
                     px: { xs: 1.5, md: 2 },
-                    py: { xs: 0.4, md: 0.5 },
-                    minHeight: { xs: 34, md: 40 },
+                    py: { xs: 0.25, md: 0.3 },
+                    minHeight: { xs: 33, md: 34 },
                     borderRadius: 1.5,
                     '&.Mui-selected': {
                       bgcolor: 'primary.light',
@@ -201,7 +201,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                     primaryTypographyProps={{
                       sx: {
                         fontWeight: location.pathname === item.path ? 600 : 400,
-                        fontSize: { xs: 15, md: 16 },
+                        fontSize: { xs: 14, md: 14 },
                       },
                     }}
                   />
