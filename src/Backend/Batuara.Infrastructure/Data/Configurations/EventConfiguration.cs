@@ -35,6 +35,10 @@ namespace Batuara.Infrastructure.Data.Configurations
             builder.Property(e => e.Location)
                 .HasMaxLength(300);
 
+            builder.Property(e => e.CardColor)
+                .HasColumnName("card_color")
+                .HasMaxLength(30);
+
             // Audit Fields
             builder.Property(e => e.CreatedAt)
                 .IsRequired()
