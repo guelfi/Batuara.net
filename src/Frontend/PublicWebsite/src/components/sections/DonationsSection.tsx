@@ -233,7 +233,7 @@ const DonationsSection: React.FC = () => {
             </IconButton>
           </DialogTitle>
           <DialogContent sx={{ textAlign: 'center' }}>
-            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+            <Box sx={{ mb: { xs: 1.5, sm: 3 }, display: 'flex', justifyContent: 'center' }}>
               <Box sx={{ p: 2, backgroundColor: 'white', borderRadius: 2, boxShadow: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {siteSettings?.pixQrCodeBase64 ? (
                   <img
@@ -248,7 +248,7 @@ const DonationsSection: React.FC = () => {
             </Box>
 
             {siteSettings?.pixPayload && (
-              <Card sx={{ mb: 2, backgroundColor: 'action.hover' }}>
+              <Card sx={{ mb: { xs: 1, sm: 2 }, backgroundColor: 'action.hover' }}>
                 <CardContent sx={{ py: 1.5, px: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Typography variant="caption" color="text.secondary" align="left" sx={{ fontWeight: 600, display: 'block' }}>
                     Pix Copia e Cola
@@ -269,8 +269,8 @@ const DonationsSection: React.FC = () => {
               </Card>
             )}
 
-            <Card sx={{ mb: 2, backgroundColor: 'primary.light' }}>
-              <CardContent sx={{ py: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Card sx={{ mb: { xs: 1, sm: 2 }, backgroundColor: 'primary.light' }}>
+              <CardContent sx={{ py: { xs: 1.25, sm: 2 }, px: 2, display: 'flex', flexDirection: 'column', gap: { xs: 0.75, sm: 1 } }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Box sx={{ textAlign: 'left' }}>
                     <Typography variant="subtitle2" sx={{ color: 'primary.contrastText', opacity: 0.8 }}>
@@ -288,8 +288,8 @@ const DonationsSection: React.FC = () => {
                     <ContentCopyIcon fontSize="small" />
                   </IconButton>
                 </Box>
-                
-                <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.2)', pt: 1, textAlign: 'left' }}>
+
+                <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.2)', pt: { xs: 0.75, sm: 1 }, textAlign: 'left' }}>
                   <Typography variant="subtitle2" sx={{ color: 'primary.contrastText', opacity: 0.8 }}>
                     Beneficiário:
                   </Typography>
@@ -297,17 +297,6 @@ const DonationsSection: React.FC = () => {
                     {siteSettings?.pixRecipientName || 'Casa de Caridade Batuara'}
                   </Typography>
                 </Box>
-                
-                {siteSettings?.pixCity && (
-                  <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.2)', pt: 1, textAlign: 'left' }}>
-                    <Typography variant="subtitle2" sx={{ color: 'primary.contrastText', opacity: 0.8 }}>
-                      Cidade:
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.contrastText' }}>
-                      {siteSettings.pixCity}
-                    </Typography>
-                  </Box>
-                )}
               </CardContent>
             </Card>
 
