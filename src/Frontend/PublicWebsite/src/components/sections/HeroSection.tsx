@@ -87,6 +87,31 @@ const HeroSection: React.FC = () => {
   const canScrollRight = scrollPosition < maxScroll;
 
   useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const forcePlay = () => {
+      if (video.paused) {
+        video.play().catch(() => {});
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        forcePlay();
+      }
+    };
+
+    video.addEventListener('pause', forcePlay);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      video.removeEventListener('pause', forcePlay);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
     // Pequeno delay para garantir que o container esteja renderizado
     const scrollTimer = setTimeout(() => {
       if (scrollContainerRef.current) {
