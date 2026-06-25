@@ -190,7 +190,7 @@ const HeroSection: React.FC = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)', // Dark overlay for better contrast
+          backgroundColor: 'rgba(0, 0, 0, 0.35)', // Dark overlay for better contrast
           zIndex: 1,
         }}
       />
