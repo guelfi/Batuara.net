@@ -18,51 +18,53 @@ namespace Batuara.Infrastructure.Data.Configurations
                 .HasMaxLength(180);
 
             builder.Property(x => x.Email)
-                .IsRequired()
                 .HasMaxLength(150);
 
             builder.Property(x => x.MobilePhone)
-                .IsRequired()
                 .HasMaxLength(40);
 
             builder.Property(x => x.HeadOrixaFront)
-                .IsRequired()
                 .HasMaxLength(100);
 
             builder.Property(x => x.HeadOrixaBack)
-                .IsRequired()
                 .HasMaxLength(100);
 
             builder.Property(x => x.HeadOrixaRonda)
-                .IsRequired()
                 .HasMaxLength(100);
 
             builder.Property(x => x.ZipCode)
-                .IsRequired()
                 .HasMaxLength(20);
 
             builder.Property(x => x.Street)
-                .IsRequired()
-                .HasMaxLength(200);
+                .HasMaxLength(300);
 
             builder.Property(x => x.Number)
-                .IsRequired()
                 .HasMaxLength(20);
 
             builder.Property(x => x.Complement)
                 .HasMaxLength(120);
 
             builder.Property(x => x.District)
-                .IsRequired()
                 .HasMaxLength(120);
 
             builder.Property(x => x.City)
-                .IsRequired()
                 .HasMaxLength(120);
 
             builder.Property(x => x.State)
-                .IsRequired()
-                .HasMaxLength(2);
+                .HasMaxLength(10);
+
+            builder.Property(x => x.AmaciDate);
+
+            builder.Property(x => x.YaoDate);
+
+            builder.Property(x => x.SmallParent)
+                .HasMaxLength(200);
+
+            builder.Property(x => x.ReligiousLeader)
+                .HasMaxLength(200);
+
+            builder.Property(x => x.Notes)
+                .HasMaxLength(2000);
 
             builder.Property(x => x.CreatedAt)
                 .IsRequired()
@@ -82,7 +84,7 @@ namespace Batuara.Infrastructure.Data.Configurations
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasIndex(x => new { x.FullName, x.IsActive });
-            builder.HasIndex(x => x.Email);
+            builder.HasIndex(x => x.Email).IsUnique(false);
         }
     }
 }

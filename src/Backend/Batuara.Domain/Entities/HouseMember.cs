@@ -9,19 +9,24 @@ namespace Batuara.Domain.Entities
 
         public string FullName { get; private set; } = string.Empty;
         public DateTime BirthDate { get; private set; }
-        public DateTime EntryDate { get; private set; }
-        public string HeadOrixaFront { get; private set; } = string.Empty;
-        public string HeadOrixaBack { get; private set; } = string.Empty;
-        public string HeadOrixaRonda { get; private set; } = string.Empty;
-        public string Email { get; private set; } = string.Empty;
-        public string MobilePhone { get; private set; } = string.Empty;
-        public string ZipCode { get; private set; } = string.Empty;
-        public string Street { get; private set; } = string.Empty;
-        public string Number { get; private set; } = string.Empty;
+        public DateTime? EntryDate { get; private set; }
+        public string? HeadOrixaFront { get; private set; }
+        public string? HeadOrixaBack { get; private set; }
+        public string? HeadOrixaRonda { get; private set; }
+        public string? Email { get; private set; }
+        public string? MobilePhone { get; private set; }
+        public string? ZipCode { get; private set; }
+        public string? Street { get; private set; }
+        public string? Number { get; private set; }
         public string? Complement { get; private set; }
-        public string District { get; private set; } = string.Empty;
-        public string City { get; private set; } = string.Empty;
-        public string State { get; private set; } = string.Empty;
+        public string? District { get; private set; }
+        public string? City { get; private set; }
+        public string? State { get; private set; }
+        public DateTime? AmaciDate { get; private set; }
+        public DateTime? YaoDate { get; private set; }
+        public string? SmallParent { get; private set; }
+        public string? ReligiousLeader { get; private set; }
+        public string? Notes { get; private set; }
 
         public IReadOnlyCollection<HouseMemberContribution> Contributions => _contributions.AsReadOnly();
 
@@ -32,19 +37,24 @@ namespace Batuara.Domain.Entities
         public HouseMember(
             string fullName,
             DateTime birthDate,
-            DateTime entryDate,
-            string headOrixaFront,
-            string headOrixaBack,
-            string headOrixaRonda,
-            string email,
-            string mobilePhone,
-            string zipCode,
-            string street,
-            string number,
+            DateTime? entryDate,
+            string? headOrixaFront,
+            string? headOrixaBack,
+            string? headOrixaRonda,
+            string? email,
+            string? mobilePhone,
+            string? zipCode,
+            string? street,
+            string? number,
             string? complement,
-            string district,
-            string city,
-            string state)
+            string? district,
+            string? city,
+            string? state,
+            DateTime? amaciDate = null,
+            DateTime? yaoDate = null,
+            string? smallParent = null,
+            string? religiousLeader = null,
+            string? notes = null)
         {
             UpdateProfile(
                 fullName,
@@ -57,45 +67,61 @@ namespace Batuara.Domain.Entities
                 mobilePhone);
 
             UpdateAddress(zipCode, street, number, complement, district, city, state);
+            UpdateSpiritualInfo(amaciDate, yaoDate, smallParent, religiousLeader, notes);
         }
 
         public void UpdateProfile(
             string fullName,
             DateTime birthDate,
-            DateTime entryDate,
-            string headOrixaFront,
-            string headOrixaBack,
-            string headOrixaRonda,
-            string email,
-            string mobilePhone)
+            DateTime? entryDate,
+            string? headOrixaFront,
+            string? headOrixaBack,
+            string? headOrixaRonda,
+            string? email,
+            string? mobilePhone)
         {
             FullName = Require(fullName, nameof(fullName));
-            HeadOrixaFront = Require(headOrixaFront, nameof(headOrixaFront));
-            HeadOrixaBack = Require(headOrixaBack, nameof(headOrixaBack));
-            HeadOrixaRonda = Require(headOrixaRonda, nameof(headOrixaRonda));
-            Email = Require(email, nameof(email));
-            MobilePhone = Require(mobilePhone, nameof(mobilePhone));
+            HeadOrixaFront = NullableString(headOrixaFront);
+            HeadOrixaBack = NullableString(headOrixaBack);
+            HeadOrixaRonda = NullableString(headOrixaRonda);
+            Email = NullableString(email);
+            MobilePhone = NullableString(mobilePhone);
             BirthDate = NormalizeDate(birthDate);
-            EntryDate = NormalizeDate(entryDate);
+            EntryDate = entryDate.HasValue ? NormalizeDate(entryDate.Value) : null;
             UpdateTimestamp();
         }
 
         public void UpdateAddress(
-            string zipCode,
-            string street,
-            string number,
+            string? zipCode,
+            string? street,
+            string? number,
             string? complement,
-            string district,
-            string city,
-            string state)
+            string? district,
+            string? city,
+            string? state)
         {
-            ZipCode = Require(zipCode, nameof(zipCode));
-            Street = Require(street, nameof(street));
-            Number = Require(number, nameof(number));
-            Complement = string.IsNullOrWhiteSpace(complement) ? null : complement.Trim();
-            District = Require(district, nameof(district));
-            City = Require(city, nameof(city));
-            State = Require(state, nameof(state));
+            ZipCode = NullableString(zipCode);
+            Street = NullableString(street);
+            Number = NullableString(number);
+            Complement = NullableString(complement);
+            District = NullableString(district);
+            City = NullableString(city);
+            State = NullableString(state);
+            UpdateTimestamp();
+        }
+
+        public void UpdateSpiritualInfo(
+            DateTime? amaciDate,
+            DateTime? yaoDate,
+            string? smallParent,
+            string? religiousLeader,
+            string? notes)
+        {
+            AmaciDate = amaciDate.HasValue ? NormalizeDate(amaciDate.Value) : null;
+            YaoDate = yaoDate.HasValue ? NormalizeDate(yaoDate.Value) : null;
+            SmallParent = NullableString(smallParent);
+            ReligiousLeader = NullableString(religiousLeader);
+            Notes = NullableString(notes);
             UpdateTimestamp();
         }
 
@@ -173,6 +199,11 @@ namespace Batuara.Domain.Entities
                 throw new ArgumentException("Value cannot be empty", paramName);
 
             return value.Trim();
+        }
+
+        private static string? NullableString(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
         }
 
         private static DateTime NormalizeDate(DateTime value)

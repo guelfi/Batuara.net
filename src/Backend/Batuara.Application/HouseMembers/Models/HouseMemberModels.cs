@@ -29,19 +29,24 @@ namespace Batuara.Application.HouseMembers.Models
         public int Id { get; set; }
         public string FullName { get; set; } = string.Empty;
         public DateTime BirthDate { get; set; }
-        public DateTime EntryDate { get; set; }
-        public string HeadOrixaFront { get; set; } = string.Empty;
-        public string HeadOrixaBack { get; set; } = string.Empty;
-        public string HeadOrixaRonda { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string MobilePhone { get; set; } = string.Empty;
-        public string ZipCode { get; set; } = string.Empty;
-        public string Street { get; set; } = string.Empty;
-        public string Number { get; set; } = string.Empty;
+        public DateTime? EntryDate { get; set; }
+        public string? HeadOrixaFront { get; set; }
+        public string? HeadOrixaBack { get; set; }
+        public string? HeadOrixaRonda { get; set; }
+        public string? Email { get; set; }
+        public string? MobilePhone { get; set; }
+        public string? ZipCode { get; set; }
+        public string? Street { get; set; }
+        public string? Number { get; set; }
         public string? Complement { get; set; }
-        public string District { get; set; } = string.Empty;
-        public string City { get; set; } = string.Empty;
-        public string State { get; set; } = string.Empty;
+        public string? District { get; set; }
+        public string? City { get; set; }
+        public string? State { get; set; }
+        public DateTime? AmaciDate { get; set; }
+        public DateTime? YaoDate { get; set; }
+        public string? SmallParent { get; set; }
+        public string? ReligiousLeader { get; set; }
+        public string? Notes { get; set; }
         public ContributionPaymentStatus? CurrentMonthContributionStatus { get; set; }
         public DateTime? CurrentMonthDueDate { get; set; }
         public DateTime? CurrentMonthPaidAt { get; set; }
@@ -55,19 +60,24 @@ namespace Batuara.Application.HouseMembers.Models
     {
         public string FullName { get; set; } = string.Empty;
         public DateTime BirthDate { get; set; }
-        public DateTime EntryDate { get; set; }
-        public string HeadOrixaFront { get; set; } = string.Empty;
-        public string HeadOrixaBack { get; set; } = string.Empty;
-        public string HeadOrixaRonda { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string MobilePhone { get; set; } = string.Empty;
-        public string ZipCode { get; set; } = string.Empty;
-        public string Street { get; set; } = string.Empty;
-        public string Number { get; set; } = string.Empty;
+        public DateTime? EntryDate { get; set; }
+        public string? HeadOrixaFront { get; set; }
+        public string? HeadOrixaBack { get; set; }
+        public string? HeadOrixaRonda { get; set; }
+        public string? Email { get; set; }
+        public string? MobilePhone { get; set; }
+        public string? ZipCode { get; set; }
+        public string? Street { get; set; }
+        public string? Number { get; set; }
         public string? Complement { get; set; }
-        public string District { get; set; } = string.Empty;
-        public string City { get; set; } = string.Empty;
-        public string State { get; set; } = string.Empty;
+        public string? District { get; set; }
+        public string? City { get; set; }
+        public string? State { get; set; }
+        public DateTime? AmaciDate { get; set; }
+        public DateTime? YaoDate { get; set; }
+        public string? SmallParent { get; set; }
+        public string? ReligiousLeader { get; set; }
+        public string? Notes { get; set; }
         public List<HouseMemberContributionInput> Contributions { get; set; } = new();
     }
 

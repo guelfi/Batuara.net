@@ -36,23 +36,23 @@ namespace Batuara.Infrastructure.HouseMembers.Services
                 var term = q.Trim().ToLower();
                 query = query.Where(x =>
                     x.FullName.ToLower().Contains(term) ||
-                    x.Email.ToLower().Contains(term) ||
-                    x.MobilePhone.ToLower().Contains(term) ||
-                    x.HeadOrixaFront.ToLower().Contains(term) ||
-                    x.HeadOrixaBack.ToLower().Contains(term) ||
-                    x.HeadOrixaRonda.ToLower().Contains(term));
+                    (x.Email != null && x.Email.ToLower().Contains(term)) ||
+                    (x.MobilePhone != null && x.MobilePhone.ToLower().Contains(term)) ||
+                    (x.HeadOrixaFront != null && x.HeadOrixaFront.ToLower().Contains(term)) ||
+                    (x.HeadOrixaBack != null && x.HeadOrixaBack.ToLower().Contains(term)) ||
+                    (x.HeadOrixaRonda != null && x.HeadOrixaRonda.ToLower().Contains(term)));
             }
 
             if (!string.IsNullOrWhiteSpace(city))
             {
                 var cityTerm = city.Trim().ToLower();
-                query = query.Where(x => x.City.ToLower().Contains(cityTerm));
+                query = query.Where(x => x.City != null && x.City.ToLower().Contains(cityTerm));
             }
 
             if (!string.IsNullOrWhiteSpace(state))
             {
                 var stateTerm = state.Trim().ToLower();
-                query = query.Where(x => x.State.ToLower().Contains(stateTerm));
+                query = query.Where(x => x.State != null && x.State.ToLower().Contains(stateTerm));
             }
 
             query = ApplySort(query, sort);
@@ -84,17 +84,20 @@ namespace Batuara.Infrastructure.HouseMembers.Services
         {
             try
             {
-                var normalizedEmail = request.Email.Trim().ToLower();
-                var duplicate = await _db.HouseMembers.AsNoTracking().AnyAsync(x => x.Email.ToLower() == normalizedEmail);
-                if (duplicate)
+                if (!string.IsNullOrWhiteSpace(request.Email))
                 {
-                    return (null, new[] { "Já existe um filho da casa com este e-mail." }, true);
+                    var normalizedEmail = request.Email.Trim().ToLower();
+                    var duplicate = await _db.HouseMembers.AsNoTracking().AnyAsync(x => x.Email != null && x.Email.ToLower() == normalizedEmail);
+                    if (duplicate)
+                    {
+                        return (null, new[] { "Já existe um filho da casa com este e-mail." }, true);
+                    }
                 }
 
                 var entity = new HouseMember(
                     request.FullName,
                     NormalizeDateOnlyUtc(request.BirthDate),
-                    NormalizeDateOnlyUtc(request.EntryDate),
+                    request.EntryDate.HasValue ? NormalizeDateOnlyUtc(request.EntryDate.Value) : null,
                     request.HeadOrixaFront,
                     request.HeadOrixaBack,
                     request.HeadOrixaRonda,
@@ -106,7 +109,12 @@ namespace Batuara.Infrastructure.HouseMembers.Services
                     request.Complement,
                     request.District,
                     request.City,
-                    request.State);
+                    request.State,
+                    request.AmaciDate.HasValue ? NormalizeDateOnlyUtc(request.AmaciDate.Value) : null,
+                    request.YaoDate.HasValue ? NormalizeDateOnlyUtc(request.YaoDate.Value) : null,
+                    request.SmallParent,
+                    request.ReligiousLeader,
+                    request.Notes);
 
                 SyncContributions(entity, request.Contributions);
                 _db.HouseMembers.Add(entity);
@@ -136,17 +144,20 @@ namespace Batuara.Infrastructure.HouseMembers.Services
 
             try
             {
-                var normalizedEmail = request.Email.Trim().ToLower();
-                var duplicate = await _db.HouseMembers.AsNoTracking().AnyAsync(x => x.Id != id && x.Email.ToLower() == normalizedEmail);
-                if (duplicate)
+                if (!string.IsNullOrWhiteSpace(request.Email))
                 {
-                    return (null, new[] { "Já existe um filho da casa com este e-mail." }, true);
+                    var normalizedEmail = request.Email.Trim().ToLower();
+                    var duplicate = await _db.HouseMembers.AsNoTracking().AnyAsync(x => x.Id != id && x.Email != null && x.Email.ToLower() == normalizedEmail);
+                    if (duplicate)
+                    {
+                        return (null, new[] { "Já existe um filho da casa com este e-mail." }, true);
+                    }
                 }
 
                 entity.UpdateProfile(
                     request.FullName,
                     NormalizeDateOnlyUtc(request.BirthDate),
-                    NormalizeDateOnlyUtc(request.EntryDate),
+                    request.EntryDate.HasValue ? NormalizeDateOnlyUtc(request.EntryDate.Value) : null,
                     request.HeadOrixaFront,
                     request.HeadOrixaBack,
                     request.HeadOrixaRonda,
@@ -160,6 +171,12 @@ namespace Batuara.Infrastructure.HouseMembers.Services
                     request.District,
                     request.City,
                     request.State);
+                entity.UpdateSpiritualInfo(
+                    request.AmaciDate.HasValue ? NormalizeDateOnlyUtc(request.AmaciDate.Value) : null,
+                    request.YaoDate.HasValue ? NormalizeDateOnlyUtc(request.YaoDate.Value) : null,
+                    request.SmallParent,
+                    request.ReligiousLeader,
+                    request.Notes);
 
                 SyncContributions(entity, request.Contributions);
 
@@ -260,7 +277,7 @@ namespace Batuara.Infrastructure.HouseMembers.Services
                 Id = entity.Id,
                 FullName = entity.FullName,
                 BirthDate = NormalizeDateOnlyUtc(entity.BirthDate),
-                EntryDate = NormalizeDateOnlyUtc(entity.EntryDate),
+                EntryDate = entity.EntryDate.HasValue ? NormalizeDateOnlyUtc(entity.EntryDate.Value) : null,
                 HeadOrixaFront = entity.HeadOrixaFront,
                 HeadOrixaBack = entity.HeadOrixaBack,
                 HeadOrixaRonda = entity.HeadOrixaRonda,
@@ -273,6 +290,11 @@ namespace Batuara.Infrastructure.HouseMembers.Services
                 District = entity.District,
                 City = entity.City,
                 State = entity.State,
+                AmaciDate = entity.AmaciDate.HasValue ? NormalizeDateOnlyUtc(entity.AmaciDate.Value) : null,
+                YaoDate = entity.YaoDate.HasValue ? NormalizeDateOnlyUtc(entity.YaoDate.Value) : null,
+                SmallParent = entity.SmallParent,
+                ReligiousLeader = entity.ReligiousLeader,
+                Notes = entity.Notes,
                 CurrentMonthContributionStatus = currentContribution?.Status,
                 CurrentMonthDueDate = NormalizeNullableDateOnlyUtc(currentContribution?.DueDate),
                 CurrentMonthPaidAt = NormalizeNullableDateOnlyUtc(currentContribution?.PaidAt),
