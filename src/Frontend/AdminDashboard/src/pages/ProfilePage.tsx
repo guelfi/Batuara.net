@@ -25,6 +25,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useForm } from 'react-hook-form';
 import { apiService } from '../services/api';
 import InfoIcon from '@mui/icons-material/Info';
+import { getRoleLabel } from '../utils/roles';
 
 interface ProfileFormData {
   name: string;
@@ -253,7 +254,7 @@ const ProfilePage: React.FC = () => {
                 {user?.email}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {user?.role === 0 ? 'Administrador' : user?.role === 1 ? 'Moderador' : 'Editor'}
+                {getRoleLabel(user?.role)}
               </Typography>
             </Box>
           </Box>

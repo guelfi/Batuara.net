@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Chip,
@@ -32,7 +33,8 @@ import { Add as AddIcon, Close as CloseIcon, Edit as EditIcon } from '@mui/icons
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import apiService from '../services/api';
 import GridPager from '../components/common/GridPager';
-import { ContributionPaymentStatus, HouseMember, HouseMemberContribution } from '../types';
+import { ContributionPaymentStatus, HouseMember, HouseMemberContribution, Orixa } from '../types';
+import { formatPhoneBr, onlyDigits } from '../utils/phone';
 
 type ContributionFormState = {
   id?: number;
@@ -42,6 +44,8 @@ type ContributionFormState = {
   status: ContributionPaymentStatus;
   paidAt: string;
   notes: string;
+  isRecurring: boolean;
+  allowWhatsAppReminder: boolean;
 };
 
 type MemberFormState = {
@@ -60,6 +64,11 @@ type MemberFormState = {
   district: string;
   city: string;
   state: string;
+  amaciDate: string;
+  yaoDate: string;
+  smallParent: string;
+  religiousLeader: string;
+  notes: string;
   isActive: boolean;
   contributions: ContributionFormState[];
 };
@@ -75,6 +84,8 @@ const buildEmptyContribution = (): ContributionFormState => {
     status: ContributionPaymentStatus.Pending,
     paidAt: '',
     notes: '',
+    isRecurring: false,
+    allowWhatsAppReminder: false,
   };
 };
 
@@ -94,6 +105,11 @@ const initialFormState: MemberFormState = {
   district: '',
   city: '',
   state: '',
+  amaciDate: '',
+  yaoDate: '',
+  smallParent: '',
+  religiousLeader: '',
+  notes: '',
   isActive: true,
   contributions: [buildEmptyContribution()],
 };
@@ -119,22 +135,13 @@ const getContributionStatusLabel = (status?: ContributionPaymentStatus) => {
   return 'Sem lançamento';
 };
 
-const onlyDigits = (value: string) => value.replace(/\D/g, '');
-
-const formatPhoneBr = (value: string) => {
-  const digits = onlyDigits(value).slice(0, 11);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-};
-
 const formatUf = (value: string) => value.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 2);
 
 const MembersPage: React.FC = () => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [rows, setRows] = useState<HouseMember[]>([]);
+  const [orixas, setOrixas] = useState<Orixa[]>([]);
   const [loading, setLoading] = useState(false);
   const [gridError, setGridError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -146,6 +153,7 @@ const MembersPage: React.FC = () => {
   const [dialogTab, setDialogTab] = useState(0);
   const [formErrors, setFormErrors] = useState<{
     fullName?: string;
+    headOrixaFront?: string;
     email?: string;
     mobilePhone?: string;
     state?: string;
@@ -196,9 +204,44 @@ const MembersPage: React.FC = () => {
     }
   }, [paginationModel.page, paginationModel.pageSize, query, cityFilter, stateFilter, statusFilter]);
 
+  const loadOrixas = useCallback(async () => {
+    try {
+      const response = await apiService.getOrixas({ pageNumber: 1, pageSize: 100, sort: 'displayOrder:asc' });
+      setOrixas(response.data.filter((item) => item.isActive !== false));
+    } catch (_) {
+      setOrixas([]);
+    }
+  }, []);
+
   useEffect(() => {
     loadMembers();
   }, [loadMembers]);
+
+  useEffect(() => {
+    loadOrixas();
+  }, [loadOrixas]);
+
+  const orixaOptions = useMemo(() => orixas.map((item) => item.name).sort((a, b) => a.localeCompare(b, 'pt-BR')), [orixas]);
+
+  const renderOrixaAutocomplete = (field: 'headOrixaFront' | 'headOrixaBack' | 'headOrixaRonda', label: string) => (
+    <Autocomplete
+      freeSolo
+      options={orixaOptions}
+      value={form[field] || null}
+      onChange={(_, value) => setForm((prev) => ({ ...prev, [field]: value || '' }))}
+      onInputChange={(_, value) => setForm((prev) => ({ ...prev, [field]: value }))}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label={label}
+          error={field === 'headOrixaFront' && !!formErrors.headOrixaFront}
+          helperText={field === 'headOrixaFront' ? formErrors.headOrixaFront : undefined}
+          fullWidth
+        />
+      )}
+      fullWidth
+    />
+  );
 
   const openDetails = (title: string, items: string[]) => {
     setDetailsTitle(title);
@@ -239,6 +282,44 @@ const MembersPage: React.FC = () => {
           sortable: false,
           filterable: false,
         },
+        {
+          field: 'email',
+          headerName: 'E-mail',
+          width: 180,
+          renderCell: (params) => (
+            <Typography variant="body2" sx={{ whiteSpace: 'nowrap', py: 1 }}>
+              {params.row.email || '—'}
+            </Typography>
+          ),
+          sortable: false,
+          filterable: false,
+        },
+        {
+          field: 'isActive',
+          headerName: 'Status',
+          width: 110,
+          renderCell: (params) => (
+            <Chip
+              label={params.row.isActive ? 'Ativo' : 'Inativo'}
+              color={params.row.isActive ? 'success' : 'default'}
+              size="small"
+            />
+          ),
+          sortable: false,
+          filterable: false,
+        },
+        {
+          field: 'entryDate',
+          headerName: 'Entrada',
+          width: 110,
+          renderCell: (params) => (
+            <Typography variant="body2" sx={{ whiteSpace: 'nowrap', py: 1 }}>
+              {params.row.entryDate ? params.row.entryDate.slice(0, 10).split('-').reverse().join('/') : '—'}
+            </Typography>
+          ),
+          sortable: false,
+          filterable: false,
+        },
       ]
     : [
         {
@@ -250,7 +331,26 @@ const MembersPage: React.FC = () => {
           ],
         },
         { field: 'fullName', headerName: 'Nome', flex: 1.2, minWidth: 240 },
+        { field: 'email', headerName: 'E-mail', flex: 1, minWidth: 200, valueGetter: (_, row) => row.email || '—' },
         { field: 'mobilePhone', headerName: 'Celular', width: 160 },
+        {
+          field: 'isActive',
+          headerName: 'Status',
+          width: 120,
+          renderCell: (params) => (
+            <Chip
+              label={params.row.isActive ? 'Ativo' : 'Inativo'}
+              color={params.row.isActive ? 'success' : 'default'}
+              size="small"
+            />
+          ),
+        },
+        {
+          field: 'entryDate',
+          headerName: 'Entrada',
+          width: 130,
+          valueGetter: (_, row) => (row.entryDate ? row.entryDate.slice(0, 10).split('-').reverse().join('/') : '—'),
+        },
       ];
 
   const mapContribution = (contribution: HouseMemberContribution): ContributionFormState => ({
@@ -261,6 +361,8 @@ const MembersPage: React.FC = () => {
     status: resolveContributionStatus(contribution.status),
     paidAt: contribution.paidAt ? contribution.paidAt.slice(0, 10) : '',
     notes: contribution.notes || '',
+    isRecurring: contribution.isRecurring,
+    allowWhatsAppReminder: contribution.allowWhatsAppReminder,
   });
 
   const handleOpenDialog = (item?: HouseMember) => {
@@ -269,19 +371,24 @@ const MembersPage: React.FC = () => {
       setForm({
         fullName: item.fullName,
         birthDate: item.birthDate.slice(0, 10),
-        entryDate: item.entryDate.slice(0, 10),
-        headOrixaFront: item.headOrixaFront,
-        headOrixaBack: item.headOrixaBack,
-        headOrixaRonda: item.headOrixaRonda,
-        email: item.email,
-        mobilePhone: item.mobilePhone,
-        zipCode: item.zipCode,
-        street: item.street,
-        number: item.number,
-        complement: item.complement || '',
-        district: item.district,
-        city: item.city,
-        state: item.state,
+        entryDate: item.entryDate?.slice(0, 10) ?? '',
+        headOrixaFront: item.headOrixaFront ?? '',
+        headOrixaBack: item.headOrixaBack ?? '',
+        headOrixaRonda: item.headOrixaRonda ?? '',
+        email: item.email ?? '',
+        mobilePhone: item.mobilePhone ? formatPhoneBr(item.mobilePhone) : '',
+        zipCode: item.zipCode ?? '',
+        street: item.street ?? '',
+        number: item.number ?? '',
+        complement: item.complement ?? '',
+        district: item.district ?? '',
+        city: item.city ?? '',
+        state: item.state ?? '',
+        amaciDate: item.amaciDate?.slice(0, 10) ?? '',
+        yaoDate: item.yaoDate?.slice(0, 10) ?? '',
+        smallParent: item.smallParent ?? '',
+        religiousLeader: item.religiousLeader ?? '',
+        notes: item.notes ?? '',
         isActive: item.isActive,
         contributions: item.contributions.map(mapContribution),
       });
@@ -344,7 +451,7 @@ const MembersPage: React.FC = () => {
     );
   }, [form.contributions]);
 
-  const updateContribution = (index: number, field: keyof ContributionFormState, value: string | number) => {
+  const updateContribution = (index: number, field: keyof ContributionFormState, value: string | number | boolean) => {
     setForm((prev) => ({
       ...prev,
       contributions: prev.contributions.map((item, currentIndex) =>
@@ -367,6 +474,7 @@ const MembersPage: React.FC = () => {
   const handleSubmit = async () => {
     const nextErrors: typeof formErrors = {};
     if (!form.fullName.trim()) nextErrors.fullName = 'Nome completo é obrigatório.';
+    if (!form.headOrixaFront.trim()) nextErrors.headOrixaFront = 'Orixá de frente é obrigatório.';
 
     const emailValue = form.email.trim();
     if (emailValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
@@ -374,7 +482,7 @@ const MembersPage: React.FC = () => {
     }
 
     const phoneDigits = onlyDigits(form.mobilePhone);
-    if (form.mobilePhone.trim() && !(phoneDigits.length === 10 || phoneDigits.length === 11)) {
+    if (form.mobilePhone.trim() && phoneDigits.length !== 10) {
       nextErrors.mobilePhone = 'Informe um celular válido (DDD + número).';
     }
 
@@ -385,7 +493,8 @@ const MembersPage: React.FC = () => {
 
     setFormErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
-      if (nextErrors.state) setDialogTab(1);
+      if (nextErrors.headOrixaFront) setDialogTab(2);
+      else if (nextErrors.state) setDialogTab(1);
       else setDialogTab(0);
       setFeedback({ open: true, message: 'Revise os campos obrigatórios antes de salvar.', severity: 'error' });
       return;
@@ -396,18 +505,23 @@ const MembersPage: React.FC = () => {
       fullName: form.fullName.trim(),
       birthDate: form.birthDate,
       entryDate: form.entryDate || today,
-      headOrixaFront: form.headOrixaFront,
-      headOrixaBack: form.headOrixaBack,
-      headOrixaRonda: form.headOrixaRonda,
-      email: form.email.trim(),
-      mobilePhone: form.mobilePhone,
-      zipCode: form.zipCode,
-      street: form.street,
-      number: form.number,
-      complement: form.complement || undefined,
-      district: form.district,
-      city: form.city,
-      state: formatUf(form.state),
+      headOrixaFront: form.headOrixaFront.trim() || null,
+      headOrixaBack: form.headOrixaBack.trim() || null,
+      headOrixaRonda: form.headOrixaRonda.trim() || null,
+      email: form.email.trim() || null,
+      mobilePhone: onlyDigits(form.mobilePhone) || null,
+      zipCode: form.zipCode.trim() || null,
+      street: form.street.trim() || null,
+      number: form.number.trim() || null,
+      complement: form.complement.trim() || null,
+      district: form.district.trim() || null,
+      city: form.city.trim() || null,
+      state: formatUf(form.state) || null,
+      amaciDate: form.amaciDate || null,
+      yaoDate: form.yaoDate || null,
+      smallParent: form.smallParent.trim() || null,
+      religiousLeader: form.religiousLeader.trim() || null,
+      notes: form.notes.trim() || null,
       isActive: form.isActive,
       contributions: form.contributions.map((item) => ({
         id: item.id,
@@ -417,6 +531,8 @@ const MembersPage: React.FC = () => {
         status: item.status,
         paidAt: item.status === ContributionPaymentStatus.Paid && item.paidAt ? item.paidAt : undefined,
         notes: item.notes || undefined,
+        isRecurring: item.isRecurring,
+        allowWhatsAppReminder: item.allowWhatsAppReminder,
       })),
     };
 
@@ -660,7 +776,7 @@ const MembersPage: React.FC = () => {
             <Tab label="Orixás" />
           </Tabs>
 
-          <Box sx={{ p: 2, pb: 2 }}>
+          <Box sx={{ p: 2, pb: 2, height: 460, overflowY: 'auto' }}>
             {dialogTab === 0 && (
               <Stack spacing={2} sx={{ mt: 1 }}>
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
@@ -786,6 +902,16 @@ const MembersPage: React.FC = () => {
                         minRows={2}
                         sx={{ mt: 2 }}
                       />
+                      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mt: 1 }}>
+                        <FormControlLabel
+                          control={<Switch checked={item.isRecurring} onChange={(e) => updateContribution(index, 'isRecurring', e.target.checked)} />}
+                          label="Recorrente"
+                        />
+                        <FormControlLabel
+                          control={<Switch checked={item.allowWhatsAppReminder} onChange={(e) => updateContribution(index, 'allowWhatsAppReminder', e.target.checked)} />}
+                          label="Lembrete por WhatsApp autorizado"
+                        />
+                      </Stack>
                     </Paper>
                   ))}
                 </Stack>
@@ -859,25 +985,50 @@ const MembersPage: React.FC = () => {
             {dialogTab === 2 && (
               <Stack spacing={2} sx={{ mt: 1 }}>
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  {renderOrixaAutocomplete('headOrixaFront', 'Orixá de frente')}
+                  {renderOrixaAutocomplete('headOrixaBack', 'Orixá de costas')}
+                  {renderOrixaAutocomplete('headOrixaRonda', 'Orixá de ronda')}
+                </Stack>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                   <TextField
-                    label="Orixá de frente"
-                    value={form.headOrixaFront}
-                    onChange={(e) => setForm((prev) => ({ ...prev, headOrixaFront: e.target.value }))}
+                    label="Data do Amaci"
+                    type="date"
+                    value={form.amaciDate}
+                    onChange={(e) => setForm((prev) => ({ ...prev, amaciDate: e.target.value }))}
+                    InputLabelProps={{ shrink: true }}
                     fullWidth
                   />
                   <TextField
-                    label="Orixá de costas"
-                    value={form.headOrixaBack}
-                    onChange={(e) => setForm((prev) => ({ ...prev, headOrixaBack: e.target.value }))}
-                    fullWidth
-                  />
-                  <TextField
-                    label="Orixá de ronda"
-                    value={form.headOrixaRonda}
-                    onChange={(e) => setForm((prev) => ({ ...prev, headOrixaRonda: e.target.value }))}
+                    label="Data do Yaô"
+                    type="date"
+                    value={form.yaoDate}
+                    onChange={(e) => setForm((prev) => ({ ...prev, yaoDate: e.target.value }))}
+                    InputLabelProps={{ shrink: true }}
                     fullWidth
                   />
                 </Stack>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                  <TextField
+                    label="Mãe/Pai Pequeno"
+                    value={form.smallParent}
+                    onChange={(e) => setForm((prev) => ({ ...prev, smallParent: e.target.value }))}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Ialorixá/Babalorixá"
+                    value={form.religiousLeader}
+                    onChange={(e) => setForm((prev) => ({ ...prev, religiousLeader: e.target.value }))}
+                    fullWidth
+                  />
+                </Stack>
+                <TextField
+                  label="Observações"
+                  value={form.notes}
+                  onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
+                  fullWidth
+                  multiline
+                  minRows={3}
+                />
               </Stack>
             )}
           </Box>

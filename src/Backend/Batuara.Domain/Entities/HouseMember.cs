@@ -125,19 +125,25 @@ namespace Batuara.Domain.Entities
             UpdateTimestamp();
         }
 
-        public HouseMemberContribution AddContribution(DateTime referenceMonth, DateTime dueDate, decimal amount, string? notes = null)
+        public HouseMemberContribution AddContribution(
+            DateTime referenceMonth,
+            DateTime dueDate,
+            decimal amount,
+            string? notes = null,
+            bool isRecurring = false,
+            bool allowWhatsAppReminder = false)
         {
             var normalizedReferenceMonth = NormalizeMonth(referenceMonth);
             var existingContribution = _contributions.FirstOrDefault(item => item.ReferenceMonth == normalizedReferenceMonth);
 
             if (existingContribution != null)
             {
-                existingContribution.UpdateDueDateAndNotes(dueDate, amount, notes);
+                existingContribution.UpdateDueDateAndNotes(dueDate, amount, notes, isRecurring, allowWhatsAppReminder);
                 UpdateTimestamp();
                 return existingContribution;
             }
 
-            var contribution = new HouseMemberContribution(Id, normalizedReferenceMonth, dueDate, amount, notes);
+            var contribution = new HouseMemberContribution(Id, normalizedReferenceMonth, dueDate, amount, notes, isRecurring, allowWhatsAppReminder);
             _contributions.Add(contribution);
             UpdateTimestamp();
             return contribution;
@@ -150,15 +156,18 @@ namespace Batuara.Domain.Entities
             decimal amount,
             ContributionPaymentStatus status,
             DateTime? paidAt,
-            string? notes)
+            string? notes,
+            bool isRecurring = false,
+            bool allowWhatsAppReminder = false)
         {
             var contribution = FindContribution(contributionId);
             contribution.UpdateReferenceMonth(referenceMonth);
-            contribution.UpdateDueDateAndNotes(dueDate, amount, notes);
+            contribution.UpdateDueDateAndNotes(dueDate, amount, notes, isRecurring, allowWhatsAppReminder);
 
             if (status == ContributionPaymentStatus.Paid)
             {
                 contribution.MarkAsPaid(paidAt ?? DateTime.UtcNow);
+                EnsureNextRecurringContribution(contribution);
             }
             else
             {
@@ -167,6 +176,34 @@ namespace Batuara.Domain.Entities
 
             UpdateTimestamp();
             return contribution;
+        }
+
+        public HouseMemberContribution? EnsureNextRecurringContribution(HouseMemberContribution contribution)
+        {
+            if (!contribution.IsRecurring || contribution.Status != ContributionPaymentStatus.Paid)
+            {
+                return null;
+            }
+
+            var nextReferenceMonth = NormalizeMonth(contribution.ReferenceMonth.AddMonths(1));
+            if (_contributions.Any(item => item.ReferenceMonth == nextReferenceMonth))
+            {
+                return null;
+            }
+
+            var nextDueDate = SameDayNextMonth(contribution.DueDate);
+            var nextContribution = new HouseMemberContribution(
+                Id,
+                nextReferenceMonth,
+                nextDueDate,
+                contribution.Amount,
+                contribution.Notes,
+                isRecurring: true,
+                allowWhatsAppReminder: contribution.AllowWhatsAppReminder);
+
+            _contributions.Add(nextContribution);
+            UpdateTimestamp();
+            return nextContribution;
         }
 
         public void RemoveContribution(int contributionId)
@@ -215,6 +252,13 @@ namespace Batuara.Domain.Entities
         {
             var normalized = new DateTime(value.Year, value.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             return normalized;
+        }
+
+        private static DateTime SameDayNextMonth(DateTime value)
+        {
+            var nextMonth = new DateTime(value.Year, value.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1);
+            var day = Math.Min(value.Day, DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month));
+            return new DateTime(nextMonth.Year, nextMonth.Month, day, 0, 0, 0, DateTimeKind.Utc);
         }
     }
 }

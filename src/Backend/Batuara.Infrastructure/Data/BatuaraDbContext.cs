@@ -23,6 +23,7 @@ namespace Batuara.Infrastructure.Data
         public DbSet<GuideEntity> Guides { get; set; } = null!;
         public DbSet<HouseMember> HouseMembers { get; set; } = null!;
         public DbSet<HouseMemberContribution> HouseMemberContributions { get; set; } = null!;
+        public DbSet<MemberLoginCode> MemberLoginCodes { get; set; } = null!;
         public DbSet<ContactMessage> ContactMessages { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -41,6 +42,7 @@ namespace Batuara.Infrastructure.Data
             modelBuilder.ApplyConfiguration(new GuideEntityConfiguration());
             modelBuilder.ApplyConfiguration(new HouseMemberConfiguration());
             modelBuilder.ApplyConfiguration(new HouseMemberContributionConfiguration());
+            modelBuilder.ApplyConfiguration(new MemberLoginCodeConfiguration());
             modelBuilder.ApplyConfiguration(new ContactMessageConfiguration());
 
             // Configure schema - using batuara schema as defined in migrations

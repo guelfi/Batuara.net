@@ -102,9 +102,7 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsRead")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Message")
                         .IsRequired()
@@ -138,13 +136,25 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<DateTime?>("WhatsAppResponseSentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("WhatsAppResponseText")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<bool>("WantsWhatsAppResponse")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email");
 
-                    b.HasIndex("IsRead");
-
                     b.HasIndex("Status", "ReceivedAt");
+
+                    b.HasIndex("WantsWhatsAppResponse", "WhatsAppResponseSentAt");
 
                     b.ToTable("ContactMessages", "batuara");
                 });
@@ -157,15 +167,15 @@ namespace Batuara.Infrastructure.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
                     b.Property<string>("CardColor")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("card_color");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -289,11 +299,13 @@ namespace Batuara.Infrastructure.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("AmaciDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("BirthDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("City")
-                        .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
@@ -307,16 +319,14 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("District")
-                        .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
-                    b.Property<DateTime>("EntryDate")
+                    b.Property<DateTime?>("EntryDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("FullName")
@@ -325,17 +335,14 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(180)");
 
                     b.Property<string>("HeadOrixaBack")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("HeadOrixaFront")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("HeadOrixaRonda")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
@@ -345,32 +352,42 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .HasDefaultValue(true);
 
                     b.Property<string>("MobilePhone")
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)");
 
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
                     b.Property<string>("Number")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasMaxLength(2)
-                        .HasColumnType("character varying(2)");
-
-                    b.Property<string>("Street")
-                        .IsRequired()
+                    b.Property<string>("ReligiousLeader")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("SmallParent")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("State")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Street")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<DateTime?>("YaoDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("ZipCode")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
@@ -406,8 +423,18 @@ namespace Batuara.Infrastructure.Data.Migrations
                     b.Property<int>("HouseMemberId")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("AllowWhatsAppReminder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRecurring")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
@@ -417,6 +444,17 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("ReferenceMonth")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ReminderAttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime?>("ReminderLastAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ReminderSentAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
@@ -434,7 +472,62 @@ namespace Batuara.Infrastructure.Data.Migrations
                     b.HasIndex("HouseMemberId", "ReferenceMonth")
                         .IsUnique();
 
+                    b.HasIndex("Status", "AllowWhatsAppReminder", "DueDate", "ReminderSentAt");
+
                     b.ToTable("HouseMemberContributions", "batuara");
+                });
+
+            modelBuilder.Entity("Batuara.Domain.Entities.MemberLoginCode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("CreatedByIp")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("HouseMemberId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConsumedAt");
+
+                    b.HasIndex("HouseMemberId", "ExpiresAt");
+
+                    b.ToTable("MemberLoginCodes", "batuara");
                 });
 
             modelBuilder.Entity("Batuara.Domain.Entities.Orixa", b =>
@@ -1029,6 +1122,17 @@ namespace Batuara.Infrastructure.Data.Migrations
                 {
                     b.HasOne("Batuara.Domain.Entities.HouseMember", "HouseMember")
                         .WithMany("Contributions")
+                        .HasForeignKey("HouseMemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("HouseMember");
+                });
+
+            modelBuilder.Entity("Batuara.Domain.Entities.MemberLoginCode", b =>
+                {
+                    b.HasOne("Batuara.Domain.Entities.HouseMember", "HouseMember")
+                        .WithMany()
                         .HasForeignKey("HouseMemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

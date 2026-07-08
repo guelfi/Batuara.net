@@ -77,6 +77,18 @@ services:
       - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Production}
       - DB_APPLY_MIGRATIONS_ON_STARTUP=${DB_APPLY_MIGRATIONS_ON_STARTUP:-false}
       - DB_SEED_ON_STARTUP=${DB_SEED_ON_STARTUP:-false}
+      - WhatsApp__Provider=${WHATSAPP_PROVIDER:-EvolutionApi}
+      - WhatsApp__Enabled=${WHATSAPP_ENABLED:-false}
+      - WhatsApp__BaseUrl=${WHATSAPP_BASE_URL:-http://batuara-evolution-api:8080}
+      - WhatsApp__ApiKey=${WHATSAPP_API_KEY:-}
+      - WhatsApp__InstanceName=${WHATSAPP_INSTANCE_NAME:-batuara-casa}
+      - WhatsApp__AllowedRecipients=${WHATSAPP_ALLOWED_RECIPIENTS:-}
+      - ContributionReminders__Enabled=${CONTRIBUTION_REMINDERS_ENABLED:-false}
+      - ContributionReminders__IntervalMinutes=${CONTRIBUTION_REMINDERS_INTERVAL_MINUTES:-15}
+      - ContributionReminders__DaysBeforeDue=${CONTRIBUTION_REMINDERS_DAYS_BEFORE_DUE:-2}
+      - ContributionReminders__MaxMessagesPerRun=${CONTRIBUTION_REMINDERS_MAX_MESSAGES_PER_RUN:-1}
+      - ContributionReminders__RetryIntervalMinutes=${CONTRIBUTION_REMINDERS_RETRY_INTERVAL_MINUTES:-60}
+      - ContributionReminders__MaxAttempts=${CONTRIBUTION_REMINDERS_MAX_ATTEMPTS:-3}
     networks:
       - batuara-network
     restart: unless-stopped

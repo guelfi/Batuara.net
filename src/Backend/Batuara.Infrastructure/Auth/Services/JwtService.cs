@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Batuara.Application.Auth.Services;
 using Batuara.Domain.Entities;
+using Batuara.Domain.Enums;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -60,6 +61,41 @@ namespace Batuara.Infrastructure.Auth.Services
                 user.Email, tokenString.Length);
             
             return tokenString;
+        }
+
+        public string GenerateMemberJwtToken(int houseMemberId, string fullName, string? mobilePhone)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.Secret);
+
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, $"member:{houseMemberId}"),
+                new Claim(JwtRegisteredClaimNames.Name, fullName),
+                new Claim(ClaimTypes.Role, UserRole.Member.ToString()),
+                new Claim("houseMemberId", houseMemberId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            };
+
+            if (!string.IsNullOrWhiteSpace(mobilePhone))
+            {
+                claims.Add(new Claim("mobilePhone", mobilePhone));
+            }
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpirationMinutes),
+                Issuer = _jwtSettings.Issuer,
+                Audience = _jwtSettings.Audience,
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature
+                )
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
 
         public string GenerateRefreshToken()

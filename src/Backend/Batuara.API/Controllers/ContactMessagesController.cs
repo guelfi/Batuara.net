@@ -130,5 +130,28 @@ namespace Batuara.API.Controllers
                 return StatusCode(500, new { success = false, message = "An error occurred" });
             }
         }
+
+        [HttpPost("{id:int}/whatsapp-response")]
+        [EnableRateLimiting("authenticated")]
+        public async Task<IActionResult> SendWhatsAppResponse([FromRoute] int id, [FromBody] SendContactWhatsAppResponseRequest request)
+        {
+            try
+            {
+                var (updated, errors) = await _service.SendWhatsAppResponseAsync(id, request, HttpContext.RequestAborted);
+                if (errors.Length > 0)
+                {
+                    if (updated == null && errors[0] == "Contact message not found")
+                        return NotFound(new { success = false, message = "Contact message not found" });
+                    return BadRequest(new { success = false, message = errors[0], errors });
+                }
+
+                return Ok(new { success = true, data = updated });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending WhatsApp response for contact message {MessageId}", id);
+                return StatusCode(500, new { success = false, message = "An error occurred" });
+            }
+        }
     }
 }

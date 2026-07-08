@@ -1,6 +1,6 @@
 // Tipos compartilhados com o backend
 export interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
   role: UserRole;
@@ -10,9 +10,10 @@ export interface User {
 }
 
 export enum UserRole {
-  Admin = 0,
-  Moderator = 1,
+  Admin = 1,
   Editor = 2,
+  Viewer = 3,
+  Member = 4,
 }
 
 export interface LoginRequest {
@@ -22,9 +23,15 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  refreshToken: string;
+  refreshToken?: string;
   expiresAt: string;
   user: User;
+}
+
+export interface MemberLoginResponse {
+  token: string;
+  expiresAt: string;
+  user: User & { houseMemberId: number };
 }
 
 export interface ApiResponse<T> {
@@ -175,25 +182,35 @@ export interface HouseMemberContribution {
   status: ContributionPaymentStatus;
   paidAt?: string;
   notes?: string;
+  isRecurring: boolean;
+  allowWhatsAppReminder: boolean;
+  reminderSentAt?: string;
+  reminderLastAttemptAt?: string;
+  reminderAttemptCount: number;
 }
 
 export interface HouseMember {
   id: number;
   fullName: string;
   birthDate: string;
-  entryDate: string;
-  headOrixaFront: string;
-  headOrixaBack: string;
-  headOrixaRonda: string;
-  email: string;
-  mobilePhone: string;
-  zipCode: string;
-  street: string;
-  number: string;
-  complement?: string;
-  district: string;
-  city: string;
-  state: string;
+  entryDate: string | null;
+  headOrixaFront: string | null;
+  headOrixaBack: string | null;
+  headOrixaRonda: string | null;
+  email: string | null;
+  mobilePhone: string | null;
+  zipCode: string | null;
+  street: string | null;
+  number: string | null;
+  complement: string | null;
+  district: string | null;
+  city: string | null;
+  state: string | null;
+  amaciDate: string | null;
+  yaoDate: string | null;
+  smallParent: string | null;
+  religiousLeader: string | null;
+  notes: string | null;
   currentMonthContributionStatus?: ContributionPaymentStatus;
   currentMonthDueDate?: string;
   currentMonthPaidAt?: string;
@@ -212,6 +229,9 @@ export interface ContactMessage {
   message: string;
   status: ContactMessageStatus;
   isRead: boolean;
+  wantsWhatsAppResponse: boolean;
+  whatsAppResponseSentAt?: string;
+  whatsAppResponseText?: string;
   adminNotes?: string;
   receivedAt: string;
   createdAt: string;

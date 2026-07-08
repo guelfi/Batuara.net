@@ -47,7 +47,12 @@ const validateOrixaForm = (form: OrixaFormState): OrixaFormErrors => {
   const errors: OrixaFormErrors = {};
   if (!form.name.trim()) errors.name = 'Nome é obrigatório.';
   if (!form.description.trim()) errors.description = 'Descrição é obrigatória.';
-  if (!form.colors.trim()) errors.colors = 'Informe pelo menos uma cor.';
+  if (!form.colors.trim()) {
+    errors.colors = 'Informe pelo menos uma cor.';
+  } else {
+    const invalidColor = splitCsv(form.colors).find((color) => !getColorSwatch(color));
+    if (invalidColor) errors.colors = `Cor "${invalidColor}" não reconhecida. Use um nome de cor conhecido ou um hex (#RRGGBB).`;
+  }
   return errors;
 };
 

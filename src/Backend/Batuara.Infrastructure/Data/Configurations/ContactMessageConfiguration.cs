@@ -36,6 +36,13 @@ namespace Batuara.Infrastructure.Data.Configurations
             builder.Property(x => x.AdminNotes)
                 .HasMaxLength(2000);
 
+            builder.Property(x => x.WantsWhatsAppResponse)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            builder.Property(x => x.WhatsAppResponseText)
+                .HasMaxLength(2000);
+
             builder.Property(x => x.Status)
                 .HasConversion(
                     value => value.ToString(),
@@ -55,6 +62,7 @@ namespace Batuara.Infrastructure.Data.Configurations
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             builder.HasIndex(x => new { x.Status, x.ReceivedAt });
+            builder.HasIndex(x => new { x.WantsWhatsAppResponse, x.WhatsAppResponseSentAt });
             builder.HasIndex(x => x.Email);
         }
     }

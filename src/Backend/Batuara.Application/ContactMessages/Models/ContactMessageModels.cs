@@ -12,6 +12,9 @@ namespace Batuara.Application.ContactMessages.Models
         public string Message { get; set; } = string.Empty;
         public ContactMessageStatus Status { get; set; }
         public bool IsRead { get; set; }
+        public bool WantsWhatsAppResponse { get; set; }
+        public DateTime? WhatsAppResponseSentAt { get; set; }
+        public string? WhatsAppResponseText { get; set; }
         public string? AdminNotes { get; set; }
         public DateTime ReceivedAt { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -23,6 +26,7 @@ namespace Batuara.Application.ContactMessages.Models
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string? Phone { get; set; }
+        public bool WantsWhatsAppResponse { get; set; }
         public string Subject { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
     }
@@ -36,5 +40,10 @@ namespace Batuara.Application.ContactMessages.Models
     public class MarkContactMessageReadRequest
     {
         public bool IsRead { get; set; } = true;
+    }
+
+    public class SendContactWhatsAppResponseRequest
+    {
+        public string ResponseText { get; set; } = string.Empty;
     }
 }

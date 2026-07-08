@@ -10,16 +10,23 @@ import {
   CircularProgress,
   InputAdornment,
   IconButton,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import {
   Visibility,
   VisibilityOff,
   Email as EmailIcon,
   Lock as LockIcon,
+  PhoneIphone as PhoneIcon,
+  Pin as PinIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useForm } from 'react-hook-form';
+import apiService from '../services/api';
+import { formatPhoneBr, onlyDigits } from '../utils/phone';
 
 interface LoginFormData {
   email: string;
@@ -29,10 +36,16 @@ interface LoginFormData {
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoading } = useAuth();
+  const { login, loginMemberWithCode, isLoading } = useAuth();
   
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<'staff' | 'member'>('staff');
+  const [memberPhone, setMemberPhone] = useState('');
+  const [memberCode, setMemberCode] = useState('');
+  const [codeRequested, setCodeRequested] = useState(false);
+  const [memberLoading, setMemberLoading] = useState(false);
+  const [memberInfo, setMemberInfo] = useState<string | null>(null);
 
   const {
     register,
@@ -54,6 +67,34 @@ const LoginPage: React.FC = () => {
 
   const handleTogglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleRequestMemberCode = async () => {
+    try {
+      setError(null);
+      setMemberInfo(null);
+      setMemberLoading(true);
+      await apiService.requestMemberCode(onlyDigits(memberPhone));
+      setCodeRequested(true);
+      setMemberInfo('Se o número estiver cadastrado, você receberá um código no WhatsApp.');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Não foi possível solicitar o código.');
+    } finally {
+      setMemberLoading(false);
+    }
+  };
+
+  const handleMemberLogin = async () => {
+    try {
+      setError(null);
+      setMemberLoading(true);
+      await loginMemberWithCode(onlyDigits(memberPhone), memberCode);
+      navigate('/member-profile', { replace: true });
+    } catch (err: any) {
+      setError(err.message || 'Código inválido.');
+    } finally {
+      setMemberLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -149,8 +190,25 @@ const LoginPage: React.FC = () => {
               color: 'text.secondary',
             }}
           >
-            Dashboard Administrativo
+            Acesso Batuara.net
           </Typography>
+
+          <ToggleButtonGroup
+            exclusive
+            fullWidth
+            value={mode}
+            onChange={(_, value) => {
+              if (value) {
+                setMode(value);
+                setError(null);
+                setMemberInfo(null);
+              }
+            }}
+            sx={{ mb: 3 }}
+          >
+            <ToggleButton value="staff">Equipe</ToggleButton>
+            <ToggleButton value="member">Filho da Casa</ToggleButton>
+          </ToggleButtonGroup>
 
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
@@ -158,6 +216,13 @@ const LoginPage: React.FC = () => {
             </Alert>
           )}
 
+          {memberInfo && (
+            <Alert severity="info" sx={{ mb: 3 }}>
+              {memberInfo}
+            </Alert>
+          )}
+
+          {mode === 'staff' ? (
           <Box component="form" onSubmit={handleSubmit(onSubmit)}>
             <TextField
               fullWidth
@@ -239,9 +304,61 @@ const LoginPage: React.FC = () => {
               )}
             </Button>
           </Box>
+          ) : (
+            <Stack spacing={2}>
+              <TextField
+                fullWidth
+                label="Celular com DDD"
+                value={memberPhone}
+                onChange={(event) => setMemberPhone(formatPhoneBr(event.target.value))}
+                placeholder="(11) 99999-9999"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PhoneIcon color="action" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              {codeRequested && (
+                <TextField
+                  fullWidth
+                  label="Código recebido"
+                  value={memberCode}
+                  onChange={(event) => setMemberCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                  inputProps={{ inputMode: 'numeric', maxLength: 6 }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PinIcon color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+
+              <Button
+                fullWidth
+                variant="contained"
+                size="large"
+                disabled={memberLoading || onlyDigits(memberPhone).length < 10 || (codeRequested && memberCode.length !== 6)}
+                onClick={codeRequested ? handleMemberLogin : handleRequestMemberCode}
+                sx={{ py: 1.5, fontSize: '1.1rem', fontWeight: 600 }}
+              >
+                {memberLoading ? <CircularProgress size={24} color="inherit" /> : codeRequested ? 'Entrar com código' : 'Receber código no WhatsApp'}
+              </Button>
+
+              {codeRequested && (
+                <Button variant="text" onClick={() => { setCodeRequested(false); setMemberCode(''); setMemberInfo(null); }}>
+                  Trocar celular
+                </Button>
+              )}
+            </Stack>
+          )}
 
           <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
-            Acesso restrito aos administradores da Casa de Caridade Batuara
+            {mode === 'staff' ? 'Acesso restrito aos administradores e editores.' : 'Acesso dos Filhos da Casa por WhatsApp.'}
           </Typography>
         </Paper>
       </Container>

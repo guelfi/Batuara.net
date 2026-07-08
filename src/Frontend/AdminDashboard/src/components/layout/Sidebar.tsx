@@ -23,9 +23,12 @@ import {
   MusicNote as PrayersIcon,
   VolunteerActivism as DonationIcon,
   Email as MessagesIcon,
+  ManageAccounts as UsersIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { isAdmin } from '../../utils/roles';
 
 interface SidebarProps {
   open: boolean;
@@ -44,14 +47,20 @@ const menuItems = [
   { text: 'Linhas da Umbanda', icon: <LinesIcon />, path: '/umbanda-lines' },
   { text: 'Orações e Pontos', icon: <PrayersIcon />, path: '/spiritual-content' },
   { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members' },
-  { text: 'Doações e Contato', icon: <DonationIcon />, path: '/donations-contact' },
+  { text: 'Doações e Contato', icon: <DonationIcon />, path: '/donations-contact', adminOnly: true },
   { text: 'Contato e Mensagens', icon: <MessagesIcon />, path: '/contact-messages' },
-  { text: 'Localização', icon: <LocationIcon />, path: '/location' },
+  { text: 'Localização', icon: <LocationIcon />, path: '/location', adminOnly: true },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent', onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+
+  const visibleMenuItems = [
+    ...menuItems.filter((item) => !item.adminOnly || isAdmin(user?.role)),
+    ...(isAdmin(user?.role) ? [{ text: 'Usuários', icon: <UsersIcon />, path: '/users' }] : []),
+  ];
 
   const handleItemClick = (path: string) => {
     navigate(path);
@@ -116,7 +125,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
 
         <Box sx={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
           <List sx={{ py: 0 }}>
-            {menuItems.map((item) => (
+            {visibleMenuItems.map((item) => (
               <ListItemButton
                 key={item.text}
                 onClick={() => handleItemClick(item.path)}

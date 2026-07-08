@@ -37,6 +37,7 @@ import {
   MarkEmailRead as MarkReadIcon,
   MarkEmailUnread as MarkUnreadIcon,
   MoreVert as MoreVertIcon,
+  WhatsApp as WhatsAppIcon,
 } from '@mui/icons-material';
 import apiService from '../services/api';
 import { ContactMessage, ContactMessageStatus } from '../types';
@@ -69,6 +70,18 @@ const getStatusColor = (status: ContactMessageStatus): 'default' | 'warning' | '
   }
 };
 
+const getWhatsAppChip = (message: ContactMessage) => {
+  if (message.whatsAppResponseSentAt) {
+    return <Chip size="small" color="success" icon={<WhatsAppIcon />} label="Respondida" />;
+  }
+
+  if (message.wantsWhatsAppResponse) {
+    return <Chip size="small" color="info" icon={<WhatsAppIcon />} label="Solicitou" />;
+  }
+
+  return <Chip size="small" variant="outlined" label="Não solicitou" />;
+};
+
 const ContactMessagesPage: React.FC = () => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
@@ -85,6 +98,8 @@ const ContactMessagesPage: React.FC = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [whatsAppResponse, setWhatsAppResponse] = useState('');
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [menuRow, setMenuRow] = useState<ContactMessage | null>(null);
   const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -137,6 +152,7 @@ const ContactMessagesPage: React.FC = () => {
 
   const openDialog = async (msg: ContactMessage) => {
     setSelectedMessage(msg);
+    setWhatsAppResponse('');
     setDialogOpen(true);
     if (!msg.isRead) {
       try {
@@ -198,6 +214,32 @@ const ContactMessagesPage: React.FC = () => {
     }
   };
 
+  const handleSendWhatsAppResponse = async () => {
+    if (!selectedMessage) return;
+    if (!whatsAppResponse.trim()) {
+      setFeedback({ open: true, message: 'Informe a resposta para enviar por WhatsApp.', severity: 'error' });
+      return;
+    }
+
+    setSendingWhatsApp(true);
+    try {
+      const response = await apiService.sendContactWhatsAppResponse(String(selectedMessage.id), whatsAppResponse.trim());
+      setSelectedMessage(response.data);
+      setMessages((prev) => prev.map((m) => (m.id === selectedMessage.id ? response.data : m)));
+      setWhatsAppResponse('');
+      setFeedback({ open: true, message: 'Resposta enviada por WhatsApp e mensagem marcada como resolvida.', severity: 'success' });
+      await loadUnreadCount();
+    } catch (error: any) {
+      setFeedback({
+        open: true,
+        message: error?.response?.data?.message || 'Não foi possível enviar a resposta por WhatsApp.',
+        severity: 'error',
+      });
+    } finally {
+      setSendingWhatsApp(false);
+    }
+  };
+
   const columns: GridColDef[] = isXs
     ? [
         {
@@ -217,6 +259,13 @@ const ContactMessagesPage: React.FC = () => {
           ),
         },
         { field: 'subject', headerName: 'Assunto', flex: 1.2, minWidth: 180 },
+        {
+          field: 'wantsWhatsAppResponse',
+          headerName: 'WhatsApp',
+          width: 140,
+          sortable: false,
+          renderCell: (params) => getWhatsAppChip(params.row),
+        },
         {
           field: 'status',
           headerName: 'Status',
@@ -281,6 +330,13 @@ const ContactMessagesPage: React.FC = () => {
           ),
         },
         { field: 'email', headerName: 'E-mail', flex: 1, minWidth: 220 },
+        {
+          field: 'wantsWhatsAppResponse',
+          headerName: 'WhatsApp',
+          width: 150,
+          sortable: false,
+          renderCell: (params) => getWhatsAppChip(params.row),
+        },
         {
           field: 'receivedAt',
           headerName: 'Recebida em',
@@ -542,7 +598,79 @@ const ContactMessagesPage: React.FC = () => {
                 <TextField label="Telefone" value={selectedMessage.phone || ''} fullWidth InputProps={{ readOnly: true }} />
                 <TextField label="Assunto" value={selectedMessage.subject} fullWidth InputProps={{ readOnly: true }} />
               </Stack>
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                <Chip
+                  size="small"
+                  color={selectedMessage.isRead ? 'default' : 'primary'}
+                  label={selectedMessage.isRead ? 'Lida' : 'Não lida'}
+                />
+                <Chip
+                  size="small"
+                  color={selectedMessage.wantsWhatsAppResponse ? 'success' : 'default'}
+                  label={selectedMessage.wantsWhatsAppResponse ? 'Aceita resposta por WhatsApp' : 'Não solicitou WhatsApp'}
+                />
+                {selectedMessage.whatsAppResponseSentAt && (
+                  <Chip size="small" color="success" label={`Respondida em ${new Date(selectedMessage.whatsAppResponseSentAt).toLocaleString('pt-BR')}`} />
+                )}
+              </Stack>
+              <Alert severity={selectedMessage.isRead ? 'info' : 'warning'}>
+                {selectedMessage.isRead
+                  ? 'Esta mensagem já foi marcada como lida.'
+                  : 'Esta mensagem ainda está marcada como não lida.'}{' '}
+                <Button size="small" onClick={() => handleToggleRead(selectedMessage)} sx={{ ml: 1 }}>
+                  {selectedMessage.isRead ? 'Marcar como não lida' : 'Marcar como lida'}
+                </Button>
+              </Alert>
               <TextField label="Mensagem" value={selectedMessage.message} multiline minRows={5} fullWidth InputProps={{ readOnly: true }} />
+              <Paper variant="outlined" sx={{ p: 2, borderColor: selectedMessage.wantsWhatsAppResponse ? 'success.light' : 'divider' }}>
+                <Stack spacing={1.5}>
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    <WhatsAppIcon color={selectedMessage.wantsWhatsAppResponse ? 'success' : 'disabled'} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      Resposta por WhatsApp
+                    </Typography>
+                    {getWhatsAppChip(selectedMessage)}
+                  </Stack>
+
+                  {!selectedMessage.wantsWhatsAppResponse ? (
+                    <Alert severity="info">
+                      O visitante não marcou a opção para receber resposta por WhatsApp no formulário público. Use o e-mail ou atualize apenas o atendimento interno.
+                    </Alert>
+                  ) : !selectedMessage.phone ? (
+                    <Alert severity="warning">
+                      O visitante autorizou WhatsApp, mas a mensagem não possui telefone salvo. Não é possível enviar resposta por WhatsApp.
+                    </Alert>
+                  ) : (
+                    <>
+                      {selectedMessage.whatsAppResponseText && (
+                        <Alert severity="success">
+                          Última resposta enviada em {selectedMessage.whatsAppResponseSentAt ? new Date(selectedMessage.whatsAppResponseSentAt).toLocaleString('pt-BR') : 'data não registrada'}: {selectedMessage.whatsAppResponseText}
+                        </Alert>
+                      )}
+                      <TextField
+                        label="Mensagem de resposta"
+                        value={whatsAppResponse}
+                        onChange={(e) => setWhatsAppResponse(e.target.value)}
+                        multiline
+                        minRows={3}
+                        fullWidth
+                        disabled={sendingWhatsApp}
+                        helperText="Ao enviar, a mensagem será marcada como resolvida e lida."
+                      />
+                      <Button
+                        variant="contained"
+                        color="success"
+                        startIcon={sendingWhatsApp ? <CircularProgress size={18} color="inherit" /> : <WhatsAppIcon />}
+                        onClick={handleSendWhatsAppResponse}
+                        disabled={sendingWhatsApp || !whatsAppResponse.trim()}
+                        sx={{ alignSelf: { xs: 'stretch', md: 'flex-start' } }}
+                      >
+                        Enviar resposta por WhatsApp
+                      </Button>
+                    </>
+                  )}
+                </Stack>
+              </Paper>
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                 <FormControl fullWidth>
                   <InputLabel>Status</InputLabel>

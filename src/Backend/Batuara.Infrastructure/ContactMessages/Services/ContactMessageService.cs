@@ -1,6 +1,7 @@
 using Batuara.Application.Common.Models;
 using Batuara.Application.ContactMessages.Models;
 using Batuara.Application.ContactMessages.Services;
+using Batuara.Application.Notifications.Services;
 using Batuara.Domain.Entities;
 using Batuara.Domain.Enums;
 using Batuara.Infrastructure.Data;
@@ -12,10 +13,12 @@ namespace Batuara.Infrastructure.ContactMessages.Services
     {
         private const int MaxPageSize = 100;
         private readonly BatuaraDbContext _db;
+        private readonly IWhatsAppService _whatsAppService;
 
-        public ContactMessageService(BatuaraDbContext db)
+        public ContactMessageService(BatuaraDbContext db, IWhatsAppService whatsAppService)
         {
             _db = db;
+            _whatsAppService = whatsAppService;
         }
 
         public async Task<PaginatedResponse<ContactMessageDto>> GetAdminAsync(
@@ -88,7 +91,12 @@ namespace Batuara.Infrastructure.ContactMessages.Services
         {
             try
             {
-                var entity = new ContactMessage(request.Name, request.Email, request.Subject, request.Message, request.Phone);
+                if (request.WantsWhatsAppResponse && string.IsNullOrWhiteSpace(request.Phone))
+                {
+                    return (null, new[] { "Telefone é obrigatório para receber resposta por WhatsApp." }, false);
+                }
+
+                var entity = new ContactMessage(request.Name, request.Email, request.Subject, request.Message, request.Phone, request.WantsWhatsAppResponse);
                 _db.ContactMessages.Add(entity);
                 await _db.SaveChangesAsync();
                 return (MapToDto(entity), Array.Empty<string>(), false);
@@ -134,6 +142,43 @@ namespace Batuara.Infrastructure.ContactMessages.Services
             return (MapToDto(entity), Array.Empty<string>());
         }
 
+        public async Task<(ContactMessageDto? Message, string[] Errors)> SendWhatsAppResponseAsync(int id, SendContactWhatsAppResponseRequest request, CancellationToken cancellationToken = default)
+        {
+            var entity = await _db.ContactMessages.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            if (entity == null)
+            {
+                return (null, new[] { "Contact message not found" });
+            }
+
+            if (!entity.WantsWhatsAppResponse)
+            {
+                return (null, new[] { "O visitante não autorizou resposta por WhatsApp." });
+            }
+
+            if (string.IsNullOrWhiteSpace(entity.Phone))
+            {
+                return (null, new[] { "A mensagem não possui telefone para resposta por WhatsApp." });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.ResponseText))
+            {
+                return (null, new[] { "Informe a resposta a ser enviada." });
+            }
+
+            try
+            {
+                await _whatsAppService.SendContactResponseAsync(entity.Phone, request.ResponseText, cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return (null, new[] { ex.Message });
+            }
+
+            entity.MarkWhatsAppResponseSent(request.ResponseText, DateTime.UtcNow);
+            await _db.SaveChangesAsync(cancellationToken);
+            return (MapToDto(entity), Array.Empty<string>());
+        }
+
         private static ContactMessageDto MapToDto(ContactMessage entity)
         {
             return new ContactMessageDto
@@ -146,6 +191,9 @@ namespace Batuara.Infrastructure.ContactMessages.Services
                 Message = entity.Message,
                 Status = entity.Status,
                 IsRead = entity.IsRead,
+                WantsWhatsAppResponse = entity.WantsWhatsAppResponse,
+                WhatsAppResponseSentAt = entity.WhatsAppResponseSentAt,
+                WhatsAppResponseText = entity.WhatsAppResponseText,
                 AdminNotes = entity.AdminNotes,
                 ReceivedAt = entity.ReceivedAt,
                 CreatedAt = entity.CreatedAt,

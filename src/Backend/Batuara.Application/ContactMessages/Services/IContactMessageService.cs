@@ -20,5 +20,6 @@ namespace Batuara.Application.ContactMessages.Services
         Task<(ContactMessageDto? Message, string[] Errors, bool Conflict)> CreatePublicAsync(CreateContactMessageRequest request);
         Task<(ContactMessageDto? Message, string[] Errors)> UpdateStatusAsync(int id, UpdateContactMessageStatusRequest request);
         Task<(ContactMessageDto? Message, string[] Errors)> MarkAsReadAsync(int id, bool isRead);
+        Task<(ContactMessageDto? Message, string[] Errors)> SendWhatsAppResponseAsync(int id, SendContactWhatsAppResponseRequest request, CancellationToken cancellationToken = default);
     }
 }

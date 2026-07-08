@@ -13,6 +13,7 @@ import {
   UmbandaLine,
   DashboardStats,
   ActivityLog,
+  User,
 } from '../types';
 
 class ApiService {
@@ -59,7 +60,7 @@ class ApiService {
   // to avoid deadlocks (refresh calling itself)
   private isAuthEndpoint(url: string | undefined): boolean {
     if (!url) return false;
-    return url.includes('/auth/refresh') || url.includes('/auth/login');
+    return url.includes('/auth/refresh') || url.includes('/auth/login') || url.includes('/member-auth/');
   }
 
   private shouldLog(): boolean {
@@ -256,6 +257,30 @@ class ApiService {
     return this.put<ApiResponse<any>>('/auth/preferences', data);
   }
 
+  async getUsers() {
+    return this.get<User[]>('/users');
+  }
+
+  async createUser(data: any) {
+    return this.post<User>('/users', data);
+  }
+
+  async updateUser(id: number, data: any) {
+    return this.put<User>(`/users/${id}`, data);
+  }
+
+  async deleteUser(id: number) {
+    return this.delete(`/users/${id}`);
+  }
+
+  async requestMemberCode(mobilePhone: string) {
+    return this.post('/member-auth/request-code', { mobilePhone });
+  }
+
+  async verifyMemberCode(mobilePhone: string, code: string) {
+    return this.post<any>('/member-auth/verify-code', { mobilePhone, code });
+  }
+
   async getSiteSettings() {
     return this.get<SiteSettingsDto>('/site-settings');
   }
@@ -367,6 +392,18 @@ class ApiService {
     return this.delete(`/house-members/${id}`);
   }
 
+  async getMyMemberProfile() {
+    return this.get<HouseMember>('/members/me');
+  }
+
+  async updateMyMemberProfile(data: any) {
+    return this.put<HouseMember>('/members/me', data);
+  }
+
+  async addMyMemberContribution(data: any) {
+    return this.post<HouseMember>('/members/me/contributions', data);
+  }
+
   async getContactMessages(params?: any) {
     return this.getPaginated<ContactMessage>('/contact-messages', params);
   }
@@ -377,6 +414,10 @@ class ApiService {
 
   async updateContactMessageStatus(id: string, data: any) {
     return this.patch<ContactMessage>(`/contact-messages/${id}/status`, data);
+  }
+
+  async sendContactWhatsAppResponse(id: string, responseText: string) {
+    return this.post<ContactMessage>(`/contact-messages/${id}/whatsapp-response`, { responseText });
   }
 
   async markContactMessageAsRead(id: string, isRead: boolean) {

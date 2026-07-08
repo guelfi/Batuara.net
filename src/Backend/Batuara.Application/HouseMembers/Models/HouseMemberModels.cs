@@ -11,6 +11,11 @@ namespace Batuara.Application.HouseMembers.Models
         public ContributionPaymentStatus Status { get; set; }
         public DateTime? PaidAt { get; set; }
         public string? Notes { get; set; }
+        public bool IsRecurring { get; set; }
+        public bool AllowWhatsAppReminder { get; set; }
+        public DateTime? ReminderSentAt { get; set; }
+        public DateTime? ReminderLastAttemptAt { get; set; }
+        public int ReminderAttemptCount { get; set; }
     }
 
     public class HouseMemberContributionInput
@@ -22,6 +27,8 @@ namespace Batuara.Application.HouseMembers.Models
         public ContributionPaymentStatus Status { get; set; } = ContributionPaymentStatus.Pending;
         public DateTime? PaidAt { get; set; }
         public string? Notes { get; set; }
+        public bool IsRecurring { get; set; }
+        public bool AllowWhatsAppReminder { get; set; }
     }
 
     public class HouseMemberDto

@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { User, LoginRequest, LoginResponse } from '../types';
+import { User, LoginRequest, LoginResponse, MemberLoginResponse } from '../types';
 import { apiService } from '../services/api';
+import { normalizeUserRole } from '../utils/roles';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
+  loginMemberWithCode: (mobilePhone: string, code: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -67,7 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await apiService.get('/auth/verify');
 
         // Token is valid, set the user
-        setUser(parsedUser);
+        setUser({ ...parsedUser, role: normalizeUserRole(parsedUser.role) });
       } catch (error) {
         // Invalid token or verification failed, clear everything
         console.warn('Token verification failed, clearing auth data');
@@ -153,7 +155,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await apiService.post<LoginResponse>('/auth/login', credentials);
 
       if (response.success && response.data) {
-        const { token, refreshToken, user: userData } = response.data;
+        const { token, refreshToken, user: rawUserData } = response.data;
+        const userData = { ...rawUserData, role: normalizeUserRole(rawUserData.role) };
 
         // Store token and user data
         localStorage.setItem('authToken', token);
@@ -199,6 +202,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const loginMemberWithCode = async (mobilePhone: string, code: string) => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.post<MemberLoginResponse>('/member-auth/verify-code', { mobilePhone, code });
+
+      if (response.success && response.data) {
+        const { token, user: rawUserData } = response.data;
+        const userData = { ...rawUserData, role: normalizeUserRole(rawUserData.role) };
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+        updateLastActivity();
+      } else {
+        throw new Error(response.message || 'Código inválido');
+      }
+    } catch (error: any) {
+      logAuthDebug('loginMemberWithCode', error);
+      throw new Error(error.response?.data?.message || error.message || 'Erro ao validar código');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     try {
       await apiService.post('/auth/logout');
@@ -221,7 +247,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await apiService.get<User>('/auth/me');
       if (response.success && response.data) {
-        const userData = response.data;
+        const userData = { ...response.data, role: normalizeUserRole(response.data.role) };
         localStorage.setItem('user', JSON.stringify(userData));
         setUser(userData);
       }
@@ -235,6 +261,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated,
     isLoading,
     login,
+    loginMemberWithCode,
     logout,
     refreshUser,
   };

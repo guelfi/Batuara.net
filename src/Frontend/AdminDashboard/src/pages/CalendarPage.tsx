@@ -443,7 +443,7 @@ const CalendarPage: React.FC = () => {
         if (form.date && form.date !== originalDate) payload.date = form.date;
         if (form.startTime && form.startTime !== originalStart) payload.startTime = form.startTime;
         if (form.endTime && form.endTime !== originalEnd) payload.endTime = form.endTime;
-        if (form.type !== editingItem.type) payload.type = form.type;
+        if (form.type !== normalizeAttendanceType(editingItem.type)) payload.type = form.type;
 
         const nextDescription = form.description.trim();
         if (nextDescription !== (editingItem.description || '')) payload.description = nextDescription;
@@ -457,7 +457,9 @@ const CalendarPage: React.FC = () => {
         const nextMaxCapacity = form.maxCapacity ? Number(form.maxCapacity) : null;
         if (nextMaxCapacity !== originalMaxCapacity) payload.maxCapacity = nextMaxCapacity;
 
-            await apiService.updateAttendance(String(editingItem.id), payload);
+        if (form.isActive !== !!editingItem.isActive) payload.isActive = form.isActive;
+
+        await apiService.updateAttendance(String(editingItem.id), payload);
         setFeedback({ open: true, message: 'Atendimento atualizado com sucesso.', severity: 'success' });
       } else {
         const payload = {
@@ -787,6 +789,20 @@ const CalendarPage: React.FC = () => {
               }
               label="Exige inscrição prévia"
             />
+            {editingItem && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    color="error"
+                    checked={!form.isActive}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setForm((prev: CalendarFormState) => ({ ...prev, isActive: !e.target.checked }))
+                    }
+                  />
+                }
+                label="Cancelar atendimento"
+              />
+            )}
             {(form.type === AttendanceType.Festa || form.type === AttendanceType.Curso || form.type === AttendanceType.Palestra) && (
               <Alert severity="warning">
                 Atenção: Para eventos especiais como Festas, Bazares ou Cursos, recomendamos utilizar a seção{' '}
