@@ -9,6 +9,8 @@
 - Nenhuma porta publica nova deve ser aberta para a Evolution API.
 - Servicos: `batuara-evolution-api`, `batuara-evolution-postgres`, `batuara-evolution-redis`.
 - Manager/API nao possuem acesso remoto publico. Acesso administrativo remoto somente via SSH/tunel local.
+- Validado em 2026-07-08: tunel local `127.0.0.1:18085` fechado; `8085` e `8080` inacessiveis pelo IP publico; container publica `8080/tcp -> 127.0.0.1:8085`.
+- Painel OCI ajustado para manter publicamente apenas `22`, `80` e `443`; nao reabrir `8085`.
 
 ## Instancia definitiva
 
@@ -52,6 +54,14 @@ ssh -i "C:\Users\MarcoGuelfi\Projetos\Batuara.net\ssh-key-2025-08-28.pem" -N -L 
 
 Depois acessar `http://127.0.0.1:18085/manager/` e parear por QR Code.
 
+Fechar o tunel ao terminar. Validar no Windows:
+
+```powershell
+Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort 18085 -ErrorAction SilentlyContinue
+```
+
+Sem saida significa que o tunel esta fechado.
+
 ## Regras operacionais
 
 - O uso atual do numero pessoal `5511975747470` e temporario para validacao operacional.
@@ -62,6 +72,7 @@ Depois acessar `http://127.0.0.1:18085/manager/` e parear por QR Code.
 - Manter rate limit no endpoint de solicitacao de codigo.
 - Se a sessao cair, repetir o pareamento com responsavel autorizado pela Casa.
 - Nunca publicar a porta `8085` em `0.0.0.0` nem abrir regra publica no firewall/OCI para a Evolution API.
+- Se precisar testar exposicao externa, esperar falha para `129.153.86.168:8085`, `129.153.86.168:8080`, `batuara.org.br:8085` e `www.batuara.org.br:8085`.
 
 ## Teste validado
 

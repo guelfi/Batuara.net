@@ -3,7 +3,41 @@
 Este arquivo mantém o histórico de tarefas resolvidas e o status de implementação do projeto Batuara.net.
 
 **Última atualização:** 2026.07.08
-**Escopo:** mudanças implementadas, deploy local, RBAC, WhatsApp OCI, recorrência/lembretes, contato WhatsApp, troubleshooting e validações recentes
+**Escopo:** mudanças implementadas, deploy OCI, RBAC, WhatsApp OCI, recorrência/lembretes, contato WhatsApp, manutenção de dados religiosos, hardening de portas e validações recentes
+
+## ✅ Tarefas Resolvidas (Sessão 2026-07-08 - Produção OCI, dados e segurança)
+
+### Deploy OCI e hotfix
+- [x] Backup pré-deploy criado em `/var/www/batuara_net/backups/predeploy_20260708_164920` e copiado localmente para `backups/predeploy_20260708_164920`.
+- [x] Commit `06a8d7a` implantado em produção via CI/CD GitHub Actions.
+- [x] Hotfix `c8c7c4e` aplicado para healthchecks de frontends usarem `curl -fsS http://127.0.0.1:80`.
+- [x] CI `28964270844` e CD OCI `28964614192` concluíram com sucesso.
+- [x] Produção validada no commit `c8c7c4e`: API, AdminDashboard, PublicWebsite e DB `healthy`.
+- [x] Migrations `20260708020346_AddMemberLoginCodes` e `20260708130000_AddRecurringContributionAndWhatsAppContact` confirmadas em produção.
+- [x] Contagens críticas do banco preservadas após deploy.
+
+### Manutenção de Orixás/Guias
+- [x] Confirmado que, na Casa Batuara, `Exu` e `Pomba Gira` são Guias/Entidades, não Orixás.
+- [x] Backup pré-manutenção criado e validado em `/var/www/batuara_net/backups/orixas_guides_maintenance_20260708_181511`.
+- [x] Produção atualizada em transação: `Exu` e `Pomba Gira` inseridos em `batuara."Guides"` e removidos de `batuara."Orixas"`.
+- [x] Validação produção: `Orixas=12`, `Guides=9`, API `Healthy`.
+- [x] Banco local de desenvolvimento recriado/sincronizado a partir da produção com `scripts/sync-db-from-oci.ps1 -FullDatabase`.
+- [x] Validação local: `Orixas=12`, `Guides=9`, API local `healthy` pelo healthcheck do container.
+
+### Evolution API e portas públicas
+- [x] Túnel SSH local da Evolution API fechado; nada ouvindo em `127.0.0.1:18085`.
+- [x] Confirmado que `batuara-evolution-api` publica apenas `8080/tcp -> 127.0.0.1:8085` na VM OCI.
+- [x] Confirmado que Nginx não possui proxy para Evolution/Manager.
+- [x] Testes externos confirmaram `8085` e `8080` inacessíveis pelo IP público.
+- [x] Inventariadas portas públicas antes do hardening: `22`, `80`, `443`, `3000`, `3001`, `3003`, `3005`, `5005`.
+- [x] Usuário removeu no painel OCI as regras extras, mantendo apenas `22`, `80`, `443` e ICMP operacional.
+
+### Pendências operacionais remanescentes
+- [ ] Revalidar com `Test-NetConnection` após qualquer nova alteração no painel OCI; esperado público: somente `22`, `80`, `443`.
+- [ ] Considerar OCI Bastion/VPN para fechar `22` público; usuário não possui IP fixo por usar Vivo Fibra.
+- [ ] Revisar `ufw` e compose dos demais projetos para remover portas host diretas ou bindar em `127.0.0.1`.
+- [ ] Trocar número temporário `5511975747470` por chip dedicado da Casa quando disponível.
+- [ ] Revisar logs da Evolution API antes de ativar qualquer automação de lembretes.
 
 ## ✅ Tarefas Resolvidas (Sessão 2026-07-08 - Validação E2E real por Claude)
 
@@ -64,7 +98,7 @@ Validação feita com envio/recebimento real de WhatsApp via túnel SSH até a i
 ### Pendências operacionais para a próxima ferramenta
 - [ ] Revisar `git status` e preparar commit sem arquivos temporários.
 - [ ] Não incluir `.claude/`, `docs/.~lock.Plano de Testes Batuara.xlsx#` nem `scripts/output/`.
-- [ ] Avaliar se docs novos, planilha de testes e `scripts/import_house_members.py` devem entrar no commit.
+- [ ] Manter e versionar `docs/PlanoTestes.md` e `docs/Plano de Testes Batuara - v5.xlsx`; `scripts/import_house_members.py` foi removido por decisão do usuário.
 - [ ] Executar E2E manual de contribuição recorrente; login WhatsApp e resposta de contato já foram validados com envio/recebimento real.
 - [ ] Revisar logs da Evolution API antes de produção.
 

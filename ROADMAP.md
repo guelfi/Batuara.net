@@ -762,10 +762,11 @@ Batuara.net/
 
 ### URLs de Produção
 
-- **Public Website:** `http://<OCI_HOST>/batuara-public/`
-- **Admin Dashboard:** `http://<OCI_HOST>/batuara-admin/`
-- **API Swagger:** `http://<OCI_HOST>/batuara-api/swagger/index.html`
-- **API Health Check:** `http://<OCI_HOST>/batuara-api/health`
+- **Public Website:** via Nginx reverse proxy (`https://batuara.org.br/` ou rota configurada no proxy)
+- **Admin Dashboard:** via Nginx reverse proxy (`/admin/` no domínio configurado)
+- **API Swagger:** via Nginx reverse proxy (`/batuara-api/swagger/index.html` ou `/swagger/` conforme host)
+- **API Health Check:** via Nginx reverse proxy (`/batuara-api/health`)
+- **Portas públicas OCI esperadas:** `22`, `80`, `443`. Não expor portas diretas de containers.
 
 ### Evolution API OCI
 
@@ -774,6 +775,15 @@ Batuara.net/
 - **Túnel administrativo temporário:** `ssh -N -L 18085:127.0.0.1:8085 ubuntu@<OCI_HOST>` e acessar `http://127.0.0.1:18085/manager/`.
 - **Instância operacional:** `batuara-casa`.
 - **Runbook:** `docs/Evolution API - Operacao OCI.md`.
+
+### Estado Operacional Validado em 2026-07-08
+
+- Produção validada no commit `c8c7c4e` após CI/CD bem-sucedido.
+- Frontends/API/DB em produção ficaram `healthy`.
+- `Exu` e `Pomba Gira` foram movidos de `Orixas` para `Guides`; produção e desenvolvimento estão sincronizados (`Orixas=12`, `Guides=9`).
+- Evolution API/Manager sem exposição pública; túnel SSH fechado após uso.
+- Regras públicas extras no painel OCI removidas pelo usuário; manter somente `22`, `80`, `443`.
+- `22` permanece público porque o usuário não possui IP fixo; avaliar OCI Bastion/VPN para hardening futuro.
 
 ---
 
@@ -786,16 +796,17 @@ Ao iniciar uma nova sessão de trabalho com este projeto:
 1. **Primeiro passo:** Ler este arquivo (`ROADMAP.md`) para entender o histórico e a fase ativa
 2. **Segundo passo:** Ler `docs/Status Atual - RBAC WhatsApp e COR-09.md` para o status mais recente de RBAC/WhatsApp/Member
 3. **Terceiro passo:** Ler `docs/Evolution API - Operacao OCI.md` se a tarefa envolver WhatsApp ou OCI
-4. **Quarto passo:** Ler `docs/EFT-especificacao-funcional-tecnica.md` para arquitetura, segurança e contratos
-5. **Quinto passo:** Ler `docs/Backlog-Executavel.md` para prioridade, dependências e histórias
-6. **Verificar fase ativa:**
+4. **Quarto passo:** Ler `docs/RUNBOOK.md` se a tarefa envolver produção, banco, portas ou deploy
+5. **Quinto passo:** Ler `docs/EFT-especificacao-funcional-tecnica.md` para arquitetura, segurança e contratos
+6. **Sexto passo:** Ler `docs/Backlog-Executavel.md` para prioridade, dependências e histórias
+7. **Verificar fase ativa:**
    - Se o tema for hardening/infra, usar a Fase 5
    - Se o tema for API/CMS/rotas do AdminDashboard/PublicWebsite, usar a Fase 6
-5. **Durante a execução:**
+8. **Durante a execução:**
    - Ao iniciar um item: mudar `[ ]` para `[→]` (em andamento)
    - Ao completar: mudar para `[x]` (concluído)
    - Ao abrir PR: atualizar coluna "PR" com link
-6. **Final de sessão:**
+9. **Final de sessão:**
    - Atualizar data de conclusão na tabela
    - Adicionar entrada no "Histórico de Execução"
    - Atualizar o `ROADMAP.md` e, se necessário, os documentos em `docs/`
