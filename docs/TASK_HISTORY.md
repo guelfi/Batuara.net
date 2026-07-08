@@ -2,8 +2,95 @@
 
 Este arquivo mantém o histórico de tarefas resolvidas e o status de implementação do projeto Batuara.net.
 
-**Última atualização:** 2026.04.03  
-**Escopo:** mudanças implementadas, deploy local, troubleshooting e validações recentes
+**Última atualização:** 2026.07.08
+**Escopo:** mudanças implementadas, deploy local, RBAC, WhatsApp OCI, recorrência/lembretes, contato WhatsApp, troubleshooting e validações recentes
+
+## ✅ Tarefas Resolvidas (Sessão 2026-07-08 - Validação E2E real por Claude)
+
+Validação feita com envio/recebimento real de WhatsApp via túnel SSH até a instância `batuara-casa` na OCI (não apenas leitura de código ou testes automatizados).
+
+### RBAC
+- [x] Login de Admin confirmado ponta a ponta no navegador (`/dashboard` sem erro de RBAC).
+- [x] Criado usuário Editor de teste, confirmado acesso liberado a rotas Editor e **bloqueio real (403)** em rotas Admin-only (`/users`); menu lateral escondendo itens Admin-only corretamente. Usuário de teste removido após validação.
+- [x] Corrigido bug crítico de regressão: `role` retornado pelo backend como string (`"Admin"`) e comparado como número no frontend (`ProtectedRoute.tsx`, `utils/roles.ts`) — normalizado via `normalizeUserRole` em `AuthContext.tsx` e `UsersPage.tsx`.
+
+### Login de Filho da Casa por WhatsApp (Fase 3)
+- [x] E2E real completo: solicitação de código pelo número `11975747470`, código `222613` recebido de verdade no WhatsApp, login validado, perfil carregado com dados reais (nome, e-mail, endereço).
+- [x] Máscara de telefone confirmada funcionando em tempo real no campo de login.
+- [x] Escrita de 5 testes automatizados novos para `MemberAuthService` (happy path, código errado, expirado, limite de tentativas, não-enumeração) — cobertura que não existia antes.
+
+### Bug encontrado e corrigido: migration local não aplicada
+- [x] `20260708130000_AddRecurringContributionAndWhatsAppContact` nunca havia sido aplicada ao banco local (só existia no código), causando 500 em `/api/members/me`, `/api/house-members` e `/api/contact-messages`. Aplicado manualmente o SQL idempotente (mesmo do `deploy-rolling.sh`) para destravar a validação local. **Atenção no deploy real:** confirmar que a Step 3.5 do `deploy-rolling.sh` realmente aplica essa migration na OCI, já que testes automatizados com EF InMemory não pegam esse tipo de dessincronia de schema.
+
+### Resposta por WhatsApp a mensagens de contato — 2 bugs reais encontrados e corrigidos
+- [x] **Bug 1:** `ContactMessageService.SendWhatsAppResponseAsync` marcava a mensagem como "Respondida" mesmo quando o envio era um no-op silencioso (`WhatsApp:Enabled=false` não lançava exceção). Corrigido: `SendTextAsync` agora lança `InvalidOperationException` explícita nesse caso, e o service captura e retorna erro sem marcar como respondida.
+- [x] **Bug 2:** allowlist nunca batia com o telefone real porque `NormalizeToEvolutionNumber` não adicionava o código do país (`55`), enquanto `AllowedRecipients` estava configurado com `55`. Corrigido usando `PhoneNumberNormalizer.NormalizeBrazilMobile` nos dois lados da comparação.
+- [x] E2E real confirmado após o fix: mensagem de teste criada pelo PublicWebsite com opt-in, resposta enviada pelo Admin, **recebida de verdade no WhatsApp** (confirmado por print do usuário), status mudou para "Respondida" com histórico correto.
+- [x] 33 testes de backend passando no total (`dotnet test "Batuara.sln" -c Release`), incluindo os novos testes de `ContactMessageServiceTests` cobrindo os dois bugs.
+
+### Pendências reais remanescentes
+- [ ] Rodar o deploy real na OCI e confirmar que a Step 3.5 (migrations) aplica as duas migrations pendentes sem erro.
+- [ ] Trocar número temporário `5511975747470` por chip dedicado da Casa quando disponível.
+- [ ] Revisar logs da Evolution API antes de produção para evitar conteúdo sensível.
+- [ ] E2E de contribuição recorrente (marcar como paga e confirmar geração automática do mês seguinte) ainda não foi validado manualmente no navegador, só por teste automatizado.
+
+## ✅ Tarefas Resolvidas (Sessão 2026-07-08 - Recorrência, Lembretes e Handoff)
+
+### Contribuições recorrentes e lembrete WhatsApp
+- [x] Transformar switches de contribuição recorrente/lembrete em campos reais persistidos.
+- [x] Implementar geração automática da próxima mensalidade recorrente ao marcar contribuição recorrente como paga.
+- [x] Implementar `ContributionReminderProcessor` e hosted service com throttling conservador.
+- [x] Manter `ContributionReminders.Enabled=false` por padrão para evitar disparos automáticos sem decisão operacional.
+- [x] Adicionar testes de recorrência e envio condicional de lembrete.
+
+### Contato público com resposta WhatsApp
+- [x] Adicionar opt-in no PublicWebsite para resposta por WhatsApp.
+- [x] Exigir telefone com DDD quando o visitante solicitar resposta por WhatsApp.
+- [x] Implementar endpoint admin para enviar resposta por WhatsApp e marcar mensagem como resolvida.
+- [x] Atualizar tipos, DTOs, validators, service e UI administrativa.
+
+### Deploy, migrations e validações
+- [x] Criar migration `20260708130000_AddRecurringContributionAndWhatsAppContact`.
+- [x] Alinhar `BatuaraDbContextModelSnapshot` com campos e índices novos.
+- [x] Atualizar deploy rolling com migration idempotente e envs de WhatsApp/lembrete.
+- [x] Normalizar scripts de deploy para LF e validar com `bash -n`.
+- [x] Rodar `dotnet test "Batuara.sln" -c Release` via SDK container: 33 testes passaram.
+- [x] Rodar `dotnet build "src/Backend/Batuara.API/Batuara.API.csproj" -c Release` via SDK container: passou.
+- [x] Rodar `npm run build` em AdminDashboard e PublicWebsite: ambos passaram com warnings antigos.
+- [x] Validar `docker compose -f "scripts/docker/docker-compose.production.yml" config --quiet` com envs dummy.
+- [x] Rebuildar `api`, `admindashboard` e `publicwebsite` via `docker-compose.local.yml`.
+- [x] Subir serviços locais e confirmar `healthy` para API, AdminDashboard e PublicWebsite.
+
+### Pendências operacionais para a próxima ferramenta
+- [ ] Revisar `git status` e preparar commit sem arquivos temporários.
+- [ ] Não incluir `.claude/`, `docs/.~lock.Plano de Testes Batuara.xlsx#` nem `scripts/output/`.
+- [ ] Avaliar se docs novos, planilha de testes e `scripts/import_house_members.py` devem entrar no commit.
+- [ ] Executar E2E manual de contribuição recorrente; login WhatsApp e resposta de contato já foram validados com envio/recebimento real.
+- [ ] Revisar logs da Evolution API antes de produção.
+
+## ✅ Tarefas Resolvidas (Sessão 2026-07-08 - Evolution API, RBAC e WhatsApp)
+
+### Evolution API na OCI
+- [x] Instalar/subir Evolution API self-hosted na OCI em compose separado.
+- [x] Manter Evolution API/Manager sem exposição pública, bindado somente em `127.0.0.1:8085`.
+- [x] Validar acesso administrativo via túnel SSH local `127.0.0.1:18085 -> 127.0.0.1:8085`.
+- [x] Parear instância definitiva `batuara-casa` via Manager/QR.
+- [x] Confirmar `GET /instance/connectionState/batuara-casa` retornando `open`.
+- [x] Enviar mensagens reais usando `batuara-casa`.
+- [x] Confirmar recebimento nos celulares `5511975747470` e `5511995384032`.
+
+### RBAC e Filho da Casa
+- [x] Implementar RBAC/multiadmin no AdminDashboard.
+- [x] Alinhar roles `Admin=1`, `Editor=2`, `Viewer=3`, `Member=4` no backend/frontend.
+- [x] Implementar login de Filho da Casa por WhatsApp e autosserviço restrito em código.
+- [x] Criar/aplicar localmente migration `20260708020346_AddMemberLoginCodes`.
+- [x] Validar build backend via Docker, testes backend, build AdminDashboard e containers locais healthy.
+
+### Pendências remanescentes
+- [x] Executar E2E completo do login WhatsApp/autosserviço com a API local/ambiente configurado para `batuara-casa`.
+- [ ] Aplicar migrations `20260708020346_AddMemberLoginCodes` e `20260708130000_AddRecurringContributionAndWhatsAppContact` nos demais ambientes no deploy.
+- [ ] Revisar logs/configuração da Evolution API antes de produção.
+- [ ] Trocar número temporário `5511975747470` por chip dedicado da Casa quando disponível.
 
 ## ✅ Tarefas Resolvidas (Sessão Anterior - Autenticação e UI)
 
@@ -110,6 +197,9 @@ curl http://localhost/batuara-public/
 ## 🔗 Referências Cruzadas
 
 - `docs/STATUS-PROJETO.md`
+- `docs/Status Atual - RBAC WhatsApp e COR-09.md`
+- `docs/Evolution API - Operacao OCI.md`
+- `docs/Plano de Implementacao - RBAC e Login WhatsApp.md`
 - `docs/Backlog-Executavel.md`
 - `docs/EFT-especificacao-funcional-tecnica.md`
 - `agent.md`

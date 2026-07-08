@@ -1,7 +1,7 @@
 # Batuara.net - Registro de Correções, Melhorias e Roadmap
 
 > Documento de referência para desenvolvedores e ferramentas de assistência por IA (Devin, Codex, Claude, Gemini, Warp Terminal, Opencode, Antigravity, Trae, Qoder e outras).
-> Última atualização: Abril/2026
+> Última atualização: Julho/2026
 
 ---
 
@@ -19,6 +19,34 @@ Este documento registra as correções e melhorias já aplicadas ao projeto Batu
 - `docs/EFT-especificacao-funcional-tecnica.md` — arquitetura, contratos, SLAs, segurança e governança
 - `docs/Resumo-Executivo.md` — objetivos, escopo, riscos, cronograma macro e benefícios
 - `docs/Backlog-Executavel.md` — épicos, histórias, dependências e priorização por rota/domínio
+- `docs/Status Atual - RBAC WhatsApp e COR-09.md` — status consolidado de RBAC, WhatsApp, Filho da Casa e COR-09
+- `docs/Evolution API - Operacao OCI.md` — runbook específico da Evolution API self-hosted na OCI
+
+### Estado de Handoff — 2026-07-08
+
+Implementações concluídas localmente e prontas para revisão/commit seletivo:
+
+- RBAC/multiadmin e login/autosserviço de Filho da Casa por WhatsApp.
+- Evolution API self-hosted na OCI com instância `batuara-casa` conectada e validada.
+- Contribuições recorrentes com persistência real, geração da próxima mensalidade e lembretes WhatsApp com opt-in.
+- Resposta WhatsApp para mensagens públicas quando o visitante autorizar no formulário público.
+- Deploy rolling preparado para migrations aditivas e configuração WhatsApp por Docker network.
+
+Validações concluídas:
+
+- `dotnet test "Batuara.sln" -c Release` via SDK container: 31 testes passaram.
+- `dotnet build "src/Backend/Batuara.API/Batuara.API.csproj" -c Release` via SDK container: passou.
+- `npm run build` em AdminDashboard e PublicWebsite: passou com warnings antigos.
+- Compose produção, scripts de deploy e build Docker local dos serviços impactados: passaram.
+- Containers locais `api`, `admindashboard` e `publicwebsite`: `healthy`.
+
+Próxima etapa operacional:
+
+1. Revisar `git status` e montar commit seletivo.
+2. Não incluir `.claude/`, `docs/.~lock.Plano de Testes Batuara.xlsx#` nem `scripts/output/`.
+3. Rodar E2E real de login WhatsApp, contribuição recorrente e resposta de contato.
+4. Revisar logs da Evolution API antes de produção.
+5. Manter lembretes automáticos desligados até ativação explícita.
 
 **Repositório:** [github.com/guelfi/Batuara.net](https://github.com/guelfi/Batuara.net)
 **Branch principal:** `master`
@@ -462,7 +490,7 @@ Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não s
 
 ## Fase 6 — Plataforma de APIs RESTful e CMS Operacional
 
-**Status:** Planejada  
+**Status:** Parcialmente executada / atualizar por subfase
 **Objetivo:** Transformar o Batuara.net em uma plataforma orientada a APIs, com PublicWebsite consumindo dados dinâmicos e AdminDashboard operando como painel completo de gestão de conteúdo, agenda, segurança e observabilidade.
 
 ### Referências Obrigatórias da Fase 6
@@ -485,11 +513,37 @@ Itens identificados durante análise dos arquivos PROJETO.md e STATUS.md. Não s
 
 | Bloco | Status | Foco | Saídas principais |
 |------|--------|------|-------------------|
-| 6.0 | Planejado | Fundação técnica | contratos, DTOs, validações, políticas, OpenAPI, revisão Swagger em produção |
-| 6.1 | Planejado | Núcleo operacional | Events, Calendar, ContactMessages, SiteSettings |
-| 6.2 | Planejado | Conteúdo institucional e espiritual | Orixas, UmbandaLines, SpiritualContents |
-| 6.3 | Planejado | Operação e governança | Dashboard stats, activity logs, trilha de auditoria |
-| 6.4 | Planejado | Hardening avançado | MFA, RBAC granular, WAF, SIEM, pentests contínuos |
+| 6.0 | Parcial | Fundação técnica | contratos, DTOs, validações, políticas, OpenAPI, revisão Swagger em produção |
+| 6.1 | Implementado em grande parte | Núcleo operacional | Events, Calendar, ContactMessages, SiteSettings |
+| 6.2 | Implementado em grande parte | Conteúdo institucional e espiritual | Orixas, UmbandaLines, SpiritualContents |
+| 6.3 | Parcial | Operação e governança | Dashboard stats, activity logs, trilha de auditoria |
+| 6.4 | Parcial | Hardening avançado | RBAC/multiadmin implementado; MFA, WAF, SIEM, HTTPS final pendentes |
+| 6.5 | Implementado em código / operacional infra | WhatsApp e Filho da Casa | Evolution API OCI `batuara-casa`, login WhatsApp, autosserviço Member |
+
+### 6.5 — WhatsApp, RBAC e Filho da Casa
+
+**Status em 2026-07-08:** implementado em código e infraestrutura operacional validada.
+
+Entregas:
+
+- RBAC/multiadmin no AdminDashboard com roles `Admin=1`, `Editor=2`, `Viewer=3`, `Member=4`.
+- Página `Usuários` e menus/rotas protegidos por perfil.
+- Evolution API self-hosted na OCI via `scripts/docker/docker-compose.whatsapp.yml`.
+- Evolution API/Manager sem exposição pública, bindados em `127.0.0.1:8085`.
+- Acesso ao Manager somente por túnel SSH local, por exemplo `127.0.0.1:18085`.
+- Instância definitiva `batuara-casa` conectada (`state=open`) usando temporariamente `5511975747470`.
+- Envio real confirmado e recebido nos celulares `5511975747470` e `5511995384032`.
+- Login de Filho da Casa por WhatsApp implementado em código.
+- Autosserviço `Member` implementado para dados pessoais/endereço/contribuição pendente.
+- Migration local `20260708020346_AddMemberLoginCodes` criada/aplicada.
+
+Pendências:
+
+- Executar E2E completo de solicitação/recebimento/validação de código e autosserviço.
+- Aplicar migration nos demais ambientes no deploy.
+- Configurar segredos reais do backend sem commit: `WhatsApp__Enabled`, `WhatsApp__BaseUrl`, `WhatsApp__ApiKey`, `WhatsApp__InstanceName=batuara-casa`.
+- Revisar logs/configuração da Evolution API antes de produção.
+- Trocar número temporário por chip dedicado da Casa quando disponível.
 
 ### 6.0 — Fundação Técnica e Contratos
 
@@ -713,6 +767,14 @@ Batuara.net/
 - **API Swagger:** `http://<OCI_HOST>/batuara-api/swagger/index.html`
 - **API Health Check:** `http://<OCI_HOST>/batuara-api/health`
 
+### Evolution API OCI
+
+- **API/Manager interno:** `http://127.0.0.1:8085` na VM OCI.
+- **Sem acesso público remoto:** não abrir porta 8085 no host/firewall/OCI.
+- **Túnel administrativo temporário:** `ssh -N -L 18085:127.0.0.1:8085 ubuntu@<OCI_HOST>` e acessar `http://127.0.0.1:18085/manager/`.
+- **Instância operacional:** `batuara-casa`.
+- **Runbook:** `docs/Evolution API - Operacao OCI.md`.
+
 ---
 
 ## Guia de Início de Sessão
@@ -722,9 +784,11 @@ Batuara.net/
 Ao iniciar uma nova sessão de trabalho com este projeto:
 
 1. **Primeiro passo:** Ler este arquivo (`ROADMAP.md`) para entender o histórico e a fase ativa
-2. **Segundo passo:** Ler `docs/EFT-especificacao-funcional-tecnica.md` para arquitetura, segurança e contratos
-3. **Terceiro passo:** Ler `docs/Backlog-Executavel.md` para prioridade, dependências e histórias
-4. **Verificar fase ativa:**
+2. **Segundo passo:** Ler `docs/Status Atual - RBAC WhatsApp e COR-09.md` para o status mais recente de RBAC/WhatsApp/Member
+3. **Terceiro passo:** Ler `docs/Evolution API - Operacao OCI.md` se a tarefa envolver WhatsApp ou OCI
+4. **Quarto passo:** Ler `docs/EFT-especificacao-funcional-tecnica.md` para arquitetura, segurança e contratos
+5. **Quinto passo:** Ler `docs/Backlog-Executavel.md` para prioridade, dependências e histórias
+6. **Verificar fase ativa:**
    - Se o tema for hardening/infra, usar a Fase 5
    - Se o tema for API/CMS/rotas do AdminDashboard/PublicWebsite, usar a Fase 6
 5. **Durante a execução:**
@@ -751,6 +815,7 @@ Ordem recomendada a partir do estado atual do projeto (otimizada por facilidade 
 9. **Fase 6.3 / EP-Dashboard** — Métricas e atividade administrativa (8 pts)
 10. **Fase 6.3 / EP-Audit** — Trilha de auditoria transversal (8 pts)
 11. **Fase 6.4** — MFA, WAF/SIEM e fechamento do HTTPS (13+ pts; item 5.3 continua dependente de domínio válido)
+12. **Fase 6.5 / WhatsApp-Member** — executar E2E real, aplicar migration em ambiente alvo e trocar para chip dedicado quando disponível
 
 > **Total estimado:** 124 story points (19 histórias)
 

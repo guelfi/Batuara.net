@@ -11,11 +11,14 @@ using Batuara.Application.ContactMessages.Services;
 using Batuara.Application.Events.Services;
 using Batuara.Application.Guides.Services;
 using Batuara.Application.HouseMembers.Services;
+using Batuara.Application.MemberAuth.Services;
+using Batuara.Application.Notifications.Services;
 using Batuara.Application.Orixas.Services;
 using Batuara.Application.SiteSettings.Services;
 using Batuara.Application.SpiritualContents.Services;
 using Batuara.Application.UmbandaLines.Services;
 using Batuara.API.Middleware;
+using Batuara.API.Services;
 using Batuara.Domain.Repositories;
 using Batuara.Domain.Services;
 using Batuara.Infrastructure.Auth.Services;
@@ -27,6 +30,8 @@ using Batuara.Infrastructure.Data.SeedData;
 using Batuara.Infrastructure.Events.Services;
 using Batuara.Infrastructure.Guides.Services;
 using Batuara.Infrastructure.HouseMembers.Services;
+using Batuara.Infrastructure.MemberAuth.Services;
+using Batuara.Infrastructure.Notifications;
 using Batuara.Infrastructure.Orixas.Services;
 using Batuara.Infrastructure.SiteSettings.Services;
 using Batuara.Infrastructure.SpiritualContents.Services;
@@ -220,6 +225,8 @@ builder.Services.AddAutoMapper(cfg => {
 builder.Services.Configure<JwtSettings>(jwtSettings);
 builder.Services.Configure<PasswordRequirements>(
     builder.Configuration.GetSection("SecuritySettings:PasswordRequirements"));
+builder.Services.Configure<EvolutionApiWhatsAppOptions>(builder.Configuration.GetSection("WhatsApp"));
+builder.Services.Configure<ContributionReminderOptions>(builder.Configuration.GetSection("ContributionReminders"));
 
 // Register Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -240,6 +247,17 @@ builder.Services.AddScoped<ICalendarDomainService, CalendarDomainService>();
 builder.Services.AddScoped<IUmbandaLineService, UmbandaLineService>();
 builder.Services.AddScoped<ISpiritualContentService, SpiritualContentService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IMemberAuthService, MemberAuthService>();
+builder.Services.AddScoped<ContributionReminderProcessor>();
+builder.Services.AddHttpClient<IWhatsAppService, EvolutionApiWhatsAppService>((serviceProvider, client) =>
+{
+    var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<EvolutionApiWhatsAppOptions>>().Value;
+    if (!string.IsNullOrWhiteSpace(options.BaseUrl))
+    {
+        client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+    }
+});
+builder.Services.AddHostedService<ContributionReminderHostedService>();
 
 // Configure Rate Limiting
 builder.Services.AddRateLimiter(options =>
@@ -249,6 +267,20 @@ builder.Services.AddRateLimiter(options =>
 
     // Login endpoint: 5 requests per minute
     options.AddPolicy("login", context =>
+    {
+        var key = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            key,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = isDevelopment ? 60 : 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+
+    options.AddPolicy("member-login", context =>
     {
         var key = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         return RateLimitPartition.GetFixedWindowLimiter(

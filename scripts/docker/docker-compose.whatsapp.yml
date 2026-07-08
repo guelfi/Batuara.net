@@ -1,0 +1,90 @@
+services:
+  evolution-api:
+    image: evoapicloud/evolution-api:latest
+    container_name: batuara-evolution-api
+    restart: unless-stopped
+    depends_on:
+      - evolution-postgres
+      - evolution-redis
+    env_file:
+      - .env.whatsapp
+    ports:
+      - "127.0.0.1:${EVOLUTION_API_PORT:-8085}:8080"
+    volumes:
+      - batuara-evolution-instances:/evolution/instances
+    networks:
+      - evolution-network
+      - batuara-network
+    expose:
+      - "8080"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  evolution-redis:
+    image: redis:7-alpine
+    container_name: batuara-evolution-redis
+    restart: unless-stopped
+    command: redis-server --port 6379 --appendonly yes
+    volumes:
+      - batuara-evolution-redis:/data
+    networks:
+      evolution-network:
+        aliases:
+          - evolution-redis
+    expose:
+      - "6379"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  evolution-postgres:
+    image: postgres:15-alpine
+    container_name: batuara-evolution-postgres
+    restart: unless-stopped
+    env_file:
+      - .env.whatsapp
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - listen_addresses=*
+    environment:
+      - POSTGRES_DB=${POSTGRES_DATABASE}
+      - POSTGRES_USER=${POSTGRES_USERNAME}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - batuara-evolution-postgres:/var/lib/postgresql/data
+    networks:
+      evolution-network:
+        aliases:
+          - evolution-postgres
+    expose:
+      - "5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USERNAME} -d ${POSTGRES_DATABASE}" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+networks:
+  evolution-network:
+    driver: bridge
+  batuara-network:
+    external: true
+    name: batuara-net_batuara-network
+
+volumes:
+  batuara-evolution-instances:
+  batuara-evolution-redis:
+  batuara-evolution-postgres:

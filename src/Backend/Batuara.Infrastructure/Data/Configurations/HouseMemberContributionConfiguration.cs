@@ -34,6 +34,18 @@ namespace Batuara.Infrastructure.Data.Configurations
             builder.Property(x => x.Notes)
                 .HasMaxLength(1000);
 
+            builder.Property(x => x.IsRecurring)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            builder.Property(x => x.AllowWhatsAppReminder)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            builder.Property(x => x.ReminderAttemptCount)
+                .IsRequired()
+                .HasDefaultValue(0);
+
             builder.Property(x => x.CreatedAt)
                 .IsRequired()
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
@@ -43,6 +55,7 @@ namespace Batuara.Infrastructure.Data.Configurations
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             builder.HasIndex(x => new { x.HouseMemberId, x.ReferenceMonth }).IsUnique();
+            builder.HasIndex(x => new { x.Status, x.AllowWhatsAppReminder, x.DueDate, x.ReminderSentAt });
         }
     }
 }

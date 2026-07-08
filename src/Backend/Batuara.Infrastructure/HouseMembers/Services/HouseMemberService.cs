@@ -1,6 +1,7 @@
 using Batuara.Application.Common.Models;
 using Batuara.Application.HouseMembers.Models;
 using Batuara.Application.HouseMembers.Services;
+using Batuara.Application.MemberAuth.Models;
 using Batuara.Domain.Entities;
 using Batuara.Domain.Enums;
 using Batuara.Infrastructure.Data;
@@ -202,6 +203,99 @@ namespace Batuara.Infrastructure.HouseMembers.Services
             }
         }
 
+        public async Task<HouseMemberDto?> GetSelfProfileAsync(int houseMemberId)
+        {
+            return await GetByIdAsync(houseMemberId);
+        }
+
+        public async Task<(HouseMemberDto? Member, string[] Errors, bool Conflict)> UpdateSelfProfileAsync(int houseMemberId, MemberSelfUpdateRequest request)
+        {
+            var entity = await _db.HouseMembers
+                .Include(x => x.Contributions)
+                .FirstOrDefaultAsync(x => x.Id == houseMemberId && x.IsActive);
+
+            if (entity == null)
+            {
+                return (null, new[] { "House member not found" }, false);
+            }
+
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(request.Email))
+                {
+                    var normalizedEmail = request.Email.Trim().ToLower();
+                    var duplicate = await _db.HouseMembers.AsNoTracking().AnyAsync(x => x.Id != houseMemberId && x.Email != null && x.Email.ToLower() == normalizedEmail);
+                    if (duplicate)
+                    {
+                        return (null, new[] { "Já existe um filho da casa com este e-mail." }, true);
+                    }
+                }
+
+                entity.UpdateProfile(
+                    request.FullName,
+                    entity.BirthDate,
+                    entity.EntryDate,
+                    entity.HeadOrixaFront,
+                    entity.HeadOrixaBack,
+                    entity.HeadOrixaRonda,
+                    request.Email,
+                    request.MobilePhone);
+                entity.UpdateAddress(
+                    request.ZipCode,
+                    request.Street,
+                    request.Number,
+                    request.Complement,
+                    request.District,
+                    request.City,
+                    request.State);
+
+                await _db.SaveChangesAsync();
+                return (MapToDto(entity), Array.Empty<string>(), false);
+            }
+            catch (ArgumentException ex)
+            {
+                return (null, new[] { ex.Message }, false);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return (null, new[] { ex.Message }, false);
+            }
+        }
+
+        public async Task<(HouseMemberDto? Member, string[] Errors)> AddSelfContributionAsync(int houseMemberId, MemberContributionRequest request)
+        {
+            var entity = await _db.HouseMembers
+                .Include(x => x.Contributions)
+                .FirstOrDefaultAsync(x => x.Id == houseMemberId && x.IsActive);
+
+            if (entity == null)
+            {
+                return (null, new[] { "House member not found" });
+            }
+
+            try
+            {
+                entity.AddContribution(
+                    NormalizeDateOnlyUtc(request.ReferenceMonth),
+                    NormalizeDateOnlyUtc(request.DueDate),
+                    request.Amount,
+                    request.Notes,
+                    request.IsRecurring,
+                    request.AllowWhatsAppReminder);
+
+                await _db.SaveChangesAsync();
+                return (MapToDto(entity), Array.Empty<string>());
+            }
+            catch (ArgumentException ex)
+            {
+                return (null, new[] { ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return (null, new[] { ex.Message });
+            }
+        }
+
         public async Task<bool> SoftDeleteAsync(int id)
         {
             var entity = await _db.HouseMembers.FirstOrDefaultAsync(x => x.Id == id);
@@ -249,7 +343,9 @@ namespace Batuara.Infrastructure.HouseMembers.Services
                         item.Amount,
                         item.Status,
                         NormalizeNullableDateOnlyUtc(item.PaidAt),
-                        item.Notes);
+                        item.Notes,
+                        item.IsRecurring,
+                        item.AllowWhatsAppReminder);
                     continue;
                 }
 
@@ -257,10 +353,13 @@ namespace Batuara.Infrastructure.HouseMembers.Services
                     NormalizeDateOnlyUtc(item.ReferenceMonth),
                     NormalizeDateOnlyUtc(item.DueDate),
                     item.Amount,
-                    item.Notes);
+                    item.Notes,
+                    item.IsRecurring,
+                    item.AllowWhatsAppReminder);
                 if (item.Status == ContributionPaymentStatus.Paid)
                 {
                     contribution.MarkAsPaid(NormalizeDateOnlyUtc(item.PaidAt ?? DateTime.UtcNow));
+                    entity.EnsureNextRecurringContribution(contribution);
                 }
             }
         }
@@ -308,7 +407,12 @@ namespace Batuara.Infrastructure.HouseMembers.Services
                         Amount = x.Amount,
                         Status = x.Status,
                         PaidAt = NormalizeNullableDateOnlyUtc(x.PaidAt),
-                        Notes = x.Notes
+                        Notes = x.Notes,
+                        IsRecurring = x.IsRecurring,
+                        AllowWhatsAppReminder = x.AllowWhatsAppReminder,
+                        ReminderSentAt = NormalizeNullableDateOnlyUtc(x.ReminderSentAt),
+                        ReminderLastAttemptAt = NormalizeNullableDateOnlyUtc(x.ReminderLastAttemptAt),
+                        ReminderAttemptCount = x.ReminderAttemptCount
                     })
                     .ToList(),
                 IsActive = entity.IsActive,

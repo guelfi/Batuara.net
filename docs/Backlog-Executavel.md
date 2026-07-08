@@ -1,6 +1,6 @@
 # Backlog Executável — Batuara.net
 
-**Última atualização:** 2026.04.03  
+**Última atualização:** 2026.07.08
 **Objetivo:** refletir o backlog executável conforme o código atual (não o plano original)
 
 ## Épicos (mapeados às rotas)
@@ -12,9 +12,10 @@
 - EP-SpiritualContents — `/batuara-api/api/spiritual-contents` e `/batuara-api/api/public/spiritual-contents`
 - EP-Dashboard — `/batuara-api/api/dashboard/...`
 - EP-SiteSettings — `/batuara-api/api/site-settings` e `/batuara-api/api/site-settings/public`
-- EP-Contact — `/batuara-api/api/public/contact-messages`
+- EP-Contact — `/batuara-api/api/public/contact-messages` e resposta WhatsApp admin em `/batuara-api/api/contact-messages/{id}/whatsapp-response`
 - EP-Audit — trilha de auditoria, correlação e retenção operacional
 - EP-Segurança — MFA, RBAC, rate limiting, WAF, SIEM, Swagger protegido
+- EP-WhatsApp — Evolution API OCI, login de Filho da Casa, autosserviço, lembretes de contribuição e resposta de contato por WhatsApp
 - EP-Documentação — OpenAPI/Swagger e guias operacionais
 - EP-Operação Local — scripts, docker compose, troubleshooting de proxy e verificação de saúde
 
@@ -25,6 +26,7 @@
 - Editor: cria/edita conteúdo via Admin.
 - Moderador: revisa/aprova conteúdo e inscrições.
 - Administrador: gestão completa e segurança.
+- Filho da Casa: membro cadastrado que acessa somente o próprio cadastro via login WhatsApp.
 
 ## Histórias com Critérios de Aceite e Pontos (Fibonacci)
 
@@ -38,9 +40,10 @@
 | EP-UmbandaLines | Implementado | CRUD admin e leitura pública já existem |
 | EP-SpiritualContents | Implementado | CRUD admin e leitura pública já existem |
 | EP-SiteSettings | Implementado | História, missão, localização, redes, PIX e dados bancários via `SiteSettings` |
-| EP-Contact | Implementado | Endpoint público para mensagens existe |
+| EP-Contact | Implementado | Endpoint público para mensagens, opt-in WhatsApp e resposta admin por WhatsApp existem |
 | EP-Dashboard | Implementado | Dashboard e seções admin existem (consumo/integração pode evoluir) |
-| EP-Segurança | Parcial | Autenticação JWT operando; itens avançados variam por ambiente |
+| EP-Segurança | Parcial | JWT, RBAC/multiadmin e rate limit base operando; itens avançados variam por ambiente |
+| EP-WhatsApp | Implementado/Operacional | Código implementado; Evolution API `batuara-casa` conectada e validada com envio real; pendente E2E completo de login/autosserviço, recorrência e resposta de contato |
 | EP-Documentação | Parcial | Existem docs e coleções Postman, mas requerem atualização contínua |
 | EP-Operação Local | Implementado | Stack docker local existe e é o caminho recomendado |
 
@@ -51,12 +54,37 @@
 - Use a **Matriz Única de Execução** como referência histórica de priorização.
 - Use as referências cruzadas em `docs/STATUS-PROJETO.md` e `docs/TASK_HISTORY.md` para validar mudanças recentes.
 
+## Handoff Atual — 2026-07-08
+
+Concluído e validado localmente:
+
+- RBAC/multiadmin, login WhatsApp e autosserviço de Filho da Casa.
+- Contribuições recorrentes com persistência real e geração da próxima mensalidade quando a atual é paga.
+- Lembretes de contribuição por WhatsApp com opt-in e throttling, desligados por padrão.
+- Contato público com opt-in para resposta por WhatsApp e endpoint admin de resposta.
+- Migration `20260708130000_AddRecurringContributionAndWhatsAppContact` e snapshot EF alinhados.
+- Deploy rolling com migration idempotente e envs de WhatsApp/lembretes.
+
+Validações executadas:
+
+- Backend: `dotnet test "Batuara.sln" -c Release` via container SDK, 33 testes passaram.
+- API: `dotnet build "src/Backend/Batuara.API/Batuara.API.csproj" -c Release` via container SDK, passou.
+- Frontends: `npm run build` em AdminDashboard e PublicWebsite, passou com warnings antigos.
+- Deploy/infra: compose produção validado, scripts de deploy validados com `bash -n`, imagens locais rebuiltadas e containers locais `healthy`.
+
+Próximos passos para outra ferramenta:
+
+- Preparar commit seletivo; evitar `.claude/`, `docs/.~lock.Plano de Testes Batuara.xlsx#` e `scripts/output/`.
+- Executar E2E real dos fluxos WhatsApp antes de produção.
+- Revisar logs da Evolution API e manter lembretes automáticos desligados até decisão explícita.
+
 ## Dependências Técnicas Transversais
 
 - `.NET 8`, `EF Core 8`, `PostgreSQL`
 - `React 19`, `Material UI 7`, `TanStack Query 5`
 - `Nginx` e `docker-compose.local.yml`
 - `SiteSettingsService`, validators, DTOs, controllers e migrations
+- `EvolutionApiWhatsAppService`, `ContributionReminderProcessor`, `MemberAuthService` e `ContactMessageService`
 
 ## Exemplos de Validação
 
@@ -264,6 +292,46 @@ Como Administrador, quero MFA TOTP com fallback SMS e RBAC granular por endpoint
 - Pontos: 13.
 - Dependências: provider SMS, storage de secrets em Vault, policies de autorização.
 
+### H-071 (EP-Segurança/RBAC) — Multiadmin e roles por rota
+Como Administrador, quero gerir usuários administrativos e restringir telas por perfil.
+
+- Status: implementado em 2026-07-08.
+- Critérios
+  - Roles alinhadas no backend/frontend: `Admin=1`, `Editor=2`, `Viewer=3`, `Member=4`.
+  - Página `Usuários` disponível apenas para Admin.
+  - Rotas de conteúdo disponíveis para Admin/Editor.
+  - Member fica restrito a `Meu Cadastro`.
+  - Labels de perfil corrigidos no frontend.
+- Pontos: entregue.
+- Referência: `docs/Status Atual - RBAC WhatsApp e COR-09.md`.
+
+### H-090 (EP-WhatsApp) — Evolution API OCI e envio WhatsApp
+Como Operador, quero enviar códigos de login por WhatsApp usando Evolution API self-hosted na OCI sem expor o painel publicamente.
+
+- Status: implementado/operacional em 2026-07-08.
+- Critérios
+  - Evolution API executa na OCI via `scripts/docker/docker-compose.whatsapp.yml`.
+  - API/Manager escutam somente em `127.0.0.1:8085`.
+  - Acesso remoto ao Manager somente por túnel SSH.
+  - Instância definitiva `batuara-casa` está `open`.
+  - Envio real confirmado e recebido em `5511975747470` e `5511995384032`.
+- Pontos: entregue.
+- Pendências: revisar logs antes de produção e trocar para chip dedicado da Casa quando disponível.
+- Referência: `docs/Evolution API - Operacao OCI.md`.
+
+### H-091 (EP-WhatsApp) — Login e autosserviço de Filho da Casa
+Como Filho da Casa, quero receber um código por WhatsApp e acessar apenas meu próprio cadastro.
+
+- Status: implementado em código; pendente E2E completo.
+- Critérios
+  - `POST /api/member-auth/request-code` gera código e envia WhatsApp.
+  - `POST /api/member-auth/verify-code` valida código e emite JWT `Member`.
+  - `GET/PUT /api/members/me` acessa apenas o próprio cadastro.
+  - `POST /api/members/me/contributions` registra contribuição pendente.
+  - Member não acessa rotas administrativas.
+- Pontos: entregue em código; validação E2E pendente.
+- Referência: `docs/Plano de Implementacao - RBAC e Login WhatsApp.md`.
+
 ### H-080 (EP-Documentação)
 Como Stakeholder, quero documentação OpenAPI 3.0 completa e versionada.
 
@@ -334,6 +402,7 @@ Como Stakeholder, quero documentação OpenAPI 3.0 completa e versionada.
 | Concorrência/Transação | H-011, H-012, H-013 | Exige desenho cuidadoso por capacidade, idempotência e race condition |
 | CRUD Admin completo | H-004, H-005, H-012, H-013 | Histórias complementares para cobrir DELETE, toggle e listagem admin |
 | Segurança avançada | H-070 | Parte pode avançar sem HTTPS final, mas WAF/SIEM/MFA dependem de preparação infra |
+| WhatsApp | H-090, H-091 | Evolution API já operacional; E2E de login depende de backend configurado com segredos reais e migration aplicada no ambiente alvo |
 
 ### Sequência Executável Recomendada
 

@@ -31,11 +31,14 @@ import {
   MusicNote as PrayersIcon,
   VolunteerActivism as DonationIcon,
   Email as MessagesIcon,
+  ManageAccounts as UsersIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import apiService from '../../services/api';
+import { UserRole } from '../../types';
+import { isAdmin, isEditorOrAdmin, isMember } from '../../utils/roles';
 
 const drawerWidth = 320;
 
@@ -47,22 +50,26 @@ interface NavigationItem {
   text: string;
   icon: React.ReactElement;
   path: string;
+  requiredRole?: UserRole;
+  memberOnly?: boolean;
   divider?: boolean;
 }
 
 const navigationItems: NavigationItem[] = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Nossa História', icon: <HistoryIcon />, path: '/history' },
-  { text: 'Calendário Atendimento', icon: <CalendarIcon />, path: '/calendar' },
-  { text: 'Eventos e Festas', icon: <EventIcon />, path: '/events' },
-  { text: 'Nossos Orixás', icon: <FavoriteIcon />, path: '/orixas' },
-  { text: 'Guias e Entidades', icon: <GuidesIcon />, path: '/guides' },
-  { text: 'Linhas da Umbanda', icon: <LinesIcon />, path: '/umbanda-lines' },
-  { text: 'Orações e Pontos', icon: <PrayersIcon />, path: '/spiritual-content' },
-  { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members' },
-  { text: 'Doações e Contato', icon: <DonationIcon />, path: '/donations-contact' },
-  { text: 'Contato e Mensagens', icon: <MessagesIcon />, path: '/contact-messages' },
-  { text: 'Localização', icon: <LocationIcon />, path: '/location' },
+  { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', requiredRole: UserRole.Editor },
+  { text: 'Nossa História', icon: <HistoryIcon />, path: '/history', requiredRole: UserRole.Editor },
+  { text: 'Calendário Atendimento', icon: <CalendarIcon />, path: '/calendar', requiredRole: UserRole.Editor },
+  { text: 'Eventos e Festas', icon: <EventIcon />, path: '/events', requiredRole: UserRole.Editor },
+  { text: 'Nossos Orixás', icon: <FavoriteIcon />, path: '/orixas', requiredRole: UserRole.Editor },
+  { text: 'Guias e Entidades', icon: <GuidesIcon />, path: '/guides', requiredRole: UserRole.Editor },
+  { text: 'Linhas da Umbanda', icon: <LinesIcon />, path: '/umbanda-lines', requiredRole: UserRole.Editor },
+  { text: 'Orações e Pontos', icon: <PrayersIcon />, path: '/spiritual-content', requiredRole: UserRole.Editor },
+  { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members', requiredRole: UserRole.Editor },
+  { text: 'Doações e Contato', icon: <DonationIcon />, path: '/donations-contact', requiredRole: UserRole.Admin },
+  { text: 'Contato e Mensagens', icon: <MessagesIcon />, path: '/contact-messages', requiredRole: UserRole.Editor },
+  { text: 'Localização', icon: <LocationIcon />, path: '/location', requiredRole: UserRole.Admin },
+  { text: 'Usuários', icon: <UsersIcon />, path: '/users', requiredRole: UserRole.Admin },
+  { text: 'Meu Cadastro', icon: <PeopleIcon />, path: '/member-profile', memberOnly: true },
 ];
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
@@ -76,6 +83,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(true);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const visibleNavigationItems = navigationItems.filter((item) => {
+    if (item.memberOnly) return isMember(user?.role);
+    if (isMember(user?.role)) return false;
+    if (item.requiredRole === UserRole.Admin) return isAdmin(user?.role);
+    if (item.requiredRole === UserRole.Editor) return isEditorOrAdmin(user?.role);
+    return true;
+  });
 
   const firstNavItemRef = useRef<HTMLDivElement | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -89,11 +103,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
 
   const fetchUnreadCount = useCallback(async () => {
+    if (!isEditorOrAdmin(user?.role)) return;
     try {
       const count = await apiService.getContactMessagesUnreadCount();
       setUnreadMessages(count);
     } catch (_) {}
-  }, []);
+  }, [user?.role]);
 
   useEffect(() => {
     fetchUnreadCount();
@@ -166,7 +181,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
         <Box sx={{ flexGrow: 1, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <List disablePadding>
-            {navigationItems.map((item, index) => (
+            {visibleNavigationItems.map((item, index) => (
               <React.Fragment key={item.text}>
                 <ListItemButton
                   ref={index === 0 ? firstNavItemRef : undefined}
@@ -220,7 +235,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
         <Box sx={{ flexShrink: 0, pb: 'calc(env(safe-area-inset-bottom) + 12px)' }}>
           <List disablePadding>
-            <ListItemButton
+            {!isMember(user?.role) && <ListItemButton
               onClick={() => handleNavigation('/profile')}
               selected={location.pathname === '/profile'}
               sx={{
@@ -251,7 +266,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   },
                 }}
               />
-            </ListItemButton>
+            </ListItemButton>}
 
             <ListItemButton
               onClick={handleLogout}
@@ -307,8 +322,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 transform: 'scale(0.98)'
               }
             }}
-            onClick={() => navigate('/dashboard')}
-            title="Voltar ao Dashboard"
+            onClick={() => navigate(isMember(user?.role) ? '/member-profile' : '/dashboard')}
+            title={isMember(user?.role) ? 'Voltar ao Meu Cadastro' : 'Voltar ao Dashboard'}
           >
             <img
               src={`${process.env.PUBLIC_URL || '/admin'}/batuara_logo.png`}

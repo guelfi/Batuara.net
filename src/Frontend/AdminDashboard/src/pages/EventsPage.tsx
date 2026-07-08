@@ -9,12 +9,14 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Paper,
   Select,
   Snackbar,
   Stack,
+  Switch,
   TextField,
   Typography,
   InputAdornment,
@@ -42,6 +44,7 @@ type EventFormState = {
   type: EventType;
   location: string;
   cardColor: string;
+  isActive: boolean;
 };
 
 const CARD_COLOR_OPTIONS: { label: string; value: string }[] = [
@@ -71,6 +74,7 @@ const initialFormState: EventFormState = {
   type: EventType.Evento,
   location: '',
   cardColor: '',
+  isActive: true,
 };
 
 const eventLabels: Record<EventType, string> = {
@@ -199,6 +203,7 @@ const EventsPage: React.FC = () => {
   const [form, setForm] = useState<EventFormState>(initialFormState);
   const [formErrors, setFormErrors] = useState<{
     title?: string;
+    description?: string;
     date?: string;
     startTime?: string;
     endTime?: string;
@@ -298,6 +303,14 @@ const EventsPage: React.FC = () => {
             );
           },
         },
+        {
+          field: 'isActive',
+          headerName: 'Status',
+          width: 100,
+          renderCell: (params) => (
+            <Chip size="small" label={params.row.isActive ? 'Ativo' : 'Cancelado'} color={params.row.isActive ? 'success' : 'error'} />
+          ),
+        },
       ]
     : [
         {
@@ -361,6 +374,15 @@ const EventsPage: React.FC = () => {
           flex: 1,
           renderCell: (params) => params.row.location || 'Não informado',
         },
+        {
+          field: 'isActive',
+          headerName: 'Status',
+          minWidth: 110,
+          flex: 0.7,
+          renderCell: (params) => (
+            <Chip size="small" label={params.row.isActive ? 'Ativo' : 'Cancelado'} color={params.row.isActive ? 'success' : 'error'} />
+          ),
+        },
       ];
 
   const resetForm = () => {
@@ -381,6 +403,7 @@ const EventsPage: React.FC = () => {
         type: normalized !== undefined ? normalized : EventType.Evento,
         location: item.location || '',
         cardColor: item.cardColor || '',
+        isActive: item.isActive,
       });
     } else {
       resetForm();
@@ -401,6 +424,9 @@ const EventsPage: React.FC = () => {
     const nextErrors: typeof formErrors = {};
 
     if (!form.title.trim()) nextErrors.title = 'Título é obrigatório.';
+    else if (form.title.length > 200) nextErrors.title = 'O título não pode exceder 200 caracteres.';
+    if (!form.description.trim()) nextErrors.description = 'Descrição é obrigatória.';
+    else if (form.description.length > 2000) nextErrors.description = 'A descrição não pode exceder 2000 caracteres.';
     if (!form.date) nextErrors.date = 'Data é obrigatória.';
     if (form.date && Number.isNaN(new Date(form.date).getTime())) nextErrors.date = 'Informe uma data válida.';
     if (!form.startTime) nextErrors.startTime = 'Horário de início é obrigatório.';
@@ -440,6 +466,7 @@ const EventsPage: React.FC = () => {
         if (form.type !== normalizedType) payload.type = form.type;
         if ((form.location || '') !== (editingItem.location || '')) payload.location = form.location ? form.location : null;
         if ((form.cardColor || '') !== (editingItem.cardColor || '')) payload.cardColor = form.cardColor || null;
+        if (form.isActive !== !!editingItem.isActive) payload.isActive = form.isActive;
 
         await apiService.updateEvent(String(editingItem.id), payload);
         setFeedback({ open: true, message: 'Evento atualizado com sucesso.', severity: 'success' });
@@ -692,9 +719,12 @@ const EventsPage: React.FC = () => {
               onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                 setForm((prev) => ({ ...prev, description: e.target.value }))
               }
+              error={!!formErrors.description}
+              helperText={formErrors.description}
               fullWidth
               multiline
               minRows={3}
+              sx={formErrors.description ? { '& .MuiInputBase-root': { backgroundColor: 'rgba(211,47,47,0.06)' } } : {}}
             />
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
               <DatePicker
@@ -864,6 +894,20 @@ const EventsPage: React.FC = () => {
                 );
               })()}
             </Stack>
+            {editingItem && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    color="error"
+                    checked={!form.isActive}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setForm((prev) => ({ ...prev, isActive: !e.target.checked }))
+                    }
+                  />
+                }
+                label="Cancelar evento"
+              />
+            )}
             <Alert severity="info">
               Os eventos alimentam diretamente o PublicWebsite, então alterações publicadas aparecem para os visitantes após a atualização da consulta.
             </Alert>

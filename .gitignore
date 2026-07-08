@@ -108,6 +108,7 @@ jspm_packages/
 
 # dotenv environment variables file
 .env
+.env.whatsapp
 .env.local
 .env.development.local
 .env.test.local
@@ -190,6 +191,7 @@ ssh-key-*.key
 ssh-key-*.ppk
 
 # Backup files
+backups/
 *.bak
 *.backup
 *.tmp
@@ -236,4 +238,8 @@ atend.md
 # Docs de especificacao unificada - artefatos gerados (nao versionar)
 docs/especificacao-unificada/index/
 docs/especificacao-unificada/metrics/evaluations.json
+
+# Credenciais e controle local (nao versionar)
+docs/credential.md
+docs/testcontrol.md
 

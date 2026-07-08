@@ -217,8 +217,8 @@ const UmbandaLinesPage: React.FC = () => {
         name: item.name,
         description: item.description,
         displayOrder: String(item.displayOrder),
-        entities: item.entities.join(', '),
-        workingDays: item.workingDays.join(', '),
+        entities: (item.entities || []).join(', '),
+        workingDays: (item.workingDays || []).join(', '),
         isActive: item.isActive,
       });
     } else {
@@ -270,16 +270,18 @@ const UmbandaLinesPage: React.FC = () => {
       return;
     }
     setFormErrors({});
-    const payload = {
-      name: form.name,
-      description: form.description,
-      displayOrder: Number(form.displayOrder || 0),
-      entities: form.entities.split(',').map((item) => item.trim()).filter(Boolean),
-      workingDays: form.workingDays.split(',').map((item) => item.trim()).filter(Boolean),
-      isActive: form.isActive,
-    };
+    setDialogError(null);
 
     try {
+      const payload = {
+        name: form.name,
+        description: form.description,
+        displayOrder: Number(form.displayOrder || 0),
+        entities: (form.entities || '').split(',').map((item) => item.trim()).filter(Boolean),
+        workingDays: (form.workingDays || '').split(',').map((item) => item.trim()).filter(Boolean),
+        isActive: form.isActive,
+      };
+
       if (editingItem) {
         await apiService.updateUmbandaLine(String(editingItem.id), payload);
         setFeedback({ open: true, message: 'Linha de Umbanda atualizada com sucesso.', severity: 'success' });
@@ -291,11 +293,9 @@ const UmbandaLinesPage: React.FC = () => {
       handleCloseDialog();
       await loadLines();
     } catch (error: any) {
-      setFeedback({
-        open: true,
-        message: error?.response?.data?.message || 'Não foi possível salvar a linha de Umbanda.',
-        severity: 'error',
-      });
+      const msg = error?.response?.data?.message || 'Não foi possível salvar a linha de Umbanda.';
+      setDialogError(msg);
+      setFeedback({ open: true, message: msg, severity: 'error' });
     }
   };
 

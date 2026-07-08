@@ -4,6 +4,7 @@ namespace Batuara.Domain.Enums
     {
         Admin = 1,
         Editor = 2,
-        Viewer = 3
+        Viewer = 3,
+        Member = 4
     }
 }

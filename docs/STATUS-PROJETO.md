@@ -1,19 +1,24 @@
 # 📊 STATUS ATUAL DO PROJETO BATUARA.NET
 
-**Última atualização:** 03/04/2026  
-**Versão de referência documental:** 2026.04.03  
-**Fase atual:** Plataforma funcional com módulos administrativos e públicos integrados  
+**Última atualização:** 08/07/2026
+**Versão de referência documental:** 2026.07.08
+**Fase atual:** Plataforma funcional com RBAC, WhatsApp OCI, autosserviço de Filho da Casa, recorrência/lembretes de contribuição e resposta WhatsApp de contato implementados localmente
 **Ambiente local:** Docker Compose com Nginx, API, PublicWebsite, AdminDashboard e PostgreSQL
 
 ## 🎯 Resumo Executivo
 
-O projeto saiu do estágio de “interfaces aguardando API” e hoje opera com backend .NET 8 funcional, banco PostgreSQL, autenticação JWT e módulos CMS reais consumidos pelos dois frontends.
+O projeto opera com backend .NET 8 funcional, banco PostgreSQL, autenticação JWT, módulos CMS reais consumidos pelos dois frontends, RBAC/multiadmin, login de Filho da Casa por WhatsApp, lembretes de contribuição com opt-in, resposta WhatsApp para contato público e Evolution API self-hosted na OCI.
 
 ### ✅ Entregas Confirmadas
 
 - **Autenticação:** login, refresh, logout, verificação de token, perfil e alteração de senha
 - **PublicWebsite:** calendário, eventos, Orixás, linhas, conteúdos, localização, rodapé e conteúdo institucional via API
 - **AdminDashboard:** gestão de história, localização, calendário, eventos, Orixás, guias, linhas, conteúdos e Filhos da Casa
+- **RBAC/multiadmin:** roles `Admin=1`, `Editor=2`, `Viewer=3`, `Member=4`; página de usuários e rotas protegidas por perfil
+- **WhatsApp OCI:** Evolution API self-hosted em loopback, instância `batuara-casa` conectada e validada com envio real
+- **Filho da Casa:** login por WhatsApp e autosserviço de cadastro/contribuição implementados em código
+- **Contribuição recorrente:** flags reais de recorrência/lembrete, geração da próxima mensalidade e processor de lembrete com throttling conservador
+- **Contato Público:** opt-in para resposta por WhatsApp no site público e endpoint admin para envio da resposta
 - **Infra local:** deploy via `docker-compose.local.yml`, health checks e Swagger operacionais
 - **Banco de dados:** migrations ativas para `SiteSettings`, `ContactMessages`, `Guides`, `HouseMembers` e módulos relacionados
 
@@ -22,6 +27,7 @@ O projeto saiu do estágio de “interfaces aguardando API” e hoje opera com b
 | Módulo | Status | Detalhes técnicos |
 |---|---|---|
 | Auth | ✅ Implementado | JWT, refresh token, endpoints `/auth/*` |
+| RBAC/multiadmin | ✅ Implementado | Admin/Editor/Viewer/Member alinhados no backend e frontend |
 | SiteSettings | ✅ Implementado | História, missão, localização, redes, PIX e dados bancários |
 | Nossa História (Admin) | ✅ Implementado | Editor textual em tela cheia, sem preview, sem mídia |
 | Localização | ✅ Implementado | Admin e site público integrados via `site-settings` |
@@ -31,11 +37,33 @@ O projeto saiu do estágio de “interfaces aguardando API” e hoje opera com b
 | Guias e Entidades | ✅ Implementado | CRUD admin + leitura pública |
 | Linhas da Umbanda | ✅ Implementado | CRUD admin + leitura pública |
 | Conteúdos Espirituais | ✅ Implementado | CRUD admin + leitura pública |
-| Filhos da Casa | ✅ Implementado | CRUD administrativo |
-| Contato Público | ✅ Implementado | Recebimento de mensagens públicas |
-| Segurança avançada OCI | 🔄 Parcial | operação local estabilizada; itens avançados dependem do ambiente alvo |
+| Filhos da Casa | ✅ Implementado | CRUD administrativo, login WhatsApp, autosserviço restrito e contribuições recorrentes |
+| Contato Público | ✅ Implementado | Recebimento de mensagens públicas, opt-in WhatsApp e resposta admin por WhatsApp |
+| Lembretes de contribuição | ✅ Implementado / 🔒 Desligado por padrão | Hosted service e processor com `ContributionReminders.Enabled=false` até ativação explícita |
+| WhatsApp / Evolution API OCI | ✅ Operacional | `batuara-casa` conectada; API/Manager acessíveis apenas via loopback/túnel SSH |
+| Segurança avançada OCI | 🔄 Parcial | revisar logs Evolution antes de produção e trocar para chip dedicado quando disponível |
 
 ## 🆕 Mudanças Recentes Relevantes
+
+### 0. RBAC, WhatsApp e Filho da Casa
+
+- Implementado RBAC/multiadmin no AdminDashboard, incluindo página de Usuários e menus/rotas por perfil.
+- Implementado `UserRole.Member = 4` para login de Filhos da Casa.
+- Implementados endpoints `POST /api/member-auth/request-code`, `POST /api/member-auth/verify-code`, `GET/PUT /api/members/me` e `POST /api/members/me/contributions`.
+- Implementada Evolution API na OCI em `127.0.0.1:8085`, sem porta pública exposta.
+- Instância definitiva `batuara-casa` conectada em 2026-07-08 com número temporário `5511975747470`.
+- Envio real validado e mensagens recebidas com sucesso nos celulares `5511975747470` e `5511995384032`.
+- Acesso ao Manager somente via SSH/túnel local, por exemplo `127.0.0.1:18085 -> 127.0.0.1:8085` na OCI.
+
+### 0.1 Recorrência, lembretes e resposta WhatsApp
+
+- Implementadas flags reais `IsRecurring` e `AllowWhatsAppReminder` em contribuições de Filhos da Casa.
+- Implementada geração automática da próxima contribuição mensal quando uma contribuição recorrente é marcada como paga.
+- Implementado `ContributionReminderProcessor` e hosted service de lembretes por WhatsApp, com limites conservadores e desligado por padrão.
+- Implementado opt-in no formulário público de contato para resposta por WhatsApp, com telefone obrigatório quando marcado.
+- Implementado endpoint administrativo para responder mensagens públicas por WhatsApp e marcar a mensagem como resolvida.
+- Migration/snapshot EF alinhados em `20260708130000_AddRecurringContributionAndWhatsAppContact`.
+- Deploy rolling preparado para aplicar a migration de forma idempotente e configurar WhatsApp via Docker network (`http://batuara-evolution-api:8080`).
 
 ### 1. Nossa História
 
@@ -75,6 +103,8 @@ O projeto saiu do estágio de “interfaces aguardando API” e hoje opera com b
 - `20260402235355_ContentManagementModules`
 - `20260403014603_AddHistoryMissionTextToSiteSettings`
 - `20260403043437_RemoveHistoryMediaFromSiteSettings`
+- `20260708020346_AddMemberLoginCodes`
+- `20260708130000_AddRecurringContributionAndWhatsAppContact`
 
 ### Alterações recentes de schema
 
@@ -83,6 +113,9 @@ O projeto saiu do estágio de “interfaces aguardando API” e hoje opera com b
 - remoção de `HistoryVideoUrl`
 - expansão da tabela `SiteSettings` para endereço, redes e doações
 - criação de tabelas para `ContactMessages`, `Guides`, `HouseMembers` e contribuições
+- criação da tabela `batuara.MemberLoginCodes` para login WhatsApp de Filhos da Casa
+- adição de campos de recorrência/lembrete em `HouseMemberContributions`
+- adição de campos de opt-in/resposta WhatsApp em `ContactMessages`
 
 ## 🌐 Endpoints em Produção Local
 
@@ -104,6 +137,16 @@ curl http://localhost/batuara-public/
 ```
 
 ## 🚀 Operação e Deploy
+
+### Evolution API na OCI
+
+- Compose versionado: `scripts/docker/docker-compose.whatsapp.yml`.
+- Compose ativo: `/var/www/batuara_net/Batuara.net/scripts/docker/docker-compose.whatsapp.yml`.
+- Segredos reais somente na OCI: `/var/www/batuara_net/Batuara.net/scripts/docker/.env.whatsapp`.
+- API/Manager: `http://127.0.0.1:8085`, bindado apenas em loopback.
+- Não abrir porta pública para Evolution API.
+- Para acesso administrativo temporário, usar túnel SSH local e acessar `http://127.0.0.1:18085/manager/`.
+- Runbook detalhado: `docs/Evolution API - Operacao OCI.md`.
 
 ### Procedimento padrão de deploy local
 
@@ -132,10 +175,14 @@ docker compose -p batuara-net-local -f docker-compose.local.yml up -d --force-re
 
 ## 🔄 Próximos Passos Recomendados
 
-1. Consolidar a documentação viva com o estado atual dos módulos
-2. Revisar o backlog restante para itens avançados de segurança e governança
-3. Validar produção OCI com a mesma disciplina operacional aplicada localmente
-4. Manter testes de regressão para `SiteSettings`, autenticação e proxy local
+1. Revisar `git status` e selecionar os arquivos de commit com cuidado; não incluir `.claude/`, `docs/.~lock.Plano de Testes Batuara.xlsx#` nem `scripts/output/`.
+2. Executar E2E real do login WhatsApp: solicitar código, receber mensagem, autenticar como Member e validar bloqueios administrativos.
+3. Executar E2E de contribuição recorrente: criar contribuição recorrente, marcar como paga e confirmar geração do próximo mês.
+4. Executar E2E de contato público: marcar opt-in WhatsApp, enviar mensagem e responder pelo AdminDashboard.
+5. Aplicar migrations `20260708020346_AddMemberLoginCodes` e `20260708130000_AddRecurringContributionAndWhatsAppContact` nos demais ambientes no momento do deploy.
+6. Revisar logs/configuração da Evolution API antes de produção para evitar conteúdo sensível.
+7. Manter `ContributionReminders.Enabled=false` até decisão explícita de ativação em produção.
+8. Trocar o pareamento para chip dedicado da Casa quando disponível.
 
 ## 📚 Referências Cruzadas
 
@@ -146,6 +193,15 @@ docker compose -p batuara-net-local -f docker-compose.local.yml up -d --force-re
 - `agent.md`
 
 ## 📝 Change Log
+
+### 08/07/2026
+
+- Atualizado estado do projeto com RBAC/multiadmin, login WhatsApp e autosserviço de Filho da Casa.
+- Registrada Evolution API OCI operacional com instância `batuara-casa` conectada.
+- Registrado que o painel Evolution Manager não tem acesso remoto público; somente loopback/túnel SSH.
+- Registrado envio real recebido com sucesso nos celulares de teste.
+- Registradas conclusões de recorrência/lembrete de contribuição e resposta WhatsApp de contato público.
+- Registradas validações locais: backend 33 testes, builds dos frontends, compose produção, scripts de deploy, build Docker e containers locais healthy.
 
 ### 03/04/2026
 

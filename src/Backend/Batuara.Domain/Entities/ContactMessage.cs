@@ -12,6 +12,9 @@ namespace Batuara.Domain.Entities
         public string Message { get; private set; } = string.Empty;
         public ContactMessageStatus Status { get; private set; } = ContactMessageStatus.New;
         public bool IsRead { get; private set; } = false;
+        public bool WantsWhatsAppResponse { get; private set; } = false;
+        public DateTime? WhatsAppResponseSentAt { get; private set; }
+        public string? WhatsAppResponseText { get; private set; }
         public string? AdminNotes { get; private set; }
         public DateTime ReceivedAt { get; private set; }
 
@@ -19,13 +22,14 @@ namespace Batuara.Domain.Entities
         {
         }
 
-        public ContactMessage(string name, string email, string subject, string message, string? phone = null)
+        public ContactMessage(string name, string email, string subject, string message, string? phone = null, bool wantsWhatsAppResponse = false)
         {
             Name = Require(name, nameof(name));
             Email = Require(email, nameof(email));
             Subject = Require(subject, nameof(subject));
             Message = Require(message, nameof(message));
             Phone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim();
+            WantsWhatsAppResponse = wantsWhatsAppResponse;
             Status = ContactMessageStatus.New;
             ReceivedAt = DateTime.UtcNow;
         }
@@ -53,6 +57,15 @@ namespace Batuara.Domain.Entities
                 IsRead = false;
                 UpdateTimestamp();
             }
+        }
+
+        public void MarkWhatsAppResponseSent(string responseText, DateTime sentAt)
+        {
+            WhatsAppResponseText = Require(responseText, nameof(responseText));
+            WhatsAppResponseSentAt = DateTime.SpecifyKind(sentAt, sentAt.Kind == DateTimeKind.Unspecified ? DateTimeKind.Utc : sentAt.Kind).ToUniversalTime();
+            Status = ContactMessageStatus.Resolved;
+            IsRead = true;
+            UpdateTimestamp();
         }
 
         private static string Require(string value, string paramName)

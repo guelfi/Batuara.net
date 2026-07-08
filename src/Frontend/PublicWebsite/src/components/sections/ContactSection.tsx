@@ -10,6 +10,8 @@ import {
   Alert,
   Snackbar,
   CircularProgress,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -20,15 +22,26 @@ interface ContactForm {
   name: string;
   email: string;
   phone: string;
+  wantsWhatsAppResponse: boolean;
   subject: string;
   message: string;
 }
+
+const onlyDigits = (value: string) => value.replace(/\D/g, '');
+
+const formatPhoneBr = (value: string) => {
+  const digits = onlyDigits(value).slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
 
 const ContactSection: React.FC = () => {
   const [formData, setFormData] = useState<ContactForm>({
     name: '',
     email: '',
     phone: '',
+    wantsWhatsAppResponse: false,
     subject: '',
     message: '',
   });
@@ -50,12 +63,22 @@ const ContactSection: React.FC = () => {
     setSubmitting(true);
     setErrorMessage('');
     try {
-      await publicApi.createContactMessage(formData);
+      if (formData.wantsWhatsAppResponse && onlyDigits(formData.phone).length < 10) {
+        setErrorMessage('Informe seu telefone com DDD para receber resposta por WhatsApp.');
+        setSubmitting(false);
+        return;
+      }
+
+      await publicApi.createContactMessage({
+        ...formData,
+        phone: onlyDigits(formData.phone) || undefined,
+      });
       setShowSuccessAlert(true);
       setFormData({
         name: '',
         email: '',
         phone: '',
+        wantsWhatsAppResponse: false,
         subject: '',
         message: '',
       });
@@ -158,7 +181,18 @@ const ContactSection: React.FC = () => {
                 <TextField fullWidth label="Nome completo" value={formData.name} onChange={handleInputChange('name')} required />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField fullWidth label="Telefone" value={formData.phone} onChange={handleInputChange('phone')} />
+                <TextField fullWidth label="Telefone" value={formData.phone} onChange={(event) => setFormData(prev => ({ ...prev, phone: formatPhoneBr(event.target.value) }))} required={formData.wantsWhatsAppResponse} />
+              </Grid>
+              <Grid size={12}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.wantsWhatsAppResponse}
+                      onChange={(event) => setFormData(prev => ({ ...prev, wantsWhatsAppResponse: event.target.checked }))}
+                    />
+                  }
+                  label="Desejo receber a resposta por WhatsApp"
+                />
               </Grid>
               <Grid size={12}>
                 <TextField fullWidth label="E-mail" type="email" value={formData.email} onChange={handleInputChange('email')} required />
