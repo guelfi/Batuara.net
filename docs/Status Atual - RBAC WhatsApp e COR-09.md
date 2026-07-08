@@ -1,6 +1,6 @@
 # Status Atual — RBAC, WhatsApp, Filho da Casa e COR-09
 
-**Atualizado em:** 2026-07-08 (revisado após validação E2E real por Claude)
+**Atualizado em:** 2026-07-08 (revisado após validação E2E real, deploy OCI e manutenção operacional)
 **Objetivo:** orientar outras ferramentas/agentes sobre o que foi implementado, validado e o que ainda depende de operação/E2E.
 
 ## ⚠️ Atualização: validação E2E real concluída (envio/recebimento WhatsApp de verdade)
@@ -16,7 +16,20 @@ Diferente das seções abaixo (que descrevem o estado no momento da implementaç
   - E2E real confirmado após o fix: mensagem recebida de verdade no WhatsApp do destinatário.
 - **Backend:** 33 testes passando (`dotnet test "Batuara.sln" -c Release`), incluindo os novos testes dos dois bugs acima.
 
-**Pendente real:** rodar o deploy de verdade na OCI e confirmar que a Step 3.5 aplica as duas migrations sem erro; E2E manual de contribuição recorrente (hoje só validado por teste automatizado); revisão de logs da Evolution API antes de produção; troca do número temporário pelo chip dedicado da Casa.
+**Pendente real:** E2E manual de contribuição recorrente (hoje só validado por teste automatizado); revisão de logs da Evolution API antes de ativar lembretes; troca do número temporário pelo chip dedicado da Casa; hardening adicional de SSH via Bastion/VPN no futuro.
+
+## Atualização operacional pós-deploy OCI
+
+- Produção implantada e validada em 2026-07-08 no commit `c8c7c4e`.
+- CI/CD do hotfix concluído com sucesso: CI `28964270844`, CD OCI `28964614192`.
+- Migrations `20260708020346_AddMemberLoginCodes` e `20260708130000_AddRecurringContributionAndWhatsAppContact` confirmadas em produção.
+- Containers produção `batuara-net-api`, `batuara-net-admin-dashboard`, `batuara-net-public-website` e `batuara-net-db` validados como `healthy`.
+- Hotfix aplicado para healthcheck dos frontends usar `curl -fsS http://127.0.0.1:80`.
+- Manutenção de dados religiosos concluída: `Exu` e `Pomba Gira` movidos de `Orixas` para `Guides` em produção; banco local sincronizado a partir da produção.
+- Validação de dados em produção e local: `Orixas=12`, `Guides=9`; `Exu` e `Pomba Gira` aparecem apenas em `Guides`.
+- Evolution API/Manager seguem sem acesso público; túnel local fechado após uso.
+- OCI Security Rules revisadas pelo usuário: ingress público deve ficar somente em `22`, `80`, `443`.
+- Como não há IP fixo, `22` permanece público por necessidade operacional; manter SSH por chave e avaliar OCI Bastion/VPN.
 
 ## Resumo executivo
 
@@ -37,11 +50,11 @@ Validação local concluída via Docker/container SDK:
 - Scripts de deploy OK com `bash -n`.
 - Containers locais `api`, `admindashboard` e `publicwebsite` recriados e `healthy`.
 
-Ainda pendente para produção/E2E:
+Ainda pendente para E2E/operação:
 - ~~Executar o fluxo E2E real de login de Filho da Casa usando WhatsApp.~~ ✅ Feito em 2026-07-08 (ver seção no topo do arquivo).
 - ~~Executar E2E de resposta de contato por WhatsApp.~~ ✅ Feito em 2026-07-08, com 2 bugs reais encontrados e corrigidos (ver seção no topo do arquivo).
 - Executar E2E de contribuição recorrente (marcar como paga → confirmar geração automática do mês seguinte) — ainda só validado por teste automatizado, não manualmente no navegador.
-- Aplicar migrations nos demais ambientes no momento do deploy (confirmar que a Step 3.5 do `deploy-rolling.sh` realmente roda sem erro — encontramos localmente que uma migration pode ficar sem aplicar silenciosamente).
+- ~~Aplicar migrations nos demais ambientes no momento do deploy.~~ ✅ Confirmado em produção em 2026-07-08.
 - Manter lembretes automáticos desligados até decisão explícita.
 
 ## Infra Evolution API
@@ -61,6 +74,7 @@ Concluído em ambiente funcional/dev:
 Pendências operacionais:
 - Revisar logs da Evolution API antes de produção para evitar conteúdo sensível.
 - Trocar para chip dedicado da Casa quando disponível; hoje `batuara-casa` usa temporariamente o número pessoal `5511975747470`.
+- Não abrir `8085`; acesso ao Manager somente por túnel SSH temporário, fechado após o uso.
 
 ## Backend implementado
 
@@ -286,12 +300,12 @@ Warnings de lint ainda existentes e considerados preexistentes/não bloqueantes:
 ## Pendências reais
 
 Para fechar produção:
-1. Configurar segredos reais em ambiente, sem commit:
+1. Configurar/validar segredos reais em ambiente, sem commit:
    - `WhatsApp__Enabled=true`
    - `WhatsApp__BaseUrl=http://127.0.0.1:8085`
    - `WhatsApp__ApiKey=<secret>`
    - `WhatsApp__InstanceName=batuara-casa`
-2. Aplicar migrations `20260708020346_AddMemberLoginCodes` e `20260708130000_AddRecurringContributionAndWhatsAppContact` nos demais ambientes no deploy (confirmar que a Step 3.5 do `deploy-rolling.sh` roda sem erro — localmente essa migration ficou sem aplicar silenciosamente até ser detectado via teste manual).
+2. ~~Aplicar migrations `20260708020346_AddMemberLoginCodes` e `20260708130000_AddRecurringContributionAndWhatsAppContact` em produção.~~ ✅ Confirmado em 2026-07-08.
 3. E2E já validado com evidência real em 2026-07-08 (ver seção no topo do arquivo):
    - ✅ Filho da Casa solicita código, recebe no WhatsApp, login funciona, perfil carrega com dados reais.
    - ✅ Visitante envia contato com opt-in WhatsApp, Admin responde e mensagem chega de verdade no WhatsApp.
@@ -302,6 +316,7 @@ Para fechar produção:
    - Membro registra contribuição pendente.
    - Membro é bloqueado em rotas administrativas.
 5. Revisar configuração de logs da Evolution API antes de produção.
+6. Manter portas públicas OCI somente `22`, `80`, `443`; não reabrir portas diretas de containers.
 
 ## Observações para próximas ferramentas/agentes
 
@@ -310,3 +325,4 @@ Para fechar produção:
 - O design-time factory do EF usa `BATUARA_CONNECTION_STRING`, não `ConnectionStrings__DefaultConnection`.
 - O banco local está em container `batuara-net-local-db` na rede `batuara-net-local_batuara-network`.
 - Existem várias alterações não relacionadas já presentes no worktree; não reverter sem confirmação do usuário.
+- Banco local foi sincronizado da produção após manutenção `Exu`/`Pomba Gira`; usar produção como fonte de verdade.

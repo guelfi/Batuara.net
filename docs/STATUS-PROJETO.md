@@ -2,12 +2,14 @@
 
 **Última atualização:** 08/07/2026
 **Versão de referência documental:** 2026.07.08
-**Fase atual:** Plataforma funcional com RBAC, WhatsApp OCI, autosserviço de Filho da Casa, recorrência/lembretes de contribuição e resposta WhatsApp de contato implementados localmente
+**Fase atual:** Plataforma funcional em produção OCI com RBAC, WhatsApp OCI, autosserviço de Filho da Casa, recorrência/lembretes de contribuição, resposta WhatsApp de contato e hardening básico de portas públicas
 **Ambiente local:** Docker Compose com Nginx, API, PublicWebsite, AdminDashboard e PostgreSQL
 
 ## 🎯 Resumo Executivo
 
 O projeto opera com backend .NET 8 funcional, banco PostgreSQL, autenticação JWT, módulos CMS reais consumidos pelos dois frontends, RBAC/multiadmin, login de Filho da Casa por WhatsApp, lembretes de contribuição com opt-in, resposta WhatsApp para contato público e Evolution API self-hosted na OCI.
+
+Produção OCI validada em 2026-07-08 no commit `c8c7c4e`, com containers principais `healthy`. O banco de desenvolvimento local foi sincronizado a partir da produção após manutenção de dados religiosos.
 
 ### ✅ Entregas Confirmadas
 
@@ -21,6 +23,8 @@ O projeto opera com backend .NET 8 funcional, banco PostgreSQL, autenticação J
 - **Contato Público:** opt-in para resposta por WhatsApp no site público e endpoint admin para envio da resposta
 - **Infra local:** deploy via `docker-compose.local.yml`, health checks e Swagger operacionais
 - **Banco de dados:** migrations ativas para `SiteSettings`, `ContactMessages`, `Guides`, `HouseMembers` e módulos relacionados
+- **Dados religiosos:** `Exu` e `Pomba Gira` tratados como Guias/Entidades, não Orixás, em produção e desenvolvimento
+- **Segurança OCI:** ingress público reduzido para `22`, `80` e `443`; Evolution API sem exposição pública
 
 ## 🧩 Status por Módulo
 
@@ -41,7 +45,7 @@ O projeto opera com backend .NET 8 funcional, banco PostgreSQL, autenticação J
 | Contato Público | ✅ Implementado | Recebimento de mensagens públicas, opt-in WhatsApp e resposta admin por WhatsApp |
 | Lembretes de contribuição | ✅ Implementado / 🔒 Desligado por padrão | Hosted service e processor com `ContributionReminders.Enabled=false` até ativação explícita |
 | WhatsApp / Evolution API OCI | ✅ Operacional | `batuara-casa` conectada; API/Manager acessíveis apenas via loopback/túnel SSH |
-| Segurança avançada OCI | 🔄 Parcial | revisar logs Evolution antes de produção e trocar para chip dedicado quando disponível |
+| Segurança OCI | ✅ Básico aplicado / 🔄 Evoluir | Painel OCI com ingress público somente `22/80/443`; manter SSH por chave e considerar Bastion/VPN no futuro |
 
 ## 🆕 Mudanças Recentes Relevantes
 
@@ -64,6 +68,18 @@ O projeto opera com backend .NET 8 funcional, banco PostgreSQL, autenticação J
 - Implementado endpoint administrativo para responder mensagens públicas por WhatsApp e marcar a mensagem como resolvida.
 - Migration/snapshot EF alinhados em `20260708130000_AddRecurringContributionAndWhatsAppContact`.
 - Deploy rolling preparado para aplicar a migration de forma idempotente e configurar WhatsApp via Docker network (`http://batuara-evolution-api:8080`).
+
+### 0.2 Produção, dados religiosos e hardening OCI
+
+- CI/CD executado no `master`; produção validada no commit `c8c7c4e` após hotfix dos healthchecks dos frontends.
+- Backup pré-deploy criado em `/var/www/batuara_net/backups/predeploy_20260708_164920` e cópia local em `backups/predeploy_20260708_164920`.
+- Backup pré-manutenção de dados religiosos criado em `/var/www/batuara_net/backups/orixas_guides_maintenance_20260708_181511`.
+- Manutenção aplicada diretamente na produção: `Exu` e `Pomba Gira` removidos de `batuara."Orixas"` e inseridos em `batuara."Guides"`.
+- Validação pós-manutenção em produção: `Orixas=12`, `Guides=9`; API `Healthy`.
+- Banco local recriado/sincronizado a partir da produção com `scripts/sync-db-from-oci.ps1 -FullDatabase`; validação local também retornou `Orixas=12`, `Guides=9`.
+- Túnel SSH da Evolution API fechado; Manager/API continuam inacessíveis publicamente.
+- Painel OCI revisado pelo usuário; regras públicas extras removidas, mantendo `22/tcp`, `80/tcp`, `443/tcp` e ICMP operacional.
+- Como o usuário não tem IP fixo, `22/tcp` permanece público por necessidade operacional; usar somente chave SSH e considerar OCI Bastion/VPN no futuro.
 
 ### 1. Nossa História
 
@@ -138,6 +154,17 @@ curl http://localhost/batuara-public/
 
 ## 🚀 Operação e Deploy
 
+### Produção OCI atual
+
+- Branch: `master`.
+- Commit validado em produção: `c8c7c4e`.
+- CI `28964270844`: sucesso.
+- CD OCI `28964614192`: sucesso.
+- Containers validados após deploy: `batuara-net-api`, `batuara-net-admin-dashboard`, `batuara-net-public-website`, `batuara-net-db`.
+- Health da API: `Healthy`.
+- Ingress público esperado na OCI: `22`, `80`, `443`.
+- Projetos publicados devem ser acessados via Nginx reverse proxy; não abrir portas diretas de containers no Security List/NSG.
+
 ### Evolution API na OCI
 
 - Compose versionado: `scripts/docker/docker-compose.whatsapp.yml`.
@@ -175,14 +202,14 @@ docker compose -p batuara-net-local -f docker-compose.local.yml up -d --force-re
 
 ## 🔄 Próximos Passos Recomendados
 
-1. Revisar `git status` e selecionar os arquivos de commit com cuidado; não incluir `.claude/`, `docs/.~lock.Plano de Testes Batuara.xlsx#` nem `scripts/output/`.
+1. Revisar `git status` e selecionar os arquivos de commit com cuidado; não incluir `.claude/`, `docs/.~lock.Plano de Testes Batuara.xlsx#`, `scripts/output/` nem dumps/backups.
 2. Executar E2E real do login WhatsApp: solicitar código, receber mensagem, autenticar como Member e validar bloqueios administrativos.
 3. Executar E2E de contribuição recorrente: criar contribuição recorrente, marcar como paga e confirmar geração do próximo mês.
 4. Executar E2E de contato público: marcar opt-in WhatsApp, enviar mensagem e responder pelo AdminDashboard.
-5. Aplicar migrations `20260708020346_AddMemberLoginCodes` e `20260708130000_AddRecurringContributionAndWhatsAppContact` nos demais ambientes no momento do deploy.
-6. Revisar logs/configuração da Evolution API antes de produção para evitar conteúdo sensível.
-7. Manter `ContributionReminders.Enabled=false` até decisão explícita de ativação em produção.
-8. Trocar o pareamento para chip dedicado da Casa quando disponível.
+5. Revisar logs/configuração da Evolution API antes de produção para evitar conteúdo sensível.
+6. Manter `ContributionReminders.Enabled=false` até decisão explícita de ativação em produção.
+7. Trocar o pareamento para chip dedicado da Casa quando disponível.
+8. Revisar `ufw` e compose dos demais projetos para remover portas host diretas ou bindar em `127.0.0.1`; a OCI já deve bloquear acesso externo direto.
 
 ## 📚 Referências Cruzadas
 
@@ -202,6 +229,7 @@ docker compose -p batuara-net-local -f docker-compose.local.yml up -d --force-re
 - Registrado envio real recebido com sucesso nos celulares de teste.
 - Registradas conclusões de recorrência/lembrete de contribuição e resposta WhatsApp de contato público.
 - Registradas validações locais: backend 33 testes, builds dos frontends, compose produção, scripts de deploy, build Docker e containers locais healthy.
+- Registrado deploy OCI em produção no commit `c8c7c4e`, hotfix de healthchecks dos frontends, manutenção `Exu`/`Pomba Gira` como Guias, sincronização do banco local com produção e hardening público OCI para `22/80/443`.
 
 ### 03/04/2026
 

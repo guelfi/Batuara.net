@@ -12,6 +12,14 @@
 ssh ubuntu@<OCI_HOST>
 ```
 
+Portas públicas esperadas na OCI:
+
+- `22/tcp` para SSH administrativo.
+- `80/tcp` para Nginx HTTP.
+- `443/tcp` para Nginx HTTPS.
+
+Como o operador usa Vivo Fibra sem IP fixo, `22/tcp` permanece público por necessidade operacional. Manter SSH somente por chave, sem root/senha, e avaliar OCI Bastion/VPN no futuro.
+
 ### Verificar Status dos Containers
 ```bash
 docker ps
@@ -82,6 +90,20 @@ Resposta esperada:
 
 ```json
 {"instance":{"instanceName":"batuara-casa","state":"open"}}
+```
+
+Confirmar que a Evolution continua sem exposição pública:
+
+```bash
+docker port batuara-evolution-api
+sudo ss -ltnp | grep ':8085' || true
+```
+
+Resultado esperado:
+
+```text
+8080/tcp -> 127.0.0.1:8085
+LISTEN ... 127.0.0.1:8085 ... docker-proxy
 ```
 
 ### Verificar lembretes de contribuição
@@ -175,6 +197,36 @@ git push origin master
 
 ---
 
+## 5.1 Manutenção de Dados Religiosos
+
+Estado validado em 2026-07-08:
+
+- `Exu` e `Pomba Gira` são Guias/Entidades na Casa Batuara, não Orixás.
+- Produção foi ajustada diretamente no banco com backup prévio.
+- Backup: `/var/www/batuara_net/backups/orixas_guides_maintenance_20260708_181511`.
+- Validação esperada: `Orixas=12`, `Guides=9`.
+
+Consulta de validação:
+
+```bash
+docker exec -i batuara-net-db psql -U batuara_user -d batuara_db -At -F '|' <<'SQL'
+select concat('Orixas=', count(*)) from batuara."Orixas";
+select concat('Guides=', count(*)) from batuara."Guides";
+select 'ORIXA_MATCH', "Id", "Name" from batuara."Orixas" where lower("Name") in ('exu', 'exú', 'pomba gira', 'pombo gira');
+select 'GUIDE_MATCH', "Id", "Name", "DisplayOrder", "IsActive", "Cor", "Saudacao" from batuara."Guides" where lower("Name") in ('exu', 'exú', 'pomba gira', 'pombo gira') order by "DisplayOrder";
+SQL
+```
+
+Sincronizar banco local a partir da produção:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "scripts\sync-db-from-oci.ps1" -SshKey "C:\Users\MarcoGuelfi\Projetos\Batuara.net\ssh-key-2025-08-28.pem" -FullDatabase -DumpFormat custom -KeepLocalBackup
+```
+
+Observação: o script pode falhar apenas na verificação final de migrations por consultar `__EFMigrationsHistory` sem aspas; se o restore ocorreu, validar manualmente com `batuara."__EFMigrationsHistory"`.
+
+---
+
 ## 6. Troubleshooting
 
 ### Evolution Manager / WhatsApp
@@ -210,6 +262,27 @@ Se a sessão cair:
 
 Nunca publicar `8085` em `0.0.0.0` nem abrir regra pública no firewall/OCI para Evolution API.
 
+### Portas públicas OCI
+
+Estado validado em 2026-07-08 após ajuste manual no painel OCI:
+
+- Manter publicamente abertas: `22/tcp`, `80/tcp`, `443/tcp`.
+- Fechar no Security List/NSG: `3000`, `3001`, `3003`, `3005`, `3500`, `5000`, `5005`, `5050`, `6000`, `6005`, `8001-8004`, `5432`, `6379`, `8080`, `8085` e qualquer porta direta de container.
+- Nginx acessa os serviços por nome de container na rede Docker; portas diretas dos containers não precisam ficar públicas.
+- Se possível no futuro, migrar SSH para OCI Bastion/VPN para remover `22/tcp` público.
+
+Validação externa a partir da máquina local:
+
+```powershell
+$ports = @(22,80,443,3000,3001,3003,3005,5005,8085)
+foreach ($port in $ports) {
+  $r = Test-NetConnection -ComputerName 129.153.86.168 -Port $port -InformationLevel Quiet -WarningAction SilentlyContinue
+  "${port}:$r"
+}
+```
+
+Resultado esperado: `22`, `80` e `443` como `True`; demais como `False`.
+
 ### Handoff para outras ferramentas
 
 Estado validado em 2026-07-08:
@@ -221,12 +294,16 @@ Estado validado em 2026-07-08:
 - `bash -n scripts/ci/deploy-rolling.sh scripts/ci/deploy-rolling-staging.sh` passou após normalização LF.
 - `docker compose -f "docker-compose.local.yml" build api admindashboard publicwebsite` passou.
 - Containers locais `api`, `admindashboard` e `publicwebsite` ficaram `healthy`.
+- Produção OCI validada no commit `c8c7c4e`, com API/Admin/Public/DB `healthy`.
+- Manutenção de `Exu`/`Pomba Gira` aplicada em produção e sincronizada para desenvolvimento.
+- Regras públicas OCI reduzidas para `22`, `80` e `443`.
 
 Antes de commit/push:
 
 - Revisar `git status`.
 - Não commitar `.claude/`, `docs/.~lock.Plano de Testes Batuara.xlsx#` nem `scripts/output/`.
-- Avaliar explicitamente se os documentos novos, planilha de testes e `scripts/import_house_members.py` devem entrar.
+- Manter e versionar `docs/PlanoTestes.md` e `docs/Plano de Testes Batuara - v5.xlsx`; `scripts/import_house_members.py` foi removido por decisão do usuário.
+- Não commitar dumps/backups locais; `backups/` deve permanecer ignorado.
 
 ### API não responde
 

@@ -35,6 +35,7 @@ flowchart LR
 - `SiteSettings` é o núcleo institucional compartilhado entre AdminDashboard e PublicWebsite
 - A Evolution API na OCI não é pública; escuta somente em `127.0.0.1:8085`
 - O Manager da Evolution só deve ser acessado por túnel SSH, nunca por porta pública
+- A OCI deve expor publicamente apenas `80/tcp`, `443/tcp` e `22/tcp`; os demais serviços devem ser acessados via Nginx reverse proxy ou rede Docker interna
 
 ## 3. Estrutura do Repositório
 
@@ -140,6 +141,13 @@ Batuara.net/
   - sem badge numérico diário
 - **Operação local**
   - `nginx` pode exigir recriação após rebuilds completos
+- **Dados religiosos / CMS**
+  - Na Casa Batuara, `Exu` e `Pomba Gira` são tratados como Guias/Entidades, não como Orixás.
+  - Em 2026-07-08, a produção foi ajustada diretamente no banco: removidos de `batuara."Orixas"` e inseridos em `batuara."Guides"`.
+  - Banco local de desenvolvimento foi sincronizado a partir da produção após essa manutenção.
+- **Hardening OCI**
+  - Regras públicas extras no painel OCI foram removidas; manter somente `22`, `80` e `443`.
+  - Como o usuário usa Vivo Fibra sem IP fixo, `22/tcp` permanece público por necessidade operacional; manter SSH por chave e sem login root/senha.
 
 ## 6. Endpoints de Referência
 
@@ -283,7 +291,7 @@ Se você alterar:
 
 ### 10.3 Estado de Handoff Atual — 2026-07-08
 
-Implementações concluídas e validadas localmente nesta sessão:
+Implementações/deploys concluídos e validados nesta sessão:
 
 - RBAC/multiadmin, login WhatsApp e autosserviço de Filho da Casa.
 - Evolution API self-hosted na OCI com instância `batuara-casa` conectada.
@@ -293,10 +301,16 @@ Implementações concluídas e validadas localmente nesta sessão:
 - Resposta administrativa por WhatsApp para mensagens públicas autorizadas pelo visitante.
 - Formulário público de contato com opt-in WhatsApp e telefone obrigatório quando opt-in estiver marcado.
 - Deploy rolling preparado para ler `.env.whatsapp`, configurar WhatsApp via Docker network e aplicar migrations aditivas.
+- Deploy em produção concluído em `master` nos commits `06a8d7a` e hotfix `c8c7c4e`; produção validada em `c8c7c4e`.
+- Healthchecks de frontends corrigidos para usar `curl -fsS http://127.0.0.1:80`; `batuara-net-api`, `batuara-net-admin-dashboard` e `batuara-net-public-website` ficaram `healthy`.
+- Banco de produção preservado após deploy; contagens críticas validadas.
+- Manutenção de dados: `Exu` e `Pomba Gira` movidos de `Orixas` para `Guides` em produção, com backup prévio e sincronização do banco local a partir da produção.
+- Evolution Manager/API validados sem acesso público; túnel local `127.0.0.1:18085` fechado.
+- Painel OCI revisado pelo usuário; regras públicas extras removidas, mantendo apenas `22`, `80` e `443`.
 
 Validações executadas:
 
-- `docker run --rm -v "${PWD}:/src" -w /src mcr.microsoft.com/dotnet/sdk:8.0 dotnet test "Batuara.sln" -c Release` — passou com 31 testes.
+- `docker run --rm -v "${PWD}:/src" -w /src mcr.microsoft.com/dotnet/sdk:8.0 dotnet test "Batuara.sln" -c Release` — passou com 33 testes.
 - `docker run --rm -v "${PWD}:/src" -w /src mcr.microsoft.com/dotnet/sdk:8.0 dotnet build "src/Backend/Batuara.API/Batuara.API.csproj" -c Release` — passou.
 - `npm run build` em `src/Frontend/AdminDashboard` — passou com warnings antigos.
 - `npm run build` em `src/Frontend/PublicWebsite` — passou com warnings antigos.
@@ -304,15 +318,21 @@ Validações executadas:
 - `bash -n scripts/ci/deploy-rolling.sh scripts/ci/deploy-rolling-staging.sh` via container SDK — passou.
 - `docker compose -f "docker-compose.local.yml" build api admindashboard publicwebsite` — passou.
 - `docker compose -f "docker-compose.local.yml" up -d api admindashboard publicwebsite` — serviços ficaram `healthy`.
+- Produção OCI: commit `c8c7c4e`, API health `Healthy`, containers principais `healthy`.
+- Produção OCI após manutenção religiosa: `Orixas=12`, `Guides=9`; `Exu` e `Pomba Gira` aparecem apenas em `Guides`.
+- Banco local após sincronização OCI -> dev: `Orixas=12`, `Guides=9`; API local `healthy` pelo healthcheck do container.
+- Acesso externo pós-hardening OCI: esperar somente `22`, `80` e `443`; revalidar com `Test-NetConnection` se houver nova alteração de regra.
 
 Pendências operacionais para a próxima ferramenta/agente:
 
 - Revisar `git status` e selecionar arquivos de commit com cuidado.
 - Não commitar `.claude/`, `docs/.~lock.Plano de Testes Batuara.xlsx#` nem `scripts/output/`.
-- Avaliar se documentos novos em `docs/` e `scripts/import_house_members.py` devem entrar no commit.
+- Manter e versionar os artefatos de controle de testes aprovados: `docs/PlanoTestes.md` e `docs/Plano de Testes Batuara - v5.xlsx`.
 - Revisar logs da Evolution API antes de produção.
 - Manter `ContributionReminders.Enabled=false` até decisão explícita de ativação em produção.
 - Trocar número temporário por chip dedicado da Casa quando disponível.
+- Considerar restringir SSH com OCI Bastion/VPN no futuro; hoje `22` fica público porque o usuário não possui IP fixo.
+- Revisar `ufw` e compose dos demais projetos para remover/bindar portas host em `127.0.0.1`; a barreira principal já foi ajustada no painel OCI.
 
 ## 11. Documentação Relacionada
 
@@ -335,6 +355,7 @@ Pendências operacionais para a próxima ferramenta/agente:
 - Registrado que o Manager da Evolution não tem acesso remoto público e deve ser acessado somente por túnel SSH.
 - Incluídos endpoints e migration de `MemberLoginCodes`.
 - Registrado handoff com contribuições recorrentes, lembretes WhatsApp, resposta WhatsApp de contato público, validações executadas e pendências de commit/deploy.
+- Registrado deploy OCI em produção no commit `c8c7c4e`, manutenção de Exu/Pomba Gira como Guias, sincronização do banco local com produção e hardening das regras públicas OCI para `22/80/443`.
 
 ### 2026.04.03
 
