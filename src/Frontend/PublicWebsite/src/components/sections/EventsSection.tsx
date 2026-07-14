@@ -133,7 +133,7 @@ const EventsSection: React.FC = () => {
 
   const formatEventDate = (dateString: string): string => {
     try {
-      const date = parseISO(dateString);
+      const date = parseISO(dateString.split('T')[0]);
       return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     } catch {
       return dateString;

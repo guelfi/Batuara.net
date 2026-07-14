@@ -51,6 +51,12 @@ const DashboardPage: React.FC = () => {
   const [activityDetailsOpen, setActivityDetailsOpen] = useState(false);
   const [activityDetailsItem, setActivityDetailsItem] = useState<DashboardStats['recentActivity'][number] | null>(null);
 
+  const parseLocalDate = (dateStr: string) => {
+    if (!dateStr) return new Date();
+    const parts = dateStr.split('T')[0].split('-').map(Number);
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  };
+
   useEffect(() => {
     loadDashboardData();
   }, []);
@@ -77,7 +83,7 @@ const DashboardPage: React.FC = () => {
 
         const upcoming = events.data?.[0];
         if (upcoming) {
-          const label = new Date(upcoming.date).toLocaleDateString('pt-BR');
+          const label = parseLocalDate(upcoming.date).toLocaleDateString('pt-BR');
           const timeLabel = upcoming.startTime ? ` às ${(upcoming.startTime || '').slice(0, 5)}` : '';
           setNextEvent({ title: upcoming.title, when: `${label}${timeLabel}` });
         } else {
@@ -108,7 +114,7 @@ const DashboardPage: React.FC = () => {
             if (!item.date) continue;
             const day = item.date.slice(0, 10);
             if (day < todayIso) continue;
-            const when = `${new Date(item.date).toLocaleDateString('pt-BR')}${item.startTime ? ` às ${(item.startTime || '').slice(0, 5)}` : ''}`;
+            const when = `${parseLocalDate(item.date).toLocaleDateString('pt-BR')}${item.startTime ? ` às ${(item.startTime || '').slice(0, 5)}` : ''}`;
             candidates.push({
               title: item.description || 'Atendimento',
               when,

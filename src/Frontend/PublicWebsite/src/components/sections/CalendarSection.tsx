@@ -338,7 +338,7 @@ const CalendarSection: React.FC = () => {
     return allDays
       .map((day) => ({
         day,
-        items: currentData.filter((item) => isSameDay(parseISO(item.date), day)),
+        items: currentData.filter((item) => isSameDay(parseISO(item.date.split('T')[0]), day)),
       }))
       .filter(({ items }) => items.length > 0);
   }, [currentData, monthStart, monthEnd]);
