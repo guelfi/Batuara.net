@@ -18,10 +18,6 @@ namespace Batuara.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(150);
 
-            builder.Property(x => x.Email)
-                .IsRequired()
-                .HasMaxLength(150);
-
             builder.Property(x => x.Phone)
                 .HasMaxLength(40);
 

@@ -8,7 +8,7 @@ namespace Batuara.API.Validators
         public CreateContactMessageRequestValidator()
         {
             RuleFor(x => x.Name).NotEmpty().MaximumLength(150);
-            RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(200);
+            RuleFor(x => x.Email).EmailAddress().MaximumLength(200).When(x => !string.IsNullOrWhiteSpace(x.Email));
             RuleFor(x => x.Phone).MaximumLength(50).When(x => x.Phone != null);
             RuleFor(x => x.Phone).NotEmpty().When(x => x.WantsWhatsAppResponse).WithMessage("Telefone é obrigatório para receber resposta por WhatsApp.");
             RuleFor(x => x.Subject).NotEmpty().MaximumLength(200);

@@ -26,10 +26,7 @@ async function login(page: Page) {
   await page.getByLabel('Senha').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Entrar' }).click();
   // Aguarda sair da página de login (SPA redireciona para / ou /dashboard)
-  await page.waitForFunction(
-    () => !window.location.pathname.includes('/login'),
-    { timeout: 20_000 }
-  );
+  await page.waitForURL(url => !url.href.includes('/login'), { timeout: 20_000 });
 }
 
 async function goToMembers(page: Page) {
@@ -48,8 +45,13 @@ async function openNewMemberDialog(page: Page) {
 async function fillPersonalData(page: Page, name: string, email: string, phone: string) {
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Nome completo').fill(name);
+  await dialog.getByLabel('Data de nascimento').fill('1980-01-01');
   await dialog.getByLabel('E-mail').fill(email);
   await dialog.getByLabel('Celular').fill(phone);
+
+  // Switch to Orixás tab and fill the required field
+  await dialog.getByRole('tab', { name: 'Orixás' }).click();
+  await dialog.getByLabel('Orixá de frente').fill('Oxalá');
 }
 
 async function saveAndExpectSuccess(page: Page) {
@@ -136,7 +138,7 @@ test.describe('Filhos da Casa — CRUD', () => {
 
     // Dialog de confirmação deve aparecer
     await expect(
-      page.getByRole('dialog').filter({ hasText: /excluir filho/i })
+      page.getByRole('dialog').filter({ hasText: /excluir cadastro/i })
     ).toBeVisible();
 
     // Confirma a exclusão

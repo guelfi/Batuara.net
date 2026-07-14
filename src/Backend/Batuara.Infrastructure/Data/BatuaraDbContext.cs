@@ -25,6 +25,7 @@ namespace Batuara.Infrastructure.Data
         public DbSet<HouseMemberContribution> HouseMemberContributions { get; set; } = null!;
         public DbSet<MemberLoginCode> MemberLoginCodes { get; set; } = null!;
         public DbSet<ContactMessage> ContactMessages { get; set; } = null!;
+        public DbSet<WhatsAppMessage> WhatsAppMessages { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -44,6 +45,7 @@ namespace Batuara.Infrastructure.Data
             modelBuilder.ApplyConfiguration(new HouseMemberContributionConfiguration());
             modelBuilder.ApplyConfiguration(new MemberLoginCodeConfiguration());
             modelBuilder.ApplyConfiguration(new ContactMessageConfiguration());
+            modelBuilder.ApplyConfiguration(new WhatsAppMessageConfiguration());
 
             // Configure schema - using batuara schema as defined in migrations
             modelBuilder.HasDefaultSchema("batuara");

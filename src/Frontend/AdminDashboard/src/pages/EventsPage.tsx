@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -341,7 +341,7 @@ const EventsPage: React.FC = () => {
           flex: 0.9,
           renderCell: (params) => {
             const normalized = normalizeEventType(params.row.type);
-            const accentColor = getEventTypeAccentColor(params.row.type);
+            const accentColor = params.row.cardColor || getEventTypeAccentColor(params.row.type);
             return (
               <Chip
                 size="small"

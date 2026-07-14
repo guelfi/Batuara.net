@@ -243,3 +243,7 @@ docs/especificacao-unificada/metrics/evaluations.json
 docs/credential.md
 docs/testcontrol.md
 
+# Claude & E2E trace debug
+.claude/
+e2e/trace_extracted/
+

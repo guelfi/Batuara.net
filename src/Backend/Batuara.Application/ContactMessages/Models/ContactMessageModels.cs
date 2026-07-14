@@ -19,6 +19,7 @@ namespace Batuara.Application.ContactMessages.Models
         public DateTime ReceivedAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public List<WhatsAppMessageDto> WhatsAppMessages { get; set; } = new();
     }
 
     public class CreateContactMessageRequest
@@ -45,5 +46,16 @@ namespace Batuara.Application.ContactMessages.Models
     public class SendContactWhatsAppResponseRequest
     {
         public string ResponseText { get; set; } = string.Empty;
+    }
+
+    public class WhatsAppMessageDto
+    {
+        public int Id { get; set; }
+        public string MessageId { get; set; } = string.Empty;
+        public string SenderPhone { get; set; } = string.Empty;
+        public string RecipientPhone { get; set; } = string.Empty;
+        public string Body { get; set; } = string.Empty;
+        public bool IsFromMe { get; set; }
+        public DateTime SentAt { get; set; }
     }
 }

@@ -153,10 +153,11 @@ const MembersPage: React.FC = () => {
   const [dialogTab, setDialogTab] = useState(0);
   const [formErrors, setFormErrors] = useState<{
     fullName?: string;
-    headOrixaFront?: string;
     email?: string;
     mobilePhone?: string;
     state?: string;
+    headOrixaFront?: string;
+    birthDate?: string;
   }>({});
   const [query, setQuery] = useState('');
   const [cityFilter, setCityFilter] = useState('');
@@ -475,6 +476,7 @@ const MembersPage: React.FC = () => {
     const nextErrors: typeof formErrors = {};
     if (!form.fullName.trim()) nextErrors.fullName = 'Nome completo é obrigatório.';
     if (!form.headOrixaFront.trim()) nextErrors.headOrixaFront = 'Orixá de frente é obrigatório.';
+    if (!form.birthDate.trim()) nextErrors.birthDate = 'Data de nascimento é obrigatória.';
 
     const emailValue = form.email.trim();
     if (emailValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
@@ -482,7 +484,7 @@ const MembersPage: React.FC = () => {
     }
 
     const phoneDigits = onlyDigits(form.mobilePhone);
-    if (form.mobilePhone.trim() && phoneDigits.length !== 10) {
+    if (form.mobilePhone.trim() && phoneDigits.length !== 10 && phoneDigits.length !== 11) {
       nextErrors.mobilePhone = 'Informe um celular válido (DDD + número).';
     }
 
@@ -493,8 +495,9 @@ const MembersPage: React.FC = () => {
 
     setFormErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
-      if (nextErrors.headOrixaFront) setDialogTab(2);
+      if (nextErrors.fullName || nextErrors.email || nextErrors.mobilePhone || nextErrors.birthDate) setDialogTab(0);
       else if (nextErrors.state) setDialogTab(1);
+      else if (nextErrors.headOrixaFront) setDialogTab(2);
       else setDialogTab(0);
       setFeedback({ open: true, message: 'Revise os campos obrigatórios antes de salvar.', severity: 'error' });
       return;
@@ -816,6 +819,9 @@ const MembersPage: React.FC = () => {
                     onChange={(e) => setForm((prev) => ({ ...prev, birthDate: e.target.value }))}
                     InputLabelProps={{ shrink: true }}
                     fullWidth
+                    required
+                    error={!!formErrors.birthDate}
+                    helperText={formErrors.birthDate}
                   />
                   <TextField
                     label="Data de entrada na casa"
