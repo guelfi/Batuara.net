@@ -28,7 +28,7 @@ namespace Batuara.Infrastructure.Tests.ContactMessages
             public Task SendAuthCodeAsync(string phoneE164, string code, CancellationToken cancellationToken = default) => Task.CompletedTask;
             public Task SendContributionReminderAsync(string phoneE164, string memberName, DateTime dueDate, decimal amount, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-            public Task SendContactResponseAsync(string phoneE164, string responseText, CancellationToken cancellationToken = default)
+            public Task<string> SendContactResponseAsync(string phoneE164, string responseText, CancellationToken cancellationToken = default)
             {
                 if (ExceptionToThrow != null)
                 {
@@ -37,7 +37,7 @@ namespace Batuara.Infrastructure.Tests.ContactMessages
 
                 LastPhone = phoneE164;
                 LastResponse = responseText;
-                return Task.CompletedTask;
+                return Task.FromResult(Guid.NewGuid().ToString());
             }
         }
 
