@@ -29,7 +29,7 @@ namespace Batuara.Infrastructure.Tests.HouseMembers
                 return Task.CompletedTask;
             }
 
-            public Task SendContactResponseAsync(string phoneE164, string responseText, CancellationToken cancellationToken = default) => Task.CompletedTask;
+            public Task<string> SendContactResponseAsync(string phoneE164, string responseText, CancellationToken cancellationToken = default) => Task.FromResult(Guid.NewGuid().ToString());
         }
 
         private static BatuaraDbContext CreateInMemoryDb()

@@ -40,9 +40,9 @@ namespace Batuara.Infrastructure.Tests.MemberAuth
                 return Task.CompletedTask;
             }
 
-            public Task SendContactResponseAsync(string phoneE164, string responseText, CancellationToken cancellationToken = default)
+            public Task<string> SendContactResponseAsync(string phoneE164, string responseText, CancellationToken cancellationToken = default)
             {
-                return Task.CompletedTask;
+                return Task.FromResult(Guid.NewGuid().ToString());
             }
         }
 
