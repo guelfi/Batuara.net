@@ -21,6 +21,8 @@ import {
   Select,
   Snackbar,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -71,6 +73,14 @@ const getStatusColor = (status: ContactMessageStatus): 'default' | 'warning' | '
 };
 
 const getWhatsAppChip = (message: ContactMessage) => {
+  const lastMsg = message.whatsAppMessages && message.whatsAppMessages.length > 0
+    ? message.whatsAppMessages[message.whatsAppMessages.length - 1]
+    : null;
+
+  if (lastMsg && !lastMsg.isFromMe) {
+    return <Chip size="small" color="error" icon={<WhatsAppIcon />} label="Respondeu" sx={{ fontWeight: 700 }} />;
+  }
+
   if (message.whatsAppResponseSentAt) {
     return <Chip size="small" color="success" icon={<WhatsAppIcon />} label="Respondida" />;
   }
@@ -98,6 +108,7 @@ const ContactMessagesPage: React.FC = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
   const [whatsAppResponse, setWhatsAppResponse] = useState('');
   const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -153,6 +164,7 @@ const ContactMessagesPage: React.FC = () => {
   const openDialog = async (msg: ContactMessage) => {
     setSelectedMessage(msg);
     setWhatsAppResponse('');
+    setTabValue(0);
     setDialogOpen(true);
     if (!msg.isRead) {
       try {
@@ -329,7 +341,6 @@ const ContactMessagesPage: React.FC = () => {
             </Typography>
           ),
         },
-        { field: 'email', headerName: 'E-mail', flex: 1, minWidth: 220 },
         {
           field: 'wantsWhatsAppResponse',
           headerName: 'WhatsApp',
@@ -587,54 +598,101 @@ const ContactMessagesPage: React.FC = () => {
             )}
           </Box>
         </DialogTitle>
-        <DialogContent sx={{ pb: isXs ? 12 : 2 }}>
+        {selectedMessage && (
+          <Tabs
+            value={tabValue}
+            onChange={(_, val) => setTabValue(val)}
+            variant="fullWidth"
+            sx={{ borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Tab label="Mensagem & Atendimento" />
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <span>WhatsApp</span>
+                  {getWhatsAppChip(selectedMessage)}
+                </Box>
+              }
+            />
+          </Tabs>
+        )}
+        <DialogContent sx={{ pb: isXs ? 12 : 2, pt: 2, height: { md: 620 } }}>
           {selectedMessage && (
-            <Stack spacing={2} sx={{ mt: 1 }}>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField label="Nome" value={selectedMessage.name} fullWidth InputProps={{ readOnly: true }} />
-                <TextField label="E-mail" value={selectedMessage.email} fullWidth InputProps={{ readOnly: true }} />
-              </Stack>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField label="Telefone" value={selectedMessage.phone || ''} fullWidth InputProps={{ readOnly: true }} />
-                <TextField label="Assunto" value={selectedMessage.subject} fullWidth InputProps={{ readOnly: true }} />
-              </Stack>
-              <Stack direction="row" spacing={1} flexWrap="wrap">
-                <Chip
-                  size="small"
-                  color={selectedMessage.isRead ? 'default' : 'primary'}
-                  label={selectedMessage.isRead ? 'Lida' : 'Não lida'}
-                />
-                <Chip
-                  size="small"
-                  color={selectedMessage.wantsWhatsAppResponse ? 'success' : 'default'}
-                  label={selectedMessage.wantsWhatsAppResponse ? 'Aceita resposta por WhatsApp' : 'Não solicitou WhatsApp'}
-                />
-                {selectedMessage.whatsAppResponseSentAt && (
-                  <Chip size="small" color="success" label={`Respondida em ${new Date(selectedMessage.whatsAppResponseSentAt).toLocaleString('pt-BR')}`} />
-                )}
-              </Stack>
-              <Alert severity={selectedMessage.isRead ? 'info' : 'warning'}>
-                {selectedMessage.isRead
-                  ? 'Esta mensagem já foi marcada como lida.'
-                  : 'Esta mensagem ainda está marcada como não lida.'}{' '}
-                <Button size="small" onClick={() => handleToggleRead(selectedMessage)} sx={{ ml: 1 }}>
-                  {selectedMessage.isRead ? 'Marcar como não lida' : 'Marcar como lida'}
-                </Button>
-              </Alert>
-              <TextField label="Mensagem" value={selectedMessage.message} multiline minRows={5} fullWidth InputProps={{ readOnly: true }} />
-              <Paper variant="outlined" sx={{ p: 2, borderColor: selectedMessage.wantsWhatsAppResponse ? 'success.light' : 'divider' }}>
-                <Stack spacing={1.5}>
+            <Box>
+              {tabValue === 0 && (
+                <Stack spacing={2}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                    <TextField label="Nome" value={selectedMessage.name} fullWidth InputProps={{ readOnly: true }} />
+                  </Stack>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                    <TextField label="Telefone" value={selectedMessage.phone || ''} fullWidth InputProps={{ readOnly: true }} />
+                    <TextField label="Assunto" value={selectedMessage.subject} fullWidth InputProps={{ readOnly: true }} />
+                  </Stack>
+                  <Stack direction="row" spacing={1} flexWrap="wrap">
+                    <Chip
+                      size="small"
+                      color={selectedMessage.isRead ? 'default' : 'primary'}
+                      label={selectedMessage.isRead ? 'Lida' : 'Não lida'}
+                    />
+                    <Chip
+                      size="small"
+                      color={selectedMessage.wantsWhatsAppResponse ? 'success' : 'default'}
+                      label={selectedMessage.wantsWhatsAppResponse ? 'Aceita resposta por WhatsApp' : 'Não solicitou WhatsApp'}
+                    />
+                  </Stack>
+                  <Alert severity={selectedMessage.isRead ? 'info' : 'warning'}>
+                    {selectedMessage.isRead
+                      ? 'Esta mensagem já foi marcada como lida.'
+                      : 'Esta mensagem ainda está marcada como não lida.'}{' '}
+                    <Button size="small" onClick={() => handleToggleRead(selectedMessage)} sx={{ ml: 1 }}>
+                      {selectedMessage.isRead ? 'Marcar como não lida' : 'Marcar como lida'}
+                    </Button>
+                  </Alert>
+                  <TextField label="Mensagem" value={selectedMessage.message} multiline minRows={5} fullWidth InputProps={{ readOnly: true }} />
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                    <FormControl fullWidth>
+                      <InputLabel>Status</InputLabel>
+                      <Select
+                        value={selectedMessage.status}
+                        label="Status"
+                        onChange={(e) => updateField('status', Number(e.target.value))}
+                      >
+                        <MenuItem value={ContactMessageStatus.New}>Nova</MenuItem>
+                        <MenuItem value={ContactMessageStatus.InProgress}>Em atendimento</MenuItem>
+                        <MenuItem value={ContactMessageStatus.Resolved}>Resolvida</MenuItem>
+                        <MenuItem value={ContactMessageStatus.Archived}>Arquivada</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <TextField
+                      label="Recebida em"
+                      value={new Date(selectedMessage.receivedAt).toLocaleString('pt-BR')}
+                      fullWidth
+                      InputProps={{ readOnly: true }}
+                    />
+                  </Stack>
+                  <TextField
+                    label="Notas administrativas"
+                    value={selectedMessage.adminNotes || ''}
+                    onChange={(e) => updateField('adminNotes', e.target.value)}
+                    multiline
+                    minRows={4}
+                    fullWidth
+                  />
+                </Stack>
+              )}
+
+              {tabValue === 1 && (
+                <Stack spacing={2}>
                   <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                     <WhatsAppIcon color={selectedMessage.wantsWhatsAppResponse ? 'success' : 'disabled'} />
                     <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                      Resposta por WhatsApp
+                      Conversa de WhatsApp
                     </Typography>
-                    {getWhatsAppChip(selectedMessage)}
                   </Stack>
 
                   {!selectedMessage.wantsWhatsAppResponse ? (
                     <Alert severity="info">
-                      O visitante não marcou a opção para receber resposta por WhatsApp no formulário público. Use o e-mail ou atualize apenas o atendimento interno.
+                      O visitante não marcou a opção para receber resposta por WhatsApp no formulário público.
                     </Alert>
                   ) : !selectedMessage.phone ? (
                     <Alert severity="warning">
@@ -642,11 +700,66 @@ const ContactMessagesPage: React.FC = () => {
                     </Alert>
                   ) : (
                     <>
-                      {selectedMessage.whatsAppResponseText && (
+                      {selectedMessage.whatsAppMessages && selectedMessage.whatsAppMessages.length > 0 ? (
+                        <Box sx={{
+                          maxHeight: 250,
+                          overflowY: 'auto',
+                          p: 1.5,
+                          borderRadius: 1,
+                          bgcolor: 'grey.50',
+                          border: '1px solid',
+                          borderColor: 'grey.200',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1
+                        }}>
+                          {selectedMessage.whatsAppMessages.map((msg) => (
+                            <Box
+                              key={msg.id}
+                              sx={{
+                                maxWidth: '90%',
+                                alignSelf: msg.isFromMe ? 'flex-end' : 'flex-start',
+                                bgcolor: msg.isFromMe ? 'success.light' : 'grey.300',
+                                color: msg.isFromMe ? 'success.contrastText' : 'text.primary',
+                                p: 1,
+                                px: 1.5,
+                                borderRadius: msg.isFromMe
+                                  ? '8px 8px 0px 8px'
+                                  : '8px 8px 8px 0px',
+                                boxShadow: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 2,
+                              }}
+                            >
+                              <Typography variant="body2" sx={{ wordBreak: 'break-word', flexGrow: 1 }}>
+                                {msg.body}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  whiteSpace: 'nowrap',
+                                  fontSize: '0.65rem',
+                                  opacity: 0.8,
+                                  ml: 'auto',
+                                  alignSelf: 'center',
+                                }}
+                              >
+                                {new Date(msg.sentAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                      ) : selectedMessage.whatsAppResponseText ? (
                         <Alert severity="success">
                           Última resposta enviada em {selectedMessage.whatsAppResponseSentAt ? new Date(selectedMessage.whatsAppResponseSentAt).toLocaleString('pt-BR') : 'data não registrada'}: {selectedMessage.whatsAppResponseText}
                         </Alert>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                          Nenhuma mensagem no histórico do WhatsApp.
+                        </Typography>
                       )}
+
                       <TextField
                         label="Mensagem de resposta"
                         value={whatsAppResponse}
@@ -670,37 +783,8 @@ const ContactMessagesPage: React.FC = () => {
                     </>
                   )}
                 </Stack>
-              </Paper>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <FormControl fullWidth>
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    value={selectedMessage.status}
-                    label="Status"
-                    onChange={(e) => updateField('status', Number(e.target.value))}
-                  >
-                    <MenuItem value={ContactMessageStatus.New}>Nova</MenuItem>
-                    <MenuItem value={ContactMessageStatus.InProgress}>Em atendimento</MenuItem>
-                    <MenuItem value={ContactMessageStatus.Resolved}>Resolvida</MenuItem>
-                    <MenuItem value={ContactMessageStatus.Archived}>Arquivada</MenuItem>
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="Recebida em"
-                  value={new Date(selectedMessage.receivedAt).toLocaleString('pt-BR')}
-                  fullWidth
-                  InputProps={{ readOnly: true }}
-                />
-              </Stack>
-              <TextField
-                label="Notas administrativas"
-                value={selectedMessage.adminNotes || ''}
-                onChange={(e) => updateField('adminNotes', e.target.value)}
-                multiline
-                minRows={4}
-                fullWidth
-              />
-            </Stack>
+              )}
+            </Box>
           )}
         </DialogContent>
         {isXs ? (

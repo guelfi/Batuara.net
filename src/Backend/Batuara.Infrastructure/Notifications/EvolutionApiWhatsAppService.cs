@@ -34,12 +34,12 @@ namespace Batuara.Infrastructure.Notifications
             await SendTextAsync(phoneE164, text, cancellationToken);
         }
 
-        public async Task SendContactResponseAsync(string phoneE164, string responseText, CancellationToken cancellationToken = default)
+        public async Task<string> SendContactResponseAsync(string phoneE164, string responseText, CancellationToken cancellationToken = default)
         {
-            await SendTextAsync(phoneE164, $"Casa Batuara: {responseText.Trim()}", cancellationToken);
+            return await SendTextAsync(phoneE164, $"Casa Batuara: {responseText.Trim()}", cancellationToken);
         }
 
-        private async Task SendTextAsync(string phoneE164, string text, CancellationToken cancellationToken)
+        private async Task<string> SendTextAsync(string phoneE164, string text, CancellationToken cancellationToken)
         {
             if (!_options.Enabled)
             {
@@ -75,6 +75,17 @@ namespace Batuara.Infrastructure.Notifications
                 _logger.LogError("Evolution API send failed with status {StatusCode}", (int)response.StatusCode);
                 response.EnsureSuccessStatusCode();
             }
+
+            try
+            {
+                var result = await response.Content.ReadFromJsonAsync<EvolutionSendResponse>(cancellationToken: cancellationToken);
+                return result?.Key?.Id ?? Guid.NewGuid().ToString();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse Evolution API send response, generating fallback GUID.");
+                return Guid.NewGuid().ToString();
+            }
         }
 
         private bool IsAllowed(string number)
@@ -97,6 +108,18 @@ namespace Batuara.Infrastructure.Notifications
         private static string GetSuffix(string number)
         {
             return number.Length <= 4 ? number : number[^4..];
+        }
+
+        private class EvolutionSendResponse
+        {
+            [System.Text.Json.Serialization.JsonPropertyName("key")]
+            public EvolutionKeyResponse? Key { get; set; }
+        }
+
+        private class EvolutionKeyResponse
+        {
+            [System.Text.Json.Serialization.JsonPropertyName("id")]
+            public string? Id { get; set; }
         }
     }
 }

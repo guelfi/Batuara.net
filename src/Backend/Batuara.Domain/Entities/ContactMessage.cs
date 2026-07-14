@@ -1,4 +1,5 @@
 using Batuara.Domain.Common;
+using Batuara.Domain.Common;
 using Batuara.Domain.Enums;
 
 namespace Batuara.Domain.Entities
@@ -18,14 +19,26 @@ namespace Batuara.Domain.Entities
         public string? AdminNotes { get; private set; }
         public DateTime ReceivedAt { get; private set; }
 
+        private readonly List<WhatsAppMessage> _whatsAppMessages = new();
+        public virtual IReadOnlyCollection<WhatsAppMessage> WhatsAppMessages => _whatsAppMessages.AsReadOnly();
+
+        public void AddWhatsAppMessage(string messageId, string senderPhone, string recipientPhone, string body, bool isFromMe, DateTime sentAt)
+        {
+            if (!_whatsAppMessages.Any(x => x.MessageId == messageId))
+            {
+                _whatsAppMessages.Add(new WhatsAppMessage(Id, messageId, senderPhone, recipientPhone, body, isFromMe, sentAt));
+                UpdateTimestamp();
+            }
+        }
+
         private ContactMessage()
         {
         }
 
-        public ContactMessage(string name, string email, string subject, string message, string? phone = null, bool wantsWhatsAppResponse = false)
+        public ContactMessage(string name, string? email, string subject, string message, string? phone = null, bool wantsWhatsAppResponse = false)
         {
             Name = Require(name, nameof(name));
-            Email = Require(email, nameof(email));
+            Email = string.IsNullOrWhiteSpace(email) ? string.Empty : email.Trim();
             Subject = Require(subject, nameof(subject));
             Message = Require(message, nameof(message));
             Phone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim();

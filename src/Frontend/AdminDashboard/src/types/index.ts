@@ -220,10 +220,19 @@ export interface HouseMember {
   updatedAt: string;
 }
 
+export interface WhatsAppMessage {
+  id: number;
+  messageId: string;
+  senderPhone: string;
+  recipientPhone: string;
+  body: string;
+  isFromMe: boolean;
+  sentAt: string;
+}
+
 export interface ContactMessage {
   id: number;
   name: string;
-  email: string;
   phone?: string;
   subject: string;
   message: string;
@@ -236,6 +245,7 @@ export interface ContactMessage {
   receivedAt: string;
   createdAt: string;
   updatedAt: string;
+  whatsAppMessages?: WhatsAppMessage[];
 }
 
 export interface UmbandaLine {

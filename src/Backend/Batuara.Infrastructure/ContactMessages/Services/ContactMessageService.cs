@@ -32,7 +32,7 @@ namespace Batuara.Infrastructure.ContactMessages.Services
             string? sort)
         {
             var (page, size) = NormalizePaging(pageNumber, pageSize);
-            var query = _db.ContactMessages.AsNoTracking().AsQueryable();
+            var query = _db.ContactMessages.AsNoTracking().Include(x => x.WhatsAppMessages).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(q))
             {
@@ -83,7 +83,9 @@ namespace Batuara.Infrastructure.ContactMessages.Services
 
         public async Task<ContactMessageDto?> GetByIdAsync(int id)
         {
-            var entity = await _db.ContactMessages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+            var entity = await _db.ContactMessages.AsNoTracking()
+                .Include(x => x.WhatsAppMessages)
+                .FirstOrDefaultAsync(x => x.Id == id);
             return entity == null ? null : MapToDto(entity);
         }
 
@@ -165,9 +167,10 @@ namespace Batuara.Infrastructure.ContactMessages.Services
                 return (null, new[] { "Informe a resposta a ser enviada." });
             }
 
+            string messageId;
             try
             {
-                await _whatsAppService.SendContactResponseAsync(entity.Phone, request.ResponseText, cancellationToken);
+                messageId = await _whatsAppService.SendContactResponseAsync(entity.Phone, request.ResponseText, cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -175,6 +178,7 @@ namespace Batuara.Infrastructure.ContactMessages.Services
             }
 
             entity.MarkWhatsAppResponseSent(request.ResponseText, DateTime.UtcNow);
+            entity.AddWhatsAppMessage(messageId, "sistema", entity.Phone, request.ResponseText, true, DateTime.UtcNow);
             await _db.SaveChangesAsync(cancellationToken);
             return (MapToDto(entity), Array.Empty<string>());
         }
@@ -197,7 +201,19 @@ namespace Batuara.Infrastructure.ContactMessages.Services
                 AdminNotes = entity.AdminNotes,
                 ReceivedAt = entity.ReceivedAt,
                 CreatedAt = entity.CreatedAt,
-                UpdatedAt = entity.UpdatedAt
+                UpdatedAt = entity.UpdatedAt,
+                WhatsAppMessages = entity.WhatsAppMessages?
+                    .OrderBy(x => x.SentAt)
+                    .Select(x => new WhatsAppMessageDto
+                    {
+                        Id = x.Id,
+                        MessageId = x.MessageId,
+                        SenderPhone = x.SenderPhone,
+                        RecipientPhone = x.RecipientPhone,
+                        Body = x.Body,
+                        IsFromMe = x.IsFromMe,
+                        SentAt = x.SentAt
+                    }).ToList() ?? new List<WhatsAppMessageDto>()
             };
         }
 

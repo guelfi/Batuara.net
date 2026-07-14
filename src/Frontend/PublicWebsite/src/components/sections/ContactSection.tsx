@@ -20,7 +20,6 @@ import { desktopMediaQuery } from '../../theme/theme';
 
 interface ContactForm {
   name: string;
-  email: string;
   phone: string;
   wantsWhatsAppResponse: boolean;
   subject: string;
@@ -39,7 +38,6 @@ const formatPhoneBr = (value: string) => {
 const ContactSection: React.FC = () => {
   const [formData, setFormData] = useState<ContactForm>({
     name: '',
-    email: '',
     phone: '',
     wantsWhatsAppResponse: false,
     subject: '',
@@ -76,7 +74,6 @@ const ContactSection: React.FC = () => {
       setShowSuccessAlert(true);
       setFormData({
         name: '',
-        email: '',
         phone: '',
         wantsWhatsAppResponse: false,
         subject: '',
@@ -184,6 +181,12 @@ const ContactSection: React.FC = () => {
                 <TextField fullWidth label="Telefone" value={formData.phone} onChange={(event) => setFormData(prev => ({ ...prev, phone: formatPhoneBr(event.target.value) }))} required={formData.wantsWhatsAppResponse} />
               </Grid>
               <Grid size={12}>
+                <TextField fullWidth label="Assunto" value={formData.subject} onChange={handleInputChange('subject')} required />
+              </Grid>
+              <Grid size={12}>
+                <TextField fullWidth label="Mensagem" multiline rows={4} value={formData.message} onChange={handleInputChange('message')} required />
+              </Grid>
+              <Grid size={12}>
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -191,17 +194,8 @@ const ContactSection: React.FC = () => {
                       onChange={(event) => setFormData(prev => ({ ...prev, wantsWhatsAppResponse: event.target.checked }))}
                     />
                   }
-                  label="Desejo receber a resposta por WhatsApp"
+                  label="Autorizo o envio de resposta a mensagem pelo WhatsApp"
                 />
-              </Grid>
-              <Grid size={12}>
-                <TextField fullWidth label="E-mail" type="email" value={formData.email} onChange={handleInputChange('email')} required />
-              </Grid>
-              <Grid size={12}>
-                <TextField fullWidth label="Assunto" value={formData.subject} onChange={handleInputChange('subject')} required />
-              </Grid>
-              <Grid size={12}>
-                <TextField fullWidth label="Mensagem" multiline rows={4} value={formData.message} onChange={handleInputChange('message')} required />
               </Grid>
               {!!errorMessage && (
                 <Grid size={12}>

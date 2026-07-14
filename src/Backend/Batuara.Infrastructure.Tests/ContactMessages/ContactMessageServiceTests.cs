@@ -70,7 +70,6 @@ namespace Batuara.Infrastructure.Tests.ContactMessages
             var (created, errors, conflict) = await service.CreatePublicAsync(new CreateContactMessageRequest
             {
                 Name = "Visitante",
-                Email = "visitante@exemplo.com",
                 Subject = "Agendamento",
                 Message = "Gostaria de saber o horário de atendimento.",
                 Phone = "11999999999"
@@ -102,7 +101,6 @@ namespace Batuara.Infrastructure.Tests.ContactMessages
             var (created, _, _) = await service.CreatePublicAsync(new CreateContactMessageRequest
             {
                 Name = "Visitante",
-                Email = "visitante@exemplo.com",
                 Subject = "Contato",
                 Message = "Gostaria de resposta por WhatsApp.",
                 Phone = "11999999999",
@@ -135,7 +133,6 @@ namespace Batuara.Infrastructure.Tests.ContactMessages
             var (created, _, _) = await service.CreatePublicAsync(new CreateContactMessageRequest
             {
                 Name = "Visitante",
-                Email = "visitante@exemplo.com",
                 Subject = "Contato",
                 Message = "Gostaria de resposta por WhatsApp.",
                 Phone = "11999999999",
@@ -178,7 +175,6 @@ namespace Batuara.Infrastructure.Tests.ContactMessages
             var (created, _, _) = await service.CreatePublicAsync(new CreateContactMessageRequest
             {
                 Name = "Visitante",
-                Email = "visitante@exemplo.com",
                 Subject = "Contato",
                 Message = "Gostaria de resposta por WhatsApp.",
                 Phone = "11975747470",

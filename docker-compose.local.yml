@@ -36,6 +36,13 @@ services:
       - DB_APPLY_MIGRATIONS_ON_STARTUP=false
       - DB_SEED_ON_STARTUP=false
       - SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD}
+      - WhatsApp__Enabled=${WHATSAPP_ENABLED:-true}
+      - WhatsApp__BaseUrl=${WHATSAPP_BASE_URL:-http://host.docker.internal:18085}
+      - WhatsApp__ApiKey=${WHATSAPP_API_KEY:-}
+      - WhatsApp__InstanceName=${WHATSAPP_INSTANCE_NAME:-batuara-casa}
+      - WhatsApp__AllowedRecipients=${WHATSAPP_ALLOWED_RECIPIENTS:-5511975747470,5511995384032}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - batuara-network
     depends_on:

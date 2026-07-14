@@ -168,7 +168,6 @@ export interface SiteSettingsDto {
 
 export interface CreateContactMessageRequest {
   name: string;
-  email: string;
   phone?: string;
   wantsWhatsAppResponse?: boolean;
   subject: string;
