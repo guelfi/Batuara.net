@@ -26,7 +26,7 @@ namespace Batuara.Infrastructure.Tests.Calendar
         public async Task Create_Should_ReturnConflict_When_EventOverlaps()
         {
             await using var db = CreateInMemoryDb();
-            var conflictDate = GetNextDay(DayOfWeek.Friday);
+            var conflictDate = GetNextDay(DayOfWeek.Saturday);
             db.Events.Add(new Event(
                 "Evento Especial",
                 "Descrição",
@@ -51,13 +51,35 @@ namespace Batuara.Infrastructure.Tests.Calendar
         }
 
         [Fact]
+        public async Task Create_Should_Succeed_For_Any_Type_On_Any_Day()
+        {
+            await using var db = CreateInMemoryDb();
+            var date = DateTime.Today.AddDays(7);
+
+            var service = new CalendarAttendanceService(db, new CalendarDomainService());
+            var request = new CreateCalendarAttendanceRequest
+            {
+                Date = date,
+                StartTime = TimeSpan.FromHours(14),
+                EndTime = TimeSpan.FromHours(16),
+                Type = AttendanceType.Kardecismo
+            };
+
+            var (attendance, errors, conflict) = await service.CreateAsync(request);
+
+            attendance.Should().NotBeNull();
+            errors.Should().BeEmpty();
+            conflict.Should().BeFalse();
+        }
+
+        [Fact]
         public async Task Update_Should_Be_Denied_When_Less_Than_3_Days_Before_Scheduled_Date_And_Schedule_Changing()
         {
             await using var db = CreateInMemoryDb();
             var attendanceDate = DateTime.Today.AddDays(2);
             var entity = new CalendarAttendance(
                 new Domain.ValueObjects.EventDate(attendanceDate, TimeSpan.FromHours(19), TimeSpan.FromHours(21)),
-                AttendanceType.Palestra,
+                AttendanceType.Umbanda,
                 "Descrição",
                 "Obs",
                 false,
@@ -86,7 +108,7 @@ namespace Batuara.Infrastructure.Tests.Calendar
             var attendanceDate = DateTime.Today.AddDays(2);
             var entity = new CalendarAttendance(
                 new Domain.ValueObjects.EventDate(attendanceDate, TimeSpan.FromHours(19), TimeSpan.FromHours(21)),
-                AttendanceType.Palestra,
+                AttendanceType.Umbanda,
                 "Descrição",
                 "Obs",
                 false,
@@ -112,10 +134,10 @@ namespace Batuara.Infrastructure.Tests.Calendar
         public async Task Update_Should_Succeed_When_At_Least_3_Days_Before_Scheduled_Date()
         {
             await using var db = CreateInMemoryDb();
-            var attendanceDate = GetNextDayFrom(DateTime.Today.AddDays(3), DayOfWeek.Saturday);
+            var attendanceDate = DateTime.Today.AddDays(5);
             var entity = new CalendarAttendance(
                 new Domain.ValueObjects.EventDate(attendanceDate, TimeSpan.FromHours(19), TimeSpan.FromHours(21)),
-                AttendanceType.Palestra,
+                AttendanceType.Kardecismo,
                 "Descrição",
                 "Obs",
                 false,
@@ -138,39 +160,10 @@ namespace Batuara.Infrastructure.Tests.Calendar
         }
 
         [Fact]
-        public async Task Update_Should_Return_Weekday_In_Portuguese_When_Day_Is_Not_Appropriate()
-        {
-            await using var db = CreateInMemoryDb();
-            var attendanceDate = GetNextDayFrom(DateTime.Today.AddDays(3), DayOfWeek.Monday);
-            var entity = new CalendarAttendance(
-                new Domain.ValueObjects.EventDate(attendanceDate, TimeSpan.FromHours(19), TimeSpan.FromHours(21)),
-                AttendanceType.Umbanda,
-                "Descrição",
-                "Obs",
-                false,
-                null);
-            db.CalendarAttendances.Add(entity);
-            await db.SaveChangesAsync();
-
-            var service = new CalendarAttendanceService(db, new CalendarDomainService());
-            var request = new UpdateCalendarAttendanceRequest
-            {
-                StartTime = TimeSpan.FromHours(19).Add(TimeSpan.FromMinutes(30))
-            };
-
-            var (updated, errors, conflict) = await service.UpdateAsync(entity.Id, request);
-
-            updated.Should().BeNull();
-            conflict.Should().BeFalse();
-            errors.Should().ContainSingle();
-            errors[0].Should().NotContain("Monday").And.Contain("segunda");
-        }
-
-        [Fact]
         public async Task Update_Should_Allow_NonSchedule_Changes_Even_When_Existing_Date_Is_Not_Appropriate()
         {
             await using var db = CreateInMemoryDb();
-            var attendanceDate = GetNextDayFrom(DateTime.Today.AddDays(5), DayOfWeek.Monday);
+            var attendanceDate = DateTime.Today.AddDays(5);
             var entity = new CalendarAttendance(
                 new Domain.ValueObjects.EventDate(attendanceDate, TimeSpan.FromHours(19), TimeSpan.FromHours(21)),
                 AttendanceType.Kardecismo,

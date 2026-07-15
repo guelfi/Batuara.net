@@ -598,10 +598,6 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ hideTitle = false }) => {
               >
                 <MenuItem value="all">Todos</MenuItem>
                 {Object.entries(attendanceLabels)
-                  .filter(([value]) => {
-                    const numVal = Number(value);
-                    return numVal === AttendanceType.Kardecismo || numVal === AttendanceType.Umbanda;
-                  })
                   .map(([value, label]) => (
                     <MenuItem key={value} value={value}>{label}</MenuItem>
                   ))}
@@ -762,10 +758,6 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ hideTitle = false }) => {
                   }
                 >
                   {Object.entries(attendanceLabels)
-                    .filter(([value]) => {
-                      const numVal = Number(value);
-                      return numVal === AttendanceType.Kardecismo || numVal === AttendanceType.Umbanda;
-                    })
                     .map(([value, label]) => (
                       <MenuItem key={value} value={value}>{label}</MenuItem>
                     ))}
