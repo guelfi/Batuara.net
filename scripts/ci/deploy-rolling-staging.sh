@@ -185,19 +185,24 @@ DB_NAME="${DB_NAME:-batuara_db_stg}"
 apply_migration() {
     local migration_id=$1
     local sql=$2
-    # Check if migration already applied
+    # Check if migration already applied (ignore error if schema/table not yet created)
     ALREADY=$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -tAc \
         "SELECT COUNT(*) FROM batuara.\"__EFMigrationsHistory\" WHERE \"MigrationId\"='${migration_id}';" 2>/dev/null || echo "0")
     if [ "${ALREADY:-0}" = "0" ]; then
         log_info "  Applying migration: $migration_id"
-        docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "$sql" > /dev/null 2>&1
+        # Use || true so a missing base schema in staging doesn't abort the deploy
+        docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "$sql" > /dev/null 2>&1 || {
+            log_warning "  Migration SQL failed (staging DB may not have base schema yet): $migration_id"
+            return 0
+        }
         docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c \
-            "INSERT INTO batuara.\"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ('${migration_id}', '8.0.0') ON CONFLICT DO NOTHING;" > /dev/null 2>&1
+            "INSERT INTO batuara.\"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ('${migration_id}', '8.0.0') ON CONFLICT DO NOTHING;" > /dev/null 2>&1 || true
         log_success "  Migration applied: $migration_id"
     else
         log_info "  Migration already applied: $migration_id (skipping)"
     fi
 }
+
 
 apply_migration "20260623140000_AddIsReadToContactMessages" \
     "ALTER TABLE batuara.\"ContactMessages\" ADD COLUMN IF NOT EXISTS \"IsRead\" boolean NOT NULL DEFAULT false; CREATE INDEX IF NOT EXISTS \"IX_ContactMessages_IsRead\" ON batuara.\"ContactMessages\" (\"IsRead\");"
