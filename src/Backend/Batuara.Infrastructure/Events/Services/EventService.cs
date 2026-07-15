@@ -186,7 +186,9 @@ namespace Batuara.Infrastructure.Events.Services
                     request.Type,
                     request.Location,
                     request.ImageUrl,
-                    request.CardColor);
+                    request.CardColor,
+                    request.RequiresRegistration,
+                    request.MaxCapacity);
 
                 var activeSameDay = (await _dbContext.Events
                     .AsNoTracking()
@@ -251,6 +253,13 @@ namespace Batuara.Infrastructure.Events.Services
                 if (request.Type.HasValue)
                 {
                     entity.UpdateType(request.Type.Value);
+                }
+
+                if (!isPatch || request.RequiresRegistration.HasValue || request.MaxCapacity.HasValue)
+                {
+                    var requiresReg = request.RequiresRegistration ?? (isPatch ? entity.RequiresRegistration : false);
+                    var maxCap = request.MaxCapacity ?? (isPatch ? entity.MaxCapacity : null);
+                    entity.UpdateRegistration(requiresReg, maxCap);
                 }
 
                 if (request.IsActive.HasValue)
@@ -379,6 +388,8 @@ namespace Batuara.Infrastructure.Events.Services
                 ImageUrl = e.ImageUrl,
                 CardColor = e.CardColor,
                 IsActive = e.IsActive,
+                RequiresRegistration = e.RequiresRegistration,
+                MaxCapacity = e.MaxCapacity,
                 CreatedAt = e.CreatedAt,
                 UpdatedAt = e.UpdatedAt
             };

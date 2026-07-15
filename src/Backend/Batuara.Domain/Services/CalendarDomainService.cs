@@ -63,9 +63,14 @@ namespace Batuara.Domain.Services
         {
             var errors = new List<string>();
 
+            if (attendance.Type != AttendanceType.Kardecismo && attendance.Type != AttendanceType.Umbanda)
+            {
+                errors.Add("Apenas Giras de Umbanda e Atendimentos Kardecistas são permitidos como Atendimento.");
+            }
+
             var appropriateDays = GetAppropriateDays(attendance.Type);
             var dayOfWeek = attendance.AttendanceDate.Date.DayOfWeek;
-            if (!appropriateDays.Contains(dayOfWeek))
+            if (appropriateDays.Length > 0 && !appropriateDays.Contains(dayOfWeek))
             {
                 var dayName = GetWeekdayPtBr(dayOfWeek);
                 errors.Add($"O tipo '{attendance.Type}' não é permitido em {dayName}.");
