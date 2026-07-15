@@ -26,7 +26,7 @@ namespace Batuara.Infrastructure.Tests.Calendar
         public async Task Create_Should_ReturnConflict_When_EventOverlaps()
         {
             await using var db = CreateInMemoryDb();
-            var conflictDate = GetNextDay(DayOfWeek.Saturday);
+            var conflictDate = GetNextDay(DayOfWeek.Friday);
             db.Events.Add(new Event(
                 "Evento Especial",
                 "Descrição",
@@ -40,7 +40,7 @@ namespace Batuara.Infrastructure.Tests.Calendar
                 Date = conflictDate,
                 StartTime = TimeSpan.FromHours(20),
                 EndTime = TimeSpan.FromHours(22),
-                Type = AttendanceType.Palestra
+                Type = AttendanceType.Umbanda
             };
 
             var (attendance, errors, conflict) = await service.CreateAsync(request);
@@ -144,7 +144,7 @@ namespace Batuara.Infrastructure.Tests.Calendar
             var attendanceDate = GetNextDayFrom(DateTime.Today.AddDays(3), DayOfWeek.Monday);
             var entity = new CalendarAttendance(
                 new Domain.ValueObjects.EventDate(attendanceDate, TimeSpan.FromHours(19), TimeSpan.FromHours(21)),
-                AttendanceType.Palestra,
+                AttendanceType.Umbanda,
                 "Descrição",
                 "Obs",
                 false,
