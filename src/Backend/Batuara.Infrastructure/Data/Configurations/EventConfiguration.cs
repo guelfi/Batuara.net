@@ -66,6 +66,12 @@ namespace Batuara.Infrastructure.Data.Configurations
                     .HasColumnName("EndTime");
             });
 
+            builder.Property(e => e.RequiresRegistration)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            builder.Property(e => e.MaxCapacity);
+
             // Indexes
             builder.HasIndex(e => e.IsActive);
             builder.HasIndex(e => e.Type);

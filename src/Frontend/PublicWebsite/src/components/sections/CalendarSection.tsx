@@ -106,6 +106,8 @@ const CalendarSection: React.FC = () => {
     [EventType.Celebracao]: '#d81b60',
     [EventType.Bazar]: '#ef6c00',
     [EventType.Palestra]: '#1e88e5',
+    [EventType.Curso]: '#388e3c',
+    [EventType.Treinamento]: '#7b1fa2',
   };
 
   const normalizeString = (value: string) => value.trim().toLowerCase();
@@ -147,7 +149,15 @@ const CalendarSection: React.FC = () => {
 
   const normalizeEventType = (type: unknown): EventType | undefined => {
     if (typeof type === 'number') {
-      return [EventType.Festa, EventType.Evento, EventType.Celebracao, EventType.Bazar, EventType.Palestra].includes(type as EventType)
+      return [
+        EventType.Festa,
+        EventType.Evento,
+        EventType.Celebracao,
+        EventType.Bazar,
+        EventType.Palestra,
+        EventType.Curso,
+        EventType.Treinamento
+      ].includes(type as EventType)
         ? (type as EventType)
         : undefined;
     }
@@ -171,6 +181,10 @@ const CalendarSection: React.FC = () => {
         return EventType.Bazar;
       case 'palestra':
         return EventType.Palestra;
+      case 'curso':
+        return EventType.Curso;
+      case 'treinamento':
+        return EventType.Treinamento;
       default:
         return undefined;
     }
@@ -205,6 +219,10 @@ const CalendarSection: React.FC = () => {
         return 'Bazar';
       case EventType.Palestra:
         return 'Palestra';
+      case EventType.Curso:
+        return 'Curso';
+      case EventType.Treinamento:
+        return 'Treinamento';
       default:
         return typeof type === 'string' && type.trim() ? type.trim() : 'Evento';
     }
@@ -239,6 +257,10 @@ const CalendarSection: React.FC = () => {
         return 'Bazar';
       case EventType.Palestra:
         return 'Palestra';
+      case EventType.Curso:
+        return 'Curso';
+      case EventType.Treinamento:
+        return 'Treinamento';
       default:
         return typeof type === 'string' && type.trim() ? type.trim() : 'Evento';
     }

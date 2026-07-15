@@ -11,6 +11,8 @@ export interface Event {
   imageUrl?: string;
   location?: string;
   cardColor?: string;
+  requiresRegistration?: boolean;
+  maxCapacity?: number;
   isActive?: boolean;
 }
 
@@ -20,6 +22,8 @@ export enum EventType {
   Celebracao = 3,
   Bazar = 4,
   Palestra = 5,
+  Curso = 6,
+  Treinamento = 7,
 }
 
 export interface CalendarAttendance {

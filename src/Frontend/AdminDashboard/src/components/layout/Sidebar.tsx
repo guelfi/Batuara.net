@@ -40,8 +40,7 @@ interface SidebarProps {
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Nossa História', icon: <HistoryIcon />, path: '/history' },
-  { text: 'Calendário Atendimento', icon: <CalendarIcon />, path: '/calendar' },
-  { text: 'Eventos e Festas', icon: <EventIcon />, path: '/events' },
+  { text: 'Agenda e Eventos', icon: <CalendarIcon />, path: '/agenda' },
   { text: 'Nossos Orixás', icon: <FavoriteIcon />, path: '/orixas' },
   { text: 'Guias e Entidades', icon: <GuidesIcon />, path: '/guides' },
   { text: 'Linhas da Umbanda', icon: <LinesIcon />, path: '/umbanda-lines' },

@@ -8,8 +8,7 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import AdminLayout from './components/layout/AdminLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
-import EventsPage from './pages/EventsPage';
-import CalendarPage from './pages/CalendarPage';
+import AgendaPage from './pages/AgendaPage';
 import OrixasPage from './pages/OrixasPage';
 import GuidesPage from './pages/GuidesPage';
 import HistoryPage from './pages/HistoryPage';
@@ -66,8 +65,9 @@ function App() {
                         <Route path="/" element={<HomeRedirect />} />
                         <Route path="/dashboard" element={<ProtectedRoute requiredRole={UserRole.Editor}><DashboardPage /></ProtectedRoute>} />
                         <Route path="/history" element={<ProtectedRoute requiredRole={UserRole.Editor}><HistoryPage /></ProtectedRoute>} />
-                        <Route path="/events" element={<ProtectedRoute requiredRole={UserRole.Editor}><EventsPage /></ProtectedRoute>} />
-                        <Route path="/calendar" element={<ProtectedRoute requiredRole={UserRole.Editor}><CalendarPage /></ProtectedRoute>} />
+                        <Route path="/agenda" element={<ProtectedRoute requiredRole={UserRole.Editor}><AgendaPage /></ProtectedRoute>} />
+                        <Route path="/events" element={<Navigate to="/agenda" replace />} />
+                        <Route path="/calendar" element={<Navigate to="/agenda" replace />} />
                         <Route path="/orixas" element={<ProtectedRoute requiredRole={UserRole.Editor}><OrixasPage /></ProtectedRoute>} />
                         <Route path="/guides" element={<ProtectedRoute requiredRole={UserRole.Editor}><GuidesPage /></ProtectedRoute>} />
                         <Route path="/umbanda-lines" element={<ProtectedRoute requiredRole={UserRole.Editor}><UmbandaLinesPage /></ProtectedRoute>} />

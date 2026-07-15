@@ -143,7 +143,11 @@ const getAttendanceTypeColor = (type: unknown): string => {
   return attendanceTypeColors[normalized] ?? '#1976d2';
 };
 
-const CalendarPage: React.FC = () => {
+interface CalendarPageProps {
+  hideTitle?: boolean;
+}
+
+const CalendarPage: React.FC<CalendarPageProps> = ({ hideTitle = false }) => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectedMonthDate, setSelectedMonthDate] = React.useState(new Date());
@@ -492,11 +496,13 @@ const CalendarPage: React.FC = () => {
   return (
     <Box>
       <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 600 }}>
-            Calendário de Atendimentos
-          </Typography>
-        </Box>
+        {!hideTitle && (
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 600 }}>
+              Calendário de Atendimentos
+            </Typography>
+          </Box>
+        )}
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
           <Paper
             variant="outlined"
@@ -591,9 +597,14 @@ const CalendarPage: React.FC = () => {
                 onChange={(e: SelectChangeEvent) => setTypeFilter(e.target.value)}
               >
                 <MenuItem value="all">Todos</MenuItem>
-                {Object.entries(attendanceLabels).map(([value, label]) => (
-                  <MenuItem key={value} value={value}>{label}</MenuItem>
-                ))}
+                {Object.entries(attendanceLabels)
+                  .filter(([value]) => {
+                    const numVal = Number(value);
+                    return numVal === AttendanceType.Kardecismo || numVal === AttendanceType.Umbanda;
+                  })
+                  .map(([value, label]) => (
+                    <MenuItem key={value} value={value}>{label}</MenuItem>
+                  ))}
               </Select>
             </FormControl>
             <FormControl sx={{ minWidth: 160 }}>
@@ -750,9 +761,14 @@ const CalendarPage: React.FC = () => {
                     setForm((prev: CalendarFormState) => ({ ...prev, type: Number(e.target.value) as AttendanceType }))
                   }
                 >
-                  {Object.entries(attendanceLabels).map(([value, label]) => (
-                    <MenuItem key={value} value={value}>{label}</MenuItem>
-                  ))}
+                  {Object.entries(attendanceLabels)
+                    .filter(([value]) => {
+                      const numVal = Number(value);
+                      return numVal === AttendanceType.Kardecismo || numVal === AttendanceType.Umbanda;
+                    })
+                    .map(([value, label]) => (
+                      <MenuItem key={value} value={value}>{label}</MenuItem>
+                    ))}
                 </Select>
               </FormControl>
               <TextField

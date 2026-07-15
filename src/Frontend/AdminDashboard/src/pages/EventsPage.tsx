@@ -44,6 +44,8 @@ type EventFormState = {
   type: EventType;
   location: string;
   cardColor: string;
+  requiresRegistration: boolean;
+  maxCapacity: string;
   isActive: boolean;
 };
 
@@ -74,6 +76,8 @@ const initialFormState: EventFormState = {
   type: EventType.Evento,
   location: '',
   cardColor: '',
+  requiresRegistration: false,
+  maxCapacity: '',
   isActive: true,
 };
 
@@ -83,6 +87,8 @@ const eventLabels: Record<EventType, string> = {
   [EventType.Celebracao]: 'Celebração',
   [EventType.Bazar]: 'Bazar',
   [EventType.Palestra]: 'Palestra',
+  [EventType.Curso]: 'Curso',
+  [EventType.Treinamento]: 'Treinamento',
 };
 
 const eventTypeNameMap: Record<string, EventType> = {
@@ -92,11 +98,21 @@ const eventTypeNameMap: Record<string, EventType> = {
   Celebração: EventType.Celebracao,
   Bazar: EventType.Bazar,
   Palestra: EventType.Palestra,
+  Curso: EventType.Curso,
+  Treinamento: EventType.Treinamento,
 };
 
 const normalizeEventType = (type: unknown): EventType | undefined => {
   if (typeof type === 'number') {
-    return [EventType.Festa, EventType.Evento, EventType.Celebracao, EventType.Bazar, EventType.Palestra].includes(type as EventType)
+    return [
+      EventType.Festa,
+      EventType.Evento,
+      EventType.Celebracao,
+      EventType.Bazar,
+      EventType.Palestra,
+      EventType.Curso,
+      EventType.Treinamento
+    ].includes(type as EventType)
       ? (type as EventType)
       : undefined;
   }
@@ -121,6 +137,10 @@ const normalizeEventType = (type: unknown): EventType | undefined => {
       return EventType.Bazar;
     case 'palestra':
       return EventType.Palestra;
+    case 'curso':
+      return EventType.Curso;
+    case 'treinamento':
+      return EventType.Treinamento;
     default:
       return undefined;
   }
@@ -138,6 +158,10 @@ const getEventTypeAccentVarName = (type: unknown): string => {
       return '--batuara-calendar-event-bazar';
     case EventType.Palestra:
       return '--batuara-calendar-event-palestra';
+    case EventType.Curso:
+      return '--batuara-calendar-event-curso';
+    case EventType.Treinamento:
+      return '--batuara-calendar-event-treinamento';
     default:
       return '--batuara-calendar-event-evento';
   }
@@ -189,7 +213,11 @@ const toIsoDateOnly = (value: Date) => {
   return `${value.getFullYear()}-${pad2(value.getMonth() + 1)}-${pad2(value.getDate())}`;
 };
 
-const EventsPage: React.FC = () => {
+interface EventsPageProps {
+  hideTitle?: boolean;
+}
+
+const EventsPage: React.FC<EventsPageProps> = ({ hideTitle = false }) => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectedMonthDate, setSelectedMonthDate] = useState(new Date());
@@ -403,6 +431,8 @@ const EventsPage: React.FC = () => {
         type: normalized !== undefined ? normalized : EventType.Evento,
         location: item.location || '',
         cardColor: item.cardColor || '',
+        requiresRegistration: !!item.requiresRegistration,
+        maxCapacity: item.maxCapacity !== undefined && item.maxCapacity !== null ? String(item.maxCapacity) : '',
         isActive: item.isActive,
       });
     } else {
@@ -466,6 +496,10 @@ const EventsPage: React.FC = () => {
         if (form.type !== normalizedType) payload.type = form.type;
         if ((form.location || '') !== (editingItem.location || '')) payload.location = form.location ? form.location : null;
         if ((form.cardColor || '') !== (editingItem.cardColor || '')) payload.cardColor = form.cardColor || null;
+        if (form.requiresRegistration !== !!editingItem.requiresRegistration) payload.requiresRegistration = form.requiresRegistration;
+        const nextMaxCapacity = form.maxCapacity ? Number(form.maxCapacity) : null;
+        const originalMaxCapacity = editingItem.maxCapacity ?? null;
+        if (nextMaxCapacity !== originalMaxCapacity) payload.maxCapacity = nextMaxCapacity;
         if (form.isActive !== !!editingItem.isActive) payload.isActive = form.isActive;
 
         await apiService.updateEvent(String(editingItem.id), payload);
@@ -480,6 +514,8 @@ const EventsPage: React.FC = () => {
           type: form.type,
           location: form.location || undefined,
           cardColor: form.cardColor || undefined,
+          requiresRegistration: form.requiresRegistration,
+          maxCapacity: form.maxCapacity ? Number(form.maxCapacity) : undefined,
         };
         await apiService.createEvent(payload);
         setFeedback({ open: true, message: 'Evento criado com sucesso.', severity: 'success' });
@@ -525,11 +561,13 @@ const EventsPage: React.FC = () => {
   return (
     <Box>
       <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 600 }}>
-            Eventos e Festas
-          </Typography>
-        </Box>
+        {!hideTitle && (
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 600 }}>
+              Eventos e Festas
+            </Typography>
+          </Box>
+        )}
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
           <Paper
             variant="outlined"
@@ -893,6 +931,32 @@ const EventsPage: React.FC = () => {
                   </Box>
                 );
               })()}
+            </Stack>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center" sx={{ mt: 1, mb: 1 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.requiresRegistration}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setForm((prev) => ({ ...prev, requiresRegistration: e.target.checked }))
+                    }
+                  />
+                }
+                label="Exige inscrição prévia"
+              />
+              {form.requiresRegistration && (
+                <TextField
+                  label="Capacidade máxima"
+                  type="number"
+                  value={form.maxCapacity}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                    setForm((prev) => ({ ...prev, maxCapacity: e.target.value }))
+                  }
+                  placeholder="Deixe em branco para ilimitado"
+                  fullWidth
+                  sx={{ maxWidth: { md: 240 } }}
+                />
+              )}
             </Stack>
             {editingItem && (
               <FormControlLabel

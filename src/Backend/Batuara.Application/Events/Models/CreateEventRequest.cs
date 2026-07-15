@@ -13,5 +13,7 @@ namespace Batuara.Application.Events.Models
         public string? Location { get; set; }
         public string? ImageUrl { get; set; }
         public string? CardColor { get; set; }
+        public bool RequiresRegistration { get; set; }
+        public int? MaxCapacity { get; set; }
     }
 }

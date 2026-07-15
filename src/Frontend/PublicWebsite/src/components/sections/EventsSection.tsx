@@ -71,6 +71,10 @@ const EventsSection: React.FC = () => {
         return EventType.Bazar;
       case 'palestra':
         return EventType.Palestra;
+      case 'curso':
+        return EventType.Curso;
+      case 'treinamento':
+        return EventType.Treinamento;
       default:
         return EventType.Evento;
     }
@@ -88,6 +92,10 @@ const EventsSection: React.FC = () => {
         return 'Bazar';
       case EventType.Palestra:
         return 'Palestra';
+      case EventType.Curso:
+        return 'Curso';
+      case EventType.Treinamento:
+        return 'Treinamento';
       default:
         return 'Evento';
     }
@@ -108,6 +116,10 @@ const EventsSection: React.FC = () => {
         return '#00acc1';
       case EventType.Bazar:
         return '#ef6c00';
+      case EventType.Curso:
+        return '#388e3c';
+      case EventType.Treinamento:
+        return '#7b1fa2';
       default:
         return '#1976d2';
     }

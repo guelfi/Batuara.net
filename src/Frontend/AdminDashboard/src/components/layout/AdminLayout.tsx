@@ -19,7 +19,6 @@ import {
   Menu as MenuIcon,
   ChevronLeft as ChevronLeftIcon,
   Dashboard as DashboardIcon,
-  Event as EventIcon,
   CalendarToday as CalendarIcon,
   People as PeopleIcon,
   AccountCircle as ProfileIcon,
@@ -58,8 +57,7 @@ interface NavigationItem {
 const navigationItems: NavigationItem[] = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', requiredRole: UserRole.Editor },
   { text: 'Nossa História', icon: <HistoryIcon />, path: '/history', requiredRole: UserRole.Editor },
-  { text: 'Calendário Atendimento', icon: <CalendarIcon />, path: '/calendar', requiredRole: UserRole.Editor },
-  { text: 'Eventos e Festas', icon: <EventIcon />, path: '/events', requiredRole: UserRole.Editor },
+  { text: 'Agenda e Eventos', icon: <CalendarIcon />, path: '/agenda', requiredRole: UserRole.Editor },
   { text: 'Nossos Orixás', icon: <FavoriteIcon />, path: '/orixas', requiredRole: UserRole.Editor },
   { text: 'Guias e Entidades', icon: <GuidesIcon />, path: '/guides', requiredRole: UserRole.Editor },
   { text: 'Linhas da Umbanda', icon: <LinesIcon />, path: '/umbanda-lines', requiredRole: UserRole.Editor },

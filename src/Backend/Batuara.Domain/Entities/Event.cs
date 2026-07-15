@@ -13,12 +13,23 @@ namespace Batuara.Domain.Entities
         public string? ImageUrl { get; private set; }
         public string? Location { get; private set; }
         public string? CardColor { get; private set; }
+        public bool RequiresRegistration { get; private set; }
+        public int? MaxCapacity { get; private set; }
 
         private Event() { } // For EF Core
 
-        public Event(string title, string description, EventDate eventDate, EventType type, string? location = null, string? imageUrl = null, string? cardColor = null)
+        public Event(
+            string title, 
+            string description, 
+            EventDate eventDate, 
+            EventType type, 
+            string? location = null, 
+            string? imageUrl = null, 
+            string? cardColor = null,
+            bool requiresRegistration = false,
+            int? maxCapacity = null)
         {
-            ValidateEvent(title, description, eventDate);
+            ValidateEvent(title, description, eventDate, maxCapacity);
             
             Title = title;
             Description = description;
@@ -27,12 +38,14 @@ namespace Batuara.Domain.Entities
             Location = location;
             ImageUrl = imageUrl;
             CardColor = cardColor;
+            RequiresRegistration = requiresRegistration;
+            MaxCapacity = maxCapacity;
 
             // Disparar domain event
             AddDomainEvent(new EventCreatedDomainEvent(this));
         }
 
-        private static void ValidateEvent(string title, string description, EventDate eventDate)
+        private static void ValidateEvent(string title, string description, EventDate eventDate, int? maxCapacity = null)
         {
             if (string.IsNullOrWhiteSpace(title))
                 throw new ArgumentException("O título do evento não pode ser vazio", nameof(title));
@@ -47,6 +60,9 @@ namespace Batuara.Domain.Entities
                 throw new ArgumentException("A descrição do evento não pode exceder 2000 caracteres", nameof(description));
 
             ArgumentNullException.ThrowIfNull(eventDate);
+
+            if (maxCapacity.HasValue && maxCapacity <= 0)
+                throw new ArgumentException("A capacidade máxima deve ser maior que zero", nameof(maxCapacity));
         }
 
         public void UpdateDetails(string title, string description, string? location = null)
@@ -90,6 +106,16 @@ namespace Batuara.Domain.Entities
         public void UpdateCardColor(string? cardColor)
         {
             CardColor = cardColor;
+            UpdateTimestamp();
+        }
+
+        public void UpdateRegistration(bool requiresRegistration, int? maxCapacity)
+        {
+            if (maxCapacity.HasValue && maxCapacity <= 0)
+                throw new ArgumentException("A capacidade máxima deve ser maior que zero", nameof(maxCapacity));
+
+            RequiresRegistration = requiresRegistration;
+            MaxCapacity = maxCapacity;
             UpdateTimestamp();
         }
 
@@ -137,6 +163,8 @@ namespace Batuara.Domain.Entities
         Evento = 2,
         Celebracao = 3,
         Bazar = 4,
-        Palestra = 5
+        Palestra = 5,
+        Curso = 6,
+        Treinamento = 7
     }
 }
