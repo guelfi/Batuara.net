@@ -92,7 +92,7 @@ const HeroSection: React.FC = () => {
 
     const forcePlay = () => {
       if (video.paused) {
-        video.play().catch(() => {});
+        video.play().catch(() => { });
       }
     };
 
@@ -145,13 +145,15 @@ const HeroSection: React.FC = () => {
         backgroundRepeat: 'no-repeat',
         color: 'white',
         position: 'relative',
-        overflow: { xs: 'visible', md: 'hidden' },
-        minHeight: { xs: 'auto', md: '100vh' },
+        overflow: 'hidden',
+        minHeight: { xs: '100vh', md: '100vh' },
         display: 'flex',
-        alignItems: 'center',
+        flexDirection: 'column',
+        alignItems: { xs: 'flex-start', md: 'center' }, // mobile: topo; desktop: centrado
         justifyContent: 'center',
-        pt: 0, // Removido padding top para eliminar o grande espaço azul vazio acima do logo
-        pb: { xs: 2, md: 6 }, // Padding bottom no mobile
+        mt: { xs: '-6px', md: '-64px' }, // Cancela o Toolbar spacer do Header
+        pt: { xs: '6px', md: '64px' },   // Compensa a AppBar fixa
+        pb: { xs: 2, md: 6 },
       }}
     >
       {/* Video background - carrega em segundo plano, só exibe quando pronto */}
