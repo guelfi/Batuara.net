@@ -150,8 +150,8 @@ const HeroSection: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        pt: { xs: '64px', md: '64px' },
-        pb: { xs: 2, md: 6 }, // Reduzir padding bottom no mobile
+        pt: { xs: '56px', md: '64px' },
+        pb: { xs: 1.5, md: 6 }, // Reduzir padding bottom no mobile
       }}
     >
       {/* Video background - carrega em segundo plano, só exibe quando pronto */}
@@ -203,7 +203,7 @@ const HeroSection: React.FC = () => {
           px: { xs: 1.5, md: 3 }, // Padding menor no mobile
         }}
       >
-        <Grid container spacing={{ xs: 2, md: 4 }} alignItems="flex-start"> {/* Spacing menor no mobile */}
+        <Grid container spacing={{ xs: 1, md: 4 }} alignItems="flex-start"> {/* Spacing menor no mobile */}
           <Grid size={{ xs: 12, md: 8 }}>
             {/* Conteúdo centralizado no espaço disponível */}
             <Box
@@ -212,7 +212,7 @@ const HeroSection: React.FC = () => {
                 flexDirection: 'column',
                 alignItems: 'center',
                 textAlign: 'center',
-                mb: 2
+                mb: { xs: 0.5, md: 2 }
               }}
             >
               <Box
@@ -220,16 +220,16 @@ const HeroSection: React.FC = () => {
                 src={`${process.env.PUBLIC_URL}/batuara_logo.png`}
                 alt="Casa de Caridade Caboclo Batuara"
                 sx={{
-                  height: { xs: 96, md: 152 },
+                  height: { xs: 64, md: 152 },
                   width: 'auto',
-                  mb: { xs: 1, md: 2 },
+                  mb: { xs: 0.5, md: 2 },
                   filter: 'drop-shadow(rgba(0, 0, 0, 0.8) 2px 2px 4px)'
                 }}
               />
               <Typography
                 variant="h1"
                 sx={{
-                  fontSize: { xs: '2rem', md: '3rem' },
+                  fontSize: { xs: '1.45rem', md: '3rem' },
                   fontWeight: 700,
                   textShadow: '2px 2px 4px rgba(0, 0, 0, 0.9)',
                   color: '#ffffff',
@@ -241,9 +241,9 @@ const HeroSection: React.FC = () => {
               <Typography
                 variant="h2"
                 sx={{
-                  fontSize: { xs: '1rem', md: '1rem' }, // Aumentado 0.5rem no mobile
+                  fontSize: { xs: '0.85rem', md: '1rem' }, // Aumentado 0.5rem no mobile
                   fontWeight: 600,
-                  mb: { xs: 1.5, md: 3 },
+                  mb: { xs: 1, md: 3 },
                   lineHeight: 1.4,
                   textShadow: '2px 2px 4px rgba(0, 0, 0, 0.9)',
                   textAlign: 'center',
@@ -263,6 +263,7 @@ const HeroSection: React.FC = () => {
                   textShadow: '1px 1px 3px rgba(0, 0, 0, 0.8)',
                   color: '#ffffff',
                   textAlign: 'center',
+                  display: { xs: 'none', sm: 'block' } // Ocultar no mobile para economizar espaço
                 }}
               >
                 Trabalhamos com a Sabedoria dos Orixás e os Ensinamentos dos Guias e Entidades,
@@ -274,7 +275,7 @@ const HeroSection: React.FC = () => {
                 gap: { xs: 1.5, md: 2 }, // Gap menor no mobile
                 flexWrap: 'wrap',
                 justifyContent: 'center',
-                mb: { xs: 1, md: 0 }, // Margem bottom para separar dos cards mobile
+                mb: { xs: 0.5, md: 0 }, // Margem bottom para separar dos cards mobile
               }}>
                 <Button
                   variant="contained"

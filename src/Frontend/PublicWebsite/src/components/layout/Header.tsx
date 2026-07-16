@@ -245,14 +245,52 @@ const Header: React.FC = () => {
 
           {/* Menu hamburger (mobile) */}
           {isMobile && (
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={handleDrawerToggle}
-            >
-              <MenuIcon />
-            </IconButton>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  mr: 0.5,
+                  animation: 'slide-arrow-menu 1.5s infinite ease-in-out',
+                  '@keyframes slide-arrow-menu': {
+                    '0%, 100%': { transform: 'translateX(0)', opacity: 0.6 },
+                    '50%': { transform: 'translateX(-4px)', opacity: 1 },
+                  },
+                }}
+              >
+                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255, 255, 255, 0.85)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Menu
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'inline-block',
+                    ml: 0.3,
+                    width: 0,
+                    height: 0,
+                    borderTop: '4px solid transparent',
+                    borderBottom: '4px solid transparent',
+                    borderLeft: '6px solid rgba(255, 255, 255, 0.85)',
+                  }}
+                />
+              </Box>
+              <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                edge="start"
+                onClick={handleDrawerToggle}
+                sx={{
+                  animation: 'pulse-hamburger-menu 2.5s infinite ease-in-out',
+                  '@keyframes pulse-hamburger-menu': {
+                    '0%': { transform: 'scale(1)', backgroundColor: 'transparent' },
+                    '50%': { transform: 'scale(1.15)', backgroundColor: 'rgba(255, 255, 255, 0.15)' },
+                    '100%': { transform: 'scale(1)', backgroundColor: 'transparent' },
+                  },
+                  borderRadius: '50%',
+                }}
+              >
+                <MenuIcon />
+              </IconButton>
+            </Box>
           )}
         </Toolbar>
       </AppBar>
