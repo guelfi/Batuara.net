@@ -21,18 +21,22 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import { useQuery } from '@tanstack/react-query';
 import publicApi from '../../services/api';
 import { EventType, Event as BatuaraEvent } from '../../types';
-import { desktopMediaQuery } from '../../theme/theme';
-import { addMonths, subMonths, format, parseISO } from 'date-fns';
+import { addMonths, subMonths, format, parseISO, isBefore, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import NavigationDots from '../common/NavigationDots';
+
+const CARD_WIDTH = 320;
+const CARD_GAP = 24;
 
 const EventsSection: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
+
   // Estado para navegação mensal
   const [selectedDate, setSelectedDate] = useState(new Date());
 
@@ -40,6 +44,7 @@ const EventsSection: React.FC = () => {
   const [scrollPosition, setScrollPosition] = useState(0);
   const [maxScroll, setMaxScroll] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const hasAutoScrolled = useRef(false);
 
   const handlePrevMonth = () => {
     setSelectedDate((prev: Date) => subMonths(prev, 1));
@@ -125,6 +130,16 @@ const EventsSection: React.FC = () => {
     }
   };
 
+  /** Retorna true se a data do evento já passou (anterior ao início de hoje) */
+  const isEventPast = (event: BatuaraEvent): boolean => {
+    try {
+      const eventDate = parseISO(event.date.split('T')[0]);
+      return isBefore(eventDate, startOfDay(new Date()));
+    } catch {
+      return false;
+    }
+  };
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ['public-events', format(selectedDate, 'yyyy-MM'), selectedType],
     queryFn: () =>
@@ -142,6 +157,13 @@ const EventsSection: React.FC = () => {
     () => (data?.data ?? []).filter((event: BatuaraEvent) => event.isActive !== false),
     [data?.data]
   );
+
+  /** Índice do primeiro evento futuro (ou do último se todos forem passados) */
+  const firstUpcomingIndex = useMemo(() => {
+    const idx = filteredEvents.findIndex((e: BatuaraEvent) => !isEventPast(e));
+    if (idx === -1) return Math.max(0, filteredEvents.length - 1);
+    return idx;
+  }, [filteredEvents]);
 
   const formatEventDate = (dateString: string): string => {
     try {
@@ -168,12 +190,12 @@ const EventsSection: React.FC = () => {
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
-      const scrollAmount = 320;
+      const scrollAmount = CARD_WIDTH + CARD_GAP;
       const currentScroll = scrollContainerRef.current.scrollLeft;
-      const targetScroll = direction === 'left' 
-        ? currentScroll - scrollAmount 
+      const targetScroll = direction === 'left'
+        ? currentScroll - scrollAmount
         : currentScroll + scrollAmount;
-      
+
       scrollContainerRef.current.scrollTo({
         left: targetScroll,
         behavior: 'smooth'
@@ -183,11 +205,8 @@ const EventsSection: React.FC = () => {
 
   const handleDotClick = (dotIndex: number) => {
     if (scrollContainerRef.current) {
-      const itemWidth = 320;
-      const gap = 24;
-      const itemWithGap = itemWidth + gap;
-      const targetScroll = dotIndex * itemWithGap;
-      
+      const targetScroll = dotIndex * (CARD_WIDTH + CARD_GAP);
+
       scrollContainerRef.current.scrollTo({
         left: targetScroll,
         behavior: 'smooth'
@@ -198,11 +217,190 @@ const EventsSection: React.FC = () => {
   const canScrollLeft = scrollPosition > 0;
   const canScrollRight = scrollPosition < maxScroll;
 
+  /* Scroll automático no mobile: posicionar no primeiro evento futuro */
+  useEffect(() => {
+    hasAutoScrolled.current = false;
+  }, [selectedDate, selectedType]);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    if (hasAutoScrolled.current) return;
+    if (filteredEvents.length === 0) return;
+    if (!scrollContainerRef.current) return;
+
+    // Aguarda um tick para o DOM estar pronto
+    const timeout = setTimeout(() => {
+      if (!scrollContainerRef.current) return;
+      const targetScroll = firstUpcomingIndex * (CARD_WIDTH + CARD_GAP);
+      scrollContainerRef.current.scrollTo({ left: targetScroll, behavior: 'smooth' });
+      handleScroll();
+      hasAutoScrolled.current = true;
+    }, 100);
+
+    return () => clearTimeout(timeout);
+  }, [filteredEvents, firstUpcomingIndex, isMobile]);
+
   useEffect(() => {
     if (scrollContainerRef.current) {
       handleScroll();
     }
   }, [filteredEvents.length]);
+
+  /* Renderiza um card de evento — comportamento igual em mobile e desktop,
+     apenas o container externo difere. */
+  const renderEventCard = (event: BatuaraEvent, cardSx: object = {}) => {
+    const past = isEventPast(event);
+    const cancelled = !!event.isCancelled;
+    const color = getEventColor(event);
+
+    // Estilo do card quando passado
+    const pastCardSx = past
+      ? {
+          opacity: 0.72,
+          filter: 'grayscale(60%)',
+          borderTopColor: '#9e9e9e',
+        }
+      : {};
+
+    return (
+      <Card
+        key={event.id}
+        sx={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          borderTop: `4px solid ${past ? '#9e9e9e' : color}`,
+          transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+          '&:hover': {
+            transform: past ? 'none' : 'translateY(-4px)',
+            boxShadow: past ? theme.shadows[1] : theme.shadows[8],
+          },
+          ...pastCardSx,
+          ...cardSx,
+        }}
+      >
+        <CardContent sx={{ flexGrow: 1, p: 3 }}>
+          {/* Cabeçalho: título + chip tipo */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5, gap: 1 }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              {/* Badge REALIZADO / CANCELADO — exibido somente se passado */}
+              {past && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                  {cancelled ? (
+                    <CancelOutlinedIcon sx={{ fontSize: 15, color: 'error.main' }} />
+                  ) : (
+                    <CheckCircleOutlineIcon sx={{ fontSize: 15, color: 'text.disabled' }} />
+                  )}
+                  <Typography
+                    sx={{
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.08em',
+                      color: cancelled ? 'error.main' : 'text.disabled',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {cancelled ? 'Cancelado' : 'Realizado'}
+                  </Typography>
+                </Box>
+              )}
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 600,
+                  lineHeight: 1.3,
+                  color: past ? 'text.disabled' : 'text.primary',
+                }}
+              >
+                {event.title}
+              </Typography>
+            </Box>
+            <Chip
+              label={getEventTypeLabel(event.type)}
+              size="small"
+              sx={{
+                backgroundColor: past ? '#e0e0e0' : color,
+                color: past ? '#757575' : 'white',
+                fontWeight: 500,
+                fontSize: '0.75rem',
+                flexShrink: 0,
+              }}
+            />
+          </Box>
+
+          <Typography
+            variant="body2"
+            sx={{
+              mb: 3,
+              lineHeight: 1.6,
+              fontSize: '0.9rem',
+              color: past ? 'text.disabled' : 'text.secondary',
+            }}
+          >
+            {event.description}
+          </Typography>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <EventIcon fontSize="small" sx={{ color: past ? 'text.disabled' : 'primary.main' }} />
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 500, fontSize: '0.85rem', color: past ? 'text.disabled' : 'text.primary' }}
+              >
+                {formatEventDate(event.date)}
+              </Typography>
+            </Box>
+
+            {(event.startTime || event.endTime) && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <AccessTimeIcon fontSize="small" sx={{ color: past ? 'text.disabled' : 'primary.main' }} />
+                <Typography
+                  variant="body2"
+                  sx={{ fontSize: '0.85rem', color: past ? 'text.disabled' : 'text.primary' }}
+                >
+                  {formatEventTime(event.startTime, event.endTime)}
+                </Typography>
+              </Box>
+            )}
+
+            {event.location && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <LocationOnIcon fontSize="small" sx={{ color: past ? 'text.disabled' : 'primary.main' }} />
+                <Typography
+                  variant="body2"
+                  sx={{ fontSize: '0.85rem', color: past ? 'text.disabled' : 'text.primary' }}
+                >
+                  {event.location}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </CardContent>
+
+        <CardActions sx={{ p: 3, pt: 0 }}>
+          <Button
+            variant={past ? 'outlined' : 'contained'}
+            fullWidth
+            size="small"
+            disabled={past}
+            sx={
+              past
+                ? { borderColor: '#bdbdbd', color: '#9e9e9e' }
+                : {
+                    backgroundColor: color,
+                    '&:hover': {
+                      backgroundColor: color,
+                      filter: 'brightness(0.9)',
+                    },
+                  }
+            }
+          >
+            {past ? (cancelled ? 'Cancelado' : 'Realizado') : 'Mais Informações'}
+          </Button>
+        </CardActions>
+      </Card>
+    );
+  };
 
   return (
     <Box
@@ -354,7 +552,7 @@ const EventsSection: React.FC = () => {
               onScroll={handleScroll}
               sx={{
                 display: 'flex',
-                gap: 3,
+                gap: `${CARD_GAP}px`,
                 overflowX: 'auto',
                 scrollBehavior: 'smooth',
                 overscrollBehaviorX: 'contain',
@@ -368,95 +566,13 @@ const EventsSection: React.FC = () => {
                 scrollbarWidth: 'none',
               }}
             >
-              {filteredEvents.map((event: BatuaraEvent) => (
-                <Card
-                  key={event.id}
-                  sx={{
-                    minWidth: 320,
-                    maxWidth: 320,
-                    height: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    scrollSnapAlign: 'start',
-                    borderTop: `4px solid ${getEventColor(event)}`,
-                    transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: theme.shadows[8],
-                    },
-                  }}
-                >
-                  <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.3, fontSize: '1.1rem' }}>
-                        {event.title}
-                      </Typography>
-                      <Chip
-                        label={getEventTypeLabel(event.type)}
-                        size="small"
-                        sx={{
-                          backgroundColor: getEventColor(event),
-                          color: 'white',
-                          fontWeight: 500,
-                          fontSize: '0.75rem',
-                        }}
-                      />
-                    </Box>
-
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 3, lineHeight: 1.6, fontSize: '0.9rem' }}
-                    >
-                      {event.description}
-                    </Typography>
-
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <EventIcon fontSize="small" color="primary" />
-                        <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.85rem' }}>
-                          {formatEventDate(event.date)}
-                        </Typography>
-                      </Box>
-
-                      {(event.startTime || event.endTime) && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <AccessTimeIcon fontSize="small" color="primary" />
-                          <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
-                            {formatEventTime(event.startTime, event.endTime)}
-                          </Typography>
-                        </Box>
-                      )}
-
-                      {event.location && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <LocationOnIcon fontSize="small" color="primary" />
-                          <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
-                            {event.location}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  </CardContent>
-
-                  <CardActions sx={{ p: 3, pt: 0 }}>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      size="small"
-                      sx={{
-                        backgroundColor: getEventColor(event),
-                        '&:hover': {
-                          backgroundColor: getEventColor(event),
-                          filter: 'brightness(0.9)',
-                        },
-                      }}
-                    >
-                      Mais Informações
-                    </Button>
-                  </CardActions>
-                </Card>
-              ))}
+              {filteredEvents.map((event: BatuaraEvent) =>
+                renderEventCard(event, {
+                  minWidth: CARD_WIDTH,
+                  maxWidth: CARD_WIDTH,
+                  scrollSnapAlign: 'start',
+                })
+              )}
             </Box>
 
             {/* Dicas de navegação e bullets */}
@@ -472,20 +588,17 @@ const EventsSection: React.FC = () => {
               >
                 👈 Deslize para ver mais eventos
               </Typography>
-              
+
               <NavigationDots
                 totalItems={filteredEvents.length}
                 currentIndex={(() => {
-                  const itemWidth = 320;
-                  const gap = 24;
-                  const itemsPerView = 1;
-                  const itemWithGap = itemWidth + gap;
-                  
+                  const itemWithGap = CARD_WIDTH + CARD_GAP;
+
                   if (scrollPosition >= maxScroll * 0.9) {
                     return filteredEvents.length - 1;
                   }
-                  
-                  return Math.floor(scrollPosition / itemWithGap / itemsPerView);
+
+                  return Math.floor(scrollPosition / itemWithGap);
                 })()}
                 itemsPerView={1}
                 onDotClick={handleDotClick}
@@ -497,87 +610,7 @@ const EventsSection: React.FC = () => {
           <Grid container spacing={3}>
             {filteredEvents.map((event: BatuaraEvent) => (
               <Grid size={{ xs: 12, md: 6, lg: 4 }} key={event.id}>
-                <Card
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    borderTop: `4px solid ${getEventColor(event)}`,
-                    transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: theme.shadows[8],
-                    },
-                  }}
-                >
-                  <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
-                        {event.title}
-                      </Typography>
-                      <Chip
-                        label={getEventTypeLabel(event.type)}
-                        size="small"
-                        sx={{
-                          backgroundColor: getEventColor(event),
-                          color: 'white',
-                          fontWeight: 500,
-                        }}
-                      />
-                    </Box>
-
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 3, lineHeight: 1.6 }}
-                    >
-                      {event.description}
-                    </Typography>
-
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <EventIcon fontSize="small" color="primary" />
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {formatEventDate(event.date)}
-                        </Typography>
-                      </Box>
-
-                      {(event.startTime || event.endTime) && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <AccessTimeIcon fontSize="small" color="primary" />
-                          <Typography variant="body2">
-                            {formatEventTime(event.startTime, event.endTime)}
-                          </Typography>
-                        </Box>
-                      )}
-
-                      {event.location && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <LocationOnIcon fontSize="small" color="primary" />
-                          <Typography variant="body2">
-                            {event.location}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  </CardContent>
-
-                  <CardActions sx={{ p: 3, pt: 0 }}>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      sx={{
-                        backgroundColor: getEventColor(event),
-                        '&:hover': {
-                          backgroundColor: getEventColor(event),
-                          filter: 'brightness(0.9)',
-                        },
-                      }}
-                    >
-                      Mais Informações
-                    </Button>
-                  </CardActions>
-                </Card>
+                {renderEventCard(event)}
               </Grid>
             ))}
           </Grid>

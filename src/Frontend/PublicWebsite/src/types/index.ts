@@ -14,6 +14,7 @@ export interface Event {
   requiresRegistration?: boolean;
   maxCapacity?: number;
   isActive?: boolean;
+  isCancelled?: boolean;
 }
 
 export enum EventType {
