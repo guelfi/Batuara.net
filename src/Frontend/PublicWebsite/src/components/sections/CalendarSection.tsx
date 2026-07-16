@@ -201,6 +201,10 @@ const CalendarSection: React.FC = () => {
 
   const getItemColor = (item: any): string => {
     if (item?.isEvent) {
+      // Prioriza cardColor individual definido no banco; fallback para cor do tipo
+      if (item?.cardColor && typeof item.cardColor === 'string' && item.cardColor.trim()) {
+        return item.cardColor.trim();
+      }
       const normalized = normalizeEventType(item?.type);
       return (normalized ? eventColors[normalized] : undefined) ?? '#1976d2';
     }
