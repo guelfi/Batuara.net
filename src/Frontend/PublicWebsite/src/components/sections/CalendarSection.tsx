@@ -21,10 +21,10 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import InfoIcon from '@mui/icons-material/Info';
 import EventIcon from '@mui/icons-material/Event';
 import { useQuery } from '@tanstack/react-query';
-import { useTheme, useMediaQuery } from '@mui/material';
+import { useTheme } from '@mui/material';
 import publicApi from '../../services/api';
 import { AttendanceType, CalendarAttendance, Event as BatuaraEvent, EventType } from '../../types';
-import { desktopMediaQuery } from '../../theme/theme';
+
 import {
   addMonths,
   subMonths,
@@ -34,12 +34,14 @@ import {
   startOfMonth,
   endOfMonth,
   eachDayOfInterval,
+  isBefore,
+  startOfDay,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const CalendarSection: React.FC = () => {
   const IMPORTANT_INFO_TEXT =
-    'Informações Importantes: Todos os atendimentos são gratuitos. Recomendamos chegar com 30 minutos de antecedência';
+    'Todos atendimentos são gratuitos. Recomendamos chegar com 30 minutos de antecedência';
 
   const toPtTitleCase = (value: string): string => {
     const stopWords = new Set(['de']);
@@ -73,14 +75,12 @@ const CalendarSection: React.FC = () => {
     return time.length >= 5 ? time.slice(0, 5) : time;
   };
 
-  // Estado para navegação mensal
   const [selectedMonthDate, setSelectedMonthDate] = useState(() => new Date());
   const monthStart = useMemo(() => startOfMonth(selectedMonthDate), [selectedMonthDate]);
   const monthEnd = useMemo(() => endOfMonth(selectedMonthDate), [selectedMonthDate]);
 
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleCloseDialog = () => setSelectedItem(null);
 
@@ -118,151 +118,84 @@ const CalendarSection: React.FC = () => {
         ? (type as AttendanceType)
         : undefined;
     }
-
     if (typeof type !== 'string') return undefined;
-
     const numeric = parseInt(type, 10);
-    if (!Number.isNaN(numeric)) {
-      return normalizeAttendanceType(numeric);
-    }
-
+    if (!Number.isNaN(numeric)) return normalizeAttendanceType(numeric);
     switch (normalizeString(type)) {
-      case 'kardecismo':
-      case 'kardec':
-      case 'espirita':
-      case 'espírita':
-        return AttendanceType.Kardecismo;
-      case 'umbanda':
-      case 'gira':
-      case 'gira de umbanda':
-        return AttendanceType.Umbanda;
-      case 'palestra':
-        return AttendanceType.Palestra;
-      case 'curso':
-        return AttendanceType.Curso;
-      case 'festa':
-        return AttendanceType.Festa;
-      default:
-        return undefined;
+      case 'kardecismo': case 'kardec': case 'espirita': case 'espírita': return AttendanceType.Kardecismo;
+      case 'umbanda': case 'gira': case 'gira de umbanda': return AttendanceType.Umbanda;
+      case 'palestra': return AttendanceType.Palestra;
+      case 'curso': return AttendanceType.Curso;
+      case 'festa': return AttendanceType.Festa;
+      default: return undefined;
     }
   };
 
   const normalizeEventType = (type: unknown): EventType | undefined => {
     if (typeof type === 'number') {
-      return [
-        EventType.Festa,
-        EventType.Evento,
-        EventType.Celebracao,
-        EventType.Bazar,
-        EventType.Palestra,
-        EventType.Curso,
-        EventType.Treinamento
-      ].includes(type as EventType)
-        ? (type as EventType)
-        : undefined;
+      return [EventType.Festa, EventType.Evento, EventType.Celebracao, EventType.Bazar, EventType.Palestra, EventType.Curso, EventType.Treinamento].includes(type as EventType)
+        ? (type as EventType) : undefined;
     }
-
     if (typeof type !== 'string') return undefined;
-
     const numeric = parseInt(type, 10);
-    if (!Number.isNaN(numeric)) {
-      return normalizeEventType(numeric);
-    }
-
+    if (!Number.isNaN(numeric)) return normalizeEventType(numeric);
     switch (normalizeString(type)) {
-      case 'festa':
-        return EventType.Festa;
-      case 'evento':
-        return EventType.Evento;
-      case 'celebração':
-      case 'celebracao':
-        return EventType.Celebracao;
-      case 'bazar':
-        return EventType.Bazar;
-      case 'palestra':
-        return EventType.Palestra;
-      case 'curso':
-        return EventType.Curso;
-      case 'treinamento':
-        return EventType.Treinamento;
-      default:
-        return undefined;
+      case 'festa': return EventType.Festa;
+      case 'evento': return EventType.Evento;
+      case 'celebração': case 'celebracao': return EventType.Celebracao;
+      case 'bazar': return EventType.Bazar;
+      case 'palestra': return EventType.Palestra;
+      case 'curso': return EventType.Curso;
+      case 'treinamento': return EventType.Treinamento;
+      default: return undefined;
     }
   };
 
   const getAttendanceLabel = (type: unknown): string => {
     switch (normalizeAttendanceType(type)) {
-      case AttendanceType.Kardecismo:
-        return 'Kardecismo';
-      case AttendanceType.Umbanda:
-        return 'Gira de Umbanda';
-      case AttendanceType.Palestra:
-        return 'Palestra';
-      case AttendanceType.Curso:
-        return 'Curso';
-      case AttendanceType.Festa:
-        return 'Festa';
-      default:
-        return typeof type === 'string' && type.trim() ? type.trim() : 'Atendimento';
+      case AttendanceType.Kardecismo: return 'Kardecismo';
+      case AttendanceType.Umbanda: return 'Gira de Umbanda';
+      case AttendanceType.Palestra: return 'Palestra';
+      case AttendanceType.Curso: return 'Curso';
+      case AttendanceType.Festa: return 'Festa';
+      default: return typeof type === 'string' && type.trim() ? type.trim() : 'Atendimento';
     }
   };
 
   const getEventLabel = (type: unknown): string => {
     switch (normalizeEventType(type)) {
-      case EventType.Festa:
-        return 'Festa';
-      case EventType.Evento:
-        return 'Evento';
-      case EventType.Celebracao:
-        return 'Celebração';
-      case EventType.Bazar:
-        return 'Bazar';
-      case EventType.Palestra:
-        return 'Palestra';
-      case EventType.Curso:
-        return 'Curso';
-      case EventType.Treinamento:
-        return 'Treinamento';
-      default:
-        return typeof type === 'string' && type.trim() ? type.trim() : 'Evento';
+      case EventType.Festa: return 'Festa';
+      case EventType.Evento: return 'Evento';
+      case EventType.Celebracao: return 'Celebração';
+      case EventType.Bazar: return 'Bazar';
+      case EventType.Palestra: return 'Palestra';
+      case EventType.Curso: return 'Curso';
+      case EventType.Treinamento: return 'Treinamento';
+      default: return typeof type === 'string' && type.trim() ? type.trim() : 'Evento';
     }
   };
 
   const getAttendanceShortLabel = (type: unknown): string => {
     switch (normalizeAttendanceType(type)) {
-      case AttendanceType.Umbanda:
-        return 'Gira';
-      case AttendanceType.Kardecismo:
-        return 'Kardec';
-      case AttendanceType.Palestra:
-        return 'Palestra';
-      case AttendanceType.Curso:
-        return 'Curso';
-      case AttendanceType.Festa:
-        return 'Festa';
-      default:
-        return typeof type === 'string' && type.trim() ? type.trim() : 'Atendimento';
+      case AttendanceType.Umbanda: return 'Gira';
+      case AttendanceType.Kardecismo: return 'Kardec';
+      case AttendanceType.Palestra: return 'Palestra';
+      case AttendanceType.Curso: return 'Curso';
+      case AttendanceType.Festa: return 'Festa';
+      default: return typeof type === 'string' && type.trim() ? type.trim() : 'Atendimento';
     }
   };
 
   const getEventShortLabel = (type: unknown): string => {
     switch (normalizeEventType(type)) {
-      case EventType.Festa:
-        return 'Festa';
-      case EventType.Evento:
-        return 'Evento';
-      case EventType.Celebracao:
-        return 'Celebração';
-      case EventType.Bazar:
-        return 'Bazar';
-      case EventType.Palestra:
-        return 'Palestra';
-      case EventType.Curso:
-        return 'Curso';
-      case EventType.Treinamento:
-        return 'Treinamento';
-      default:
-        return typeof type === 'string' && type.trim() ? type.trim() : 'Evento';
+      case EventType.Festa: return 'Festa';
+      case EventType.Evento: return 'Evento';
+      case EventType.Celebracao: return 'Celebração';
+      case EventType.Bazar: return 'Bazar';
+      case EventType.Palestra: return 'Palestra';
+      case EventType.Curso: return 'Curso';
+      case EventType.Treinamento: return 'Treinamento';
+      default: return typeof type === 'string' && type.trim() ? type.trim() : 'Evento';
     }
   };
 
@@ -271,49 +204,32 @@ const CalendarSection: React.FC = () => {
       const normalized = normalizeEventType(item?.type);
       return (normalized ? eventColors[normalized] : undefined) ?? '#1976d2';
     }
-
     const normalized = normalizeAttendanceType(item?.type);
     return (normalized ? attendanceColors[normalized] : undefined) ?? '#1976d2';
   };
 
-  const getItemLabel = (item: any): string => {
-    return item?.isEvent ? getEventLabel(item?.type) : getAttendanceLabel(item?.type);
-  };
+  const getItemLabel = (item: any): string =>
+    item?.isEvent ? getEventLabel(item?.type) : getAttendanceLabel(item?.type);
 
-  const getItemShortLabel = (item: any): string => {
-    return item?.isEvent ? getEventShortLabel(item?.type) : getAttendanceShortLabel(item?.type);
-  };
+  const getItemShortLabel = (item: any): string =>
+    item?.isEvent ? getEventShortLabel(item?.type) : getAttendanceShortLabel(item?.type);
 
-  const getPrimaryItem = (items: any[]) => {
-    if (!items || items.length === 0) return undefined;
-    const eventItem = items.find((item) => item.isEvent);
-    return eventItem || items[0];
-  };
 
-  // Query para Atendimentos (Giras, Kardec, etc)
+
   const { data: attendancesData, isLoading: loadingAttendances, isError: errorAttendances } = useQuery({
     queryKey: ['public-calendar-attendances', format(selectedMonthDate, 'yyyy-MM')],
-    queryFn: () =>
-      publicApi.getCalendarAttendances({
-        pageNumber: 1,
-        pageSize: 100,
-        sort: 'date:asc',
-        month: selectedMonthDate.getMonth() + 1,
-        year: selectedMonthDate.getFullYear(),
-      }),
+    queryFn: () => publicApi.getCalendarAttendances({
+      pageNumber: 1, pageSize: 100, sort: 'date:asc',
+      month: selectedMonthDate.getMonth() + 1, year: selectedMonthDate.getFullYear(),
+    }),
   });
 
-  // Query para Eventos (Festas, Bazares, etc)
   const { data: eventsData, isLoading: loadingEvents, isError: errorEvents } = useQuery({
     queryKey: ['public-calendar-events', format(selectedMonthDate, 'yyyy-MM')],
-    queryFn: () =>
-      publicApi.getEvents({
-        pageNumber: 1,
-        pageSize: 100,
-        sort: 'date:asc',
-        month: selectedMonthDate.getMonth() + 1,
-        year: selectedMonthDate.getFullYear(),
-      }),
+    queryFn: () => publicApi.getEvents({
+      pageNumber: 1, pageSize: 100, sort: 'date:asc',
+      month: selectedMonthDate.getMonth() + 1, year: selectedMonthDate.getFullYear(),
+    }),
   });
 
   const isLoading = loadingAttendances || loadingEvents;
@@ -322,26 +238,16 @@ const CalendarSection: React.FC = () => {
   const currentData = useMemo(() => {
     const attendances = (attendancesData?.data ?? [])
       .filter((a: CalendarAttendance) => a.isActive)
-      .map((a: CalendarAttendance) => ({
-        ...a,
-        displayTitle: a.description || getAttendanceLabel(a.type),
-        isEvent: false,
-      }));
+      .map((a: CalendarAttendance) => ({ ...a, displayTitle: a.description || getAttendanceLabel(a.type), isEvent: false }));
 
     const events = (eventsData?.data ?? [])
       .filter((e: BatuaraEvent) => e.isActive !== false)
-      .map((e: BatuaraEvent) => ({
-        ...e,
-        displayTitle: e.title,
-        isEvent: true,
-        startTime: e.startTime || '---',
-      }));
+      .map((e: BatuaraEvent) => ({ ...e, displayTitle: e.title, isEvent: true, startTime: e.startTime || '---' }));
 
     const combined = [...events, ...attendances];
     const seen = new Set();
     const uniqueData = combined.filter((item) => {
-      const dateStr = item.date.split('T')[0];
-      const key = `${dateStr}_${item.displayTitle.toLowerCase().trim()}`;
+      const key = `${item.date.split('T')[0]}_${item.displayTitle.toLowerCase().trim()}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -354,14 +260,10 @@ const CalendarSection: React.FC = () => {
     });
   }, [attendancesData?.data, eventsData?.data]);
 
-  // Agrupa itens por dia para o layout de lista
   const itemsByDay = useMemo(() => {
     const allDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
     return allDays
-      .map((day) => ({
-        day,
-        items: currentData.filter((item) => isSameDay(parseISO(item.date.split('T')[0]), day)),
-      }))
+      .map((day) => ({ day, items: currentData.filter((item) => isSameDay(parseISO(item.date.split('T')[0]), day)) }))
       .filter(({ items }) => items.length > 0);
   }, [currentData, monthStart, monthEnd]);
 
@@ -371,6 +273,8 @@ const CalendarSection: React.FC = () => {
   }, [selectedMonthDate]);
 
   const yearLabel = useMemo(() => format(selectedMonthDate, 'yyyy'), [selectedMonthDate]);
+
+  const isPastDay = (day: Date): boolean => isBefore(day, startOfDay(new Date()));
 
   return (
     <Box
@@ -384,7 +288,7 @@ const CalendarSection: React.FC = () => {
       }}
     >
       <Container maxWidth="sm">
-        {/* Cabeçalho estilo Instagram: "CALENDÁRIO | junho" */}
+        {/* Cabecalho: CALENDARIO | Mes / Ano com setas alinhadas ao titulo */}
         <Box sx={{ mb: { xs: 0.5, md: 0.75 } }}>
           <Stack
             direction="row"
@@ -392,67 +296,50 @@ const CalendarSection: React.FC = () => {
             justifyContent="space-between"
             sx={{ mb: { xs: 0.5, md: 0.75 } }}
           >
-            <IconButton
-              onClick={handlePrevMonth}
-              color="primary"
-              size="medium"
-              aria-label="Mês anterior"
-            >
+            <IconButton onClick={handlePrevMonth} color="primary" size="medium" aria-label="Mes anterior">
               <ArrowBackIosIcon fontSize="small" />
             </IconButton>
 
-            <Box sx={{ textAlign: 'center' }}>
-              <Stack direction="row" alignItems="baseline" justifyContent="center" spacing={1}>
-                <Typography
-                  sx={{
-                    fontSize: { xs: '1.34rem', md: '1.61rem' },
-                    fontWeight: 900,
-                    color: 'text.primary',
-                    letterSpacing: '-0.5px',
-                    lineHeight: 1,
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Calendário
-                </Typography>
-                <Box
-                  component="span"
-                  sx={{
-                    width: 3,
-                    height: { xs: 18, md: 24 },
-                    backgroundColor: theme.palette.primary.main,
-                    borderRadius: 1,
-                    display: 'inline-block',
-                    mx: 0.5,
-                    verticalAlign: 'middle',
-                  }}
-                />
-                <Typography
-                  sx={{
-                    fontSize: { xs: '1.18rem', md: '1.45rem' },
-                    fontWeight: 400,
-                    fontStyle: 'italic',
-                    color: theme.palette.primary.main,
-                    lineHeight: 1,
-                  }}
-                >
-                  {monthLabel}
-                </Typography>
-              </Stack>
+            {/* Titulo central: CALENDARIO | Mes / Ano na mesma linha */}
+            <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5}>
               <Typography
-                variant="caption"
-                sx={{ color: 'text.secondary', fontWeight: 500 }}
+                sx={{
+                  fontSize: { xs: '1.34rem', md: '1.75rem' },
+                  fontWeight: 900,
+                  color: 'text.primary',
+                  letterSpacing: '-0.5px',
+                  lineHeight: 1,
+                  textTransform: 'uppercase',
+                }}
               >
-                {yearLabel}
+                Calendário
               </Typography>
-            </Box>
+              <Box
+                component="span"
+                sx={{
+                  width: 3,
+                  height: { xs: 18, md: 26 },
+                  backgroundColor: theme.palette.primary.main,
+                  borderRadius: 1,
+                  display: 'inline-block',
+                  mx: 0.5,
+                }}
+              />
+              {/* Mes / Ano com a mesma fonte e tamanho */}
+              <Typography
+                sx={{
+                  fontSize: { xs: '1.18rem', md: '1.55rem' },
+                  fontWeight: 400,
+                  fontStyle: 'italic',
+                  color: theme.palette.primary.main,
+                  lineHeight: 1,
+                }}
+              >
+                {monthLabel}&nbsp;/&nbsp;{yearLabel}
+              </Typography>
+            </Stack>
 
-            <IconButton
-              onClick={handleNextMonth}
-              color="primary"
-              size="medium"
-              aria-label="Próximo mês"
-            >
+            <IconButton onClick={handleNextMonth} color="primary" size="medium" aria-label="Proximo mes">
               <ArrowForwardIosIcon fontSize="small" />
             </IconButton>
           </Stack>
@@ -460,11 +347,7 @@ const CalendarSection: React.FC = () => {
           <Alert
             severity="info"
             icon={<InfoIcon fontSize="small" />}
-            sx={{
-              py: 0.25,
-              px: 1,
-              '& .MuiAlert-message': { width: '100%' },
-            }}
+            sx={{ py: 0.25, px: 1, '& .MuiAlert-message': { width: '100%' } }}
           >
             <Typography variant="body2" sx={{ fontSize: { xs: '0.7rem', md: '0.8rem' }, lineHeight: 1.25 }}>
               {IMPORTANT_INFO_TEXT}
@@ -495,118 +378,118 @@ const CalendarSection: React.FC = () => {
             </Typography>
           </Box>
         ) : (
-          /* Lista de dias estilo Instagram */
+          /* Lista: UMA linha por evento
+             [Icone] Data | Dia semana - Nome Evento | Horario */
           <Stack spacing={0} divider={<Divider sx={{ my: 0 }} />}>
-            {itemsByDay.map(({ day, items }) => {
+            {itemsByDay.flatMap(({ day, items }) => {
               const dayNum = format(day, 'dd.MM', { locale: ptBR });
               const weekDay = toPtTitleCase(format(day, 'EEEE', { locale: ptBR }));
+              const past = isPastDay(day);
 
-              return (
-                <Box
-                  key={day.toISOString()}
-                  sx={{
-                    py: { xs: 0.75, md: 0.9 },
-                    px: { xs: 0.5, md: 1 },
-                  }}
-                >
-                  {/* Linha da data: ícone + data + dia da semana */}
-                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.25 }}>
-                    <EventIcon
-                      sx={{
-                        fontSize: { xs: 22, md: 26 },
-                        color: getItemColor(items[0]),
-                        flexShrink: 0,
-                      }}
-                    />
-                    <Box>
-                      <Typography
-                        sx={{
-                          fontSize: { xs: '1.07rem', md: '1.18rem' },
-                          fontWeight: 900,
-                          lineHeight: 1.15,
-                          color: 'text.primary',
-                          letterSpacing: '-0.25px',
-                        }}
-                      >
-                        {dayNum} | {weekDay}
-                      </Typography>
-                    </Box>
-                  </Stack>
+              return items.map((item: any) => {
+                const color = getItemColor(item);
+                const startT = formatTime(item.startTime);
+                const endT = formatTime(item.endTime);
+                const timeStr = startT
+                  ? (endT && endT !== startT ? `${startT} – ${endT}` : startT)
+                  : undefined;
 
-                  {/* Itens do dia */}
-                  <Stack spacing={0.1} sx={{ pl: { xs: 3.5, md: 4.5 } }}>
-                    {items.map((item: any) => {
-                      const color = getItemColor(item);
-                      const startT = formatTime(item.startTime);
-                      const endT = formatTime(item.endTime);
-                      const timeStr = startT
-                        ? endT && endT !== startT
-                          ? `${startT} – ${endT}`
-                          : startT
-                        : undefined;
-                      const label = getItemLabel(item);
-
-                      return (
-                        <Box key={`${item.isEvent ? 'ev' : 'at'}-${item.id}`}>
+                return (
+                  <Box
+                    key={`${item.isEvent ? 'ev' : 'at'}-${item.id}`}
+                    sx={{ py: { xs: 0.65, md: 0.85 }, px: { xs: 0.5, md: 1 } }}
+                  >
+                    {/* Linha 1: layout colunar com larguras fixas para alinhamento entre linhas */}
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'nowrap', minWidth: 0 }}>
+                      {/* Coluna 1: Ícone — largura fixa */}
+                      <Box sx={{ flexShrink: 0, width: { xs: '24px', md: '28px' }, display: 'flex', alignItems: 'center', pt: '1px' }}>
+                        <EventIcon
+                          sx={{
+                            fontSize: { xs: 19, md: 22 },
+                            color: past ? 'text.disabled' : color,
+                          }}
+                        />
+                      </Box>
+                      {/* Coluna 2: Data | Dia da semana — largura fixa */}
+                      <Box sx={{ flexShrink: 0, width: { xs: '148px', md: '178px' } }}>
+                        <Typography
+                          component="span"
+                          sx={{
+                            fontSize: { xs: '0.9rem', md: '1.05rem' },
+                            fontWeight: 700,
+                            color: past ? 'text.disabled' : 'text.primary',
+                            whiteSpace: 'nowrap',
+                            lineHeight: 1.35,
+                          }}
+                        >
+                          {dayNum} | {weekDay}
+                        </Typography>
+                      </Box>
+                      {/* Coluna 3: Separador — largura fixa */}
+                      <Box sx={{ flexShrink: 0, width: { xs: '14px', md: '18px' } }}>
+                        <Typography
+                          component="span"
+                          sx={{
+                            fontSize: { xs: '0.9rem', md: '1.05rem' },
+                            fontWeight: 400,
+                            color: past ? 'text.disabled' : 'text.secondary',
+                            lineHeight: 1.35,
+                          }}
+                        >
+                          -
+                        </Typography>
+                      </Box>
+                      {/* Coluna 4: Nome do Evento — ocupa o restante, pode quebrar linha */}
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography
+                          component="span"
+                          sx={{
+                            fontSize: { xs: '0.9rem', md: '1.05rem' },
+                            fontWeight: 700,
+                            color: past ? 'text.disabled' : color,
+                            whiteSpace: 'normal',
+                            wordBreak: 'break-word',
+                            lineHeight: 1.35,
+                            display: 'block',
+                          }}
+                        >
+                          {item.displayTitle}
+                        </Typography>
+                        {/* Linha 2: horário logo abaixo do nome, alinhado na mesma coluna */}
+                        {timeStr && (
                           <Typography
+                            component="span"
                             sx={{
-                              fontSize: { xs: '0.94rem', md: '1.02rem' },
+                              fontSize: { xs: '0.82rem', md: '0.97rem' },
                               fontWeight: 500,
-                              color: 'text.secondary',
+                              color: past ? 'text.disabled' : 'text.secondary',
+                              whiteSpace: 'nowrap',
                               lineHeight: 1.3,
+                              display: 'block',
+                              mt: 0.1,
                             }}
                           >
-                            <Box
-                              component="span"
-                              sx={{ color, fontWeight: 700 }}
-                            >
-                              {item.displayTitle !== label ? item.displayTitle : label}
-                            </Box>
-                            {timeStr && (
-                              <Box component="span" sx={{ color: 'text.secondary', fontWeight: 400 }}>
-                                {' | '}{timeStr}
-                              </Box>
-                            )}
+                            🕐 {timeStr}
                           </Typography>
-                          {item.observations && (
-                            <Typography
-                              variant="caption"
-                              sx={{ color: 'text.disabled', display: 'block', lineHeight: 1.3 }}
-                            >
-                              {item.observations}
-                            </Typography>
-                          )}
-                        </Box>
-                      );
-                    })}
-                  </Stack>
-                </Box>
-              );
+                        )}
+                      </Box>
+                    </Box>
+                  </Box>
+                );
+              });
             })}
           </Stack>
         )}
       </Container>
 
-      {/* Dialog de detalhes ao clicar num item (mantido para compatibilidade futura) */}
+      {/* Dialog de detalhes */}
       <Dialog
         open={!!selectedItem}
         onClose={handleCloseDialog}
         fullWidth
         maxWidth="xs"
-        PaperProps={{
-          sx: {
-            width: { xs: 'calc(100% - 24px)', sm: '100%' },
-            m: { xs: 1.5, sm: 3 },
-            borderRadius: 3,
-          },
-        }}
-        BackdropProps={{
-          sx: {
-            backgroundColor: 'rgba(0,0,0,0.12)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-          },
-        }}
+        PaperProps={{ sx: { width: { xs: 'calc(100% - 24px)', sm: '100%' }, m: { xs: 1.5, sm: 3 }, borderRadius: 3 } }}
+        BackdropProps={{ sx: { backgroundColor: 'rgba(0,0,0,0.12)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' } }}
       >
         {selectedItem && (
           <>
@@ -619,11 +502,7 @@ const CalendarSection: React.FC = () => {
                   const color = getItemColor(selectedItem);
                   const startT = formatTime(selectedItem.startTime);
                   const endT = formatTime(selectedItem.endTime);
-                  const timeStr = startT
-                    ? endT && endT !== startT
-                      ? `${startT} – ${endT}`
-                      : startT
-                    : undefined;
+                  const timeStr = startT ? (endT && endT !== startT ? `${startT} – ${endT}` : startT) : undefined;
                   return (
                     <Paper sx={{ p: 1.5, borderRadius: 2, borderLeft: `4px solid ${color}`, backgroundColor: `${color}0D`, border: `1px solid ${color}40` }}>
                       <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
