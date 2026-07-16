@@ -46,6 +46,8 @@ const Header: React.FC = () => {
 
   const handleNavClick = (href: string) => {
     if (href === '#home') {
+      // Scroll para a posição exata do elemento #home no documento (= altura do Toolbar spacer).
+      // Combinado com pt:'56px' na HeroSection, o logo fica logo abaixo da AppBar fixa.
       const element = document.querySelector(href);
       if (element) {
         const targetTop = element.getBoundingClientRect().top + window.scrollY;
