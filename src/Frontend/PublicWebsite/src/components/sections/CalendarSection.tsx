@@ -429,19 +429,17 @@ const CalendarSection: React.FC = () => {
                           {dayNum} | {weekDay}
                         </Typography>
                       </Box>
-                      {/* Coluna 3: Separador — largura fixa */}
-                      <Box sx={{ flexShrink: 0, width: { xs: '14px', md: '18px' } }}>
-                        <Typography
-                          component="span"
+                      {/* Coluna 3: Bullet colorido — mesma cor do ícone */}
+                      <Box sx={{ flexShrink: 0, width: { xs: '14px', md: '18px' }, display: 'flex', alignItems: 'center', pt: '2px' }}>
+                        <Box
                           sx={{
-                            fontSize: { xs: '0.9rem', md: '1.05rem' },
-                            fontWeight: 400,
-                            color: past ? 'text.disabled' : 'text.secondary',
-                            lineHeight: 1.35,
+                            width: { xs: 7, md: 8 },
+                            height: { xs: 7, md: 8 },
+                            borderRadius: '50%',
+                            backgroundColor: past ? 'text.disabled' : color,
+                            flexShrink: 0,
                           }}
-                        >
-                          -
-                        </Typography>
+                        />
                       </Box>
                       {/* Coluna 4: Nome do Evento — ocupa o restante, pode quebrar linha */}
                       <Box sx={{ flex: 1, minWidth: 0 }}>
