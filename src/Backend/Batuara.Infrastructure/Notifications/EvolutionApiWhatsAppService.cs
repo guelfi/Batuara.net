@@ -24,7 +24,15 @@ namespace Batuara.Infrastructure.Notifications
 
         public async Task SendAuthCodeAsync(string phoneE164, string code, CancellationToken cancellationToken = default)
         {
-            await SendTextAsync(phoneE164, $"Codigo de acesso a Casa Batuara [ {code} ]. Valido por alguns minutos.", cancellationToken);
+            // Código em linha própria e em negrito (*código*) para facilitar
+            // a seleção e cópia — especialmente para usuários com pouca experiência.
+            var message =
+                $"🔐 *Casa Batuara — Código de Acesso*\n\n" +
+                $"*{code}*\n\n" +
+                $"Copie e cole esse código na tela de login.\n" +
+                $"Válido por 10 minutos.";
+
+            await SendTextAsync(phoneE164, message, cancellationToken);
         }
 
         public async Task SendContributionReminderAsync(string phoneE164, string memberName, DateTime dueDate, decimal amount, CancellationToken cancellationToken = default)
