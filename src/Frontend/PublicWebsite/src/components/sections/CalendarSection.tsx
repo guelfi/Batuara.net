@@ -24,7 +24,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@mui/material';
 import publicApi from '../../services/api';
 import { AttendanceType, CalendarAttendance, Event as BatuaraEvent, EventType } from '../../types';
-
+import { orixaColorMap } from '../../utils/orixaColors';
 import {
   addMonths,
   subMonths,
@@ -38,6 +38,56 @@ import {
   startOfDay,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+// Ícone de calendário reproduzindo o estilo usado nas postagens do Instagram da Casa
+// (quadrado arredondado, dois furos no topo e grade de dias), colorido conforme o Orixá do mês.
+const CalendarGridIcon: React.FC<{ size?: number; color?: string }> = ({ size = 18, color = '#43a047' }) => {
+  const isLight = color === orixaColorMap['branco'];
+  const detailColor = isLight ? 'rgba(33, 33, 33, 0.35)' : 'rgba(255, 255, 255, 0.85)';
+
+  return (
+    <Box
+      component="svg"
+      viewBox="0 0 24 24"
+      sx={{ width: size, height: size, flexShrink: 0 }}
+    >
+      <rect
+        x="2" y="3" width="20" height="19" rx="3.5"
+        fill={color}
+        stroke={isLight ? 'rgba(33, 33, 33, 0.2)' : 'none'}
+        strokeWidth={isLight ? 0.6 : 0}
+      />
+      <circle cx="7.5" cy="3" r="1.4" fill={detailColor} />
+      <circle cx="16.5" cy="3" r="1.4" fill={detailColor} />
+      <g fill={detailColor}>
+        <rect x="5" y="9.2" width="2.3" height="2.3" rx="0.6" />
+        <rect x="10.85" y="9.2" width="2.3" height="2.3" rx="0.6" />
+        <rect x="16.7" y="9.2" width="2.3" height="2.3" rx="0.6" />
+        <rect x="5" y="13.7" width="2.3" height="2.3" rx="0.6" />
+        <rect x="10.85" y="13.7" width="2.3" height="2.3" rx="0.6" />
+        <rect x="16.7" y="13.7" width="2.3" height="2.3" rx="0.6" />
+        <rect x="5" y="18.2" width="2.3" height="2.3" rx="0.6" />
+        <rect x="10.85" y="18.2" width="2.3" height="2.3" rx="0.6" />
+      </g>
+    </Box>
+  );
+};
+
+// Orixá do mês, conforme datas comemorativas da apostila da Casa (confirmado com a direção em 2026-07-17).
+// Meses sem Orixá com data comemorativa própria usam Iemanjá (azul), Orixá padroeira da Casa.
+const getMonthAccentColor = (date: Date): string => {
+  switch (date.getMonth()) {
+    case 0: return orixaColorMap['verde'];    // Janeiro - Oxóssi (20/01)
+    case 1: return orixaColorMap['azul'];     // Fevereiro - Iemanjá (02/02)
+    case 3: return orixaColorMap['vermelho']; // Abril - Ogum (23/04)
+    case 6: return orixaColorMap['lilás'];    // Julho - Nanã (27/07)
+    case 7: return orixaColorMap['dourado'];  // Agosto - Oxum (15/08)
+    case 8: return orixaColorMap['marrom'];   // Setembro - Xangô (30/09)
+    case 11: // Dezembro: Iansã (04/12) na 1ª quinzena, Oxalá (25/12) na 2ª
+      return date.getDate() <= 15 ? orixaColorMap['laranja'] : orixaColorMap['branco'];
+    default: return orixaColorMap['azul'];    // Sem Orixá com data própria: Iemanjá, padroeira da Casa
+  }
+};
 
 const CalendarSection: React.FC = () => {
   const IMPORTANT_INFO_TEXT =
@@ -278,6 +328,9 @@ const CalendarSection: React.FC = () => {
 
   const yearLabel = useMemo(() => format(selectedMonthDate, 'yyyy'), [selectedMonthDate]);
 
+  const monthAccentColor = useMemo(() => getMonthAccentColor(selectedMonthDate), [selectedMonthDate]);
+  const isLightAccent = monthAccentColor === orixaColorMap['branco'];
+
   const isPastDay = (day: Date): boolean => isBefore(day, startOfDay(new Date()));
 
   return (
@@ -304,8 +357,9 @@ const CalendarSection: React.FC = () => {
               <ArrowBackIosIcon fontSize="small" />
             </IconButton>
 
-            {/* Titulo central: CALENDARIO | Mes / Ano na mesma linha */}
+            {/* Titulo central: icone + CALENDARIO | Mes / Ano manuscrito na cor do Orixa do mes */}
             <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5}>
+              <CalendarGridIcon size={20} color={monthAccentColor} />
               <Typography
                 sx={{
                   fontSize: { xs: '1.34rem', md: '1.75rem' },
@@ -329,14 +383,18 @@ const CalendarSection: React.FC = () => {
                   mx: 0.5,
                 }}
               />
-              {/* Mes / Ano com a mesma fonte e tamanho */}
+              {/* Mes / Ano em fonte manuscrita, colorido conforme o Orixa do mes */}
               <Typography
                 sx={{
-                  fontSize: { xs: '1.18rem', md: '1.55rem' },
-                  fontWeight: 400,
-                  fontStyle: 'italic',
-                  color: theme.palette.primary.main,
+                  fontFamily: '"Dancing Script", cursive',
+                  fontSize: { xs: '1.55rem', md: '2rem' },
+                  fontWeight: 700,
+                  color: monthAccentColor,
                   lineHeight: 1,
+                  ...(isLightAccent && {
+                    WebkitTextStroke: '1px rgba(33, 33, 33, 0.35)',
+                    textShadow: '0 1px 3px rgba(0, 0, 0, 0.25)',
+                  }),
                 }}
               >
                 {monthLabel}&nbsp;/&nbsp;{yearLabel}

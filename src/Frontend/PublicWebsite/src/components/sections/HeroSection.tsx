@@ -150,9 +150,9 @@ const HeroSection: React.FC = () => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: { xs: 'flex-start', md: 'center' }, // mobile: topo; desktop: centrado
-        justifyContent: 'center',
-        mt: { xs: '-6px', md: '-64px' }, // Cancela o Toolbar spacer do Header
-        pt: { xs: '6px', md: '64px' },   // Compensa a AppBar fixa
+        justifyContent: { xs: 'flex-start', md: 'center' }, // mobile: conteúdo no topo; desktop: centralizado
+        mt: { xs: '-56px', md: '-64px' }, // Cancela o Toolbar spacer do Header (56px mobile / 64px desktop)
+        pt: { xs: '91px', md: '64px' },   // Compensa a AppBar fixa (56px do header + ~35px de respiro no mobile)
         pb: { xs: 2, md: 6 },
       }}
     >

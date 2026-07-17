@@ -1,0 +1,23 @@
+// Paleta de cores por nome, usada para representar a cor de um Orixá na UI.
+export const orixaColorMap: Record<string, string> = {
+  branco: '#e8eaf6',
+  azul: '#1976d2',
+  'azul claro': '#42a5f5',
+  'azul marinho': '#1a237e',
+  prata: '#90a4ae',
+  lilás: '#9c27b0',
+  roxo: '#7b1fa2',
+  dourado: '#f9a825',
+  amarelo: '#fbc02d',
+  vermelho: '#d32f2f',
+  verde: '#388e3c',
+  'verde escuro': '#2e7d32',
+  marrom: '#795548',
+  preto: '#212121',
+  rosa: '#e91e63',
+  coral: '#ff7043',
+  laranja: '#f57c00',
+  alaranjado: '#e65100',
+  arcoíris: '#673ab7',
+  'arco-íris': '#673ab7',
+};

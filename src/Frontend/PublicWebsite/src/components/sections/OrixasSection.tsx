@@ -27,29 +27,7 @@ import NavigationDots from '../common/NavigationDots';
 import publicApi from '../../services/api';
 import { Orixa } from '../../types';
 import { desktopMediaQuery } from '../../theme/theme';
-
-const colorMap: Record<string, string> = {
-  branco: '#e8eaf6',
-  azul: '#1976d2',
-  'azul claro': '#42a5f5',
-  'azul marinho': '#1a237e',
-  prata: '#90a4ae',
-  lilás: '#9c27b0',
-  roxo: '#7b1fa2',
-  dourado: '#f9a825',
-  amarelo: '#fbc02d',
-  vermelho: '#d32f2f',
-  verde: '#388e3c',
-  'verde escuro': '#2e7d32',
-  marrom: '#795548',
-  preto: '#212121',
-  rosa: '#e91e63',
-  coral: '#ff7043',
-  laranja: '#f57c00',
-  alaranjado: '#e65100',
-  arcoíris: '#673ab7',
-  'arco-íris': '#673ab7',
-};
+import { orixaColorMap as colorMap } from '../../utils/orixaColors';
 
 const DialogTransition = React.forwardRef(function DialogTransition(
   props: TransitionProps & { children: React.ReactElement },

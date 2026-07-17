@@ -1,43 +1,11 @@
 import { createTheme } from '@mui/material/styles';
 
-// Cores da Casa Batuara baseadas em Yemanjá (azul oceano) como cor principal
+// Cores da Casa Batuara baseadas em Yemanjá (azul oceano) como cor principal e Oxum (dourado) como secundária
 const batuaraColors = {
-  // Cores principais de Yemanjá
   yemanja: {
     main: '#1976d2', // Azul oceano principal
     light: '#42a5f5', // Azul claro
     dark: '#1565c0', // Azul escuro
-    contrastText: '#ffffff',
-  },
-  // Cores dos Orixás para uso contextual
-  oxala: {
-    main: '#ffffff',
-    light: '#f5f5f5',
-    dark: '#e0e0e0',
-    contrastText: '#1976d2',
-  },
-  iansa: {
-    main: '#ff9800', // Amarelo/laranja
-    light: '#ffb74d',
-    dark: '#f57c00',
-    contrastText: '#ffffff',
-  },
-  ogum: {
-    main: '#1565c0', // Azul escuro
-    light: '#1976d2',
-    dark: '#0d47a1',
-    contrastText: '#ffffff',
-  },
-  oxossi: {
-    main: '#4caf50', // Verde
-    light: '#81c784',
-    dark: '#388e3c',
-    contrastText: '#ffffff',
-  },
-  xango: {
-    main: '#d32f2f', // Vermelho
-    light: '#f44336',
-    dark: '#c62828',
     contrastText: '#ffffff',
   },
   oxum: {
@@ -45,12 +13,6 @@ const batuaraColors = {
     light: '#ffeb3b',
     dark: '#ff8f00',
     contrastText: '#000000',
-  },
-  nana: {
-    main: '#9c27b0', // Roxo
-    light: '#ba68c8',
-    dark: '#7b1fa2',
-    contrastText: '#ffffff',
   },
 };
 
@@ -216,24 +178,5 @@ export const batuaraTheme = createTheme({
   },
 });
 
-// Cores específicas dos Orixás para uso em componentes
-export const orixaColors = batuaraColors;
-
 export const desktopMinWidth = 1024;
 export const desktopMediaQuery = `@media (min-width:${desktopMinWidth}px)`;
-
-// Função para obter cor do Orixá
-export const getOrixaColor = (orixaName: string): string => {
-  const colorMap: { [key: string]: string } = {
-    'oxala': batuaraColors.oxala.main,
-    'yemanja': batuaraColors.yemanja.main,
-    'iansa': batuaraColors.iansa.main,
-    'ogum': batuaraColors.ogum.main,
-    'oxossi': batuaraColors.oxossi.main,
-    'xango': batuaraColors.xango.main,
-    'oxum': batuaraColors.oxum.main,
-    'nana': batuaraColors.nana.main,
-  };
-  
-  return colorMap[orixaName.toLowerCase()] || batuaraColors.yemanja.main;
-};
