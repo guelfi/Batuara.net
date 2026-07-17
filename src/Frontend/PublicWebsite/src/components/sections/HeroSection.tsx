@@ -402,210 +402,92 @@ const HeroSection: React.FC = () => {
               </Card>
             </Box>
 
-            {/* Mobile: Carrossel */}
+            {/* Mobile: Carrossel Perpétuo */}
             <Box
               sx={{
                 display: { xs: 'block', md: 'none' },
+                overflow: 'hidden',
+                width: '100%',
                 position: 'relative',
-                overflow: 'clip',
+                py: 1,
               }}
             >
-              {canScrollLeft && (
-                <IconButton
-                  onClick={() => scroll('left')}
-                  sx={{
-                    position: 'absolute',
-                    left: { xs: 4, md: -20 },
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    zIndex: 2,
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    color: 'white',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                    },
-                  }}
-                >
-                  <ArrowBackIosIcon />
-                </IconButton>
-              )}
-
-              {canScrollRight && (
-                <IconButton
-                  onClick={() => scroll('right')}
-                  sx={{
-                    position: 'absolute',
-                    right: { xs: 4, md: -20 },
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    zIndex: 2,
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    color: 'white',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                    },
-                  }}
-                >
-                  <ArrowForwardIosIcon />
-                </IconButton>
-              )}
-
               <Box
-                ref={scrollContainerRef}
-                onScroll={handleScroll}
                 sx={{
                   display: 'flex',
-                  gap: 1.5, // Gap menor entre cards
-                  overflowX: 'auto',
-                  scrollBehavior: 'smooth',
-                  overscrollBehaviorX: 'contain',
-                  WebkitOverflowScrolling: 'touch',
-                  pb: 1.5, // Padding bottom menor
-                  px: 0.5,
-                  scrollSnapType: 'x mandatory',
-                  '&::-webkit-scrollbar': {
-                    display: 'none',
+                  gap: '12px',
+                  width: 'max-content',
+                  animation: 'marquee 25s linear infinite',
+                  '@keyframes marquee': {
+                    '0%': { transform: 'translateX(0)' },
+                    '100%': { transform: 'translateX(-624px)' }, // 4 cards * (144px largura + 12px gap) = 624px
                   },
-                  scrollbarWidth: 'none',
                 }}
               >
-                <Card
-                  sx={{
-                    minWidth: mobileCardWidth,
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    scrollSnapAlign: 'start',
-                  }}
-                >
-                  <CardContent sx={{ textAlign: 'center', py: 1.5, px: 1.5 }}>
-                    <FavoriteIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />
-                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '0.85rem', mb: 0.2 }}>
-                      Caridade
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.72rem' }}>
-                      "Fora da caridade não há salvação"
-                    </Typography>
-                  </CardContent>
-                </Card>
-
-                <Card
-                  sx={{
-                    minWidth: mobileCardWidth,
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    scrollSnapAlign: 'start',
-                  }}
-                >
-                  <CardContent sx={{ textAlign: 'center', py: 1.5, px: 1.5 }}>
-                    <PeopleIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />
-                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '0.85rem', mb: 0.2 }}>
-                      Fraternidade
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.72rem' }}>
-                      Unidos no amor e na fé
-                    </Typography>
-                  </CardContent>
-                </Card>
-
-                <Card
-                  sx={{
-                    minWidth: mobileCardWidth,
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    scrollSnapAlign: 'start',
-                  }}
-                >
-                  <CardContent sx={{ textAlign: 'center', py: 1.5, px: 1.5 }}>
-                    <AutoAwesomeIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />
-                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '0.85rem', mb: 0.2 }}>
-                      Espiritualidade
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.72rem' }}>
-                      Elevação da alma através da fé
-                    </Typography>
-                  </CardContent>
-                </Card>
-
-                <Card
-                  sx={{
-                    minWidth: mobileCardWidth,
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    scrollSnapAlign: 'start',
-                  }}
-                >
-                  <CardContent sx={{ textAlign: 'center', py: 1.5, px: 1.5 }}>
-                    <MenuBookIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />
-                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '0.85rem', mb: 0.2 }}>
-                      Tradição
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.72rem' }}>
-                      Preservando os ensinamentos ancestrais
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Box>
-
-              <Typography
-                variant="body2"
-                sx={{
-                  textAlign: 'center',
-                  mt: 1, // Margem menor
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  fontSize: '0.8rem', // Fonte menor
-                  fontStyle: 'italic',
-                }}
-              >
-                👆 Deslize para ver nossos valores
-              </Typography>
-
-              <Box sx={{ textAlign: 'center', mt: 0.5 }}> {/* Margem menor */}
-                <NavigationDots
-                  totalItems={4}
-                  currentIndex={(() => {
-                    // Se chegou ao final do scroll, mostrar o último dot
-                    if (scrollPosition >= maxScroll - 10) {
-                      return 3;
-                    }
-
-                    // Calcular o índice baseado na posição do scroll
-                    // Adicionar metade do itemWidth para melhor detecção do centro
-                    const adjustedScrollPosition = scrollPosition + (mobileCardWidth / 2);
-                    const calculatedIndex = Math.floor(adjustedScrollPosition / mobileCardWithGap);
-
-                    // Garantir que o índice esteja dentro dos limites
-                    return Math.min(Math.max(calculatedIndex, 0), 3);
-                  })()}
-                  itemsPerView={1}
-                  onDotClick={handleDotClick}
-                  sx={{
-                    '& > div': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.3)', // Dots inativos mais transparentes
-                      border: '1px solid rgba(255, 255, 255, 0.5)',
-                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-                      width: '10px',
-                      height: '10px',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.6)',
-                        transform: 'scale(1.2)',
-                        border: '1px solid rgba(255, 255, 255, 0.8)',
-                      }
-                    },
-                    '& > div[data-active="true"]': {
-                      backgroundColor: '#ffffff', // Dot ativo branco sólido
-                      border: '2px solid #2196f3', // Borda azul para destaque
-                      boxShadow: '0 2px 8px rgba(33, 150, 243, 0.6)', // Sombra azul
-                      width: '12px',
-                      height: '12px',
-                      transform: 'scale(1.1)',
-                    }
-                  }}
-                />
+                {[
+                  {
+                    icon: <FavoriteIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />,
+                    title: 'Caridade',
+                    description: '"Fora da caridade não há salvação"',
+                  },
+                  {
+                    icon: <PeopleIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />,
+                    title: 'Fraternidade',
+                    description: 'Unidos no amor e na fé',
+                  },
+                  {
+                    icon: <AutoAwesomeIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />,
+                    title: 'Espiritualidade',
+                    description: 'Elevação da alma através da fé',
+                  },
+                  {
+                    icon: <MenuBookIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />,
+                    title: 'Tradição',
+                    description: 'Preservando os ensinamentos ancestrais',
+                  },
+                ].concat([
+                  {
+                    icon: <FavoriteIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />,
+                    title: 'Caridade',
+                    description: '"Fora da caridade não há salvação"',
+                  },
+                  {
+                    icon: <PeopleIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />,
+                    title: 'Fraternidade',
+                    description: 'Unidos no amor e na fé',
+                  },
+                  {
+                    icon: <AutoAwesomeIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />,
+                    title: 'Espiritualidade',
+                    description: 'Elevação da alma através da fé',
+                  },
+                  {
+                    icon: <MenuBookIcon sx={{ fontSize: 25, mb: 0.3, color: 'white' }} />,
+                    title: 'Tradição',
+                    description: 'Preservando os ensinamentos ancestrais',
+                  },
+                ]).map((card, idx) => (
+                  <Card
+                    key={idx}
+                    sx={{
+                      width: 144,
+                      flexShrink: 0,
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      backdropFilter: 'blur(10px)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                    }}
+                  >
+                    <CardContent sx={{ textAlign: 'center', py: 1.5, px: 1.5 }}>
+                      {card.icon}
+                      <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '0.85rem', mb: 0.2 }}>
+                        {card.title}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.72rem' }}>
+                        {card.description}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                ))}
               </Box>
             </Box>
           </Grid>
