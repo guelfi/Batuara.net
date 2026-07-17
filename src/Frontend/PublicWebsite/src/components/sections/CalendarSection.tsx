@@ -73,19 +73,26 @@ const CalendarGridIcon: React.FC<{ size?: number; color?: string }> = ({ size = 
   );
 };
 
-// Orixá do mês, conforme datas comemorativas da apostila da Casa (confirmado com a direção em 2026-07-17).
-// Meses sem Orixá com data comemorativa própria usam Iemanjá (azul), Orixá padroeira da Casa.
+// Cor do mês, conforme o Orixá ou Guia efetivamente festejado nas Festas da Casa
+// (conferido com a direção em 2026-07-17, com base no calendário real de 2026, não apenas na apostila).
+// Meses sem Festa própria usam Iemanjá (azul), Orixá padroeira da Casa.
 const getMonthAccentColor = (date: Date): string => {
+  const day = date.getDate();
   switch (date.getMonth()) {
-    case 0: return orixaColorMap['verde'];    // Janeiro - Oxóssi (20/01)
-    case 1: return orixaColorMap['azul'];     // Fevereiro - Iemanjá (02/02)
-    case 3: return orixaColorMap['vermelho']; // Abril - Ogum (23/04)
-    case 6: return orixaColorMap['lilás'];    // Julho - Nanã (27/07)
-    case 7: return orixaColorMap['dourado'];  // Agosto - Oxum (15/08)
-    case 8: return orixaColorMap['marrom'];   // Setembro - Xangô (30/09)
-    case 11: // Dezembro: Iansã (04/12) na 1ª quinzena, Oxalá (25/12) na 2ª
-      return date.getDate() <= 15 ? orixaColorMap['laranja'] : orixaColorMap['branco'];
-    default: return orixaColorMap['azul'];    // Sem Orixá com data própria: Iemanjá, padroeira da Casa
+    case 0: return orixaColorMap['verde'];      // Janeiro - Festa de Oxóssi (20/01)
+    case 1: return orixaColorMap['azul'];       // Fevereiro - Festa de Iemanjá (02/02)
+    case 3: return orixaColorMap['vermelho'];   // Abril - Festa de Ogum (23/04)
+    case 4: // Maio: Festa dos Pretos Velhos (13/05) na 1ª quinzena, Festa dos Ciganos (24/05) na 2ª
+      return day <= 15 ? orixaColorMap['preto'] : orixaColorMap['vermelho'];
+    case 5: return orixaColorMap['marrom'];     // Junho - Festa de Boiadeiro (24/06)
+    case 6: return orixaColorMap['lilás'];      // Julho - Festa de Nanã (27/07)
+    case 7: return orixaColorMap['roxo'];       // Agosto - Festa de Obaluaê
+    case 8: return orixaColorMap['arcoíris'];   // Setembro - Festa dos Erês (27/09)
+    case 9: // Outubro: Festa de Xangô na 1ª quinzena, Festa de Oxum na 2ª
+      return day <= 15 ? orixaColorMap['marrom'] : orixaColorMap['dourado'];
+    case 11: // Dezembro: Festa de Iansã (04/12) na 1ª quinzena, Festa de Oxalá (25/12) na 2ª
+      return day <= 15 ? orixaColorMap['laranja'] : orixaColorMap['branco'];
+    default: return orixaColorMap['azul'];      // Março e Novembro sem Festa em 2026: Iemanjá, padroeira da Casa
   }
 };
 
