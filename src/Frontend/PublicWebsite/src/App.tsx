@@ -22,8 +22,8 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 3,
-      staleTime: 5 * 60 * 1000, // 5 minutos
-      refetchOnWindowFocus: false,
+      staleTime: 0,              // Sempre considera dados como stale → revalida em background
+      refetchOnWindowFocus: true, // Revalida ao voltar à aba (útil após salvar no Admin)
     },
   },
 });

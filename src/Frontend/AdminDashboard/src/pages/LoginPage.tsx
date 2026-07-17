@@ -130,6 +130,9 @@ const LoginPage: React.FC = () => {
             p: 4,
             borderRadius: 3,
             textAlign: 'center',
+            minHeight: { xs: 420, sm: 440 },
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
           <Box
@@ -216,11 +219,7 @@ const LoginPage: React.FC = () => {
             </Alert>
           )}
 
-          {memberInfo && (
-            <Alert severity="info" sx={{ mb: 3 }}>
-              {memberInfo}
-            </Alert>
-          )}
+
 
           {mode === 'staff' ? (
           <Box component="form" onSubmit={handleSubmit(onSubmit)}>
@@ -310,47 +309,64 @@ const LoginPage: React.FC = () => {
                 fullWidth
                 label="Celular com DDD"
                 value={memberPhone}
+                disabled={codeRequested}
                 onChange={(event) => setMemberPhone(formatPhoneBr(event.target.value))}
                 placeholder="(11) 99999-9999"
+                helperText={codeRequested ? 'Código enviado! Verifique seu WhatsApp.' : undefined}
+                FormHelperTextProps={{ sx: { color: 'success.main', fontWeight: 500 } }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <PhoneIcon color="action" />
+                      <PhoneIcon color={codeRequested ? 'disabled' : 'action'} />
                     </InputAdornment>
                   ),
                 }}
               />
 
-              {codeRequested && (
-                <TextField
-                  fullWidth
-                  label="Código recebido"
-                  value={memberCode}
-                  onChange={(event) => setMemberCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
-                  inputProps={{ inputMode: 'numeric', maxLength: 6 }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <PinIcon color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              )}
+              {/* Campo código — sempre visível, habilitado apenas após envio */}
+              <TextField
+                fullWidth
+                label="Código recebido"
+                value={memberCode}
+                disabled={!codeRequested}
+                onChange={(event) => setMemberCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                inputProps={{ inputMode: 'numeric', maxLength: 6 }}
+                placeholder={codeRequested ? '000000' : '------'}
+                helperText={!codeRequested ? 'Informe seu celular acima para receber o código' : undefined}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PinIcon color={codeRequested ? 'action' : 'disabled'} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
 
               <Button
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={memberLoading || onlyDigits(memberPhone).length < 10 || (codeRequested && memberCode.length !== 6)}
+                disabled={
+                  memberLoading ||
+                  (!codeRequested && onlyDigits(memberPhone).length < 10) ||
+                  (codeRequested && memberCode.length !== 6)
+                }
                 onClick={codeRequested ? handleMemberLogin : handleRequestMemberCode}
                 sx={{ py: 1.5, fontSize: '1.1rem', fontWeight: 600 }}
               >
-                {memberLoading ? <CircularProgress size={24} color="inherit" /> : codeRequested ? 'Entrar com código' : 'Receber código no WhatsApp'}
+                {memberLoading
+                  ? <CircularProgress size={24} color="inherit" />
+                  : codeRequested
+                  ? 'Entrar com código'
+                  : 'Receber código no WhatsApp'}
               </Button>
 
               {codeRequested && (
-                <Button variant="text" onClick={() => { setCodeRequested(false); setMemberCode(''); setMemberInfo(null); }}>
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() => { setCodeRequested(false); setMemberCode(''); setMemberInfo(null); }}
+                >
                   Trocar celular
                 </Button>
               )}

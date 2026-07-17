@@ -392,6 +392,9 @@ app.UseSwaggerUI(c =>
 // Security headers
 app.UseMiddleware<SecurityHeadersMiddleware>();
 
+// Cache-Control por tipo de rota (evita dados stale no PublicWebsite após edições no Admin)
+app.UseMiddleware<CacheControlMiddleware>();
+
 app.UseHttpsRedirection();
 app.UseSerilogRequestLogging(options =>
 {
