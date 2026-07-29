@@ -21,7 +21,6 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import InfoIcon from '@mui/icons-material/Info';
 import EventIcon from '@mui/icons-material/Event';
 import { useQuery } from '@tanstack/react-query';
-import { useTheme } from '@mui/material';
 import publicApi from '../../services/api';
 import { AttendanceType, CalendarAttendance, Event as BatuaraEvent, EventType } from '../../types';
 import { orixaColorMap } from '../../utils/orixaColors';
@@ -137,7 +136,6 @@ const CalendarSection: React.FC = () => {
   const monthEnd = useMemo(() => endOfMonth(selectedMonthDate), [selectedMonthDate]);
 
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
-  const theme = useTheme();
 
   const handleCloseDialog = () => setSelectedItem(null);
 
@@ -364,32 +362,9 @@ const CalendarSection: React.FC = () => {
               <ArrowBackIosIcon fontSize="small" />
             </IconButton>
 
-            {/* Titulo central: icone + CALENDARIO | Mes / Ano manuscrito na cor do Orixa do mes */}
+            {/* Titulo central: icone + Mes / Ano manuscrito na cor do Orixa do mes */}
             <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5}>
               <CalendarGridIcon size={20} color={monthAccentColor} />
-              <Typography
-                sx={{
-                  fontSize: { xs: '1.34rem', md: '1.75rem' },
-                  fontWeight: 900,
-                  color: 'text.primary',
-                  letterSpacing: '-0.5px',
-                  lineHeight: 1,
-                  textTransform: 'uppercase',
-                }}
-              >
-                Calendário
-              </Typography>
-              <Box
-                component="span"
-                sx={{
-                  width: 3,
-                  height: { xs: 18, md: 26 },
-                  backgroundColor: theme.palette.primary.main,
-                  borderRadius: 1,
-                  display: 'inline-block',
-                  mx: 0.5,
-                }}
-              />
               {/* Mes / Ano em fonte manuscrita, colorido conforme o Orixa do mes */}
               <Typography
                 sx={{

@@ -16,18 +16,18 @@ ENV PUBLIC_URL=${WEB_BASE_PATH}
 # Copia arquivos de dependências
 COPY ${APP_PATH}/package*.json ./
 
-# Instala dependências usando lockfile para reprodutibilidade
+# Instala dependências (usa ci se lockfile existir, install como fallback)
 RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
     npm config set fetch-timeout 600000 && \
-    for i in 1 2 3; do \
-      echo "npm ci attempt $i/3"; \
-      npm ci --legacy-peer-deps && break; \
-      if [ "$i" -eq 3 ]; then exit 1; fi; \
-      echo "npm ci failed, retrying in 10s..."; \
-      sleep 10; \
-    done
+    if [ -f package-lock.json ]; then \
+      echo "Usando npm ci (lockfile encontrado)"; \
+      npm ci --legacy-peer-deps; \
+    else \
+      echo "Usando npm install (sem lockfile)"; \
+      npm install --legacy-peer-deps; \
+    fi
 
 # Copia código fonte
 COPY ${APP_PATH}/ ./
