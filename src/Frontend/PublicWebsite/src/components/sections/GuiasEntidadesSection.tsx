@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import CloseIcon from '@mui/icons-material/Close';
 import PeopleIcon from '@mui/icons-material/People';
 import { TransitionProps } from '@mui/material/transitions';
 import { useQuery } from '@tanstack/react-query';
@@ -449,9 +450,22 @@ const GuiasEntidadesSection: React.FC = () => {
                   backgroundColor: `${dialogAccentColor}14`,
                   borderBottom: `1px solid ${dialogAccentColor}30`,
                   color: dialogTitleColor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1,
+                  pr: 1,
                 }}
               >
                 {selectedGuia?.name}
+                <IconButton
+                  aria-label="Fechar"
+                  onClick={handleCloseDialog}
+                  size="small"
+                  sx={{ color: dialogTitleColor }}
+                >
+                  <CloseIcon />
+                </IconButton>
               </DialogTitle>
               <DialogContent>
                 {selectedGuia && (

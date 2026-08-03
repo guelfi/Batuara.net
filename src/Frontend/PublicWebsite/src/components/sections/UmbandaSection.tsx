@@ -17,7 +17,8 @@ import {
 } from '@mui/material';
 import { 
   ArrowBackIos as ArrowBackIcon,
-  ArrowForwardIos as ArrowForwardIcon
+  ArrowForwardIos as ArrowForwardIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import { TransitionProps } from '@mui/material/transitions';
 import { useQuery } from '@tanstack/react-query';
@@ -281,18 +282,8 @@ const UmbandaSection: React.FC = () => {
               pb: 2,
               px: { xs: 0.5, md: 0 },
               scrollSnapType: 'x mandatory',
-              scrollbarWidth: { xs: 'none', md: 'thin' },
-              '&::-webkit-scrollbar': {
-                height: { xs: 0, md: 8 },
-              },
-              '&::-webkit-scrollbar-track': {
-                backgroundColor: 'rgba(0,0,0,0.1)',
-                borderRadius: 4,
-              },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'primary.main',
-                borderRadius: 4,
-              },
+              '&::-webkit-scrollbar': { display: 'none' },
+              scrollbarWidth: 'none',
             }}
           >
           {linhas.map((linha, index) => (
@@ -494,9 +485,26 @@ const UmbandaSection: React.FC = () => {
             backgroundColor: `${(selectedLinhaColor ?? theme.palette.primary.main)}14`,
             borderBottom: `1px solid ${(selectedLinhaColor ?? theme.palette.primary.main)}30`,
             color: (selectedLinhaColor ?? theme.palette.primary.main) === '#e8eaf6' ? '#1a237e' : (selectedLinhaColor ?? theme.palette.primary.main),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1,
+            pr: 1,
           }}
         >
           {selectedLinha?.name}
+          <IconButton
+            aria-label="Fechar"
+            onClick={handleCloseDialog}
+            size="small"
+            sx={{
+              color: (selectedLinhaColor ?? theme.palette.primary.main) === '#e8eaf6'
+                ? '#1a237e'
+                : (selectedLinhaColor ?? theme.palette.primary.main),
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'grid', gap: 2, py: 1 }}>

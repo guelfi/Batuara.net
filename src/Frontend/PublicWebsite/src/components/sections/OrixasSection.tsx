@@ -21,6 +21,7 @@ import {
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import CloseIcon from '@mui/icons-material/Close';
 import { TransitionProps } from '@mui/material/transitions';
 import { useQuery } from '@tanstack/react-query';
 import NavigationDots from '../common/NavigationDots';
@@ -420,9 +421,22 @@ const OrixasSection: React.FC = () => {
               backgroundColor: `${dialogAccentColor}14`,
               borderBottom: `1px solid ${dialogAccentColor}30`,
               color: dialogTitleColor,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1,
+              pr: 1,
             }}
           >
             {selectedOrixa?.name}
+            <IconButton
+              aria-label="Fechar"
+              onClick={handleCloseDialog}
+              size="small"
+              sx={{ color: dialogTitleColor }}
+            >
+              <CloseIcon />
+            </IconButton>
           </DialogTitle>
           <DialogContent>
             {selectedOrixa && (
