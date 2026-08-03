@@ -299,30 +299,20 @@ Warnings de lint ainda existentes e considerados preexistentes/não bloqueantes:
 
 ## Pendências reais
 
-Para fechar produção:
-1. Configurar/validar segredos reais em ambiente, sem commit:
-   - `WhatsApp__Enabled=true`
-   - `WhatsApp__BaseUrl=http://127.0.0.1:8085`
-   - `WhatsApp__ApiKey=<secret>`
-   - `WhatsApp__InstanceName=batuara-casa`
-2. ~~Aplicar migrations `20260708020346_AddMemberLoginCodes` e `20260708130000_AddRecurringContributionAndWhatsAppContact` em produção.~~ ✅ Confirmado em 2026-07-08.
-3. E2E já validado com evidência real em 2026-07-08 (ver seção no topo do arquivo):
-   - ✅ Filho da Casa solicita código, recebe no WhatsApp, login funciona, perfil carrega com dados reais.
-   - ✅ Visitante envia contato com opt-in WhatsApp, Admin responde e mensagem chega de verdade no WhatsApp.
-   - ✅ RBAC: Admin e Editor testados no navegador, bloqueio real confirmado.
-4. E2E ainda não validado manualmente (só por teste automatizado):
-   - Admin cria contribuição recorrente e marca como paga → sistema gera a contribuição do próximo mês.
-   - Membro edita dados pessoais/endereço via `Meu Cadastro`.
-   - Membro registra contribuição pendente.
-   - Membro é bloqueado em rotas administrativas.
-5. Revisar configuração de logs da Evolution API antes de produção.
-6. Manter portas públicas OCI somente `22`, `80`, `443`; não reabrir portas diretas de containers.
+> **Controle ativo:** todas as pendências abaixo foram migradas para [`docs/PLANO-MELHORIAS.md`](PLANO-MELHORIAS.md) (`PM-004`…`PM-008`, etc.).  
+> Este arquivo permanece como **snapshot** da validação de 2026-07-08, não como tracker.
+
+Resumo do que ainda importava neste snapshot:
+
+- E2E manual de contribuição recorrente (só coberto por teste automatizado) → `PM-004`
+- Revisar logs Evolution / chip dedicado / lembretes desligados → `PM-006`, `PM-007`, `PM-008`
+- Manter portas públicas OCI somente `22`, `80`, `443`
 
 ## Observações para próximas ferramentas/agentes
 
+- Usar `docs/PLANO-MELHORIAS.md` para fila e handoff.
 - Não executar build backend com `dotnet` no host Windows; usar Docker local.
-- O container runtime `batuara-net-local-api` não possui SDK. Para EF/testes, usar `mcr.microsoft.com/dotnet/sdk:8.0` com volume do workspace.
+- O container runtime `batuara-net-local-api` não possui SDK. Para EF/testes, usar `mcr.microsoft.com/dotnet/sdk:8.0` (ou `:10.0` após upgrade) com volume do workspace.
 - O design-time factory do EF usa `BATUARA_CONNECTION_STRING`, não `ConnectionStrings__DefaultConnection`.
 - O banco local está em container `batuara-net-local-db` na rede `batuara-net-local_batuara-network`.
-- Existem várias alterações não relacionadas já presentes no worktree; não reverter sem confirmação do usuário.
 - Banco local foi sincronizado da produção após manutenção `Exu`/`Pomba Gira`; usar produção como fonte de verdade.

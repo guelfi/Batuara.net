@@ -301,6 +301,7 @@ docker compose -p batuara-net-local -f docker-compose.local.yml up -d --force-re
 3. Validar `health`, `swagger`, site público e admin
 4. Fazer login com usuário admin seedado
 5. Conferir documentação complementar:
+   - `docs/PLANO-MELHORIAS.md`
    - `docs/Resumo-Executivo.md`
    - `docs/STATUS-PROJETO.md`
    - `docs/Backlog-Executavel.md`

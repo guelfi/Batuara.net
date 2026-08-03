@@ -1,26 +1,26 @@
 # Batuara.net - Registro de Correções, Melhorias e Roadmap
 
-> Documento de referência para desenvolvedores e ferramentas de assistência por IA (Devin, Codex, Claude, Gemini, Warp Terminal, Opencode, Antigravity, Trae, Qoder e outras).
-> Última atualização: Julho/2026
+> Documento de **histórico** de fases, PRs e entregas já aplicadas.
+> Última atualização documental: Agosto/2026
+
+> **Controle ativo de melhorias e handoff:** use apenas [`docs/PLANO-MELHORIAS.md`](docs/PLANO-MELHORIAS.md).  
+> Este `ROADMAP.md` não é mais o tracker de tarefas pendentes.
 
 ---
 
 ## Visão Geral
 
-Este documento registra as correções e melhorias já aplicadas ao projeto Batuara.net, organizadas por fases de execução. A partir de Março/2026 ele também passa a funcionar como roadmap principal de produto e plataforma, consolidando:
-
-- histórico de entregas já concluídas
-- hardening e infraestrutura ainda pendentes
-- evolução funcional da API RESTful e do CMS administrativo
-- referência cruzada com os documentos de planejamento detalhado
+Este documento registra as correções e melhorias já aplicadas ao projeto Batuara.net, organizadas por fases de execução. Serve como histórico e contexto; a fila de trabalho atual está em `docs/PLANO-MELHORIAS.md`.
 
 ### Documentos Complementares
 
+- `docs/PLANO-MELHORIAS.md` — **fila única de melhorias + handoff**
 - `docs/EFT-especificacao-funcional-tecnica.md` — arquitetura, contratos, SLAs, segurança e governança
 - `docs/Resumo-Executivo.md` — objetivos, escopo, riscos, cronograma macro e benefícios
-- `docs/Backlog-Executavel.md` — épicos, histórias, dependências e priorização por rota/domínio
-- `docs/Status Atual - RBAC WhatsApp e COR-09.md` — status consolidado de RBAC, WhatsApp, Filho da Casa e COR-09
-- `docs/Evolution API - Operacao OCI.md` — runbook específico da Evolution API self-hosted na OCI
+- `docs/Backlog-Executavel.md` — épicos, histórias e critérios de aceite (referência)
+- `docs/STATUS-PROJETO.md` — status por módulo
+- `docs/Status Atual - RBAC WhatsApp e COR-09.md` — snapshot validado de RBAC/WhatsApp
+- `docs/Evolution API - Operacao OCI.md` — runbook da Evolution API na OCI
 
 ### Estado de Handoff — 2026-07-08
 
@@ -236,9 +236,9 @@ Este plano deve ser utilizado como ponto de partida em cada sessão de trabalho:
 | 5.5 | Logging Centralizado | [x] | Alta | 3-5h | 24/03/2026 | [#17](https://github.com/guelfi/Batuara.net/pull/17) |
 | 5.6 | Backup PostgreSQL | [x] | Alta | 3-4h | 24/03/2026 | [#17](https://github.com/guelfi/Batuara.net/pull/17) |
 | 5.7 | Runbook de Operações | [x] | Média | 3-4h | 24/03/2026 | [#17](https://github.com/guelfi/Batuara.net/pull/17) |
-| 5.3 | HTTPS com Let's Encrypt | [⏳] | Crítica | 2-3h | - | Bloqueado — aguardando domínio |
+| 5.3 | HTTPS com Let's Encrypt | [x] | Crítica | 2-3h | 2026-08-03 (reconhecido) | Produção: `https://www.batuara.org.br/` |
 
-> ⚠️ **Item 5.3 por último:** HTTPS com Let's Encrypt aguarda domínio válido. Continuar com os outros itens primeiro.
+> ✅ **Item 5.3 concluído em produção** (`batuara.org.br` / Cloudflare). Controle ativo: `docs/PLANO-MELHORIAS.md`.
 
 ### Histórico de Execução
 
@@ -318,7 +318,7 @@ Este plano deve ser utilizado como ponto de partida em cada sessão de trabalho:
 
 ### 5.3 — HTTPS com Let's Encrypt
 
-**Status:** `[⏳]` Bloqueado - Aguardando domínio  
+**Status:** `[x]` Concluído em produção — `https://www.batuara.org.br/` (reconhecido em 2026-08-03; docs abaixo são histórico do planejamento)  
 **PR:** —  
 **Prioridade:** Crítica  
 **Facilidade:** Média  
@@ -793,42 +793,19 @@ Batuara.net/
 
 Ao iniciar uma nova sessão de trabalho com este projeto:
 
-1. **Primeiro passo:** Ler este arquivo (`ROADMAP.md`) para entender o histórico e a fase ativa
-2. **Segundo passo:** Ler `docs/Status Atual - RBAC WhatsApp e COR-09.md` para o status mais recente de RBAC/WhatsApp/Member
-3. **Terceiro passo:** Ler `docs/Evolution API - Operacao OCI.md` se a tarefa envolver WhatsApp ou OCI
-4. **Quarto passo:** Ler `docs/RUNBOOK.md` se a tarefa envolver produção, banco, portas ou deploy
-5. **Quinto passo:** Ler `docs/EFT-especificacao-funcional-tecnica.md` para arquitetura, segurança e contratos
-6. **Sexto passo:** Ler `docs/Backlog-Executavel.md` para prioridade, dependências e histórias
-7. **Verificar fase ativa:**
-   - Se o tema for hardening/infra, usar a Fase 5
-   - Se o tema for API/CMS/rotas do AdminDashboard/PublicWebsite, usar a Fase 6
-8. **Durante a execução:**
-   - Ao iniciar um item: mudar `[ ]` para `[→]` (em andamento)
-   - Ao completar: mudar para `[x]` (concluído)
-   - Ao abrir PR: atualizar coluna "PR" com link
-9. **Final de sessão:**
-   - Atualizar data de conclusão na tabela
-   - Adicionar entrada no "Histórico de Execução"
-   - Atualizar o `ROADMAP.md` e, se necessário, os documentos em `docs/`
+1. **Primeiro passo:** Ler `docs/PLANO-MELHORIAS.md` (fila ativa + handoff)
+2. **Segundo passo:** Ler `agent.md` para arquitetura e regras do repositório
+3. **Terceiro passo:** Ler `docs/STATUS-PROJETO.md` e, se necessário, `docs/Status Atual - RBAC WhatsApp e COR-09.md`
+4. **Quarto passo:** Se a tarefa envolver WhatsApp/OCI → `docs/Evolution API - Operacao OCI.md`
+5. **Quinto passo:** Se envolver produção/banco/deploy → `docs/RUNBOOK.md`
+6. **Sexto passo:** Detalhe de histórias/aceite → `docs/Backlog-Executavel.md`; histórico de fases → este `ROADMAP.md`
+7. **Durante a execução:** atualizar status dos itens `PM-XXX` em `docs/PLANO-MELHORIAS.md`
+8. **Final de sessão:** preencher o handoff em `docs/PLANO-MELHORIAS.md` §6
 
 ### Prioridade de Execução
 
-Ordem recomendada a partir do estado atual do projeto (otimizada por facilidade + criticidade):
-
-1. **Fase 6.0** — Fundação técnica e contratos (pré-requisito de tudo)
-2. **Fase 6.1 / EP-SiteSettings** — CRUD mais simples, valida a fundação end-to-end (5 pts)
-3. **Fase 6.1 / EP-Events** — CRUD completo: listar, criar, editar, excluir, listagem admin (5+8+5+3+3 = 24 pts)
-4. **Fase 6.1 / EP-Contact** — Endpoint único, rápido de implementar (5 pts)
-5. **Fase 6.2 / EP-Orixas** — Reutiliza padrões do EP-Events (3+8 = 11 pts)
-6. **Fase 6.2 / EP-UmbandaLines** — Mesma estrutura de EP-Orixas (8 pts)
-7. **Fase 6.2 / EP-SpiritualContents** — CRUD com busca e sanitização XSS (8 pts)
-8. **Fase 6.1 / EP-Calendar** — Mais complexo: público, inscrições e CRUD admin (5+13+8+8 = 34 pts)
-9. **Fase 6.3 / EP-Dashboard** — Métricas e atividade administrativa (8 pts)
-10. **Fase 6.3 / EP-Audit** — Trilha de auditoria transversal (8 pts)
-11. **Fase 6.4** — MFA, WAF/SIEM e fechamento do HTTPS (13+ pts; item 5.3 continua dependente de domínio válido)
-12. **Fase 6.5 / WhatsApp-Member** — executar E2E real, aplicar migration em ambiente alvo e trocar para chip dedicado quando disponível
-
-> **Total estimado:** 124 story points (19 histórias)
+A ordem vigente está em `docs/PLANO-MELHORIAS.md` §4.  
+O checklist histórico da Fase 5/6 abaixo permanece apenas como registro; itens ainda abertos foram migrados para IDs `PM-XXX`.
 
 ### Atalhos de Comando
 

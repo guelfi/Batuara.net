@@ -105,8 +105,10 @@ Batuara.net/
 ├── Dockerfile.api                    # Build da API .NET
 ├── Dockerfile.frontend               # Build do Public Website
 ├── Dockerfile.admin                  # Build do Admin Dashboard
-├── ROADMAP.md                        # Registro de correcoes, melhorias e roadmap
-└── docs/                             # Documentacao adicional
+├── ROADMAP.md                        # Historico de fases e PRs
+├── agent.md                          # Onboarding para IA e desenvolvedores
+└── docs/
+    └── PLANO-MELHORIAS.md            # Fila unica de melhorias e handoff
 ```
 
 ---
@@ -339,6 +341,8 @@ git push origin master
 
 ### Areas para Contribuicao
 
+Consulte a fila priorizada em [`docs/PLANO-MELHORIAS.md`](docs/PLANO-MELHORIAS.md). Exemplos:
+
 - Melhorias de acessibilidade (a11y) no website publico
 - Testes unitarios e de integracao
 - Internacionalizacao (i18n)
@@ -353,7 +357,8 @@ git push origin master
 
 | Documento | Descricao |
 |-----------|-----------|
-| [ROADMAP.md](ROADMAP.md) | Registro completo de correcoes, melhorias e roadmap do projeto |
+| [docs/PLANO-MELHORIAS.md](docs/PLANO-MELHORIAS.md) | Fila unica de melhorias e handoff de desenvolvimento |
+| [ROADMAP.md](ROADMAP.md) | Historico de fases, PRs e entregas ja aplicadas |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Guia de deploy na Oracle Cloud |
 | [docs/LOCAL_DEVELOPMENT_SETUP.md](docs/LOCAL_DEVELOPMENT_SETUP.md) | Setup do ambiente de desenvolvimento |
 | [docs/database-schema.md](docs/database-schema.md) | Schema do banco de dados PostgreSQL |

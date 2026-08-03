@@ -1,7 +1,9 @@
 # Batuara.net — Guia de Onboarding para IA e Desenvolvedores
 
-**Versão do documento:** 2026.07.08
+**Versão do documento:** 2026.08.03
 **Objetivo:** oferecer contexto suficiente para uma IA ou novo desenvolvedor entender rapidamente a estrutura, os módulos, o fluxo de deploy e os pontos de atenção do projeto.
+
+> **Fila de melhorias e handoff:** [`docs/PLANO-MELHORIAS.md`](docs/PLANO-MELHORIAS.md)
 
 ## 1. Visão Geral
 
@@ -323,29 +325,24 @@ Validações executadas:
 - Banco local após sincronização OCI -> dev: `Orixas=12`, `Guides=9`; API local `healthy` pelo healthcheck do container.
 - Acesso externo pós-hardening OCI: esperar somente `22`, `80` e `443`; revalidar com `Test-NetConnection` se houver nova alteração de regra.
 
-Pendências operacionais para a próxima ferramenta/agente:
+Pendências e handoff para a próxima ferramenta/agente:
 
-- Revisar `git status` e selecionar arquivos de commit com cuidado.
-- Não commitar `.claude/`, `docs/.~lock.Plano de Testes Batuara.xlsx#` nem `scripts/output/`.
-- Manter e versionar os artefatos de controle de testes aprovados: `docs/PlanoTestes.md` e `docs/Plano de Testes Batuara - v5.xlsx`.
-- Revisar logs da Evolution API antes de produção.
-- Manter `ContributionReminders.Enabled=false` até decisão explícita de ativação em produção.
-- Trocar número temporário por chip dedicado da Casa quando disponível.
-- Considerar restringir SSH com OCI Bastion/VPN no futuro; hoje `22` fica público porque o usuário não possui IP fixo.
-- Revisar `ufw` e compose dos demais projetos para remover/bindar portas host em `127.0.0.1`; a barreira principal já foi ajustada no painel OCI.
+→ **Usar somente [`docs/PLANO-MELHORIAS.md`](docs/PLANO-MELHORIAS.md)** (fila `PM-XXX` + §6 Handoff).
+
+Artefatos de QA a manter versionados: `docs/PlanoTestes.md` e a planilha `docs/Plano de Testes Batuara - v5.xlsx`.
 
 ## 11. Documentação Relacionada
 
+- `docs/PLANO-MELHORIAS.md` — **fila única de melhorias + handoff**
 - `docs/EFT-especificacao-funcional-tecnica.md`
 - `docs/Resumo-Executivo.md`
-- `docs/Backlog-Executavel.md`
+- `docs/Backlog-Executavel.md` — histórias/aceite (não é tracker)
 - `docs/STATUS-PROJETO.md`
 - `docs/Status Atual - RBAC WhatsApp e COR-09.md`
 - `docs/Evolution API - Operacao OCI.md`
-- `docs/Plano de Implementacao - RBAC e Login WhatsApp.md`
-- `docs/TASK_HISTORY.md`
 - `docs/DEPLOY.md`
 - `docs/LOCAL_DEVELOPMENT_SETUP.md`
+- `ROADMAP.md` — histórico de fases/PRs
 
 ## 12. Change Log
 

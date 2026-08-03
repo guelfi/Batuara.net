@@ -1,7 +1,10 @@
 # Backlog Executável — Batuara.net
 
-**Última atualização:** 2026.07.08
-**Objetivo:** refletir o backlog executável conforme o código atual (não o plano original)
+**Última atualização:** 2026.08.03
+**Objetivo:** histórias, critérios de aceite e dependências por domínio (referência de produto)
+
+> **Tracker de tarefas em desenvolvimento:** [`docs/PLANO-MELHORIAS.md`](PLANO-MELHORIAS.md).  
+> Este backlog não deve ser usado como checklist de sessão.
 
 ## Épicos (mapeados às rotas)
 
@@ -52,31 +55,8 @@
 - Use a seção **Status Atual de Execução (Resumo)** para saber o que já foi entregue.
 - Use as histórias para entender critérios de aceite, dependências e endpoints.
 - Use a **Matriz Única de Execução** como referência histórica de priorização.
-- Use as referências cruzadas em `docs/STATUS-PROJETO.md` e `docs/TASK_HISTORY.md` para validar mudanças recentes.
-
-## Handoff Atual — 2026-07-08
-
-Concluído e validado localmente:
-
-- RBAC/multiadmin, login WhatsApp e autosserviço de Filho da Casa.
-- Contribuições recorrentes com persistência real e geração da próxima mensalidade quando a atual é paga.
-- Lembretes de contribuição por WhatsApp com opt-in e throttling, desligados por padrão.
-- Contato público com opt-in para resposta por WhatsApp e endpoint admin de resposta.
-- Migration `20260708130000_AddRecurringContributionAndWhatsAppContact` e snapshot EF alinhados.
-- Deploy rolling com migration idempotente e envs de WhatsApp/lembretes.
-
-Validações executadas:
-
-- Backend: `dotnet test "Batuara.sln" -c Release` via container SDK, 33 testes passaram.
-- API: `dotnet build "src/Backend/Batuara.API/Batuara.API.csproj" -c Release` via container SDK, passou.
-- Frontends: `npm run build` em AdminDashboard e PublicWebsite, passou com warnings antigos.
-- Deploy/infra: compose produção validado, scripts de deploy validados com `bash -n`, imagens locais rebuiltadas e containers locais `healthy`.
-
-Próximos passos para outra ferramenta:
-
-- Preparar commit seletivo; evitar `.claude/`, `docs/.~lock.Plano de Testes Batuara.xlsx#` e `scripts/output/`.
-- Executar E2E real dos fluxos WhatsApp antes de produção.
-- Revisar logs da Evolution API e manter lembretes automáticos desligados até decisão explícita.
+- Para handoff e fila de trabalho: `docs/PLANO-MELHORIAS.md`.
+- Para status de módulos: `docs/STATUS-PROJETO.md`.
 
 ## Dependências Técnicas Transversais
 
@@ -330,7 +310,7 @@ Como Filho da Casa, quero receber um código por WhatsApp e acessar apenas meu p
   - `POST /api/members/me/contributions` registra contribuição pendente.
   - Member não acessa rotas administrativas.
 - Pontos: entregue em código; validação E2E pendente.
-- Referência: `docs/Plano de Implementacao - RBAC e Login WhatsApp.md`.
+- Referência operacional: `docs/Status Atual - RBAC WhatsApp e COR-09.md`; controle de pendências: `docs/PLANO-MELHORIAS.md`.
 
 ### H-080 (EP-Documentação)
 Como Stakeholder, quero documentação OpenAPI 3.0 completa e versionada.
@@ -390,7 +370,7 @@ Como Stakeholder, quero documentação OpenAPI 3.0 completa e versionada.
 | 12b | Núcleo avançado | 6.1 | EP-Calendar | H-013 | Administrador | Listar, desativar e gerenciar inscrições | `/batuara-api/api/calendar/attendances`, `.../registrations` | P1 | 8 | H-012, H-011 (CRUD + inscrições) | Planejado |
 | 13 | Governança | 6.3 | EP-Dashboard | H-060 | Administrador | Consultar métricas e atividade administrativa | `/batuara-api/api/dashboard/stats`, `/batuara-api/api/dashboard/activity-logs` | P1 | 8 | pipeline de auditoria, índices por timestamp, dados dos domínios anteriores | Planejado |
 | 14 | Governança | 6.3 | EP-Audit | H-061 | Administrador | Consultar trilhas de auditoria por usuário, ação e entidade | trilha transversal + consulta administrativa | P1 | 8 | Serilog estruturado, storage/indexação de logs, retenção, correlação com SIEM | Planejado |
-| 15 | Segurança | 6.4 | EP-Segurança | H-070 | Administrador | Habilitar MFA, RBAC granular e limites por perfil | `/batuara-api/api/auth/**`, `/batuara-api/api/**` | P1 | 13 | provider SMS, Vault, policies, WAF, SIEM, domínio válido para HTTPS final | Bloqueado |
+| 15 | Segurança | 6.4 | EP-Segurança | H-070 | Administrador | Habilitar MFA, RBAC granular e limites por perfil | `/batuara-api/api/auth/**`, `/batuara-api/api/**` | P1 | 13 | provider SMS, Vault, policies, WAF, SIEM (HTTPS/domínio já em produção: batuara.org.br) | Parcial — ver PLANO-MELHORIAS |
 
 ### Visão por Dependência de Execução
 

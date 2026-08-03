@@ -164,10 +164,10 @@ curl http://localhost/batuara-admin/
 
 ### 9.2 Referências Cruzadas
 
+- `docs/PLANO-MELHORIAS.md` — fila de melhorias e handoff
 - `docs/EFT-especificacao-funcional-tecnica.md`
 - `docs/STATUS-PROJETO.md`
 - `docs/Backlog-Executavel.md`
-- `docs/TASK_HISTORY.md`
 - `agent.md`
 
 ## 10. Change Log

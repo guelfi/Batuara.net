@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
   Container,
   Dialog,
   DialogContent,
@@ -135,9 +134,10 @@ const GuiasEntidadesSection: React.FC = () => {
     }
   };
 
+  const cardWidth = isMobile ? 260 : 300;
+
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      const cardWidth = isMobile ? 300 : 340;
       const gap = 24;
       const scrollAmount = cardWidth + gap;
       scrollContainerRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
@@ -146,7 +146,6 @@ const GuiasEntidadesSection: React.FC = () => {
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
-      const cardWidth = isMobile ? 300 : 340;
       const gap = 24;
       const scrollAmount = cardWidth + gap;
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
@@ -155,9 +154,8 @@ const GuiasEntidadesSection: React.FC = () => {
 
   const handleDotClick = (dotIndex: number) => {
     if (scrollContainerRef.current) {
-      const itemWidth = isMobile ? 300 : 340;
       const gap = 24;
-      const itemWithGap = itemWidth + gap;
+      const itemWithGap = cardWidth + gap;
       const targetScroll = dotIndex * itemWithGap;
       scrollContainerRef.current.scrollTo({ left: targetScroll, behavior: 'smooth' });
     }
@@ -282,139 +280,153 @@ const GuiasEntidadesSection: React.FC = () => {
                   scrollbarWidth: 'none',
                 }}
               >
-                {guides.map((guia) => (
-                  (() => {
-                    const accentColor = getAccentColorFromGuide(guia);
-                    const accentText = accentColor === '#e8eaf6' ? '#1a237e' : accentColor;
+                {guides.map((guia) => {
+                  const accentColor = getAccentColorFromGuide(guia);
+                  const accentText = accentColor === '#e8eaf6' ? '#1a237e' : accentColor;
 
-                    return (
-                      <Card
-                        key={guia.id}
-                        onClick={() => handleOpenDialog(guia, accentColor)}
+                  return (
+                    <Card
+                      key={guia.id}
+                      onClick={() => handleOpenDialog(guia, accentColor)}
+                      sx={{
+                        minWidth: cardWidth,
+                        maxWidth: cardWidth,
+                        height: 340,
+                        cursor: 'pointer',
+                        scrollSnapAlign: 'start',
+                        transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
+                        border: `1px solid ${accentColor}35`,
+                        borderLeft: `6px solid ${accentColor}`,
+                        '&:hover': {
+                          transform: 'translateY(-8px)',
+                          boxShadow: theme.shadows[8],
+                          borderColor: `${accentColor}90`,
+                        },
+                      }}
+                    >
+                      <CardContent
                         sx={{
-                          minWidth: { xs: 300, md: 340 },
-                          maxWidth: { xs: 300, md: 340 },
-                          cursor: 'pointer',
-                          scrollSnapAlign: 'start',
-                          transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
-                          border: `1px solid ${accentColor}35`,
-                          borderLeft: `6px solid ${accentColor}`,
-                          boxShadow: 3,
-                          '&:hover': {
-                            transform: 'translateY(-8px)',
-                            boxShadow: 6,
-                            borderColor: `${accentColor}90`,
-                          },
+                          p: 3,
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          textAlign: 'center',
                         }}
                       >
-                    <CardContent>
-                      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
                         <Box
                           sx={{
-                            width: 64,
-                            height: 64,
+                            width: 80,
+                            height: 80,
                             borderRadius: '50%',
                             backgroundColor: accentColor,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            flexShrink: 0,
+                            mx: 'auto',
+                            mb: 2,
+                            boxShadow: theme.shadows[4],
                           }}
                         >
-                          <PeopleIcon sx={{ fontSize: 34, color: 'white' }} />
+                          <PeopleIcon sx={{ fontSize: 40, color: 'white' }} />
                         </Box>
-                        <Box>
-                          <Typography variant="h6" sx={{ fontWeight: 800, color: accentText }}>
-                            {guia.name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {guia.highlight}
-                          </Typography>
-                        </Box>
-                      </Stack>
-
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{
-                          lineHeight: 1.7,
-                          display: '-webkit-box',
-                          WebkitLineClamp: 3,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          mb: 2,
-                        }}
-                      >
-                        {guia.description}
-                      </Typography>
-
-                      <Stack spacing={0.75} sx={{ mb: 2 }}>
-                        {guia.saudacao && (
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Saudação:</strong> {guia.saudacao}
-                          </Typography>
+                        <Typography
+                          variant="h5"
+                          sx={{
+                            fontWeight: 700,
+                            mb: 1,
+                            color: accentText,
+                          }}
+                        >
+                          {guia.name}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: 'text.secondary',
+                            mb: 2,
+                            minHeight: 40,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {guia.description}
+                        </Typography>
+                        {guia.cor && (
+                          <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" sx={{ mb: 2 }}>
+                            <Chip
+                              label={guia.cor}
+                              size="small"
+                              sx={{
+                                backgroundColor: `${accentColor}20`,
+                                color: accentText,
+                                border: `1px solid ${accentColor}50`,
+                              }}
+                            />
+                          </Stack>
                         )}
-                        {guia.diaDaSemana && (
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Dia:</strong> {guia.diaDaSemana}
-                          </Typography>
-                        )}
-                        {guia.fruta && (
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Fruta:</strong> {guia.fruta}
-                          </Typography>
-                        )}
-                        {guia.comida && (
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Comida:</strong> {guia.comida}
-                          </Typography>
-                        )}
-                      </Stack>
-
-                      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
-                        {guia.tags.slice(0, 3).map((tag) => (
-                          <Chip
-                            key={tag}
-                            label={tag}
-                            size="small"
-                            variant="outlined"
-                            sx={{
-                              borderColor: `${accentColor}70`,
-                              color: accentText,
-                              backgroundColor: `${accentColor}10`,
-                            }}
-                          />
-                        ))}
-                      </Stack>
-
-                      <Box sx={{ mt: 2 }}>
-                        <Button variant="text" sx={{ px: 0 }}>
-                          Ver detalhes
-                        </Button>
-                      </Box>
-                    </CardContent>
-                      </Card>
-                    );
-                  })()
-                ))}
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: 'text.secondary',
+                            lineHeight: 1.6,
+                            flexGrow: 1,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 4,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {guia.tags.slice(0, 3).join(' · ')}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </Box>
-              <NavigationDots
-                totalItems={guides.length}
-                currentIndex={(() => {
-                  const itemWidth = isMobile ? 300 : 340;
-                  const gap = 24;
-                  const itemWithGap = itemWidth + gap;
-                  const totalDots = guides.length;
 
-                  if (scrollPosition >= maxScroll * 0.9) {
-                    return totalDots - 1;
-                  }
+              <Box sx={{ textAlign: 'center', mt: 2 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: '0.85rem',
+                    fontStyle: 'italic',
+                    mb: isMobile ? 1 : 0,
+                  }}
+                >
+                  👆 Clique no cartão para saber mais
+                </Typography>
+                {isMobile && (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: 'text.secondary',
+                      fontSize: '0.85rem',
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    👈 Deslize para ver mais guias
+                  </Typography>
+                )}
+                <NavigationDots
+                  totalItems={guides.length}
+                  currentIndex={(() => {
+                    const gap = 24;
+                    const itemWithGap = cardWidth + gap;
+                    const totalDots = guides.length;
 
-                  return Math.floor(scrollPosition / itemWithGap);
-                })()}
-                itemsPerView={1}
-                onDotClick={handleDotClick}
-              />
+                    if (scrollPosition >= maxScroll * 0.9) {
+                      return totalDots - 1;
+                    }
+
+                    return Math.floor(scrollPosition / itemWithGap);
+                  })()}
+                  itemsPerView={1}
+                  onDotClick={handleDotClick}
+                />
+              </Box>
             </Box>
 
             <Dialog

@@ -1,8 +1,9 @@
 # 📊 STATUS ATUAL DO PROJETO BATUARA.NET
 
-**Última atualização:** 08/07/2026
+**Última atualização:** 03/08/2026 (ponteiro de handoff; conteúdo de módulos = 08/07/2026)
 **Versão de referência documental:** 2026.07.08
 **Fase atual:** Plataforma funcional em produção OCI com RBAC, WhatsApp OCI, autosserviço de Filho da Casa, recorrência/lembretes de contribuição, resposta WhatsApp de contato e hardening básico de portas públicas
+**Controle de melhorias:** [`docs/PLANO-MELHORIAS.md`](PLANO-MELHORIAS.md)
 **Ambiente local:** Docker Compose com Nginx, API, PublicWebsite, AdminDashboard e PostgreSQL
 
 ## 🎯 Resumo Executivo
@@ -200,23 +201,20 @@ docker compose -p batuara-net-local -f docker-compose.local.yml up -d --force-re
 - `docs/` — documentação funcional, operacional e de onboarding
 - `agent.md` — guia de entendimento rápido para IA e novos devs
 
-## 🔄 Próximos Passos Recomendados
+## 🔄 Próximos Passos
 
-1. Revisar `git status` e selecionar os arquivos de commit com cuidado; não incluir `.claude/`, `docs/.~lock.Plano de Testes Batuara.xlsx#`, `scripts/output/` nem dumps/backups.
-2. Executar E2E real do login WhatsApp: solicitar código, receber mensagem, autenticar como Member e validar bloqueios administrativos.
-3. Executar E2E de contribuição recorrente: criar contribuição recorrente, marcar como paga e confirmar geração do próximo mês.
-4. Executar E2E de contato público: marcar opt-in WhatsApp, enviar mensagem e responder pelo AdminDashboard.
-5. Revisar logs/configuração da Evolution API antes de produção para evitar conteúdo sensível.
-6. Manter `ContributionReminders.Enabled=false` até decisão explícita de ativação em produção.
-7. Trocar o pareamento para chip dedicado da Casa quando disponível.
-8. Revisar `ufw` e compose dos demais projetos para remover portas host diretas ou bindar em `127.0.0.1`; a OCI já deve bloquear acesso externo direto.
+A fila ativa de melhorias, prioridades e handoff estão **somente** em:
+
+→ **[`docs/PLANO-MELHORIAS.md`](PLANO-MELHORIAS.md)**
+
+Este `STATUS-PROJETO.md` descreve o estado dos módulos; não é tracker de tarefas.
 
 ## 📚 Referências Cruzadas
 
+- `docs/PLANO-MELHORIAS.md` — controle único de melhorias e handoff
 - `docs/EFT-especificacao-funcional-tecnica.md`
 - `docs/Resumo-Executivo.md`
 - `docs/Backlog-Executavel.md`
-- `docs/TASK_HISTORY.md`
 - `agent.md`
 
 ## 📝 Change Log

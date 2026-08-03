@@ -505,4 +505,4 @@ docker-compose -f docker-compose.production.yml up -d
 
 ---
 
-*Para dúvidas ou problemas não cobertos neste runbook, consulte o ROADMAP.md ou abra uma issue no GitHub.*
+*Para dúvidas ou problemas não cobertos neste runbook, consulte `docs/PLANO-MELHORIAS.md` (melhorias/handoff), `ROADMAP.md` (histórico) ou abra uma issue no GitHub.*
