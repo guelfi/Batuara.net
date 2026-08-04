@@ -184,51 +184,7 @@ const OrixasSection: React.FC = () => {
           <Alert severity="info">Nenhum Orixá ativo foi encontrado para exibição pública.</Alert>
         ) : (
           <>
-            <Box sx={{ position: 'relative', mb: 4, overflow: 'clip' }}>
-              {canScrollLeft && (
-                <IconButton
-                  onClick={() => scroll('left')}
-                  sx={{
-                    position: 'absolute',
-                    left: { xs: 4, md: 8 },
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    zIndex: 2,
-                    backgroundColor: 'rgba(255, 255, 255, 0.92)',
-                    border: '1px solid rgba(0, 0, 0, 0.08)',
-                    boxShadow: theme.shadows[6],
-                    '&:hover': {
-                      backgroundColor: 'primary.main',
-                      color: 'white',
-                    },
-                  }}
-                >
-                  <ArrowBackIosIcon />
-                </IconButton>
-              )}
-
-              {canScrollRight && (
-                <IconButton
-                  onClick={() => scroll('right')}
-                  sx={{
-                    position: 'absolute',
-                    right: { xs: 4, md: 8 },
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    zIndex: 2,
-                    backgroundColor: 'rgba(255, 255, 255, 0.92)',
-                    border: '1px solid rgba(0, 0, 0, 0.08)',
-                    boxShadow: theme.shadows[6],
-                    '&:hover': {
-                      backgroundColor: 'primary.main',
-                      color: 'white',
-                    },
-                  }}
-                >
-                  <ArrowForwardIosIcon />
-                </IconButton>
-              )}
-
+            <Box sx={{ mb: 4, overflow: 'clip' }}>
               <Box
                 ref={scrollContainerRef}
                 onScroll={handleScroll}
@@ -354,30 +310,77 @@ const OrixasSection: React.FC = () => {
                 })}
               </Box>
 
-              <Box sx={{ textAlign: 'center', mt: 2 }}>
-                <Typography
-                  variant="body2"
+              <Box sx={{ mt: 2 }}>
+                <Box
                   sx={{
-                    color: 'text.secondary',
-                    fontSize: '0.85rem',
-                    fontStyle: 'italic',
-                    mb: isMobile ? 1 : 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: { xs: 1, md: 2 },
                   }}
                 >
-                  👆 Clique no cartão para saber mais
-                </Typography>
-                {isMobile && (
-                  <Typography
-                    variant="body2"
+                  <IconButton
+                    aria-label="Cartões anteriores"
+                    onClick={() => scroll('left')}
+                    disabled={!canScrollLeft}
+                    size="small"
                     sx={{
-                      color: 'text.secondary',
-                      fontSize: '0.85rem',
-                      fontStyle: 'italic',
+                      backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                      border: '1px solid rgba(0, 0, 0, 0.08)',
+                      boxShadow: theme.shadows[2],
+                      opacity: canScrollLeft ? 1 : 0.35,
+                      '&:hover': {
+                        backgroundColor: 'primary.main',
+                        color: 'white',
+                      },
                     }}
                   >
-                    👈 Deslize para ver mais orixás
-                  </Typography>
-                )}
+                    <ArrowBackIosIcon fontSize="small" />
+                  </IconButton>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: 'text.secondary',
+                        fontSize: '0.85rem',
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      👆 Clique no cartão para saber mais
+                    </Typography>
+                    {isMobile && (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: 'text.secondary',
+                          fontSize: '0.85rem',
+                          fontStyle: 'italic',
+                          mt: 0.5,
+                        }}
+                      >
+                        👈 Deslize para ver mais orixás
+                      </Typography>
+                    )}
+                  </Box>
+                  <IconButton
+                    aria-label="Próximos cartões"
+                    onClick={() => scroll('right')}
+                    disabled={!canScrollRight}
+                    size="small"
+                    sx={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                      border: '1px solid rgba(0, 0, 0, 0.08)',
+                      boxShadow: theme.shadows[2],
+                      opacity: canScrollRight ? 1 : 0.35,
+                      '&:hover': {
+                        backgroundColor: 'primary.main',
+                        color: 'white',
+                      },
+                    }}
+                  >
+                    <ArrowForwardIosIcon fontSize="small" />
+                  </IconButton>
+                </Box>
                 <NavigationDots
                   totalItems={orixas.length}
                   currentIndex={(() => {

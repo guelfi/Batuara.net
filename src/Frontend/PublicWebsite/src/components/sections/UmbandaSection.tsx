@@ -221,54 +221,7 @@ const UmbandaSection: React.FC = () => {
           e com suas características específicas de atuação espiritual.
         </Typography>
 
-        {/* Container com botões de navegação */}
-        <Box sx={{ position: 'relative', overflow: 'clip' }}>
-          {/* Botão de navegação esquerda */}
-          <IconButton
-            onClick={scrollLeft}
-            disabled={!canScrollLeft}
-            sx={{
-              position: 'absolute',
-              left: { xs: 4, md: 8 },
-              top: '50%',
-              transform: 'translateY(-50%)',
-              zIndex: 2,
-              backgroundColor: 'rgba(255, 255, 255, 0.92)',
-              border: '1px solid rgba(0, 0, 0, 0.08)',
-              boxShadow: theme.shadows[6],
-              opacity: canScrollLeft ? 1 : 0.35,
-              '&:hover': {
-                backgroundColor: 'primary.main',
-                color: 'white',
-              },
-            }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-
-          {/* Botão de navegação direita */}
-          <IconButton
-            onClick={scrollRight}
-            disabled={!canScrollRight}
-            sx={{
-              position: 'absolute',
-              right: { xs: 4, md: 8 },
-              top: '50%',
-              transform: 'translateY(-50%)',
-              zIndex: 2,
-              backgroundColor: 'rgba(255, 255, 255, 0.92)',
-              border: '1px solid rgba(0, 0, 0, 0.08)',
-              boxShadow: theme.shadows[6],
-              opacity: canScrollRight ? 1 : 0.35,
-              '&:hover': {
-                backgroundColor: 'primary.main',
-                color: 'white',
-              },
-            }}
-          >
-            <ArrowForwardIcon />
-          </IconButton>
-
+        <Box sx={{ overflow: 'clip' }}>
           <Box
             id="umbanda-carousel"
             ref={scrollContainerRef}
@@ -405,33 +358,78 @@ const UmbandaSection: React.FC = () => {
 
 
 
-        {/* Dicas de interação */}
-        <Box sx={{ textAlign: 'center', mt: 1.5 }}>
-          <Typography
-            variant="body2"
+        <Box sx={{ mt: 1.5 }}>
+          <Box
             sx={{
-              color: 'text.secondary',
-              fontSize: '0.85rem',
-              fontStyle: 'italic',
-              mb: isMobile ? 1 : 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: { xs: 1, md: 2 },
             }}
           >
-            👆 Clique no cartão para saber mais
-          </Typography>
-          {isMobile && (
-            <Typography
-              variant="body2"
+            <IconButton
+              aria-label="Cartões anteriores"
+              onClick={scrollLeft}
+              disabled={!canScrollLeft}
+              size="small"
               sx={{
-                color: 'text.secondary',
-                fontSize: '0.85rem',
-                fontStyle: 'italic',
+                backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
+                boxShadow: theme.shadows[2],
+                opacity: canScrollLeft ? 1 : 0.35,
+                '&:hover': {
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                },
               }}
             >
-              👈 Deslize para ver mais linhas
-            </Typography>
-          )}
-          
-          {/* Indicadores de navegação */}
+              <ArrowBackIcon fontSize="small" />
+            </IconButton>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'text.secondary',
+                  fontSize: '0.85rem',
+                  fontStyle: 'italic',
+                }}
+              >
+                👆 Clique no cartão para saber mais
+              </Typography>
+              {isMobile && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: '0.85rem',
+                    fontStyle: 'italic',
+                    mt: 0.5,
+                  }}
+                >
+                  👈 Deslize para ver mais linhas
+                </Typography>
+              )}
+            </Box>
+            <IconButton
+              aria-label="Próximos cartões"
+              onClick={scrollRight}
+              disabled={!canScrollRight}
+              size="small"
+              sx={{
+                backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
+                boxShadow: theme.shadows[2],
+                opacity: canScrollRight ? 1 : 0.35,
+                '&:hover': {
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                },
+              }}
+            >
+              <ArrowForwardIcon fontSize="small" />
+            </IconButton>
+          </Box>
+
           <NavigationDots
             totalItems={linhas.length}
             currentIndex={(() => {
@@ -440,11 +438,11 @@ const UmbandaSection: React.FC = () => {
               const itemsPerView = 1;
               const itemWithGap = itemWidth + gap;
               const totalDots = Math.ceil(linhas.length / itemsPerView);
-              
+
               if (scrollPosition >= maxScroll * 0.9) {
                 return totalDots - 1;
               }
-              
+
               return Math.floor(scrollPosition / itemWithGap / itemsPerView);
             })()}
             itemsPerView={1}

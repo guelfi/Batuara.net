@@ -219,50 +219,7 @@ const GuiasEntidadesSection: React.FC = () => {
           <Alert severity="info">Nenhum guia ou entidade ativo foi cadastrado até o momento.</Alert>
         ) : (
           <>
-            <Box sx={{ position: 'relative', overflow: 'clip' }}>
-              <IconButton
-                onClick={scrollLeft}
-                disabled={!canScrollLeft}
-                sx={{
-                  position: 'absolute',
-                  left: { xs: 4, md: 8 },
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  zIndex: 2,
-                  backgroundColor: 'rgba(255, 255, 255, 0.92)',
-                  border: '1px solid rgba(0, 0, 0, 0.08)',
-                  boxShadow: theme.shadows[6],
-                  opacity: canScrollLeft ? 1 : 0.35,
-                  '&:hover': {
-                    backgroundColor: 'primary.main',
-                    color: 'white',
-                  },
-                }}
-              >
-                <ArrowBackIosIcon />
-              </IconButton>
-              <IconButton
-                onClick={scrollRight}
-                disabled={!canScrollRight}
-                sx={{
-                  position: 'absolute',
-                  right: { xs: 4, md: 8 },
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  zIndex: 2,
-                  backgroundColor: 'rgba(255, 255, 255, 0.92)',
-                  border: '1px solid rgba(0, 0, 0, 0.08)',
-                  boxShadow: theme.shadows[6],
-                  opacity: canScrollRight ? 1 : 0.35,
-                  '&:hover': {
-                    backgroundColor: 'primary.main',
-                    color: 'white',
-                  },
-                }}
-              >
-                <ArrowForwardIosIcon />
-              </IconButton>
-
+            <Box sx={{ overflow: 'clip' }}>
               <Box
                 id="guides-carousel"
                 ref={scrollContainerRef}
@@ -387,30 +344,77 @@ const GuiasEntidadesSection: React.FC = () => {
                 })}
               </Box>
 
-              <Box sx={{ textAlign: 'center', mt: 2 }}>
-                <Typography
-                  variant="body2"
+              <Box sx={{ mt: 2 }}>
+                <Box
                   sx={{
-                    color: 'text.secondary',
-                    fontSize: '0.85rem',
-                    fontStyle: 'italic',
-                    mb: isMobile ? 1 : 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: { xs: 1, md: 2 },
                   }}
                 >
-                  👆 Clique no cartão para saber mais
-                </Typography>
-                {isMobile && (
-                  <Typography
-                    variant="body2"
+                  <IconButton
+                    aria-label="Cartões anteriores"
+                    onClick={scrollLeft}
+                    disabled={!canScrollLeft}
+                    size="small"
                     sx={{
-                      color: 'text.secondary',
-                      fontSize: '0.85rem',
-                      fontStyle: 'italic',
+                      backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                      border: '1px solid rgba(0, 0, 0, 0.08)',
+                      boxShadow: theme.shadows[2],
+                      opacity: canScrollLeft ? 1 : 0.35,
+                      '&:hover': {
+                        backgroundColor: 'primary.main',
+                        color: 'white',
+                      },
                     }}
                   >
-                    👈 Deslize para ver mais guias
-                  </Typography>
-                )}
+                    <ArrowBackIosIcon fontSize="small" />
+                  </IconButton>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: 'text.secondary',
+                        fontSize: '0.85rem',
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      👆 Clique no cartão para saber mais
+                    </Typography>
+                    {isMobile && (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: 'text.secondary',
+                          fontSize: '0.85rem',
+                          fontStyle: 'italic',
+                          mt: 0.5,
+                        }}
+                      >
+                        👈 Deslize para ver mais guias
+                      </Typography>
+                    )}
+                  </Box>
+                  <IconButton
+                    aria-label="Próximos cartões"
+                    onClick={scrollRight}
+                    disabled={!canScrollRight}
+                    size="small"
+                    sx={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                      border: '1px solid rgba(0, 0, 0, 0.08)',
+                      boxShadow: theme.shadows[2],
+                      opacity: canScrollRight ? 1 : 0.35,
+                      '&:hover': {
+                        backgroundColor: 'primary.main',
+                        color: 'white',
+                      },
+                    }}
+                  >
+                    <ArrowForwardIosIcon fontSize="small" />
+                  </IconButton>
+                </Box>
                 <NavigationDots
                   totalItems={guides.length}
                   currentIndex={(() => {
