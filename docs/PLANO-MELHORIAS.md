@@ -72,6 +72,7 @@ Histórico de fases: `ROADMAP.md`.
 | PM-006 | `todo` | **Revisar logs Evolution API** | Sem PII/segredos em logs; config pronta antes de ativar lembretes. |
 | PM-007 | `blocked` | **Chip WhatsApp dedicado da Casa** | Substituir número temporário `5511975747470`. **Bloqueio:** aguarda chip/dispositivo da Casa. |
 | PM-008 | `todo` | **Manter lembretes desligados até decisão** | `ContributionReminders.Enabled=false` em prod até OK explícito do dono do produto. (Controle operacional — não “implementar”, e sim **não ativar**.) |
+| PM-036 | `done` | **Incidente 2026-08-17 — `batuara.org.br` (apex) em branco** | ✅ Causa: `location` regex injetada no `nginx-proxy` compartilhado pelo CD do Allugme (`Alugue.me/deploy/nginx-allugme.locations.conf`) capturava `/static/...` (não estava na lista de exclusão) e desviava os assets do PublicWebsite para a API do Allugme (404). `www` mascarava o problema por cache antigo do Cloudflare (imutável, ~13 dias). Corrigido em produção (`/var/www/nginx/nginx.conf` na OCI): location `^~ /static/` dedicada para blindar contra regex de terceiros + split do server block em `batuara.org.br` (301 → `www`) e `www.batuara.org.br` (conteúdo). Cache do Cloudflare purgado. Refletido em [`scripts/oracle/nginx-proxy.nginx.conf`](../scripts/oracle/nginx-proxy.nginx.conf). Pendência de correção na raiz (regex do Allugme) registrada no repositório Alugue.me (`docs/handoff/`) para ser tratada por lá. |
 
 ### P1 — AdminDashboard / QA (ex-COR restantes)
 
@@ -211,6 +212,10 @@ Não ativar lembretes automáticos (PM-008) sem decisão explícita.
 ---
 
 ## 7. Changelog deste plano
+
+### 2026-08-17
+
+- **PM-036 → `done`:** corrigido incidente de produção em que `https://batuara.org.br` (sem `www`) carregava tela em branco — causa raiz era uma regra de roteamento de outro projeto (Allugme) compartilhando o mesmo `nginx-proxy` na OCI. Ver detalhes na linha PM-036 da §3 e no arquivo atualizado `scripts/oracle/nginx-proxy.nginx.conf`.
 
 ### 2026-08-03
 
