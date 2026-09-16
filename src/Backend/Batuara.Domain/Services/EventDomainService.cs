@@ -110,14 +110,6 @@ namespace Batuara.Domain.Services
                 errors.Add("Palestras devem ter horário de início e fim definidos");
             }
 
-            // Regra: Eventos aos domingos devem ser após 14h (para não conflitar com atendimentos)
-            if (eventEntity.EventDate.Date.DayOfWeek == DayOfWeek.Sunday && 
-                eventEntity.EventDate.StartTime.HasValue && 
-                eventEntity.EventDate.StartTime.Value < TimeSpan.FromHours(14))
-            {
-                errors.Add("Eventos aos domingos devem ser agendados após 14h");
-            }
-
             return (IsValid: errors.Count == 0, Errors: errors.ToArray());
         }
 
