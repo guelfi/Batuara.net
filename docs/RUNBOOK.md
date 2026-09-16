@@ -219,11 +219,26 @@ SQL
 
 Sincronizar banco local a partir da produção:
 
+Linux (recomendado neste ambiente):
+
+```bash
+chmod +x scripts/sync-db-from-oci.sh
+./scripts/sync-db-from-oci.sh \
+  --ssh-key /home/guelfi/Projetos/oci-key-2026-07-29 \
+  --full-database \
+  --dump-format custom \
+  --keep-local-backup
+```
+
+Windows (PowerShell):
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File "scripts\sync-db-from-oci.ps1" -SshKey "C:\Users\MarcoGuelfi\Projetos\Batuara.net\ssh-key-2025-08-28.pem" -FullDatabase -DumpFormat custom -KeepLocalBackup
 ```
 
-Observação: o script pode falhar apenas na verificação final de migrations por consultar `__EFMigrationsHistory` sem aspas; se o restore ocorreu, validar manualmente com `batuara."__EFMigrationsHistory"`.
+Após o sync: `docker compose -f docker-compose.local.yml restart api`.
+
+Observação: o script PowerShell antigo pode falhar apenas na verificação final de migrations por consultar `__EFMigrationsHistory` sem aspas; o script Linux já consulta `batuara."__EFMigrationsHistory"`.
 
 ---
 
