@@ -129,8 +129,7 @@ const Header: React.FC = () => {
 
     const items: NavAction[] = [...restrictedSpiritualItems];
 
-    const profilePath =
-      role === UserRole.Member ? `${adminBase}/member-profile` : `${adminBase}/profile`;
+    const profilePath = `${adminBase}/profile`;
     items.push({ label: 'Perfil', href: profilePath, kind: 'link' });
 
     if (role === UserRole.Admin || role === UserRole.Editor) {

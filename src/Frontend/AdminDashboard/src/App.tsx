@@ -17,10 +17,9 @@ import DonationsContactPage from './pages/DonationsContactPage';
 import LocationPage from './pages/LocationPage';
 import UmbandaLinesPage from './pages/UmbandaLinesPage';
 import SpiritualContentPage from './pages/SpiritualContentPage';
-import ProfilePage from './pages/ProfilePage';
+import ProfilePage from './pages/UnifiedProfilePage';
 import ContactMessagesPage from './pages/ContactMessagesPage';
 import UsersPage from './pages/UsersPage';
-import MemberProfilePage from './pages/MemberProfilePage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import NotFoundPage from './pages/NotFoundPage';
 import { UserRole } from './types';
@@ -38,7 +37,7 @@ const queryClient = new QueryClient({
 
 const HomeRedirect: React.FC = () => {
   const { user } = useAuth();
-  return <Navigate to={user?.role === UserRole.Member ? '/member-profile' : '/dashboard'} replace />;
+  return <Navigate to={user?.role === UserRole.Member ? '/profile' : '/dashboard'} replace />;
 };
 
 function App() {
@@ -79,7 +78,7 @@ function App() {
                         <Route path="/location" element={<ProtectedRoute requiredRole={UserRole.Admin}><LocationPage /></ProtectedRoute>} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/users" element={<ProtectedRoute requiredRole={UserRole.Admin}><UsersPage /></ProtectedRoute>} />
-                        <Route path="/member-profile" element={<ProtectedRoute allowedRoles={[UserRole.Member]}><MemberProfilePage /></ProtectedRoute>} />
+                        <Route path="/member-profile" element={<Navigate to="/profile" replace />} />
                         <Route path="*" element={<NotFoundPage />} />
                       </Routes>
                     </AdminLayout>

@@ -75,7 +75,7 @@ const navigationItems: NavigationItem[] = [
   { text: 'Contato e Mensagens', icon: <MessagesIcon />, path: '/contact-messages', requiredRole: UserRole.Editor },
   { text: 'Localização', icon: <LocationIcon />, path: '/location', requiredRole: UserRole.Admin },
   { text: 'Usuários', icon: <UsersIcon />, path: '/users', requiredRole: UserRole.Admin },
-  { text: 'Meu Cadastro', icon: <PeopleIcon />, path: '/member-profile', memberOnly: true },
+  { text: 'Meu Cadastro', icon: <PeopleIcon />, path: '/profile', memberOnly: true },
 ];
 
 const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
@@ -336,7 +336,7 @@ const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
                 transform: 'scale(0.98)'
               }
             }}
-            onClick={() => navigate(isMember(user?.role) ? '/member-profile' : '/dashboard')}
+            onClick={() => navigate(isMember(user?.role) ? '/profile' : '/dashboard')}
             title={isMember(user?.role) ? 'Voltar ao Meu Cadastro' : 'Voltar ao Dashboard'}
           >
             <img

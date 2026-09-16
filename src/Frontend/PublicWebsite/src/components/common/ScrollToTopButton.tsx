@@ -176,12 +176,12 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
       <Fab
         onClick={scrollToNext}
         aria-label="Próxima seção"
-        disabled={currentSectionIndex === sections.length - 1}
+        disabled={currentSectionIndex >= Math.max(getPresentSections().length - 1, 0)}
         sx={{
           ...getButtonStyle(),
           bottom: { xs: 100, md: 110 },
           right: { xs: 16, md: 20 },
-          transform: isVisible && currentSectionIndex < sections.length - 1 && !isOverFooter ? 'translateX(0)' : 'translateX(100px)',
+          transform: isVisible && currentSectionIndex < getPresentSections().length - 1 && !isOverFooter ? 'translateX(0)' : 'translateX(100px)',
           pointerEvents: 'auto',
         }}
       >

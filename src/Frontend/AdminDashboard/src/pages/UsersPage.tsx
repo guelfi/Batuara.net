@@ -108,6 +108,9 @@ const UsersPage: React.FC = () => {
   const validateForm = () => {
     if (!form.name.trim()) return 'Nome é obrigatório.';
     if (!form.email.trim()) return 'E-mail é obrigatório.';
+    if (!form.houseMemberId.trim() || Number(form.houseMemberId) <= 0) {
+      return 'É obrigatório vincular um Filho da Casa.';
+    }
     if (!editingUser && form.password.length < 6) return 'Senha inicial deve ter pelo menos 6 caracteres.';
     if (!editingUser && form.password !== form.confirmPassword) return 'Confirmação de senha não confere.';
     return null;
@@ -277,7 +280,8 @@ const UsersPage: React.FC = () => {
             onChange={(event) => setForm((prev) => ({ ...prev, houseMemberId: event.target.value }))}
             fullWidth
             margin="normal"
-            helperText="Obrigatório para Administrador e Editor (validado pela API)."
+            required
+            helperText="Obrigatório. Use o ID do cadastro em Filhos da Casa."
           />
           {editingUser ? (
             <FormControlLabel
