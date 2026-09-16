@@ -347,22 +347,6 @@ const Header: React.FC = () => {
           </List>
         </>
       )}
-
-      {!isAuthenticated && (
-        <>
-          <Divider />
-          <List>
-            <ListItem
-              onClick={() => {
-                window.location.href = loginUrl;
-              }}
-              sx={{ cursor: 'pointer' }}
-            >
-              <ListItemText primary="Entrar" />
-            </ListItem>
-          </List>
-        </>
-      )}
     </Box>
   );
 
