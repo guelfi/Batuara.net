@@ -13,8 +13,8 @@ import {
   Public as PublicIcon,
   VisibilityOff as HiddenIcon,
 } from '@mui/icons-material';
-import { ContentVisibility, ContentVisibilityModule } from '../types';
-import { useContentVisibility } from '../hooks/useContentVisibility';
+import { ContentVisibility, ContentVisibilityModule } from '../../types';
+import { useContentVisibility } from '../../hooks/useContentVisibility';
 
 const OPTIONS: Array<{ value: ContentVisibility; label: string; shortLabel: string; icon: React.ReactElement }> = [
   { value: ContentVisibility.Hidden, label: 'Oculto', shortLabel: 'Oculto', icon: <HiddenIcon fontSize="inherit" /> },
