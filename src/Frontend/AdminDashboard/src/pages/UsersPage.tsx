@@ -29,6 +29,7 @@ interface UserFormState {
   name: string;
   email: string;
   role: UserRole;
+  houseMemberId: string;
   isActive: boolean;
   password: string;
   confirmPassword: string;
@@ -38,6 +39,7 @@ const initialForm: UserFormState = {
   name: '',
   email: '',
   role: UserRole.Editor,
+  houseMemberId: '',
   isActive: true,
   password: '',
   confirmPassword: '',
@@ -87,6 +89,7 @@ const UsersPage: React.FC = () => {
       name: user.name,
       email: user.email,
       role: user.role,
+      houseMemberId: user.houseMemberId ? String(user.houseMemberId) : '',
       isActive: user.isActive,
       password: '',
       confirmPassword: '',
@@ -117,12 +120,21 @@ const UsersPage: React.FC = () => {
       return;
     }
 
+    const parsedHouseMemberId = form.houseMemberId.trim()
+      ? Number(form.houseMemberId.trim())
+      : undefined;
+    const houseMemberId =
+      parsedHouseMemberId !== undefined && !Number.isNaN(parsedHouseMemberId) && parsedHouseMemberId > 0
+        ? parsedHouseMemberId
+        : undefined;
+
     try {
       if (editingUser) {
         await apiService.updateUser(editingUser.id, {
           name: form.name.trim(),
           email: form.email.trim(),
           role: form.role,
+          houseMemberId,
           isActive: form.isActive,
         });
         setFeedback({ open: true, message: 'Usuário atualizado com sucesso.', severity: 'success' });
@@ -131,6 +143,7 @@ const UsersPage: React.FC = () => {
           name: form.name.trim(),
           email: form.email.trim(),
           role: form.role,
+          houseMemberId,
           password: form.password,
           confirmPassword: form.confirmPassword,
         });
@@ -164,6 +177,12 @@ const UsersPage: React.FC = () => {
       headerName: 'Papel',
       width: 150,
       renderCell: (params) => <Chip label={getRoleLabel(params.row.role)} size="small" color={params.row.role === UserRole.Admin ? 'primary' : 'default'} />,
+    },
+    {
+      field: 'houseMemberId',
+      headerName: 'Filho da Casa',
+      width: 130,
+      valueFormatter: (value) => (value ? String(value) : '-'),
     },
     {
       field: 'isActive',
@@ -249,9 +268,17 @@ const UsersPage: React.FC = () => {
             >
               <MenuItem value={UserRole.Admin}>Administrador</MenuItem>
               <MenuItem value={UserRole.Editor}>Editor</MenuItem>
-              <MenuItem value={UserRole.Viewer}>Viewer</MenuItem>
             </Select>
           </FormControl>
+          <TextField
+            label="ID do Filho da Casa"
+            type="number"
+            value={form.houseMemberId}
+            onChange={(event) => setForm((prev) => ({ ...prev, houseMemberId: event.target.value }))}
+            fullWidth
+            margin="normal"
+            helperText="Obrigatório para Administrador e Editor (validado pela API)."
+          />
           {editingUser ? (
             <FormControlLabel
               control={<Switch checked={form.isActive} onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.checked }))} />}

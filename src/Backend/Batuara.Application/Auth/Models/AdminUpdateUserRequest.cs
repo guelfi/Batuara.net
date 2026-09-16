@@ -12,6 +12,8 @@ namespace Batuara.Application.Auth.Models
 
         public UserRole? Role { get; set; }
 
+        public int? HouseMemberId { get; set; }
+
         public bool? IsActive { get; set; }
     }
 }

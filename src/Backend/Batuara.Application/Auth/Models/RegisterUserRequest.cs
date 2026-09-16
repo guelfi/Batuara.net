@@ -21,5 +21,10 @@ namespace Batuara.Application.Auth.Models
         public string Name { get; set; } = string.Empty;
 
         public UserRole Role { get; set; } = UserRole.Editor;
+
+        /// <summary>
+        /// Required for Admin and Editor (Equipe) roles.
+        /// </summary>
+        public int? HouseMemberId { get; set; }
     }
 }

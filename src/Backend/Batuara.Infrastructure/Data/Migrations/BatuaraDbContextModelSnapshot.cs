@@ -746,6 +746,11 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<int>("GuidesVisibility")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<string>("HistoryHtml")
                         .HasMaxLength(50000)
                         .HasColumnType("character varying(50000)");
@@ -786,6 +791,11 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<int>("OrixasVisibility")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<string>("PixCity")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -804,6 +814,11 @@ namespace Batuara.Infrastructure.Data.Migrations
                     b.Property<string>("PixRecipientName")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<int>("PrayersVisibility")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("PrimaryPhone")
                         .IsRequired()
@@ -831,6 +846,11 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<int>("UmbandaLinesVisibility")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -1028,6 +1048,10 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("email");
 
+                    b.Property<int?>("HouseMemberId")
+                        .HasColumnType("integer")
+                        .HasColumnName("house_member_id");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
@@ -1059,6 +1083,8 @@ namespace Batuara.Infrastructure.Data.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("HouseMemberId");
 
                     b.ToTable("users", "batuara");
                 });
@@ -1212,6 +1238,14 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Batuara.Domain.Entities.User", b =>
+                {
+                    b.HasOne("Batuara.Domain.Entities.HouseMember", null)
+                        .WithMany()
+                        .HasForeignKey("HouseMemberId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Batuara.Domain.Entities.SiteSettings", b =>

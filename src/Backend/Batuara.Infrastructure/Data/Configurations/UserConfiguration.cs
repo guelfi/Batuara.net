@@ -19,11 +19,19 @@ namespace Batuara.Infrastructure.Data.Configurations
             builder.Property(u => u.PasswordHash).HasColumnName("password_hash").IsRequired();
             builder.Property(u => u.Name).HasColumnName("name").IsRequired().HasMaxLength(100);
             builder.Property(u => u.Role).HasColumnName("role").IsRequired();
+            builder.Property(u => u.HouseMemberId).HasColumnName("house_member_id");
             builder.Property(u => u.IsActive).HasColumnName("is_active").IsRequired();
             builder.Property(u => u.LastLoginAt).HasColumnName("last_login_at");
             
             builder.Property(u => u.CreatedAt).HasColumnName("created_at").IsRequired();
             builder.Property(u => u.UpdatedAt).HasColumnName("updated_at").IsRequired();
+
+            builder.HasOne<HouseMember>()
+                .WithMany()
+                .HasForeignKey(u => u.HouseMemberId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasIndex(u => u.HouseMemberId);
 
             // Relationship with RefreshTokens
             builder.HasMany(u => u.RefreshTokens)

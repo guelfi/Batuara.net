@@ -55,6 +55,7 @@ namespace Batuara.API.Controllers
                         Email = user.Email,
                         Name = user.Name,
                         Role = user.Role,
+                        HouseMemberId = user.HouseMemberId,
                         IsActive = user.IsActive,
                         LastLoginAt = user.LastLoginAt,
                         CreatedAt = user.CreatedAt

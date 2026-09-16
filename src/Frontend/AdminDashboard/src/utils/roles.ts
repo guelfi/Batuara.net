@@ -3,7 +3,6 @@ import { UserRole } from '../types';
 const ROLE_NAME_MAP: Record<string, UserRole> = {
   Admin: UserRole.Admin,
   Editor: UserRole.Editor,
-  Viewer: UserRole.Viewer,
   Member: UserRole.Member,
 };
 
@@ -14,7 +13,7 @@ const ROLE_NAME_MAP: Record<string, UserRole> = {
 export const normalizeUserRole = (role: unknown): UserRole => {
   if (typeof role === 'number') return role as UserRole;
   if (typeof role === 'string' && ROLE_NAME_MAP[role] !== undefined) return ROLE_NAME_MAP[role];
-  return UserRole.Viewer;
+  return UserRole.Member;
 };
 
 export const getRoleLabel = (role?: UserRole | null): string => {
@@ -23,8 +22,6 @@ export const getRoleLabel = (role?: UserRole | null): string => {
       return 'Administrador';
     case UserRole.Editor:
       return 'Editor';
-    case UserRole.Viewer:
-      return 'Viewer';
     case UserRole.Member:
       return 'Filho da Casa';
     default:

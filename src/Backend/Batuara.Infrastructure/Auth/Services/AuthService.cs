@@ -135,6 +135,13 @@ namespace Batuara.Infrastructure.Auth.Services
                 throw new InvalidOperationException("User with this email already exists");
             }
 
+            // Equipe (Admin/Editor) must be linked to a HouseMember
+            if (IsEquipeRole(request.Role) && (!request.HouseMemberId.HasValue || request.HouseMemberId.Value <= 0))
+            {
+                _logger.LogWarning("Registration attempt for Equipe role without HouseMemberId: {Email}", request.Email);
+                throw new InvalidOperationException("HouseMemberId is required for Admin and Editor roles");
+            }
+
             // Validate password strength
             if (!_passwordService.ValidatePasswordStrength(request.Password))
             {
@@ -146,7 +153,7 @@ namespace Batuara.Infrastructure.Auth.Services
             var passwordHash = _passwordService.HashPassword(request.Password);
 
             // Create user
-            var user = new User(request.Email, passwordHash, request.Name, request.Role)
+            var user = new User(request.Email, passwordHash, request.Name, request.Role, request.HouseMemberId)
             {
                 Email = request.Email,
                 PasswordHash = passwordHash,
@@ -302,6 +309,11 @@ namespace Batuara.Infrastructure.Auth.Services
                 user.UpdateRole(request.Role.Value);
             }
 
+            if (request.HouseMemberId.HasValue)
+            {
+                user.SetHouseMemberId(request.HouseMemberId.Value > 0 ? request.HouseMemberId : null);
+            }
+
             if (request.IsActive.HasValue)
             {
                 user.SetActive(request.IsActive.Value);
@@ -341,5 +353,8 @@ namespace Batuara.Infrastructure.Auth.Services
 
             return user;
         }
+
+        private static bool IsEquipeRole(UserRole role) =>
+            role == UserRole.Admin || role == UserRole.Editor;
     }
 }

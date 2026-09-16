@@ -11,6 +11,7 @@ namespace Batuara.Domain.Entities
         public required string PasswordHash { get; set; }
         public required string Name { get; set; }
         public UserRole Role { get; private set; }
+        public int? HouseMemberId { get; private set; }
         public new bool IsActive { get; private set; }
         public DateTime? LastLoginAt { get; private set; }
         public List<RefreshToken> RefreshTokens { get; private set; } = new List<RefreshToken>();
@@ -18,12 +19,13 @@ namespace Batuara.Domain.Entities
         // Para EF Core
         private User() { }
 
-        public User(string email, string passwordHash, string name, UserRole role)
+        public User(string email, string passwordHash, string name, UserRole role, int? houseMemberId = null)
         {
             Email = email ?? throw new ArgumentNullException(nameof(email));
             PasswordHash = passwordHash ?? throw new ArgumentNullException(nameof(passwordHash));
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Role = role;
+            HouseMemberId = houseMemberId;
             IsActive = true;
             CreatedAt = DateTime.UtcNow;
             UpdatedAt = DateTime.UtcNow;
@@ -59,6 +61,12 @@ namespace Batuara.Domain.Entities
         public void UpdateRole(UserRole role)
         {
             Role = role;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void SetHouseMemberId(int? houseMemberId)
+        {
+            HouseMemberId = houseMemberId;
             UpdatedAt = DateTime.UtcNow;
         }
 

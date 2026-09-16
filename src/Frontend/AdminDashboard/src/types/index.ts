@@ -4,6 +4,7 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  houseMemberId?: number | null;
   isActive: boolean;
   createdAt: string;
   lastLoginAt?: string;
@@ -12,8 +13,7 @@ export interface User {
 export enum UserRole {
   Admin = 1,
   Editor = 2,
-  Viewer = 3,
-  Member = 4,
+  Member = 3,
 }
 
 export interface LoginRequest {
@@ -40,6 +40,14 @@ export interface ApiResponse<T> {
   message?: string;
   errors?: string[];
 }
+
+export enum ContentVisibility {
+  Hidden = 0,
+  Authenticated = 1,
+  Public = 2,
+}
+
+export type ContentVisibilityModule = 'orixas' | 'guides' | 'umbandaLines' | 'prayers';
 
 export interface SiteSettingsDto {
   address: string;
@@ -79,6 +87,10 @@ export interface SiteSettingsDto {
   bankAccountType?: string;
   companyDocument?: string;
   aboutText: string;
+  orixasVisibility?: ContentVisibility;
+  guidesVisibility?: ContentVisibility;
+  umbandaLinesVisibility?: ContentVisibility;
+  prayersVisibility?: ContentVisibility;
 }
 
 export enum ContactMessageStatus {
