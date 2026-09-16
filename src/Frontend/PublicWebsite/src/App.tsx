@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { batuaraTheme } from './theme/theme';
 import Layout from './components/layout/Layout';
 import HeroSection from './components/sections/HeroSection';
@@ -16,17 +16,71 @@ import ContactSection from './components/sections/ContactSection';
 import LocationSection from './components/sections/LocationSection';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import LoadingProvider from './components/common/LoadingProvider';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ContentVisibility } from './types';
+import { publicApi } from './services/api';
 
-// Configuração do React Query
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 3,
-      staleTime: 0,              // Sempre considera dados como stale → revalida em background
-      refetchOnWindowFocus: true, // Revalida ao voltar à aba (útil após salvar no Admin)
+      staleTime: 0,
+      refetchOnWindowFocus: true,
     },
   },
 });
+
+const asVisibility = (value?: number | ContentVisibility | null): ContentVisibility => {
+  if (
+    value === ContentVisibility.Public ||
+    value === ContentVisibility.Authenticated ||
+    value === ContentVisibility.Hidden
+  ) {
+    return value;
+  }
+  return ContentVisibility.Hidden;
+};
+
+const canShowSpiritual = (visibility: ContentVisibility, isAuthenticated: boolean): boolean => {
+  if (visibility === ContentVisibility.Public) return true;
+  if (visibility === ContentVisibility.Authenticated) return isAuthenticated;
+  return false;
+};
+
+const MainSections: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+  const { data: siteSettings } = useQuery({
+    queryKey: ['public-site-settings-sections'],
+    queryFn: () => publicApi.getSiteSettings(),
+    staleTime: 60_000,
+  });
+
+  const show = useMemo(
+    () => ({
+      orixas: canShowSpiritual(asVisibility(siteSettings?.orixasVisibility), isAuthenticated),
+      guides: canShowSpiritual(asVisibility(siteSettings?.guidesVisibility), isAuthenticated),
+      umbanda: canShowSpiritual(asVisibility(siteSettings?.umbandaLinesVisibility), isAuthenticated),
+      prayers: canShowSpiritual(asVisibility(siteSettings?.prayersVisibility), isAuthenticated),
+    }),
+    [isAuthenticated, siteSettings]
+  );
+
+  return (
+    <Layout>
+      <HeroSection />
+      <AboutSection />
+      <CalendarSection />
+      <EventsSection />
+      {show.orixas && <OrixasSection />}
+      {show.guides && <GuiasEntidadesSection />}
+      {show.umbanda && <UmbandaSection />}
+      {show.prayers && <PrayersSection />}
+      <DonationsSection />
+      <ContactSection />
+      <LocationSection />
+    </Layout>
+  );
+};
 
 function App() {
   return (
@@ -34,21 +88,11 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={batuaraTheme}>
           <CssBaseline />
-          <LoadingProvider>
-            <Layout>
-              <HeroSection />
-              <AboutSection />
-              <CalendarSection />
-              <EventsSection />
-              <OrixasSection />
-              <GuiasEntidadesSection />
-              <UmbandaSection />
-              <PrayersSection />
-              <DonationsSection />
-              <ContactSection />
-              <LocationSection />
-            </Layout>
-          </LoadingProvider>
+          <AuthProvider>
+            <LoadingProvider>
+              <MainSections />
+            </LoadingProvider>
+          </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>

@@ -1,5 +1,6 @@
 using Batuara.Application.MemberAuth.Models;
 using Batuara.Application.MemberAuth.Services;
+using Batuara.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -10,11 +11,16 @@ namespace Batuara.API.Controllers
     public class MemberAuthController : ControllerBase
     {
         private readonly IMemberAuthService _memberAuthService;
+        private readonly IAuthCookieService _authCookies;
         private readonly ILogger<MemberAuthController> _logger;
 
-        public MemberAuthController(IMemberAuthService memberAuthService, ILogger<MemberAuthController> logger)
+        public MemberAuthController(
+            IMemberAuthService memberAuthService,
+            IAuthCookieService authCookies,
+            ILogger<MemberAuthController> logger)
         {
             _memberAuthService = memberAuthService;
+            _authCookies = authCookies;
             _logger = logger;
         }
 
@@ -33,6 +39,7 @@ namespace Batuara.API.Controllers
             try
             {
                 var response = await _memberAuthService.VerifyCodeAsync(request, cancellationToken);
+                _authCookies.SetAccessToken(Response, response.Token, response.ExpiresAt);
                 return Ok(new { success = true, data = response });
             }
             catch (UnauthorizedAccessException ex)

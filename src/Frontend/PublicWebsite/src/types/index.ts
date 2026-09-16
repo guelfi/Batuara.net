@@ -129,6 +129,7 @@ export interface ApiResponse<T> {
   data: T;
   success: boolean;
   message?: string;
+  errors?: string[];
 }
 
 export interface SiteSettingsDto {
@@ -206,3 +207,25 @@ export interface PaginatedResponse<T> {
   pageSize: number;
   totalPages: number;
 }
+
+export enum UserRole {
+  Admin = 1,
+  Editor = 2,
+  Member = 3,
+}
+
+export enum ContentVisibility {
+  Hidden = 0,
+  Authenticated = 1,
+  Public = 2,
+}
+
+export interface AuthUser {
+  id: number;
+  email?: string;
+  name: string;
+  role: UserRole | string | number;
+  houseMemberId?: number | null;
+  isActive?: boolean;
+}
+

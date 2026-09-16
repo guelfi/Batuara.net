@@ -34,6 +34,18 @@ const logAuthDebug = (label: string, error: any) => {
   console.warn('[Auth]', label, { status, url, apiMessage, message });
 };
 
+const getLoginPath = () => {
+  const base = (process.env.PUBLIC_URL || '').replace(/\/+$/, '');
+  return `${base}/login`;
+};
+
+const clearLegacyAuthStorage = () => {
+  try {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+  } catch (_) { /* ignore */ }
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,38 +62,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [warningShown]);
 
   const initializeAuth = async () => {
+    // Drop legacy JWT from localStorage (XSS-readable); session lives in httpOnly cookies
+    clearLegacyAuthStorage();
+
     try {
-      const token = localStorage.getItem('authToken');
-      const userData = localStorage.getItem('user');
-
-      // If no token exists, clear everything and finish loading
-      if (!token || !userData) {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
-        setUser(null);
-        setIsLoading(false);
-        return;
-      }
-
-      // Try to verify the token before setting user
-      try {
-        const parsedUser = JSON.parse(userData);
-        await apiService.get('/auth/verify');
-
-        // Token is valid, set the user
-        setUser({ ...parsedUser, role: normalizeUserRole(parsedUser.role) });
-      } catch (error) {
-        // Invalid token or verification failed, clear everything
-        console.warn('Token verification failed, clearing auth data');
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
+      const response = await apiService.get<User>('/auth/me');
+      if (response.success && response.data) {
+        setUser({ ...response.data, role: normalizeUserRole(response.data.role) });
+      } else {
         setUser(null);
       }
-    } catch (error) {
-      logAuthDebug('initializeAuth', error);
-      // On any error, clear auth data to be safe
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
+    } catch (error: any) {
+      if (error?.response?.status !== 401) {
+        logAuthDebug('initializeAuth', error);
+      }
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -94,14 +88,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       logAuthDebug('sessionTimeoutLogout', error);
     } finally {
-      try {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
-      } catch (_) { }
+      clearLegacyAuthStorage();
       setUser(null);
-      document.cookie = 'token=; Max-Age=0; path=/';
-      document.cookie = 'session=; Max-Age=0; path=/';
-      window.location.href = '/admin/login';
+      window.location.href = getLoginPath();
     }
   };
 
@@ -151,22 +140,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (credentials: LoginRequest) => {
     try {
       setIsLoading(true);
-      // Use the real API instead of mock
       const response = await apiService.post<LoginResponse>('/auth/login', credentials);
 
       if (response.success && response.data) {
-        const { token, refreshToken, user: rawUserData } = response.data;
+        const { user: rawUserData } = response.data;
         const userData = { ...rawUserData, role: normalizeUserRole(rawUserData.role) };
-
-        // Store token and user data
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('user', JSON.stringify({
-          ...userData,
-          refreshToken: refreshToken
-        }));
+        clearLegacyAuthStorage();
         setUser(userData);
-
-        // Reset activity tracking
         updateLastActivity();
       } else {
         throw new Error(response.message || 'Error logging in');
@@ -208,10 +188,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await apiService.post<MemberLoginResponse>('/member-auth/verify-code', { mobilePhone, code });
 
       if (response.success && response.data) {
-        const { token, user: rawUserData } = response.data;
+        const { user: rawUserData } = response.data;
         const userData = { ...rawUserData, role: normalizeUserRole(rawUserData.role) };
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('user', JSON.stringify(userData));
+        clearLegacyAuthStorage();
         setUser(userData);
         updateLastActivity();
       } else {
@@ -231,13 +210,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       logAuthDebug('logout', error);
     } finally {
-      try {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
-      } catch (_) { }
+      clearLegacyAuthStorage();
       setUser(null);
-      document.cookie = 'token=; Max-Age=0; path=/';
-      document.cookie = 'session=; Max-Age=0; path=/';
       setLastActivity(Date.now());
       setWarningShown(false);
     }
@@ -248,7 +222,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await apiService.get<User>('/auth/me');
       if (response.success && response.data) {
         const userData = { ...response.data, role: normalizeUserRole(response.data.role) };
-        localStorage.setItem('user', JSON.stringify(userData));
         setUser(userData);
       }
     } catch (error) {

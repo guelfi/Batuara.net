@@ -48,6 +48,7 @@ class ApiService {
     this.api = axios.create({
       baseURL: this.resolveBaseUrl(),
       timeout: 10000,
+      withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -60,7 +61,18 @@ class ApiService {
   // to avoid deadlocks (refresh calling itself)
   private isAuthEndpoint(url: string | undefined): boolean {
     if (!url) return false;
-    return url.includes('/auth/refresh') || url.includes('/auth/login') || url.includes('/member-auth/');
+    // Do not refresh/redirect on bootstrap or credential endpoints
+    return url.includes('/auth/refresh')
+      || url.includes('/auth/login')
+      || url.includes('/auth/logout')
+      || url.includes('/auth/me')
+      || url.includes('/auth/verify')
+      || url.includes('/member-auth/');
+  }
+
+  private getLoginPath(): string {
+    const base = (process.env.PUBLIC_URL || '').replace(/\/+$/, '');
+    return `${base}/login`;
   }
 
   private shouldLog(): boolean {
@@ -77,14 +89,16 @@ class ApiService {
   }
 
   private setupInterceptors() {
-    // Request interceptor para adicionar token de autenticação
+    // Optional Bearer from legacy localStorage during transition; primary auth is httpOnly cookie
     this.api.interceptors.request.use(
       (config) => {
         (config as any).metadata = { startTime: Date.now() };
-        const token = localStorage.getItem('authToken');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
+        try {
+          const token = localStorage.getItem('authToken');
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+          }
+        } catch (_) { /* ignore */ }
         if (this.shouldLog()) {
           const info = this.buildLogInfo(config);
           console.log('[API]', info.method, info.url);
@@ -118,15 +132,13 @@ class ApiService {
           }
         }
 
-        // Se o token expirou (skip auth endpoints to avoid deadlock)
+        // Access cookie expired — try refresh cookie (staff). Members have no refresh cookie.
         if (status === 401 && !originalRequest._retry && !this.isAuthEndpoint(originalRequest.url)) {
           if (this.isRefreshing) {
-            // Se já estamos atualizando o token, enfileiramos a requisição
             return new Promise((resolve, reject) => {
               this.failedQueue.push({ resolve, reject });
-            }).then(token => {
+            }).then(() => {
               if (originalRequest) {
-                originalRequest.headers.Authorization = `Bearer ${token}`;
                 return this.api(originalRequest);
               }
               return Promise.reject(new Error('Original request is undefined'));
@@ -139,40 +151,15 @@ class ApiService {
           this.isRefreshing = true;
 
           try {
-            const refreshToken = this.getRefreshToken();
-            if (refreshToken) {
-              const response = await this.refreshToken(refreshToken);
-              const newToken = response.data.token;
-              const newRefreshToken = response.data.refreshToken;
-
-              // Atualizar token no localStorage
-              localStorage.setItem('authToken', newToken);
-              if (newRefreshToken) {
-                const userStr = localStorage.getItem('user');
-                if (userStr) {
-                  try {
-                    const user = JSON.parse(userStr);
-                    localStorage.setItem('user', JSON.stringify({ ...user, refreshToken: newRefreshToken }));
-                  } catch (_) { }
-                }
-              }
-
-              // Processar requisições pendentes
-              this.processQueue(null, newToken);
-
-              // Tentar novamente a requisição original
-              if (originalRequest) {
-                originalRequest.headers.Authorization = `Bearer ${newToken}`;
-                return this.api(originalRequest);
-              }
-            } else {
-              throw new Error('No refresh token available');
+            await this.refreshToken();
+            this.processQueue(null);
+            if (originalRequest) {
+              return this.api(originalRequest);
             }
           } catch (refreshError) {
-            // Se falhar ao atualizar o token, limpar dados e redirecionar para login
-            this.processQueue(refreshError, null);
+            this.processQueue(refreshError);
             this.clearAuthData();
-            window.location.href = '/admin/login';
+            window.location.href = this.getLoginPath();
             return Promise.reject(refreshError);
           } finally {
             this.isRefreshing = false;
@@ -184,33 +171,21 @@ class ApiService {
     );
   }
 
-  private getRefreshToken(): string | null {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        return user.refreshToken || null;
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  }
-
-  private async refreshToken(refreshToken: string) {
-    return this.post<any>('/auth/refresh', { refreshToken });
+  private async refreshToken() {
+    // Refresh token is sent via httpOnly cookie (withCredentials)
+    return this.post<any>('/auth/refresh', {});
   }
 
   async logout() {
     return this.post<ApiResponse<any>>('/auth/logout');
   }
 
-  private processQueue(error: any, token: string | null = null) {
+  private processQueue(error: any) {
     this.failedQueue.forEach(prom => {
       if (error) {
         prom.reject(error);
       } else {
-        prom.resolve(token);
+        prom.resolve(null);
       }
     });
 
@@ -218,8 +193,10 @@ class ApiService {
   }
 
   private clearAuthData() {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
+    try {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+    } catch (_) { /* ignore */ }
   }
 
   // Métodos genéricos

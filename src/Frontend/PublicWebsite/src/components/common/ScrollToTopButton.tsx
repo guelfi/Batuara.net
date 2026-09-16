@@ -10,7 +10,7 @@ interface NavigationButtonsProps {
   smooth?: boolean; // Scroll suave (padrão: true)
 }
 
-// Lista das seções na ordem
+// Lista das seções na ordem (espirituais só entram se existirem no DOM)
 const sections = [
   '#home',
   '#nossa-historia',
@@ -25,6 +25,9 @@ const sections = [
   '#entre-em-contato',
   '#nossa-localizacao',
 ];
+
+const getPresentSections = () =>
+  sections.filter((sectionId) => !!document.querySelector(sectionId));
 
 // Função de throttling
 const throttle = (func: Function, delay: number) => {
@@ -60,24 +63,23 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     setIsVisible(scrollTop > threshold);
 
-    // Determinar seção atual baseada na posição do scroll
+    const present = getPresentSections();
     let currentIndex = 0;
-    sections.forEach((sectionId, index) => {
+    present.forEach((sectionId, index) => {
       const element = document.querySelector(sectionId);
       if (element) {
         const rect = element.getBoundingClientRect();
-        if (rect.top <= 100) { // Considera seção atual se estiver próxima do topo
+        if (rect.top <= 100) {
           currentIndex = index;
         }
       }
     });
     setCurrentSectionIndex(currentIndex);
 
-    // Verificar se estamos sobre o footer (última seção ou próximo do final da página)
     const windowHeight = window.innerHeight;
     const documentHeight = document.documentElement.scrollHeight;
     const isNearBottom = scrollTop + windowHeight >= documentHeight - 100;
-    const isInLastSection = currentIndex === sections.length - 1;
+    const isInLastSection = currentIndex === present.length - 1;
 
     setIsOverFooter(isNearBottom || isInLastSection);
   }, [threshold]);
@@ -102,17 +104,20 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
   const scrollToTop = () => scrollToSection('#home');
 
   const scrollToPrevious = () => {
+    const present = getPresentSections();
     const prevIndex = Math.max(0, currentSectionIndex - 1);
-    scrollToSection(sections[prevIndex]);
+    scrollToSection(present[prevIndex] || '#home');
   };
 
   const scrollToNext = () => {
-    const nextIndex = Math.min(sections.length - 1, currentSectionIndex + 1);
-    scrollToSection(sections[nextIndex]);
+    const present = getPresentSections();
+    const nextIndex = Math.min(present.length - 1, currentSectionIndex + 1);
+    scrollToSection(present[nextIndex] || present[present.length - 1]);
   };
 
   const scrollToFooter = () => {
-    scrollToSection(sections[sections.length - 1]);
+    const present = getPresentSections();
+    scrollToSection(present[present.length - 1] || '#nossa-localizacao');
   };
 
   const getButtonStyle = () => ({

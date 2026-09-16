@@ -10,62 +10,194 @@ import {
   List,
   ListItem,
   ListItemText,
+  ListSubheader,
+  Divider,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
-import { NavigationItem } from '../../types';
+import { useQuery } from '@tanstack/react-query';
+import { ContentVisibility, NavigationItem, UserRole } from '../../types';
+import { useAuth } from '../../contexts/AuthContext';
+import { publicApi } from '../../services/api';
 
-const navigationItems: NavigationItem[] = [
+type NavAction = NavigationItem & {
+  kind?: 'hash' | 'link' | 'action';
+  action?: () => void;
+};
+
+const PUBLIC_LINE_BASE: NavigationItem[] = [
   { label: 'Início', href: '#home' },
   { label: 'Nossa História', href: '#nossa-historia' },
   { label: 'Nossa Missão', href: '#nossa-missao' },
   { label: 'Calendário', href: '#calendario-atendimento' },
   { label: 'Eventos e Festas', href: '#eventos-e-festas' },
-  { label: 'Orixás', href: '#orixas' },
-  { label: 'Guias e Entidades', href: '#guias-entidades' },
-  { label: 'Linhas da Umbanda', href: '#linhas-da-umbanda' },
-  { label: 'Orações', href: '#oracoes' },
   { label: 'Doações', href: '#doacoes' },
   { label: 'Contato', href: '#entre-em-contato' },
   { label: 'Localização', href: '#nossa-localizacao' },
 ];
+
+const SPIRITUAL_MODULES: Array<{
+  key: 'orixas' | 'guides' | 'umbandaLines' | 'prayers';
+  label: string;
+  href: string;
+  field: 'orixasVisibility' | 'guidesVisibility' | 'umbandaLinesVisibility' | 'prayersVisibility';
+}> = [
+  { key: 'orixas', label: 'Orixás', href: '#orixas', field: 'orixasVisibility' },
+  { key: 'guides', label: 'Guias e Entidades', href: '#guias-entidades', field: 'guidesVisibility' },
+  { key: 'umbandaLines', label: 'Linhas da Umbanda', href: '#linhas-da-umbanda', field: 'umbandaLinesVisibility' },
+  { key: 'prayers', label: 'Orações', href: '#oracoes', field: 'prayersVisibility' },
+];
+
+const resolveAdminBase = (): string => {
+  if (typeof window !== 'undefined') {
+    const path = window.location.pathname || '';
+    if (path.startsWith('/batuara-public') || path.startsWith('/batuara-admin')) {
+      return '/batuara-admin';
+    }
+  }
+  return '/admin';
+};
+
+const asVisibility = (value?: number | ContentVisibility | null): ContentVisibility => {
+  if (value === ContentVisibility.Public || value === ContentVisibility.Authenticated || value === ContentVisibility.Hidden) {
+    return value;
+  }
+  return ContentVisibility.Hidden;
+};
 
 const Header: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeHref, setActiveHref] = useState<string>('#home');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const sectionIds = useMemo(() => navigationItems.map((item) => item.href.replace('#', '')), []);
   const appBarRef = useRef<HTMLDivElement | null>(null);
+  const { isAuthenticated, role, logout, loginUrl } = useAuth();
+  const adminBase = resolveAdminBase();
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const { data: siteSettings } = useQuery({
+    queryKey: ['public-site-settings-nav'],
+    queryFn: () => publicApi.getSiteSettings(),
+    staleTime: 60_000,
+  });
 
-  const handleNavClick = (href: string) => {
-    if (href === '#home') {
-      // Scroll para a posição exata do elemento #home no documento (= altura do Toolbar spacer).
-      // Combinado com pt:'56px' na HeroSection, o logo fica logo abaixo da AppBar fixa.
-      const element = document.querySelector(href);
+  const visibilityMap = useMemo(
+    () => ({
+      orixas: asVisibility(siteSettings?.orixasVisibility),
+      guides: asVisibility(siteSettings?.guidesVisibility),
+      umbandaLines: asVisibility(siteSettings?.umbandaLinesVisibility),
+      prayers: asVisibility(siteSettings?.prayersVisibility),
+    }),
+    [siteSettings]
+  );
+
+  const publicSpiritualItems = useMemo(
+    () =>
+      SPIRITUAL_MODULES.filter((m) => visibilityMap[m.key] === ContentVisibility.Public).map((m) => ({
+        label: m.label,
+        href: m.href,
+        kind: 'hash' as const,
+      })),
+    [visibilityMap]
+  );
+
+  const restrictedSpiritualItems = useMemo(
+    () =>
+      SPIRITUAL_MODULES.filter((m) => visibilityMap[m.key] === ContentVisibility.Authenticated).map((m) => ({
+        label: m.label,
+        href: m.href,
+        kind: 'hash' as const,
+      })),
+    [visibilityMap]
+  );
+
+  const line1Items: NavAction[] = useMemo(() => {
+    // Insert public spiritual modules after Eventos e Festas (index 5)
+    const base = [...PUBLIC_LINE_BASE] as NavAction[];
+    const insertAt = base.findIndex((i) => i.href === '#doacoes');
+    const withPublic = [
+      ...base.slice(0, insertAt),
+      ...publicSpiritualItems,
+      ...base.slice(insertAt),
+    ];
+    return withPublic;
+  }, [publicSpiritualItems]);
+
+  const line2Items: NavAction[] = useMemo(() => {
+    if (!isAuthenticated) return [];
+
+    const items: NavAction[] = [...restrictedSpiritualItems];
+
+    const profilePath =
+      role === UserRole.Member ? `${adminBase}/member-profile` : `${adminBase}/profile`;
+    items.push({ label: 'Perfil', href: profilePath, kind: 'link' });
+
+    if (role === UserRole.Admin || role === UserRole.Editor) {
+      items.push({ label: 'Painel', href: `${adminBase}/`, kind: 'link' });
+    }
+
+    items.push({
+      label: 'Sair',
+      href: '#sair',
+      kind: 'action',
+      action: () => {
+        void logout();
+      },
+    });
+
+    return items;
+  }, [adminBase, isAuthenticated, logout, restrictedSpiritualItems, role]);
+
+  const allHashHrefs = useMemo(() => {
+    const hrefs = [
+      ...line1Items.filter((i) => (i.kind ?? 'hash') === 'hash').map((i) => i.href),
+      ...line2Items.filter((i) => (i.kind ?? 'hash') === 'hash').map((i) => i.href),
+    ];
+    return Array.from(new Set(hrefs));
+  }, [line1Items, line2Items]);
+
+  const sectionIds = useMemo(
+    () => allHashHrefs.map((href) => href.replace('#', '')).filter(Boolean),
+    [allHashHrefs]
+  );
+
+  const handleDrawerToggle = () => setMobileOpen((open) => !open);
+
+  const handleNavClick = (item: NavAction) => {
+    const kind = item.kind ?? 'hash';
+
+    if (kind === 'action') {
+      item.action?.();
+      setMobileOpen(false);
+      return;
+    }
+
+    if (kind === 'link') {
+      window.location.href = item.href;
+      setMobileOpen(false);
+      return;
+    }
+
+    if (item.href === '#home') {
+      const element = document.querySelector(item.href);
       if (element) {
         const targetTop = element.getBoundingClientRect().top + window.scrollY;
         window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
-        window.history.replaceState(null, '', href);
-        setActiveHref(href);
+        window.history.replaceState(null, '', item.href);
+        setActiveHref(item.href);
       }
       setMobileOpen(false);
       return;
     }
 
-    const element = document.querySelector(href);
+    const element = document.querySelector(item.href);
     if (element) {
-      const headerHeight = appBarRef.current?.offsetHeight ?? (isMobile ? 56 : 64);
+      const headerHeight = appBarRef.current?.offsetHeight ?? (isMobile ? 56 : 96);
       const targetTop = element.getBoundingClientRect().top + window.scrollY - headerHeight;
       window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
-      window.history.replaceState(null, '', href);
-      setActiveHref(href);
+      window.history.replaceState(null, '', item.href);
+      setActiveHref(item.href);
     }
     setMobileOpen(false);
   };
@@ -76,10 +208,8 @@ const Header: React.FC = () => {
         setActiveHref(window.location.hash);
       }
     };
-
     handleHashSync();
     window.addEventListener('hashchange', handleHashSync);
-
     return () => window.removeEventListener('hashchange', handleHashSync);
   }, []);
 
@@ -110,211 +240,202 @@ const Header: React.FC = () => {
     );
 
     elements.forEach((el) => observer.observe(el));
-
     return () => observer.disconnect();
   }, [sectionIds]);
 
+  const navButtonSx = (href: string) => ({
+    textTransform: 'none' as const,
+    fontWeight: href === activeHref ? 700 : 500,
+    px: 0.7,
+    py: 0.4,
+    minWidth: 'auto',
+    fontSize: '0.78rem',
+    whiteSpace: 'nowrap' as const,
+    backgroundColor: href === activeHref ? 'rgba(255, 255, 255, 0.14)' : 'transparent',
+    '&:hover': {
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    },
+  });
+
+  const renderDesktopRow = (items: NavAction[]) => (
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 0.4,
+        flexWrap: 'wrap',
+        width: '100%',
+      }}
+    >
+      {items.map((item) => (
+        <Button
+          key={`${item.label}-${item.href}`}
+          color="inherit"
+          onClick={() => handleNavClick(item)}
+          sx={navButtonSx(item.href)}
+        >
+          {item.label}
+        </Button>
+      ))}
+    </Box>
+  );
+
   const drawer = (
-    <Box sx={{ width: 250 }}>
+    <Box sx={{ width: 280 }} role="presentation">
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
-        <IconButton onClick={handleDrawerToggle}>
+        <IconButton onClick={handleDrawerToggle} aria-label="Fechar menu">
           <CloseIcon />
         </IconButton>
       </Box>
-      <List>
-        {navigationItems.map((item) => (
-          <ListItem
-            key={item.label}
-            onClick={() => handleNavClick(item.href)}
-            sx={{ cursor: 'pointer' }}
-          >
+      <List
+        subheader={
+          <ListSubheader component="div" sx={{ bgcolor: 'transparent', fontWeight: 700 }}>
+            Público
+          </ListSubheader>
+        }
+      >
+        {line1Items.map((item) => (
+          <ListItem key={`m1-${item.label}`} onClick={() => handleNavClick(item)} sx={{ cursor: 'pointer' }}>
             <ListItemText
               primary={item.label}
               sx={{
                 '& .MuiListItemText-primary': {
                   color: item.href === activeHref ? theme.palette.primary.main : theme.palette.text.primary,
                   fontWeight: item.href === activeHref ? 700 : 500,
-                }
+                },
               }}
             />
           </ListItem>
         ))}
       </List>
+
+      {isAuthenticated && line2Items.length > 0 && (
+        <>
+          <Divider />
+          <List
+            subheader={
+              <ListSubheader component="div" sx={{ bgcolor: 'transparent', fontWeight: 700 }}>
+                Área autenticada
+              </ListSubheader>
+            }
+          >
+            {line2Items.map((item) => (
+              <ListItem key={`m2-${item.label}`} onClick={() => handleNavClick(item)} sx={{ cursor: 'pointer' }}>
+                <ListItemText
+                  primary={item.label}
+                  sx={{
+                    '& .MuiListItemText-primary': {
+                      color: item.href === activeHref ? theme.palette.primary.main : theme.palette.text.primary,
+                      fontWeight: item.href === activeHref ? 700 : 500,
+                    },
+                  }}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </>
+      )}
+
+      {!isAuthenticated && (
+        <>
+          <Divider />
+          <List>
+            <ListItem
+              onClick={() => {
+                window.location.href = loginUrl;
+              }}
+              sx={{ cursor: 'pointer' }}
+            >
+              <ListItemText primary="Entrar" />
+            </ListItem>
+          </List>
+        </>
+      )}
     </Box>
   );
 
   return (
     <>
       <AppBar ref={appBarRef} position="fixed" elevation={2}>
-        <Toolbar sx={{ display: 'flex', alignItems: 'center' }}>
-          {/* Logo/Título à esquerda */}
+        <Toolbar
+          sx={{
+            display: 'flex',
+            alignItems: isMobile ? 'center' : 'flex-start',
+            flexDirection: isMobile ? 'row' : 'column',
+            py: isMobile ? 0 : 0.75,
+            gap: isMobile ? 0 : 0.5,
+            minHeight: isMobile ? 56 : undefined,
+          }}
+        >
           <Box
             sx={{
-              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              mr: isMobile ? 0 : 4,
-              flexGrow: isMobile ? 1 : 0,
+              width: '100%',
             }}
-            onClick={() => handleNavClick('#home')}
           >
-            {isMobile ? (
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Box
-                  component="img"
-                  src={`${process.env.PUBLIC_URL}/batuara_logo.png`}
-                  alt="Batuara Logo"
-                  sx={{
-                    height: 24,
-                    width: 'auto',
-                    mr: 1,
-                  }}
-                />
-                <Typography
-                  variant="h6"
-                  component="div"
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                  }}
-                >
-                  Casa de Caridade Caboclo Batuara
-                </Typography>
-              </Box>
-            ) : (
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Box
-                  component="img"
-                  src={`${process.env.PUBLIC_URL}/batuara_logo.png`}
-                  alt="Batuara Logo"
-                  sx={{
-                    height: 40,
-                    width: 'auto',
-                    mr: 2,
-                  }}
-                />
-                <Typography
-                  variant="h6"
-                  component="div"
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: '0.95rem',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Casa de Caridade Caboclo Batuara
-                </Typography>
-              </Box>
-            )}
-          </Box>
-
-          {/* Menu centralizado (apenas desktop) */}
-          {!isMobile && (
             <Box
               sx={{
+                cursor: 'pointer',
                 display: 'flex',
-                justifyContent: 'center',
                 alignItems: 'center',
-                gap: 0.5,
-                flexGrow: 1,
-                flexWrap: 'wrap',
+                mr: isMobile ? 0 : 2,
+                flexGrow: isMobile ? 1 : 0,
+                flexShrink: 0,
               }}
+              onClick={() => handleNavClick({ label: 'Início', href: '#home' })}
             >
-              {navigationItems.map((item) => (
-                <Button
-                  key={item.label}
-                  color="inherit"
-                  onClick={() => handleNavClick(item.href)}
-                  sx={{
-                    textTransform: 'none',
-                    fontWeight: item.href === activeHref ? 700 : 500,
-                    px: 0.7,
-                    py: 0.7,
-                    minWidth: 'auto',
-                    fontSize: '0.8rem',
-                    whiteSpace: 'nowrap',
-                    backgroundColor: item.href === activeHref ? 'rgba(255, 255, 255, 0.14)' : 'transparent',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    },
-                  }}
-                >
-                  {item.label}
-                </Button>
-              ))}
-            </Box>
-          )}
-
-          {/* Menu hamburger (mobile) */}
-          {isMobile && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Box
+                component="img"
+                src={`${process.env.PUBLIC_URL}/batuara_logo.png`}
+                alt="Batuara Logo"
                 sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  mr: 0.5,
-                  animation: 'slide-arrow-menu 1.5s infinite ease-in-out',
-                  '@keyframes slide-arrow-menu': {
-                    '0%, 100%': { transform: 'translateX(0)', opacity: 0.6 },
-                    '50%': { transform: 'translateX(-4px)', opacity: 1 },
-                  },
+                  height: isMobile ? 24 : 36,
+                  width: 'auto',
+                  mr: isMobile ? 1 : 1.5,
+                }}
+              />
+              <Typography
+                variant="h6"
+                component="div"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: isMobile ? '1rem' : '0.9rem',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255, 255, 255, 0.85)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Menu
-                </Typography>
-                <Box
-                  sx={{
-                    display: 'inline-block',
-                    ml: 0.3,
-                    width: 0,
-                    height: 0,
-                    borderTop: '4px solid transparent',
-                    borderBottom: '4px solid transparent',
-                    borderLeft: '6px solid rgba(255, 255, 255, 0.85)',
-                  }}
-                />
+                {isMobile ? 'Casa de Caridade Caboclo Batuara' : 'Casa de Caridade Caboclo Batuara'}
+              </Typography>
+            </Box>
+
+            {!isMobile && (
+              <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 0.25, ml: 1 }}>
+                {renderDesktopRow(line1Items)}
+                {line2Items.length > 0 && renderDesktopRow(line2Items)}
               </Box>
-              <IconButton
-                color="inherit"
-                aria-label="open drawer"
-                edge="start"
-                onClick={handleDrawerToggle}
-                sx={{
-                  animation: 'pulse-hamburger-menu 2.5s infinite ease-in-out',
-                  '@keyframes pulse-hamburger-menu': {
-                    '0%': { transform: 'scale(1)', backgroundColor: 'transparent' },
-                    '50%': { transform: 'scale(1.15)', backgroundColor: 'rgba(255, 255, 255, 0.15)' },
-                    '100%': { transform: 'scale(1)', backgroundColor: 'transparent' },
-                  },
-                  borderRadius: '50%',
-                }}
-              >
+            )}
+
+            {isMobile && (
+              <IconButton color="inherit" aria-label="Abrir menu" onClick={handleDrawerToggle} edge="end">
                 <MenuIcon />
               </IconButton>
-            </Box>
-          )}
+            )}
+          </Box>
         </Toolbar>
       </AppBar>
 
+      {/* Spacer: altura dinâmica conforme 1 ou 2 linhas */}
+      <Toolbar sx={{ minHeight: isMobile ? 56 : line2Items.length > 0 ? 96 : 72 }} />
+
       <Drawer
-        variant="temporary"
         anchor="right"
         open={mobileOpen}
         onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true, // Better open performance on mobile.
-        }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 250 },
-        }}
+        ModalProps={{ keepMounted: true }}
       >
         {drawer}
       </Drawer>
-
-      {/* Spacer for fixed AppBar */}
-      <Toolbar />
     </>
   );
 };

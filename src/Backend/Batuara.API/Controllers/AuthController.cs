@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Batuara.Application.Auth.Models;
 using Batuara.Application.Auth.Services;
+using Batuara.API.Services;
+using Batuara.Domain.Enums;
 using Microsoft.Extensions.Logging;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace Batuara.API.Controllers
@@ -13,11 +16,16 @@ namespace Batuara.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IAuthCookieService _authCookies;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IAuthService authService, ILogger<AuthController> logger)
+        public AuthController(
+            IAuthService authService,
+            IAuthCookieService authCookies,
+            ILogger<AuthController> logger)
         {
             _authService = authService;
+            _authCookies = authCookies;
             _logger = logger;
         }
 
@@ -31,15 +39,15 @@ namespace Batuara.API.Controllers
             {
                 var ipAddress = GetIpAddress();
                 var response = await _authService.LoginAsync(request, ipAddress);
-                
-                // Set refresh token in cookie
-                SetRefreshTokenCookie(response.RefreshToken);
-                
-                // Return in the format expected by frontend
-                return Ok(new 
+
+                _authCookies.SetAccessToken(Response, response.AccessToken, response.TokenExpiration);
+                _authCookies.SetRefreshToken(Response, response.RefreshToken);
+
+                // Tokens still returned for API tools / transition; browsers should rely on httpOnly cookies
+                return Ok(new
                 {
                     success = true,
-                    data = new 
+                    data = new
                     {
                         token = response.AccessToken,
                         refreshToken = response.RefreshToken,
@@ -76,7 +84,7 @@ namespace Batuara.API.Controllers
                 var refreshToken = request?.RefreshToken;
                 if (string.IsNullOrWhiteSpace(refreshToken))
                 {
-                    refreshToken = Request.Cookies["refreshToken"];
+                    refreshToken = _authCookies.GetRefreshToken(Request);
                 }
 
                 if (string.IsNullOrWhiteSpace(refreshToken))
@@ -91,10 +99,10 @@ namespace Batuara.API.Controllers
 
                 var ipAddress = GetIpAddress();
                 var response = await _authService.RefreshTokenAsync(refreshToken, ipAddress);
-                
-                // Set new refresh token in cookie
-                SetRefreshTokenCookie(response.RefreshToken);
-                
+
+                _authCookies.SetAccessToken(Response, response.AccessToken, response.TokenExpiration);
+                _authCookies.SetRefreshToken(Response, response.RefreshToken);
+
                 return Ok(new
                 {
                     success = true,
@@ -144,13 +152,13 @@ namespace Batuara.API.Controllers
         }
 
         [HttpPost("logout")]
-        [Authorize]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> Logout()
         {
             try
             {
-                var refreshToken = Request.Cookies["refreshToken"];
+                var refreshToken = _authCookies.GetRefreshToken(Request);
                 if (!string.IsNullOrEmpty(refreshToken))
                 {
                     var ipAddress = GetIpAddress();
@@ -168,15 +176,15 @@ namespace Batuara.API.Controllers
                     }
                 }
 
-                // Clear refresh token cookie
-                Response.Cookies.Delete("refreshToken");
-                
-                return Ok(new { message = "Logged out successfully" });
+                _authCookies.ClearAuthCookies(Response);
+
+                return Ok(new { success = true, message = "Logged out successfully" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during logout");
-                return StatusCode(500, new { message = "An error occurred during logout" });
+                _authCookies.ClearAuthCookies(Response);
+                return StatusCode(500, new { success = false, message = "An error occurred during logout" });
             }
         }
 
@@ -230,23 +238,28 @@ namespace Batuara.API.Controllers
         [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<UserDto>> GetCurrentUser()
+        public async Task<IActionResult> GetCurrentUser()
         {
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var id))
+                if (TryBuildMemberPrincipal(out var memberPrincipal))
                 {
-                    return Unauthorized(new { message = "Invalid token" });
+                    return Ok(new { success = true, data = memberPrincipal });
                 }
 
-                var user = await _authService.GetUserByIdAsync(id);
+                var userId = GetCurrentUserId();
+                if (userId == null)
+                {
+                    return Unauthorized(new { success = false, message = "Invalid token" });
+                }
+
+                var user = await _authService.GetUserByIdAsync(userId.Value);
                 if (user == null)
                 {
-                    return NotFound(new { message = "User not found" });
+                    return NotFound(new { success = false, message = "User not found" });
                 }
 
-                return Ok(new UserDto
+                var dto = new UserDto
                 {
                     Id = user.Id,
                     Email = user.Email,
@@ -256,12 +269,14 @@ namespace Batuara.API.Controllers
                     IsActive = user.IsActive,
                     LastLoginAt = user.LastLoginAt,
                     CreatedAt = user.CreatedAt
-                });
+                };
+
+                return Ok(new { success = true, data = dto });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving current user");
-                return StatusCode(500, new { message = "An error occurred while retrieving user information" });
+                return StatusCode(500, new { success = false, message = "An error occurred while retrieving user information" });
             }
         }
 
@@ -368,12 +383,59 @@ namespace Batuara.API.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult VerifyToken()
         {
-            return Ok(new { message = "Token is valid", user = new { id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value } });
+            return Ok(new
+            {
+                success = true,
+                message = "Token is valid",
+                user = new { id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value }
+            });
+        }
+
+        private bool TryBuildMemberPrincipal(out object principal)
+        {
+            principal = null!;
+            var houseMemberIdValue = User.FindFirst("houseMemberId")?.Value;
+            if (string.IsNullOrWhiteSpace(houseMemberIdValue) || !int.TryParse(houseMemberIdValue, out var houseMemberId))
+            {
+                return false;
+            }
+
+            var roleClaim = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (!string.Equals(roleClaim, UserRole.Member.ToString(), StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(roleClaim, ((int)UserRole.Member).ToString(), StringComparison.Ordinal))
+            {
+                // Staff users may also have HouseMemberId linked; only treat JWT with member claim as member session
+                var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                    ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (sub == null || !sub.StartsWith("member:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            var name = User.FindFirst(ClaimTypes.Name)?.Value
+                ?? User.FindFirst(JwtRegisteredClaimNames.Name)?.Value
+                ?? string.Empty;
+            var email = User.FindFirst(ClaimTypes.Email)?.Value
+                ?? User.FindFirst(JwtRegisteredClaimNames.Email)?.Value
+                ?? string.Empty;
+
+            principal = new
+            {
+                id = houseMemberId,
+                houseMemberId,
+                name,
+                email,
+                role = UserRole.Member,
+                isActive = true
+            };
+            return true;
         }
 
         private int? GetCurrentUserId()
         {
-            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
             if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var id))
                 return null;
             return id;
@@ -385,18 +447,6 @@ namespace Batuara.API.Controllers
                 return Request.Headers["X-Forwarded-For"].ToString() ?? "unknown";
             else
                 return HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "unknown";
-        }
-
-        private void SetRefreshTokenCookie(string token)
-        {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Expires = DateTime.UtcNow.AddDays(7),
-                SameSite = SameSiteMode.Strict,
-                Secure = Request.IsHttps
-            };
-            Response.Cookies.Append("refreshToken", token, cookieOptions);
         }
     }
 }

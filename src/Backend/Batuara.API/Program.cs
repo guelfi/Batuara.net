@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Batuara.Application.Auth.Models;
 using Batuara.Application.Auth.Services;
 using Batuara.Application.Calendar.Services;
 using Batuara.Application.Common.Mappings;
@@ -91,23 +92,32 @@ builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddValidatorsFromAssemblyContaining<MappingProfile>();
 
-// Configure CORS using allowed origins from configuration
+// Configure CORS using allowed origins from configuration.
+// AllowCredentials is required for httpOnly auth cookies shared across /admin and /.
 var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowProxy", policy =>
     {
-        if (builder.Environment.IsDevelopment())
-        {
-            policy.AllowAnyOrigin()
-                .AllowAnyMethod()
-                .AllowAnyHeader();
-            return;
-        }
-
         if (allowedOrigins.Length > 0)
         {
             policy.WithOrigins(allowedOrigins)
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
+            return;
+        }
+
+        if (builder.Environment.IsDevelopment())
+        {
+            // Credentials cannot be used with AllowAnyOrigin — fall back to common local origins
+            policy.WithOrigins(
+                    "http://localhost:3000",
+                    "http://localhost:3001",
+                    "http://localhost:8081",
+                    "http://127.0.0.1:3000",
+                    "http://127.0.0.1:3001",
+                    "http://127.0.0.1:8081")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
@@ -145,6 +155,9 @@ if (jwtSecret.Length < 32)
 }
 
 var key = Encoding.ASCII.GetBytes(jwtSecret);
+var authCookieSettings = builder.Configuration.GetSection(AuthCookieSettings.SectionName).Get<AuthCookieSettings>()
+    ?? new AuthCookieSettings();
+var accessTokenCookieName = authCookieSettings.AccessTokenCookieName;
 
 builder.Services.AddAuthentication(options =>
 {
@@ -167,6 +180,22 @@ builder.Services.AddAuthentication(options =>
     };
     options.Events = new JwtBearerEvents
     {
+        OnMessageReceived = context =>
+        {
+            // Prefer Authorization Bearer (API tools); fall back to httpOnly access cookie
+            var authorization = context.Request.Headers.Authorization.FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(authorization)
+                || !authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                if (context.Request.Cookies.TryGetValue(accessTokenCookieName, out var cookieToken)
+                    && !string.IsNullOrWhiteSpace(cookieToken))
+                {
+                    context.Token = cookieToken;
+                }
+            }
+
+            return Task.CompletedTask;
+        },
         OnAuthenticationFailed = context =>
         {
             if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
@@ -223,6 +252,7 @@ builder.Services.AddAutoMapper(cfg => {
 
 // Configure Options
 builder.Services.Configure<JwtSettings>(jwtSettings);
+builder.Services.Configure<AuthCookieSettings>(builder.Configuration.GetSection(AuthCookieSettings.SectionName));
 builder.Services.Configure<PasswordRequirements>(
     builder.Configuration.GetSection("SecuritySettings:PasswordRequirements"));
 builder.Services.Configure<EvolutionApiWhatsAppOptions>(builder.Configuration.GetSection("WhatsApp"));
@@ -235,6 +265,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddSingleton<IAuthCookieService, AuthCookieService>();
 builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
 builder.Services.AddScoped<IGuideService, GuideService>();
 builder.Services.AddScoped<IHouseMemberService, HouseMemberService>();

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import {
   ApiResponse,
+  AuthUser,
   CalendarAttendance,
   CreateContactMessageRequest,
   Event,
@@ -41,6 +42,7 @@ const resolveBaseUrl = (): string => {
 const api = axios.create({
   baseURL: resolveBaseUrl(),
   timeout: 10000,
+  withCredentials: true,
 });
 
 const shouldLog = () => process.env.NODE_ENV === 'development';
@@ -80,13 +82,35 @@ api.interceptors.response.use(
       const start = error?.config?.metadata?.startTime;
       const elapsedMs = typeof start === 'number' ? Date.now() - start : undefined;
       const apiMessage = error?.response?.data?.message;
-      console.warn('[Public API]', (error?.config?.method || 'get').toUpperCase(), fullUrl, status, elapsedMs != null ? `${elapsedMs}ms` : '', apiMessage || error?.message);
+      // 401 on /auth/me is expected when anonymous — keep quiet
+      if (!(status === 401 && typeof url === 'string' && url.includes('/auth/me'))) {
+        console.warn('[Public API]', (error?.config?.method || 'get').toUpperCase(), fullUrl, status, elapsedMs != null ? `${elapsedMs}ms` : '', apiMessage || error?.message);
+      }
     }
     return Promise.reject(error);
   }
 );
 
 export const publicApi = {
+  async getCurrentUser(): Promise<AuthUser | null> {
+    try {
+      const response = await api.get<ApiResponse<AuthUser>>('/auth/me');
+      if (response.data?.success && response.data.data) {
+        return response.data.data;
+      }
+      return null;
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  async logout() {
+    await api.post('/auth/logout');
+  },
+
   async getSiteSettings() {
     const response = await api.get<ApiResponse<SiteSettingsDto>>('/site-settings/public');
     return response.data.data;
