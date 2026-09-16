@@ -10,6 +10,7 @@ import {
   useTheme,
   useMediaQuery,
   IconButton,
+  GlobalStyles,
 } from '@mui/material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -90,24 +91,57 @@ const HeroSection: React.FC = () => {
     const video = videoRef.current;
     if (!video) return;
 
-    const forcePlay = () => {
-      if (video.paused) {
-        video.play().catch(() => { });
+    // iOS Safari autoplay requires the muted/playsinline DOM attributes and
+    // properties to be set before play() — React's muted prop alone is unreliable.
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.loop = true;
+    video.setAttribute('muted', '');
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    video.removeAttribute('controls');
+
+    const tryPlay = () => {
+      if (!video.paused) return;
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Autoplay blocked (e.g. Low Power Mode) — retry on first gesture below.
+        });
       }
     };
 
-    const handleVisibilityChange = () => {
+    tryPlay();
+
+    const onReady = () => tryPlay();
+    const onPause = () => {
+      // Resume when the OS pauses background media, but only while the page is visible.
       if (document.visibilityState === 'visible') {
-        forcePlay();
+        tryPlay();
       }
     };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        tryPlay();
+      }
+    };
+    const onFirstGesture = () => tryPlay();
 
-    video.addEventListener('pause', forcePlay);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    video.addEventListener('loadeddata', onReady);
+    video.addEventListener('canplay', onReady);
+    video.addEventListener('pause', onPause);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    document.addEventListener('touchstart', onFirstGesture, { once: true, passive: true });
+    document.addEventListener('click', onFirstGesture, { once: true });
 
     return () => {
-      video.removeEventListener('pause', forcePlay);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      video.removeEventListener('loadeddata', onReady);
+      video.removeEventListener('canplay', onReady);
+      video.removeEventListener('pause', onPause);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      document.removeEventListener('touchstart', onFirstGesture);
+      document.removeEventListener('click', onFirstGesture);
     };
   }, []);
 
@@ -156,16 +190,42 @@ const HeroSection: React.FC = () => {
         pb: { xs: 2, md: 6 },
       }}
     >
-      {/* Video background - carrega em segundo plano, só exibe quando pronto */}
+      <GlobalStyles
+        styles={{
+          '.hero-bg-video::-webkit-media-controls': {
+            display: 'none !important',
+          },
+          '.hero-bg-video::-webkit-media-controls-enclosure': {
+            display: 'none !important',
+          },
+          '.hero-bg-video::-webkit-media-controls-start-playback-button': {
+            display: 'none !important',
+            WebkitAppearance: 'none',
+          },
+        }}
+      />
+      {/* Video background - muted/playsInline/loop for continuous iOS autoplay; no controls overlay */}
       <Box
         component="video"
         ref={videoRef}
+        className="hero-bg-video"
+        src={`${process.env.PUBLIC_URL}/bg.mp4`}
         autoPlay
         muted
         loop
         playsInline
         preload="auto"
+        controls={false}
+        disablePictureInPicture
+        disableRemotePlayback
+        aria-hidden
         onCanPlayThrough={() => setVideoLoaded(true)}
+        onLoadedData={() => {
+          const video = videoRef.current;
+          if (!video) return;
+          video.muted = true;
+          void video.play().catch(() => { });
+        }}
         sx={{
           position: 'absolute',
           top: '50%',
@@ -179,10 +239,9 @@ const HeroSection: React.FC = () => {
           zIndex: 0,
           opacity: videoLoaded ? 1 : 0,
           transition: 'opacity 1s ease-in',
+          pointerEvents: 'none',
         }}
-      >
-        <source src={`${process.env.PUBLIC_URL}/bg.mp4`} type="video/mp4" />
-      </Box>
+      />
 
       {/* Dark overlay for better text contrast on all devices */}
       <Box
