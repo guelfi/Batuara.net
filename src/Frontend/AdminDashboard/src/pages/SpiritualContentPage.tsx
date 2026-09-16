@@ -341,14 +341,15 @@ const SpiritualContentPage: React.FC = () => {
   return (
     <Box>
       <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
-        <Box>
+        <Stack direction="row" alignItems="center" spacing={1.5} flexWrap="wrap" useFlexGap>
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
             Conteúdos Espirituais
           </Typography>
-          <Box sx={{ mt: 1.5 }}>
-            <ContentVisibilityControl module="prayers" />
-          </Box>
-        </Box>
+          <Typography variant="h4" color="text.secondary" sx={{ fontWeight: 400, lineHeight: 1 }}>
+            —
+          </Typography>
+          <ContentVisibilityControl module="prayers" />
+        </Stack>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()} fullWidth={isXs}>
             Novo conteúdo

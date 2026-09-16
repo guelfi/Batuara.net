@@ -40,7 +40,8 @@ const LoginPage: React.FC = () => {
   
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<'staff' | 'member'>('staff');
+  const initialMode = new URLSearchParams(location.search).get('mode') === 'member' ? 'member' : 'staff';
+  const [mode, setMode] = useState<'staff' | 'member'>(initialMode);
   const [memberPhone, setMemberPhone] = useState('');
   const [memberCode, setMemberCode] = useState('');
   const [codeRequested, setCodeRequested] = useState(false);
@@ -89,7 +90,7 @@ const LoginPage: React.FC = () => {
       setError(null);
       setMemberLoading(true);
       await loginMemberWithCode(onlyDigits(memberPhone), memberCode);
-      navigate('/member-profile', { replace: true });
+      navigate('/profile', { replace: true });
     } catch (err: any) {
       setError(err.message || 'Código inválido.');
     } finally {

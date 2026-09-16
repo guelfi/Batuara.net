@@ -11,6 +11,7 @@ import {
   ListItemText,
   Snackbar,
   Toolbar,
+  Tooltip,
   Typography,
   IconButton,
   Divider,
@@ -34,6 +35,9 @@ import {
   Email as MessagesIcon,
   ManageAccounts as UsersIcon,
   Logout as LogoutIcon,
+  VisibilityOff as VisibilityOffIcon,
+  Lock as LockIcon,
+  Public as PublicIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -41,12 +45,16 @@ import {
   ContentVisibilityProvider,
   useContentVisibility,
 } from '../../hooks/useContentVisibility';
-import ContentVisibilityControl from '../common/ContentVisibilityControl';
 import apiService from '../../services/api';
-import { ContentVisibilityModule, UserRole } from '../../types';
+import {
+  ContentVisibility,
+  ContentVisibilityModule,
+  UserRole,
+} from '../../types';
 import { isAdmin, isEditorOrAdmin, isMember } from '../../utils/roles';
 
-const drawerWidth = 320;
+const drawerWidth = 280;
+const batuaraLogoSrc = `${process.env.PUBLIC_URL || '/admin'}/batuara_logo.png`;
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -55,26 +63,83 @@ interface AdminLayoutProps {
 interface NavigationItem {
   text: string;
   icon: React.ReactElement;
-  path: string;
+  path?: string;
+  externalHref?: string;
   requiredRole?: UserRole;
   memberOnly?: boolean;
+  alwaysVisible?: boolean;
   divider?: boolean;
   visibilityModule?: ContentVisibilityModule;
 }
+
+const VISIBILITY_STATUS: Record<
+  ContentVisibility,
+  { icon: React.ReactElement; label: string }
+> = {
+  [ContentVisibility.Hidden]: {
+    icon: <VisibilityOffIcon sx={{ fontSize: 17 }} />,
+    label: 'Oculto',
+  },
+  [ContentVisibility.Authenticated]: {
+    icon: <LockIcon sx={{ fontSize: 17 }} />,
+    label: 'Restrito',
+  },
+  [ContentVisibility.Public]: {
+    icon: <PublicIcon sx={{ fontSize: 17 }} />,
+    label: 'Público',
+  },
+};
 
 const navigationItems: NavigationItem[] = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', requiredRole: UserRole.Editor },
   { text: 'Nossa História', icon: <HistoryIcon />, path: '/history', requiredRole: UserRole.Editor },
   { text: 'Agenda e Eventos', icon: <CalendarIcon />, path: '/agenda', requiredRole: UserRole.Editor },
-  { text: 'Nossos Orixás', icon: <FavoriteIcon />, path: '/orixas', requiredRole: UserRole.Editor, visibilityModule: 'orixas' },
-  { text: 'Guias e Entidades', icon: <GuidesIcon />, path: '/guides', requiredRole: UserRole.Editor, visibilityModule: 'guides' },
-  { text: 'Linhas da Umbanda', icon: <LinesIcon />, path: '/umbanda-lines', requiredRole: UserRole.Editor, visibilityModule: 'umbandaLines' },
-  { text: 'Orações e Pontos', icon: <PrayersIcon />, path: '/spiritual-content', requiredRole: UserRole.Editor, visibilityModule: 'prayers' },
+  {
+    text: 'Nossos Orixás',
+    icon: <FavoriteIcon />,
+    path: '/orixas',
+    requiredRole: UserRole.Editor,
+    visibilityModule: 'orixas',
+  },
+  {
+    text: 'Guias da Casa',
+    icon: <GuidesIcon />,
+    path: '/guides',
+    requiredRole: UserRole.Editor,
+    visibilityModule: 'guides',
+  },
+  {
+    text: 'Linhas da Umbanda',
+    icon: <LinesIcon />,
+    path: '/umbanda-lines',
+    requiredRole: UserRole.Editor,
+    visibilityModule: 'umbandaLines',
+  },
+  {
+    text: 'Orações e Pontos',
+    icon: <PrayersIcon />,
+    path: '/spiritual-content',
+    requiredRole: UserRole.Editor,
+    visibilityModule: 'prayers',
+  },
   { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members', requiredRole: UserRole.Editor },
   { text: 'Doações e Contato', icon: <DonationIcon />, path: '/donations-contact', requiredRole: UserRole.Admin },
   { text: 'Contato e Mensagens', icon: <MessagesIcon />, path: '/contact-messages', requiredRole: UserRole.Editor },
   { text: 'Localização', icon: <LocationIcon />, path: '/location', requiredRole: UserRole.Admin },
   { text: 'Usuários', icon: <UsersIcon />, path: '/users', requiredRole: UserRole.Admin },
+  {
+    text: 'Site',
+    icon: (
+      <Box
+        component="img"
+        src={batuaraLogoSrc}
+        alt=""
+        sx={{ width: 24, height: 24, objectFit: 'contain', borderRadius: '50%' }}
+      />
+    ),
+    externalHref: '/',
+    alwaysVisible: true,
+  },
   { text: 'Meu Cadastro', icon: <PeopleIcon />, path: '/profile', memberOnly: true },
 ];
 
@@ -85,12 +150,18 @@ const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { error: visibilityError, successMessage, clearFeedback } = useContentVisibility();
+  const {
+    error: visibilityError,
+    successMessage,
+    clearFeedback,
+    getVisibility,
+  } = useContentVisibility();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(true);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const visibleNavigationItems = navigationItems.filter((item) => {
+    if (item.alwaysVisible) return true;
     if (item.memberOnly) return isMember(user?.role);
     if (isMember(user?.role)) return false;
     if (item.requiredRole === UserRole.Admin) return isAdmin(user?.role);
@@ -132,11 +203,20 @@ const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
     navigate('/login');
   };
 
-  const handleNavigation = (path: string) => {
-    navigate(path);
+  const closeMobileDrawer = () => {
     if (mobileOpen) {
       setMobileOpen(false);
     }
+  };
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    closeMobileDrawer();
+  };
+
+  const handleExternalNavigation = (href: string) => {
+    closeMobileDrawer();
+    window.location.assign(href);
   };
 
   useEffect(() => {
@@ -188,60 +268,92 @@ const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
 
         <Box sx={{ flexGrow: 1, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <List disablePadding>
-            {visibleNavigationItems.map((item, index) => (
-              <React.Fragment key={item.text}>
-                <ListItemButton
-                  ref={index === 0 ? firstNavItemRef : undefined}
-                  onClick={() => handleNavigation(item.path)}
-                  selected={location.pathname === item.path}
-                  sx={{
-                    mx: 1,
-                    my: 0.15,
-                    px: { xs: 1.5, md: 2 },
-                    py: { xs: 0.25, md: 0.3 },
-                    minHeight: { xs: 33, md: 34 },
-                    borderRadius: 1.5,
-                    alignItems: 'center',
-                    gap: 0.5,
-                    '&.Mui-selected': {
-                      bgcolor: 'primary.light',
-                      borderRadius: 1.5,
-                      '&:hover': {
-                        bgcolor: 'primary.light',
-                      },
-                    },
-                  }}
-                >
-                  <ListItemIcon
+            {visibleNavigationItems.map((item, index) => {
+              const isSelected = !!item.path && location.pathname === item.path;
+              const status =
+                item.visibilityModule != null
+                  ? VISIBILITY_STATUS[getVisibility(item.visibilityModule)]
+                  : null;
+              return (
+                <React.Fragment key={item.text}>
+                  <ListItemButton
+                    ref={index === 0 ? firstNavItemRef : undefined}
+                    onClick={() => {
+                      if (item.externalHref) {
+                        handleExternalNavigation(item.externalHref);
+                        return;
+                      }
+                      if (item.path) {
+                        handleNavigation(item.path);
+                      }
+                    }}
+                    selected={isSelected}
                     sx={{
-                      minWidth: { xs: 36, md: 40 },
-                      color: location.pathname === item.path ? 'primary.main' : 'inherit',
+                      mx: 1,
+                      my: 0.15,
+                      px: { xs: 1.5, md: 2 },
+                      py: { xs: 0.25, md: 0.3 },
+                      minHeight: { xs: 33, md: 34 },
+                      borderRadius: 1.5,
+                      alignItems: 'center',
+                      gap: 0.5,
+                      '&.Mui-selected': {
+                        bgcolor: 'primary.light',
+                        borderRadius: 1.5,
+                        '&:hover': {
+                          bgcolor: 'primary.light',
+                        },
+                      },
                     }}
                   >
-                    {item.path === '/contact-messages' ? (
-                      <Badge badgeContent={unreadMessages} color="error" max={99}>
-                        {item.icon}
-                      </Badge>
-                    ) : item.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      noWrap: true,
-                      sx: {
-                        fontWeight: location.pathname === item.path ? 600 : 400,
-                        fontSize: { xs: 13, md: 13 },
-                      },
-                    }}
-                    sx={{ flex: '1 1 auto', minWidth: 0, mr: 0.5 }}
-                  />
-                  {item.visibilityModule && isEditorOrAdmin(user?.role) && (
-                    <ContentVisibilityControl module={item.visibilityModule} variant="compact" />
-                  )}
-                </ListItemButton>
-                {item.divider && <Divider sx={{ my: 1 }} />}
-              </React.Fragment>
-            ))}
+                    <ListItemIcon
+                      sx={{
+                        minWidth: { xs: 36, md: 40 },
+                        color: isSelected ? 'primary.main' : 'inherit',
+                      }}
+                    >
+                      {item.path === '/contact-messages' ? (
+                        <Badge badgeContent={unreadMessages} color="error" max={99}>
+                          {item.icon}
+                        </Badge>
+                      ) : (
+                        item.icon
+                      )}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.text}
+                      primaryTypographyProps={{
+                        noWrap: true,
+                        sx: {
+                          fontWeight: isSelected ? 600 : 400,
+                          fontSize: { xs: 13, md: 13 },
+                        },
+                      }}
+                      sx={{ flex: '1 1 auto', minWidth: 0, mr: 0.5 }}
+                    />
+                    {status && (
+                      <Tooltip title={status.label}>
+                        <Box
+                          component="span"
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            flexShrink: 0,
+                            ml: 0.5,
+                            color: isSelected ? 'primary.main' : 'text.secondary',
+                            lineHeight: 0,
+                          }}
+                          aria-label={status.label}
+                        >
+                          {status.icon}
+                        </Box>
+                      </Tooltip>
+                    )}
+                  </ListItemButton>
+                  {item.divider && <Divider sx={{ my: 1 }} />}
+                </React.Fragment>
+              );
+            })}
           </List>
         </Box>
 
@@ -340,7 +452,7 @@ const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
             title={isMember(user?.role) ? 'Voltar ao Meu Cadastro' : 'Voltar ao Dashboard'}
           >
             <img
-              src={`${process.env.PUBLIC_URL || '/admin'}/batuara_logo.png`}
+              src={batuaraLogoSrc}
               alt="Batuara Logo"
               style={{
                 height: isMobile ? '24px' : '32px',

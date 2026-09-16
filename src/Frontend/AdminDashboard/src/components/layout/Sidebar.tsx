@@ -42,7 +42,7 @@ const menuItems = [
   { text: 'Nossa História', icon: <HistoryIcon />, path: '/history' },
   { text: 'Agenda e Eventos', icon: <CalendarIcon />, path: '/agenda' },
   { text: 'Nossos Orixás', icon: <FavoriteIcon />, path: '/orixas' },
-  { text: 'Guias e Entidades', icon: <GuidesIcon />, path: '/guides' },
+  { text: 'Guias da Casa', icon: <GuidesIcon />, path: '/guides' },
   { text: 'Linhas da Umbanda', icon: <LinesIcon />, path: '/umbanda-lines' },
   { text: 'Orações e Pontos', icon: <PrayersIcon />, path: '/spiritual-content' },
   { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members' },

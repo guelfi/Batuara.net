@@ -13,6 +13,7 @@ import {
   ContentVisibilityModule,
   SiteSettingsDto,
 } from '../types';
+import { asVisibility } from '../utils/contentVisibility';
 import { useAuth } from './AuthContext';
 import { isEditorOrAdmin } from '../utils/roles';
 
@@ -51,10 +52,10 @@ const defaultVisibility: ContentVisibilityState = {
 const ContentVisibilityContext = createContext<ContentVisibilityContextType | undefined>(undefined);
 
 const mapFromSettings = (data: SiteSettingsDto): ContentVisibilityState => ({
-  orixas: data.orixasVisibility ?? ContentVisibility.Hidden,
-  guides: data.guidesVisibility ?? ContentVisibility.Hidden,
-  umbandaLines: data.umbandaLinesVisibility ?? ContentVisibility.Hidden,
-  prayers: data.prayersVisibility ?? ContentVisibility.Hidden,
+  orixas: asVisibility(data.orixasVisibility),
+  guides: asVisibility(data.guidesVisibility),
+  umbandaLines: asVisibility(data.umbandaLinesVisibility),
+  prayers: asVisibility(data.prayersVisibility),
 });
 
 interface ContentVisibilityProviderProps {

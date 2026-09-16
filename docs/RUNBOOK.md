@@ -277,6 +277,32 @@ Se a sessão cair:
 
 Nunca publicar `8085` em `0.0.0.0` nem abrir regra pública no firewall/OCI para Evolution API.
 
+### Login Filho da Casa (WhatsApp) — teste local
+
+Pré-requisitos:
+
+1. API local com `WhatsApp__Enabled=true` (padrão em `docker-compose.local.yml`).
+2. Evolution API acessível a partir do container da API via túnel no host:
+
+```bash
+# Linux / macOS — ajuste a chave e o host OCI conforme o ambiente
+ssh -i ./ssh-key-2025-08-28.pem -N -L 18085:127.0.0.1:8085 ubuntu@129.153.86.168
+```
+
+O compose aponta `WhatsApp__BaseUrl=http://host.docker.internal:18085` (não reabra o túnel se já estiver ativo).
+
+3. Instância `batuara-casa` com estado `open` e telefone do Filho na allowlist (`WhatsApp__AllowedRecipients`).
+
+Fluxo de teste no site:
+
+1. Abra o PublicWebsite anônimo → menu **[Filhos]** (após Localização) → `/admin/login?mode=member`.
+2. Aba **Filho da Casa**: informe celular com DDD → **Solicitar código**.
+3. Confirme o código no WhatsApp → login → redireciona para **Meu Perfil** (`/admin/profile`).
+4. Volte ao Site: linha 2 deve mostrar módulos **Restrito** (ex.: Orixás / Guias da Casa / Linhas da Umbanda) + Perfil + Sair — **sem Painel**.
+5. Admin/Editor autenticados veem **Painel**; item **Filhos** some quando autenticado.
+
+Se o código não chegar: valide o túnel (`curl -sS http://127.0.0.1:18085`), a allowlist e `connectionState/batuara-casa` (ver seção Evolution Manager acima).
+
 ### Portas públicas OCI
 
 Estado validado em 2026-07-08 após ajuste manual no painel OCI:

@@ -170,10 +170,10 @@ export interface SiteSettingsDto {
   bankAccountType?: string;
   companyDocument?: string;
   aboutText: string;
-  orixasVisibility?: number;
-  guidesVisibility?: number;
-  umbandaLinesVisibility?: number;
-  prayersVisibility?: number;
+  orixasVisibility?: number | string;
+  guidesVisibility?: number | string;
+  umbandaLinesVisibility?: number | string;
+  prayersVisibility?: number | string;
 }
 
 export interface CreateContactMessageRequest {

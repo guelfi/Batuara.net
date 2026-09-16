@@ -17,8 +17,8 @@ import LocationSection from './components/sections/LocationSection';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import LoadingProvider from './components/common/LoadingProvider';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ContentVisibility } from './types';
 import { publicApi } from './services/api';
+import { asVisibility, canShowSpiritual } from './utils/contentVisibility';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,29 +30,14 @@ const queryClient = new QueryClient({
   },
 });
 
-const asVisibility = (value?: number | ContentVisibility | null): ContentVisibility => {
-  if (
-    value === ContentVisibility.Public ||
-    value === ContentVisibility.Authenticated ||
-    value === ContentVisibility.Hidden
-  ) {
-    return value;
-  }
-  return ContentVisibility.Hidden;
-};
-
-const canShowSpiritual = (visibility: ContentVisibility, isAuthenticated: boolean): boolean => {
-  if (visibility === ContentVisibility.Public) return true;
-  if (visibility === ContentVisibility.Authenticated) return isAuthenticated;
-  return false;
-};
-
 const MainSections: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const { data: siteSettings } = useQuery({
     queryKey: ['public-site-settings-sections'],
     queryFn: () => publicApi.getSiteSettings(),
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const show = useMemo(

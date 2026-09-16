@@ -9,7 +9,7 @@ const navigationItems = [
   { label: 'Calendário', href: '#calendario-atendimento' },
   { label: 'Eventos e Festas', href: '#eventos-e-festas' },
   { label: 'Orixás', href: '#orixas' },
-  { label: 'Guias e Entidades', href: '#guias-entidades' },
+  { label: 'Guias da Casa', href: '#guias-entidades' },
   { label: 'Linhas da Umbanda', href: '#linhas-da-umbanda' },
   { label: 'Orações', href: '#oracoes' },
   { label: 'Doações', href: '#doacoes' },
@@ -137,8 +137,20 @@ test.beforeEach(async ({ page }) => {
             pixCity: 'SAO PAULO',
             bankName: 'Banco Mock',
             aboutText: 'Texto institucional simulado para testes visuais.',
+            orixasVisibility: 'Public',
+            guidesVisibility: 'Public',
+            umbandaLinesVisibility: 'Public',
+            prayersVisibility: 'Public',
           })
         ),
+      });
+    }
+
+    if (path.endsWith('/auth/me')) {
+      return route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: false, message: 'Unauthorized', data: null }),
       });
     }
 

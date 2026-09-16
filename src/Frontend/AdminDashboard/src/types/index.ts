@@ -87,10 +87,10 @@ export interface SiteSettingsDto {
   bankAccountType?: string;
   companyDocument?: string;
   aboutText: string;
-  orixasVisibility?: ContentVisibility;
-  guidesVisibility?: ContentVisibility;
-  umbandaLinesVisibility?: ContentVisibility;
-  prayersVisibility?: ContentVisibility;
+  orixasVisibility?: ContentVisibility | string | number;
+  guidesVisibility?: ContentVisibility | string | number;
+  umbandaLinesVisibility?: ContentVisibility | string | number;
+  prayersVisibility?: ContentVisibility | string | number;
 }
 
 export enum ContactMessageStatus {

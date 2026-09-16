@@ -21,6 +21,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ContentVisibility, NavigationItem, UserRole } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { publicApi } from '../../services/api';
+import { asVisibility } from '../../utils/contentVisibility';
 
 type NavAction = NavigationItem & {
   kind?: 'hash' | 'link' | 'action';
@@ -45,7 +46,7 @@ const SPIRITUAL_MODULES: Array<{
   field: 'orixasVisibility' | 'guidesVisibility' | 'umbandaLinesVisibility' | 'prayersVisibility';
 }> = [
   { key: 'orixas', label: 'Orixás', href: '#orixas', field: 'orixasVisibility' },
-  { key: 'guides', label: 'Guias e Entidades', href: '#guias-entidades', field: 'guidesVisibility' },
+  { key: 'guides', label: 'Guias da Casa', href: '#guias-entidades', field: 'guidesVisibility' },
   { key: 'umbandaLines', label: 'Linhas da Umbanda', href: '#linhas-da-umbanda', field: 'umbandaLinesVisibility' },
   { key: 'prayers', label: 'Orações', href: '#oracoes', field: 'prayersVisibility' },
 ];
@@ -60,11 +61,9 @@ const resolveAdminBase = (): string => {
   return '/admin';
 };
 
-const asVisibility = (value?: number | ContentVisibility | null): ContentVisibility => {
-  if (value === ContentVisibility.Public || value === ContentVisibility.Authenticated || value === ContentVisibility.Hidden) {
-    return value;
-  }
-  return ContentVisibility.Hidden;
+const memberLoginUrl = (loginUrl: string): string => {
+  const joiner = loginUrl.includes('?') ? '&' : '?';
+  return `${loginUrl}${joiner}mode=member`;
 };
 
 const Header: React.FC = () => {
@@ -73,13 +72,15 @@ const Header: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const appBarRef = useRef<HTMLDivElement | null>(null);
-  const { isAuthenticated, role, logout, loginUrl } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, role, logout, loginUrl } = useAuth();
   const adminBase = resolveAdminBase();
 
   const { data: siteSettings } = useQuery({
     queryKey: ['public-site-settings-nav'],
     queryFn: () => publicApi.getSiteSettings(),
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const visibilityMap = useMemo(
@@ -113,7 +114,7 @@ const Header: React.FC = () => {
   );
 
   const line1Items: NavAction[] = useMemo(() => {
-    // Insert public spiritual modules after Eventos e Festas (index 5)
+    // Insert public spiritual modules after Eventos e Festas (before Doações)
     const base = [...PUBLIC_LINE_BASE] as NavAction[];
     const insertAt = base.findIndex((i) => i.href === '#doacoes');
     const withPublic = [
@@ -121,17 +122,28 @@ const Header: React.FC = () => {
       ...publicSpiritualItems,
       ...base.slice(insertAt),
     ];
+
+    // Filhos: anonymous shortcut to Admin login (Member WhatsApp / staff). Hidden when authenticated.
+    if (!authLoading && !isAuthenticated) {
+      withPublic.push({
+        label: 'Filhos',
+        href: memberLoginUrl(loginUrl),
+        kind: 'link',
+      });
+    }
+
     return withPublic;
-  }, [publicSpiritualItems]);
+  }, [authLoading, isAuthenticated, loginUrl, publicSpiritualItems]);
 
   const line2Items: NavAction[] = useMemo(() => {
-    if (!isAuthenticated) return [];
+    if (authLoading || !isAuthenticated) return [];
 
     const items: NavAction[] = [...restrictedSpiritualItems];
 
     const profilePath = `${adminBase}/profile`;
     items.push({ label: 'Perfil', href: profilePath, kind: 'link' });
 
+    // Painel: Admin and Editor only — Members edit Profile only
     if (role === UserRole.Admin || role === UserRole.Editor) {
       items.push({ label: 'Painel', href: `${adminBase}/`, kind: 'link' });
     }
@@ -146,7 +158,7 @@ const Header: React.FC = () => {
     });
 
     return items;
-  }, [adminBase, isAuthenticated, logout, restrictedSpiritualItems, role]);
+  }, [adminBase, authLoading, isAuthenticated, logout, restrictedSpiritualItems, role]);
 
   const allHashHrefs = useMemo(() => {
     const hrefs = [

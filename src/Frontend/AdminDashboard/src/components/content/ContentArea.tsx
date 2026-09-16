@@ -85,7 +85,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ selectedItem }) => {
       case 'guias':
         return (
           <PlaceholderContent
-            title="Guias e Entidades"
+            title="Guias da Casa"
             description="Sistema completo para gerenciamento de Guias espirituais, Pretos Velhos, Caboclos, Crianças e demais entidades da casa."
             phase="A1"
             phaseLabel="Recursos Avançados"
