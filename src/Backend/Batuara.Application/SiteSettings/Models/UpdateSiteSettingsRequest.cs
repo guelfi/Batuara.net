@@ -1,3 +1,5 @@
+using Batuara.Domain.Enums;
+
 namespace Batuara.Application.SiteSettings.Models
 {
     public class UpdateSiteSettingsRequest
@@ -39,5 +41,9 @@ namespace Batuara.Application.SiteSettings.Models
         public string? CompanyDocument { get; set; }
         public string? PixQrCodeBase64 { get; set; }
         public string? AboutText { get; set; }
+        public ContentVisibility? OrixasVisibility { get; set; }
+        public ContentVisibility? GuidesVisibility { get; set; }
+        public ContentVisibility? UmbandaLinesVisibility { get; set; }
+        public ContentVisibility? PrayersVisibility { get; set; }
     }
 }

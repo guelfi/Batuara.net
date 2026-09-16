@@ -175,6 +175,21 @@ namespace Batuara.Infrastructure.SiteSettings.Services
                     pixQrCodeBase64);
             }
 
+            var hasVisibilityChange =
+                request.OrixasVisibility.HasValue ||
+                request.GuidesVisibility.HasValue ||
+                request.UmbandaLinesVisibility.HasValue ||
+                request.PrayersVisibility.HasValue;
+
+            if (hasVisibilityChange)
+            {
+                entity.UpdateContentVisibility(
+                    request.OrixasVisibility ?? entity.OrixasVisibility,
+                    request.GuidesVisibility ?? entity.GuidesVisibility,
+                    request.UmbandaLinesVisibility ?? entity.UmbandaLinesVisibility,
+                    request.PrayersVisibility ?? entity.PrayersVisibility);
+            }
+
             await _dbContext.SaveChangesAsync();
             return Map(entity);
         }
@@ -326,7 +341,11 @@ namespace Batuara.Infrastructure.SiteSettings.Services
                 PixQrCodeBase64 = entity.PixQrCodeBase64,
                 AboutText = string.IsNullOrWhiteSpace(entity.AboutText)
                     ? GetDefaultAboutText()
-                    : entity.AboutText
+                    : entity.AboutText,
+                OrixasVisibility = entity.OrixasVisibility,
+                GuidesVisibility = entity.GuidesVisibility,
+                UmbandaLinesVisibility = entity.UmbandaLinesVisibility,
+                PrayersVisibility = entity.PrayersVisibility
             };
         }
 

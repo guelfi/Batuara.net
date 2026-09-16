@@ -26,6 +26,7 @@ import { Add as AddIcon, Close as CloseIcon, Edit as EditIcon } from '@mui/icons
 import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
 import apiService from '../services/api';
 import GridPager from '../components/common/GridPager';
+import ContentVisibilityControl from '../components/common/ContentVisibilityControl';
 import { Orixa } from '../types';
 
 type OrixaFormState = {
@@ -365,6 +366,9 @@ const OrixasPage: React.FC = () => {
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
             Orixás
           </Typography>
+          <Box sx={{ mt: 1.5 }}>
+            <ContentVisibilityControl module="orixas" />
+          </Box>
         </Box>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()} fullWidth={isXs}>

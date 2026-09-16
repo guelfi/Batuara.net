@@ -1,4 +1,5 @@
 using Batuara.Domain.Entities;
+using Batuara.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -133,6 +134,26 @@ namespace Batuara.Infrastructure.Data.Configurations
 
             builder.Property(s => s.PixQrCodeBase64)
                 .HasColumnType("text");
+
+            builder.Property(s => s.OrixasVisibility)
+                .IsRequired()
+                .HasDefaultValue(ContentVisibility.Hidden)
+                .HasConversion<int>();
+
+            builder.Property(s => s.GuidesVisibility)
+                .IsRequired()
+                .HasDefaultValue(ContentVisibility.Hidden)
+                .HasConversion<int>();
+
+            builder.Property(s => s.UmbandaLinesVisibility)
+                .IsRequired()
+                .HasDefaultValue(ContentVisibility.Hidden)
+                .HasConversion<int>();
+
+            builder.Property(s => s.PrayersVisibility)
+                .IsRequired()
+                .HasDefaultValue(ContentVisibility.Hidden)
+                .HasConversion<int>();
 
             builder.OwnsOne(s => s.ContactInfo, ci =>
             {

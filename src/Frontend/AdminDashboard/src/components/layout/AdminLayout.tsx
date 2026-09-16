@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Badge,
   Box,
   AppBar,
@@ -8,6 +9,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Snackbar,
   Toolbar,
   Typography,
   IconButton,
@@ -35,8 +37,13 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import {
+  ContentVisibilityProvider,
+  useContentVisibility,
+} from '../../hooks/useContentVisibility';
+import ContentVisibilityControl from '../common/ContentVisibilityControl';
 import apiService from '../../services/api';
-import { UserRole } from '../../types';
+import { ContentVisibilityModule, UserRole } from '../../types';
 import { isAdmin, isEditorOrAdmin, isMember } from '../../utils/roles';
 
 const drawerWidth = 320;
@@ -52,16 +59,17 @@ interface NavigationItem {
   requiredRole?: UserRole;
   memberOnly?: boolean;
   divider?: boolean;
+  visibilityModule?: ContentVisibilityModule;
 }
 
 const navigationItems: NavigationItem[] = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', requiredRole: UserRole.Editor },
   { text: 'Nossa História', icon: <HistoryIcon />, path: '/history', requiredRole: UserRole.Editor },
   { text: 'Agenda e Eventos', icon: <CalendarIcon />, path: '/agenda', requiredRole: UserRole.Editor },
-  { text: 'Nossos Orixás', icon: <FavoriteIcon />, path: '/orixas', requiredRole: UserRole.Editor },
-  { text: 'Guias e Entidades', icon: <GuidesIcon />, path: '/guides', requiredRole: UserRole.Editor },
-  { text: 'Linhas da Umbanda', icon: <LinesIcon />, path: '/umbanda-lines', requiredRole: UserRole.Editor },
-  { text: 'Orações e Pontos', icon: <PrayersIcon />, path: '/spiritual-content', requiredRole: UserRole.Editor },
+  { text: 'Nossos Orixás', icon: <FavoriteIcon />, path: '/orixas', requiredRole: UserRole.Editor, visibilityModule: 'orixas' },
+  { text: 'Guias e Entidades', icon: <GuidesIcon />, path: '/guides', requiredRole: UserRole.Editor, visibilityModule: 'guides' },
+  { text: 'Linhas da Umbanda', icon: <LinesIcon />, path: '/umbanda-lines', requiredRole: UserRole.Editor, visibilityModule: 'umbandaLines' },
+  { text: 'Orações e Pontos', icon: <PrayersIcon />, path: '/spiritual-content', requiredRole: UserRole.Editor, visibilityModule: 'prayers' },
   { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members', requiredRole: UserRole.Editor },
   { text: 'Doações e Contato', icon: <DonationIcon />, path: '/donations-contact', requiredRole: UserRole.Admin },
   { text: 'Contato e Mensagens', icon: <MessagesIcon />, path: '/contact-messages', requiredRole: UserRole.Editor },
@@ -70,13 +78,14 @@ const navigationItems: NavigationItem[] = [
   { text: 'Meu Cadastro', icon: <PeopleIcon />, path: '/member-profile', memberOnly: true },
 ];
 
-const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
+const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { error: visibilityError, successMessage, clearFeedback } = useContentVisibility();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(true);
@@ -192,6 +201,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                     py: { xs: 0.25, md: 0.3 },
                     minHeight: { xs: 33, md: 34 },
                     borderRadius: 1.5,
+                    alignItems: 'center',
+                    gap: 0.5,
                     '&.Mui-selected': {
                       bgcolor: 'primary.light',
                       borderRadius: 1.5,
@@ -203,7 +214,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 >
                   <ListItemIcon
                     sx={{
-                      minWidth: { xs: 40, md: 56 },
+                      minWidth: { xs: 36, md: 40 },
                       color: location.pathname === item.path ? 'primary.main' : 'inherit',
                     }}
                   >
@@ -216,12 +227,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   <ListItemText
                     primary={item.text}
                     primaryTypographyProps={{
+                      noWrap: true,
                       sx: {
                         fontWeight: location.pathname === item.path ? 600 : 400,
-                        fontSize: { xs: 14, md: 14 },
+                        fontSize: { xs: 13, md: 13 },
                       },
                     }}
+                    sx={{ flex: '1 1 auto', minWidth: 0, mr: 0.5 }}
                   />
+                  {item.visibilityModule && isEditorOrAdmin(user?.role) && (
+                    <ContentVisibilityControl module={item.visibilityModule} variant="compact" />
+                  )}
                 </ListItemButton>
                 {item.divider && <Divider sx={{ my: 1 }} />}
               </React.Fragment>
@@ -435,8 +451,29 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         <Toolbar />
         {children}
       </Box>
+
+      <Snackbar
+        open={!!visibilityError || !!successMessage}
+        autoHideDuration={4000}
+        onClose={clearFeedback}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={clearFeedback}
+          severity={visibilityError ? 'error' : 'success'}
+          sx={{ width: '100%' }}
+        >
+          {visibilityError || successMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
+
+const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => (
+  <ContentVisibilityProvider>
+    <AdminLayoutInner>{children}</AdminLayoutInner>
+  </ContentVisibilityProvider>
+);
 
 export default AdminLayout;

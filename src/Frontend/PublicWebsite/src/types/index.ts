@@ -169,6 +169,10 @@ export interface SiteSettingsDto {
   bankAccountType?: string;
   companyDocument?: string;
   aboutText: string;
+  orixasVisibility?: number;
+  guidesVisibility?: number;
+  umbandaLinesVisibility?: number;
+  prayersVisibility?: number;
 }
 
 export interface CreateContactMessageRequest {

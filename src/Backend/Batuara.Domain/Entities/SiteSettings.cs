@@ -1,4 +1,5 @@
 using Batuara.Domain.Common;
+using Batuara.Domain.Enums;
 using Batuara.Domain.ValueObjects;
 
 namespace Batuara.Domain.Entities
@@ -39,6 +40,10 @@ namespace Batuara.Domain.Entities
         public string? BankAccountType { get; private set; }
         public string? CompanyDocument { get; private set; }
         public string? PixQrCodeBase64 { get; private set; }
+        public ContentVisibility OrixasVisibility { get; private set; } = ContentVisibility.Hidden;
+        public ContentVisibility GuidesVisibility { get; private set; } = ContentVisibility.Hidden;
+        public ContentVisibility UmbandaLinesVisibility { get; private set; } = ContentVisibility.Hidden;
+        public ContentVisibility PrayersVisibility { get; private set; } = ContentVisibility.Hidden;
 
         private SiteSettings()
         {
@@ -183,6 +188,19 @@ namespace Batuara.Domain.Entities
         public void UpdatePixKey(string? pixKey)
         {
             UpdateDonationInfo(pixKey, PixPayload, PixRecipientName, PixCity, BankName, BankAgency, BankAccount, BankAccountType, CompanyDocument);
+        }
+
+        public void UpdateContentVisibility(
+            ContentVisibility orixasVisibility,
+            ContentVisibility guidesVisibility,
+            ContentVisibility umbandaLinesVisibility,
+            ContentVisibility prayersVisibility)
+        {
+            OrixasVisibility = orixasVisibility;
+            GuidesVisibility = guidesVisibility;
+            UmbandaLinesVisibility = umbandaLinesVisibility;
+            PrayersVisibility = prayersVisibility;
+            UpdateTimestamp();
         }
 
         private string BuildAddressLine()

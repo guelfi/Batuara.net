@@ -43,6 +43,10 @@ namespace Batuara.API.Validators
             RuleFor(x => x.BankAccountType).MaximumLength(40).When(x => x.BankAccountType != null);
             RuleFor(x => x.CompanyDocument).MaximumLength(30).When(x => x.CompanyDocument != null);
             RuleFor(x => x.AboutText).MaximumLength(20000).When(x => x.AboutText != null);
+            RuleFor(x => x.OrixasVisibility).IsInEnum().When(x => x.OrixasVisibility.HasValue);
+            RuleFor(x => x.GuidesVisibility).IsInEnum().When(x => x.GuidesVisibility.HasValue);
+            RuleFor(x => x.UmbandaLinesVisibility).IsInEnum().When(x => x.UmbandaLinesVisibility.HasValue);
+            RuleFor(x => x.PrayersVisibility).IsInEnum().When(x => x.PrayersVisibility.HasValue);
         }
     }
 }
