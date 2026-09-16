@@ -11,6 +11,8 @@ import {
 } from '@mui/icons-material';
 import { ContentVisibility, ContentVisibilityModule } from '../../types';
 import { useContentVisibility } from '../../hooks/useContentVisibility';
+import { useAuth } from '../../contexts/AuthContext';
+import { isAdmin } from '../../utils/roles';
 
 const OPTIONS: Array<{ value: ContentVisibility; label: string; icon: React.ReactElement }> = [
   { value: ContentVisibility.Hidden, label: 'Oculto', icon: <HiddenIcon fontSize="inherit" /> },
@@ -27,7 +29,13 @@ const ContentVisibilityControl: React.FC<ContentVisibilityControlProps> = ({
   module,
   size = 'small',
 }) => {
+  const { user } = useAuth();
   const { getVisibility, setVisibility, savingModule, loading } = useContentVisibility();
+
+  if (!isAdmin(user?.role)) {
+    return null;
+  }
+
   const value = getVisibility(module);
   const disabled = loading || savingModule === module;
 

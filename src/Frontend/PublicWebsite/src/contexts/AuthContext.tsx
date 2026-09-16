@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
 import { AuthUser, UserRole } from '../types';
 import { publicApi } from '../services/api';
+import { resolvePublicSiteUrl } from '../utils/publicSite';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -99,6 +100,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Cookie clear may still succeed server-side; ignore network errors
     } finally {
       setUser(null);
+      window.location.assign(resolvePublicSiteUrl());
     }
   }, []);
 

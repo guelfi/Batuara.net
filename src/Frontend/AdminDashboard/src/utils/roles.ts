@@ -29,6 +29,14 @@ export const getRoleLabel = (role?: UserRole | null): string => {
   }
 };
 
-export const isAdmin = (role?: UserRole | null): boolean => role === UserRole.Admin;
-export const isEditorOrAdmin = (role?: UserRole | null): boolean => role === UserRole.Admin || role === UserRole.Editor;
-export const isMember = (role?: UserRole | null): boolean => role === UserRole.Member;
+export const isAdmin = (role?: UserRole | null): boolean =>
+  role != null && normalizeUserRole(role) === UserRole.Admin;
+
+export const isEditorOrAdmin = (role?: UserRole | null): boolean => {
+  if (role == null) return false;
+  const normalized = normalizeUserRole(role);
+  return normalized === UserRole.Admin || normalized === UserRole.Editor;
+};
+
+export const isMember = (role?: UserRole | null): boolean =>
+  role != null && normalizeUserRole(role) === UserRole.Member;

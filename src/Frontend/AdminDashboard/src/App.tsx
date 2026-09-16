@@ -64,7 +64,7 @@ function App() {
                         <Route path="/" element={<HomeRedirect />} />
                         <Route path="/dashboard" element={<ProtectedRoute requiredRole={UserRole.Editor}><DashboardPage /></ProtectedRoute>} />
                         <Route path="/history" element={<ProtectedRoute requiredRole={UserRole.Editor}><HistoryPage /></ProtectedRoute>} />
-                        <Route path="/agenda" element={<ProtectedRoute requiredRole={UserRole.Editor}><AgendaPage /></ProtectedRoute>} />
+                        <Route path="/agenda" element={<ProtectedRoute requiredRole={UserRole.Admin}><AgendaPage /></ProtectedRoute>} />
                         <Route path="/events" element={<Navigate to="/agenda" replace />} />
                         <Route path="/calendar" element={<Navigate to="/agenda" replace />} />
                         <Route path="/orixas" element={<ProtectedRoute requiredRole={UserRole.Editor}><OrixasPage /></ProtectedRoute>} />
@@ -72,10 +72,10 @@ function App() {
                         <Route path="/umbanda-lines" element={<ProtectedRoute requiredRole={UserRole.Editor}><UmbandaLinesPage /></ProtectedRoute>} />
                         <Route path="/prayers" element={<ProtectedRoute requiredRole={UserRole.Editor}><SpiritualContentPage /></ProtectedRoute>} />
                         <Route path="/spiritual-content" element={<ProtectedRoute requiredRole={UserRole.Editor}><SpiritualContentPage /></ProtectedRoute>} />
-                        <Route path="/members" element={<ProtectedRoute requiredRole={UserRole.Editor}><MembersPage /></ProtectedRoute>} />
+                        <Route path="/members" element={<ProtectedRoute requiredRole={UserRole.Admin}><MembersPage /></ProtectedRoute>} />
                         <Route path="/donations-contact" element={<ProtectedRoute requiredRole={UserRole.Admin}><DonationsContactPage /></ProtectedRoute>} />
-                        <Route path="/contact-messages" element={<ProtectedRoute requiredRole={UserRole.Editor}><ContactMessagesPage /></ProtectedRoute>} />
-                        <Route path="/location" element={<ProtectedRoute requiredRole={UserRole.Admin}><LocationPage /></ProtectedRoute>} />
+                        <Route path="/contact-messages" element={<ProtectedRoute requiredRole={UserRole.Admin}><ContactMessagesPage /></ProtectedRoute>} />
+                        <Route path="/location" element={<ProtectedRoute requiredRole={UserRole.Editor}><LocationPage /></ProtectedRoute>} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/users" element={<ProtectedRoute requiredRole={UserRole.Admin}><UsersPage /></ProtectedRoute>} />
                         <Route path="/member-profile" element={<Navigate to="/profile" replace />} />

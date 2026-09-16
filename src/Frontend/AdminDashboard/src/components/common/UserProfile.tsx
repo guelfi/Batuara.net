@@ -52,7 +52,6 @@ const UserProfile: React.FC<UserProfileProps> = ({
     handleClose();
     try {
       await logout();
-      navigate('/login');
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     }

@@ -9,7 +9,7 @@ namespace Batuara.API.Controllers
     [ApiController]
     [Route("api/house-members")]
     [Route("api/v1/house-members")]
-    [Authorize(Roles = "Admin,Editor")]
+    [Authorize(Roles = "Admin")]
     public class HouseMembersController : ControllerBase
     {
         private readonly IHouseMemberService _service;

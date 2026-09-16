@@ -10,7 +10,7 @@ namespace Batuara.API.Controllers
     [ApiController]
     [Route("api/events")]
     [Route("api/v1/events")]
-    [Authorize(Roles = "Admin,Editor")]
+    [Authorize(Roles = "Admin")]
     public class EventsController(
         IEventService eventService,
         ILogger<EventsController> logger) : ControllerBase

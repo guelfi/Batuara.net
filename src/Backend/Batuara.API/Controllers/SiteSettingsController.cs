@@ -61,10 +61,22 @@ namespace Batuara.API.Controllers
         [EnableRateLimiting("authenticated")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Update([FromBody] UpdateSiteSettingsRequest request)
         {
             try
             {
+                var hasVisibilityChange =
+                    request.OrixasVisibility.HasValue ||
+                    request.GuidesVisibility.HasValue ||
+                    request.UmbandaLinesVisibility.HasValue ||
+                    request.PrayersVisibility.HasValue;
+
+                if (hasVisibilityChange && !User.IsInRole("Admin"))
+                {
+                    return Forbid();
+                }
+
                 var settings = await _siteSettingsService.UpdateAsync(request);
                 return Ok(new { success = true, data = settings });
             }

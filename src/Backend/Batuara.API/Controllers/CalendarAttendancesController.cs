@@ -10,7 +10,7 @@ namespace Batuara.API.Controllers
     [ApiController]
     [Route("api/calendar/attendances")]
     [Route("api/v1/calendar/attendances")]
-    [Authorize(Roles = "Admin,Editor")]
+    [Authorize(Roles = "Admin")]
     public class CalendarAttendancesController(
         ICalendarAttendanceService service,
         ILogger<CalendarAttendancesController> logger) : ControllerBase

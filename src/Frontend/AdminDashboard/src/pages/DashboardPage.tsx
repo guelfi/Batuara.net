@@ -33,9 +33,13 @@ import { ptBR } from 'date-fns/locale';
 import apiService from '../services/api';
 import { DashboardStats } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { isAdmin } from '../utils/roles';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const canAccessAdminModules = isAdmin(user?.role);
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(true);
@@ -59,7 +63,7 @@ const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [canAccessAdminModules]);
 
   const loadDashboardData = async () => {
     try {
@@ -72,61 +76,66 @@ const DashboardPage: React.FC = () => {
       const today = new Date();
       const todayIso = today.toISOString().slice(0, 10);
 
-      try {
-        const events = await apiService.getEvents({
-          isActive: true,
-          fromDate: todayIso,
-          pageNumber: 1,
-          pageSize: 1,
-          sort: 'date:asc',
-        });
-
-        const upcoming = events.data?.[0];
-        if (upcoming) {
-          const label = parseLocalDate(upcoming.date).toLocaleDateString('pt-BR');
-          const timeLabel = upcoming.startTime ? ` às ${(upcoming.startTime || '').slice(0, 5)}` : '';
-          setNextEvent({ title: upcoming.title, when: `${label}${timeLabel}` });
-        } else {
-          setNextEvent(null);
-        }
-      } catch (_) {
-        setNextEvent(null);
-      }
-
-      try {
-        const candidates: { title: string; when: string; sortKey: string }[] = [];
-
-        for (let i = 0; i < 2; i += 1) {
-          const monthDate = new Date(today.getFullYear(), today.getMonth() + i, 1);
-          const month = monthDate.getMonth() + 1;
-          const year = monthDate.getFullYear();
-
-          const attendances = await apiService.getAttendances({
+      if (canAccessAdminModules) {
+        try {
+          const events = await apiService.getEvents({
             isActive: true,
+            fromDate: todayIso,
             pageNumber: 1,
-            pageSize: 50,
+            pageSize: 1,
             sort: 'date:asc',
-            month,
-            year,
           });
 
-          for (const item of attendances.data || []) {
-            if (!item.date) continue;
-            const day = item.date.slice(0, 10);
-            if (day < todayIso) continue;
-            const when = `${parseLocalDate(item.date).toLocaleDateString('pt-BR')}${item.startTime ? ` às ${(item.startTime || '').slice(0, 5)}` : ''}`;
-            candidates.push({
-              title: item.description || 'Atendimento',
-              when,
-              sortKey: `${day}T${(item.startTime || '00:00').slice(0, 5)}`,
-            });
+          const upcoming = events.data?.[0];
+          if (upcoming) {
+            const label = parseLocalDate(upcoming.date).toLocaleDateString('pt-BR');
+            const timeLabel = upcoming.startTime ? ` às ${(upcoming.startTime || '').slice(0, 5)}` : '';
+            setNextEvent({ title: upcoming.title, when: `${label}${timeLabel}` });
+          } else {
+            setNextEvent(null);
           }
+        } catch (_) {
+          setNextEvent(null);
         }
 
-        candidates.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
-        const first = candidates[0];
-        setNextAttendance(first ? { title: first.title, when: first.when } : null);
-      } catch (_) {
+        try {
+          const candidates: { title: string; when: string; sortKey: string }[] = [];
+
+          for (let i = 0; i < 2; i += 1) {
+            const monthDate = new Date(today.getFullYear(), today.getMonth() + i, 1);
+            const month = monthDate.getMonth() + 1;
+            const year = monthDate.getFullYear();
+
+            const attendances = await apiService.getAttendances({
+              isActive: true,
+              pageNumber: 1,
+              pageSize: 50,
+              sort: 'date:asc',
+              month,
+              year,
+            });
+
+            for (const item of attendances.data || []) {
+              if (!item.date) continue;
+              const day = item.date.slice(0, 10);
+              if (day < todayIso) continue;
+              const when = `${parseLocalDate(item.date).toLocaleDateString('pt-BR')}${item.startTime ? ` às ${(item.startTime || '').slice(0, 5)}` : ''}`;
+              candidates.push({
+                title: item.description || 'Atendimento',
+                when,
+                sortKey: `${day}T${(item.startTime || '00:00').slice(0, 5)}`,
+              });
+            }
+          }
+
+          candidates.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+          const first = candidates[0];
+          setNextAttendance(first ? { title: first.title, when: first.when } : null);
+        } catch (_) {
+          setNextAttendance(null);
+        }
+      } else {
+        setNextEvent(null);
         setNextAttendance(null);
       }
 
@@ -242,80 +251,84 @@ const DashboardPage: React.FC = () => {
 
       {/* Cards de estatísticas */}
       <Grid container spacing={{ xs: 1.5, sm: 3 }} sx={{ mb: { xs: 2, md: 4 }, justifyContent: 'flex-start', maxWidth: '100%' }}>
-        <Grid size={{ xs: 6, sm: 6, md: 6, lg: 3 }}>
-          <Card sx={{ height: '100%' }}>
-            <CardActionArea {...buildStatCardProps('/events')}>
-              <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
-                  <EventIcon sx={{ color: 'primary.main', mr: { xs: 0.75, sm: 1 } }} fontSize="small" />
-                  <Typography variant={isXs ? 'subtitle1' : 'h6'} color="primary" sx={{ flexGrow: 1, fontWeight: 600 }}>
-                    Eventos
-                  </Typography>
-                  <ChevronRightIcon fontSize="small" color="action" />
-                </Box>
-                <Typography
-                  variant={isXs ? 'h4' : 'h3'}
-                  sx={{ fontWeight: 700, mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '1.75rem', sm: '3rem' } }}
-                >
-                  {stats?.eventsUntilEndOfYear ?? 0}
-                </Typography>
-                <Typography variant={isXs ? 'caption' : 'body2'} color="text.secondary">
-                  Até o final do ano
-                </Typography>
-              </CardContent>
-            </CardActionArea>
-          </Card>
-        </Grid>
+        {canAccessAdminModules && (
+          <>
+            <Grid size={{ xs: 6, sm: 6, md: 6, lg: 3 }}>
+              <Card sx={{ height: '100%' }}>
+                <CardActionArea {...buildStatCardProps('/events')}>
+                  <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
+                      <EventIcon sx={{ color: 'primary.main', mr: { xs: 0.75, sm: 1 } }} fontSize="small" />
+                      <Typography variant={isXs ? 'subtitle1' : 'h6'} color="primary" sx={{ flexGrow: 1, fontWeight: 600 }}>
+                        Eventos
+                      </Typography>
+                      <ChevronRightIcon fontSize="small" color="action" />
+                    </Box>
+                    <Typography
+                      variant={isXs ? 'h4' : 'h3'}
+                      sx={{ fontWeight: 700, mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '1.75rem', sm: '3rem' } }}
+                    >
+                      {stats?.eventsUntilEndOfYear ?? 0}
+                    </Typography>
+                    <Typography variant={isXs ? 'caption' : 'body2'} color="text.secondary">
+                      Até o final do ano
+                    </Typography>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            </Grid>
 
-        <Grid size={{ xs: 6, sm: 6, md: 6, lg: 3 }}>
-          <Card sx={{ height: '100%' }}>
-            <CardActionArea {...buildStatCardProps('/calendar')}>
-              <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
-                  <CalendarMonthIcon sx={{ color: 'secondary.main', mr: { xs: 0.75, sm: 1 } }} fontSize="small" />
-                  <Typography variant={isXs ? 'subtitle1' : 'h6'} color="secondary" sx={{ flexGrow: 1, fontWeight: 600 }}>
-                    Atendimentos
-                  </Typography>
-                  <ChevronRightIcon fontSize="small" color="action" />
-                </Box>
-                <Typography
-                  variant={isXs ? 'h4' : 'h3'}
-                  sx={{ fontWeight: 700, mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '1.75rem', sm: '3rem' } }}
-                >
-                  {stats?.attendancesUntilEndOfYear ?? 0}
-                </Typography>
-                <Typography variant={isXs ? 'caption' : 'body2'} color="text.secondary">
-                  Espirituais até o final do ano
-                </Typography>
-              </CardContent>
-            </CardActionArea>
-          </Card>
-        </Grid>
+            <Grid size={{ xs: 6, sm: 6, md: 6, lg: 3 }}>
+              <Card sx={{ height: '100%' }}>
+                <CardActionArea {...buildStatCardProps('/calendar')}>
+                  <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
+                      <CalendarMonthIcon sx={{ color: 'secondary.main', mr: { xs: 0.75, sm: 1 } }} fontSize="small" />
+                      <Typography variant={isXs ? 'subtitle1' : 'h6'} color="secondary" sx={{ flexGrow: 1, fontWeight: 600 }}>
+                        Atendimentos
+                      </Typography>
+                      <ChevronRightIcon fontSize="small" color="action" />
+                    </Box>
+                    <Typography
+                      variant={isXs ? 'h4' : 'h3'}
+                      sx={{ fontWeight: 700, mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '1.75rem', sm: '3rem' } }}
+                    >
+                      {stats?.attendancesUntilEndOfYear ?? 0}
+                    </Typography>
+                    <Typography variant={isXs ? 'caption' : 'body2'} color="text.secondary">
+                      Espirituais até o final do ano
+                    </Typography>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            </Grid>
 
-        <Grid size={{ xs: 6, sm: 6, md: 6, lg: 3 }}>
-          <Card sx={{ height: '100%' }}>
-            <CardActionArea {...buildStatCardProps('/members')}>
-              <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
-                  <PeopleIcon sx={{ color: 'success.main', mr: { xs: 0.75, sm: 1 } }} fontSize="small" />
-                  <Typography variant={isXs ? 'subtitle1' : 'h6'} color="success.main" sx={{ flexGrow: 1, fontWeight: 600 }}>
-                    Filhos da Casa
-                  </Typography>
-                  <ChevronRightIcon fontSize="small" color="action" />
-                </Box>
-                <Typography
-                  variant={isXs ? 'h4' : 'h3'}
-                  sx={{ fontWeight: 700, mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '1.75rem', sm: '3rem' } }}
-                >
-                  {stats?.activeHouseMembers ?? 0}
-                </Typography>
-                <Typography variant={isXs ? 'caption' : 'body2'} color="text.secondary">
-                  Cadastrados e ativos
-                </Typography>
-              </CardContent>
-            </CardActionArea>
-          </Card>
-        </Grid>
+            <Grid size={{ xs: 6, sm: 6, md: 6, lg: 3 }}>
+              <Card sx={{ height: '100%' }}>
+                <CardActionArea {...buildStatCardProps('/members')}>
+                  <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
+                      <PeopleIcon sx={{ color: 'success.main', mr: { xs: 0.75, sm: 1 } }} fontSize="small" />
+                      <Typography variant={isXs ? 'subtitle1' : 'h6'} color="success.main" sx={{ flexGrow: 1, fontWeight: 600 }}>
+                        Filhos da Casa
+                      </Typography>
+                      <ChevronRightIcon fontSize="small" color="action" />
+                    </Box>
+                    <Typography
+                      variant={isXs ? 'h4' : 'h3'}
+                      sx={{ fontWeight: 700, mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '1.75rem', sm: '3rem' } }}
+                    >
+                      {stats?.activeHouseMembers ?? 0}
+                    </Typography>
+                    <Typography variant={isXs ? 'caption' : 'body2'} color="text.secondary">
+                      Cadastrados e ativos
+                    </Typography>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            </Grid>
+          </>
+        )}
 
         <Grid size={{ xs: 6, sm: 6, md: 6, lg: 3 }}>
           <Card sx={{ height: '100%' }}>
@@ -345,41 +358,43 @@ const DashboardPage: React.FC = () => {
 
       {/* Atividade recente */}
       <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 4 }} sx={{ order: { xs: 1, md: 2 } }}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-              Resumo Rápido
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Box>
-                <Typography variant="body2" color="text.secondary">
-                  Próximo evento
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                  {nextEvent?.title || 'Nenhum evento agendado'}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {nextEvent?.when || '—'}
-                </Typography>
+        {canAccessAdminModules && (
+          <Grid size={{ xs: 12, md: 4 }} sx={{ order: { xs: 1, md: 2 } }}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                Resumo Rápido
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Próximo evento
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                    {nextEvent?.title || 'Nenhum evento agendado'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {nextEvent?.when || '—'}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Próximo atendimento
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                    {nextAttendance?.title || 'Nenhum atendimento agendado'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {nextAttendance?.when || '—'}
+                  </Typography>
+                </Box>
+
               </Box>
+            </Paper>
+          </Grid>
+        )}
 
-              <Box>
-                <Typography variant="body2" color="text.secondary">
-                  Próximo atendimento
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                  {nextAttendance?.title || 'Nenhum atendimento agendado'}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {nextAttendance?.when || '—'}
-                </Typography>
-              </Box>
-
-            </Box>
-          </Paper>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 8 }} sx={{ order: { xs: 2, md: 1 } }}>
+        <Grid size={{ xs: 12, md: canAccessAdminModules ? 8 : 12 }} sx={{ order: { xs: 2, md: 1 } }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
               Atividade Recente

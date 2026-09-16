@@ -40,15 +40,15 @@ interface SidebarProps {
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Nossa História', icon: <HistoryIcon />, path: '/history' },
-  { text: 'Agenda e Eventos', icon: <CalendarIcon />, path: '/agenda' },
+  { text: 'Agenda e Eventos', icon: <CalendarIcon />, path: '/agenda', adminOnly: true },
   { text: 'Nossos Orixás', icon: <FavoriteIcon />, path: '/orixas' },
   { text: 'Guias da Casa', icon: <GuidesIcon />, path: '/guides' },
   { text: 'Linhas da Umbanda', icon: <LinesIcon />, path: '/umbanda-lines' },
   { text: 'Orações e Pontos', icon: <PrayersIcon />, path: '/spiritual-content' },
-  { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members' },
+  { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members', adminOnly: true },
   { text: 'Doações e Contato', icon: <DonationIcon />, path: '/donations-contact', adminOnly: true },
-  { text: 'Contato e Mensagens', icon: <MessagesIcon />, path: '/contact-messages' },
-  { text: 'Localização', icon: <LocationIcon />, path: '/location', adminOnly: true },
+  { text: 'Contato e Mensagens', icon: <MessagesIcon />, path: '/contact-messages', adminOnly: true },
+  { text: 'Localização', icon: <LocationIcon />, path: '/location' },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent', onLogout }) => {
@@ -70,7 +70,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant = 'permanent',
 
   const handleLogout = () => {
     onLogout();
-    navigate('/login');
   };
 
   const drawerWidth = 320;

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { User, LoginRequest, LoginResponse, MemberLoginResponse } from '../types';
 import { apiService } from '../services/api';
 import { normalizeUserRole } from '../utils/roles';
+import { resolvePublicSiteUrl } from '../utils/publicSite';
 
 interface AuthContextType {
   user: User | null;
@@ -32,11 +33,6 @@ const logAuthDebug = (label: string, error: any) => {
   const apiMessage = error?.response?.data?.message;
   const message = error?.message;
   console.warn('[Auth]', label, { status, url, apiMessage, message });
-};
-
-const getLoginPath = () => {
-  const base = (process.env.PUBLIC_URL || '').replace(/\/+$/, '');
-  return `${base}/login`;
 };
 
 const clearLegacyAuthStorage = () => {
@@ -90,7 +86,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       clearLegacyAuthStorage();
       setUser(null);
-      window.location.href = getLoginPath();
+      window.location.assign(resolvePublicSiteUrl());
     }
   };
 
@@ -214,6 +210,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null);
       setLastActivity(Date.now());
       setWarningShown(false);
+      window.location.assign(resolvePublicSiteUrl());
     }
   };
 

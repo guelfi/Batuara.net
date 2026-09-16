@@ -52,6 +52,7 @@ import {
   UserRole,
 } from '../../types';
 import { isAdmin, isEditorOrAdmin, isMember } from '../../utils/roles';
+import { resolvePublicSiteUrl } from '../../utils/publicSite';
 
 const drawerWidth = 280;
 const batuaraLogoSrc = `${process.env.PUBLIC_URL || '/admin'}/batuara_logo.png`;
@@ -93,7 +94,7 @@ const VISIBILITY_STATUS: Record<
 const navigationItems: NavigationItem[] = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', requiredRole: UserRole.Editor },
   { text: 'Nossa História', icon: <HistoryIcon />, path: '/history', requiredRole: UserRole.Editor },
-  { text: 'Agenda e Eventos', icon: <CalendarIcon />, path: '/agenda', requiredRole: UserRole.Editor },
+  { text: 'Agenda e Eventos', icon: <CalendarIcon />, path: '/agenda', requiredRole: UserRole.Admin },
   {
     text: 'Nossos Orixás',
     icon: <FavoriteIcon />,
@@ -122,10 +123,10 @@ const navigationItems: NavigationItem[] = [
     requiredRole: UserRole.Editor,
     visibilityModule: 'prayers',
   },
-  { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members', requiredRole: UserRole.Editor },
+  { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members', requiredRole: UserRole.Admin },
   { text: 'Doações e Contato', icon: <DonationIcon />, path: '/donations-contact', requiredRole: UserRole.Admin },
-  { text: 'Contato e Mensagens', icon: <MessagesIcon />, path: '/contact-messages', requiredRole: UserRole.Editor },
-  { text: 'Localização', icon: <LocationIcon />, path: '/location', requiredRole: UserRole.Admin },
+  { text: 'Contato e Mensagens', icon: <MessagesIcon />, path: '/contact-messages', requiredRole: UserRole.Admin },
+  { text: 'Localização', icon: <LocationIcon />, path: '/location', requiredRole: UserRole.Editor },
   { text: 'Usuários', icon: <UsersIcon />, path: '/users', requiredRole: UserRole.Admin },
   {
     text: 'Site',
@@ -137,7 +138,7 @@ const navigationItems: NavigationItem[] = [
         sx={{ width: 24, height: 24, objectFit: 'contain', borderRadius: '50%' }}
       />
     ),
-    externalHref: '/',
+    externalHref: '__PUBLIC_SITE__',
     alwaysVisible: true,
   },
   { text: 'Meu Cadastro', icon: <PeopleIcon />, path: '/profile', memberOnly: true },
@@ -181,7 +182,7 @@ const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
   };
 
   const fetchUnreadCount = useCallback(async () => {
-    if (!isEditorOrAdmin(user?.role)) return;
+    if (!isAdmin(user?.role)) return;
     try {
       const count = await apiService.getContactMessagesUnreadCount();
       setUnreadMessages(count);
@@ -200,7 +201,6 @@ const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
   };
 
   const closeMobileDrawer = () => {
@@ -216,7 +216,7 @@ const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
 
   const handleExternalNavigation = (href: string) => {
     closeMobileDrawer();
-    window.location.assign(href);
+    window.location.assign(href === '__PUBLIC_SITE__' ? resolvePublicSiteUrl() : href);
   };
 
   useEffect(() => {

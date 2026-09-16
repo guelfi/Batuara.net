@@ -15,7 +15,7 @@ import {
 } from '../types';
 import { asVisibility } from '../utils/contentVisibility';
 import { useAuth } from './AuthContext';
-import { isEditorOrAdmin } from '../utils/roles';
+import { isAdmin, isEditorOrAdmin } from '../utils/roles';
 
 const MODULE_FIELD: Record<ContentVisibilityModule, keyof SiteSettingsDto> = {
   orixas: 'orixasVisibility',
@@ -64,15 +64,17 @@ interface ContentVisibilityProviderProps {
 
 export const ContentVisibilityProvider: React.FC<ContentVisibilityProviderProps> = ({ children }) => {
   const { user } = useAuth();
-  const canManage = isEditorOrAdmin(user?.role);
+  // Editors can read visibility for sidebar status icons; only Admin can change it.
+  const canView = isEditorOrAdmin(user?.role);
+  const canManage = isAdmin(user?.role);
   const [visibility, setVisibilityState] = useState<ContentVisibilityState>(defaultVisibility);
-  const [loading, setLoading] = useState(canManage);
+  const [loading, setLoading] = useState(canView);
   const [savingModule, setSavingModule] = useState<ContentVisibilityModule | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!canManage) {
+    if (!canView) {
       setLoading(false);
       return;
     }
@@ -101,7 +103,7 @@ export const ContentVisibilityProvider: React.FC<ContentVisibilityProviderProps>
     return () => {
       cancelled = true;
     };
-  }, [canManage]);
+  }, [canView]);
 
   const clearFeedback = useCallback(() => {
     setError(null);

@@ -10,7 +10,7 @@ namespace Batuara.API.Controllers
     [ApiController]
     [Route("api/contact-messages")]
     [Route("api/v1/contact-messages")]
-    [Authorize(Roles = "Admin,Editor")]
+    [Authorize(Roles = "Admin")]
     public class ContactMessagesController : ControllerBase
     {
         private readonly IContactMessageService _service;

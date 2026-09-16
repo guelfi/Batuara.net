@@ -15,6 +15,7 @@ import {
   ActivityLog,
   User,
 } from '../types';
+import { resolvePublicSiteUrl } from '../utils/publicSite';
 
 class ApiService {
   private api: AxiosInstance;
@@ -70,9 +71,8 @@ class ApiService {
       || url.includes('/member-auth/');
   }
 
-  private getLoginPath(): string {
-    const base = (process.env.PUBLIC_URL || '').replace(/\/+$/, '');
-    return `${base}/login`;
+  private getPublicSitePath(): string {
+    return resolvePublicSiteUrl();
   }
 
   private shouldLog(): boolean {
@@ -159,7 +159,7 @@ class ApiService {
           } catch (refreshError) {
             this.processQueue(refreshError);
             this.clearAuthData();
-            window.location.href = this.getLoginPath();
+            window.location.href = this.getPublicSitePath();
             return Promise.reject(refreshError);
           } finally {
             this.isRefreshing = false;
