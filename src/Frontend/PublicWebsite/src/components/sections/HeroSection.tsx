@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import {
   Box,
   Container,
@@ -87,32 +87,68 @@ const HeroSection: React.FC = () => {
   const canScrollLeft = scrollPosition > 0;
   const canScrollRight = scrollPosition < maxScroll;
 
-  useEffect(() => {
+  // useLayoutEffect so muted/playsinline are locked before paint and before src load.
+  useLayoutEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // iOS Safari autoplay requires the muted/playsinline DOM attributes and
-    // properties to be set before play() — React's muted prop alone is unreliable.
-    video.muted = true;
-    video.defaultMuted = true;
-    video.playsInline = true;
-    video.loop = true;
-    video.setAttribute('muted', '');
-    video.setAttribute('playsinline', '');
-    video.setAttribute('webkit-playsinline', '');
-    video.removeAttribute('controls');
+    const videoSrc = `${process.env.PUBLIC_URL}/bg.mp4`;
+    let cancelled = false;
+    let playAttempts = 0;
+    const maxPlayAttempts = 12;
+    const retryTimers: number[] = [];
+
+    // iOS WebKit (Safari + Chrome on iPhone): muted/playsinline MUST be set as
+    // both properties AND attributes BEFORE src is assigned / before play().
+    // React's muted prop alone does not reliably set the HTML attribute.
+    const lockMutedInline = () => {
+      video.muted = true;
+      video.defaultMuted = true;
+      video.volume = 0;
+      video.playsInline = true;
+      video.loop = true;
+      video.autoplay = true;
+      video.setAttribute('muted', '');
+      video.setAttribute('playsinline', '');
+      video.setAttribute('webkit-playsinline', '');
+      video.setAttribute('autoplay', '');
+      video.setAttribute('loop', '');
+      video.removeAttribute('controls');
+    };
+
+    lockMutedInline();
 
     const tryPlay = () => {
-      if (!video.paused) return;
+      if (cancelled || !video.paused) return;
+      lockMutedInline();
       const playPromise = video.play();
       if (playPromise !== undefined) {
         playPromise.catch(() => {
-          // Autoplay blocked (e.g. Low Power Mode) — retry on first gesture below.
+          // Autoplay can still be blocked (e.g. Low Power Mode). Retries +
+          // gesture fallback below maximize the chance without requiring a tap.
         });
       }
     };
 
-    tryPlay();
+    const scheduleRetries = () => {
+      // Immediate + rAF + staggered retries cover Safari's deferred media pipeline.
+      tryPlay();
+      requestAnimationFrame(() => {
+        tryPlay();
+        requestAnimationFrame(tryPlay);
+      });
+
+      const delays = [0, 50, 150, 300, 600, 1000, 2000, 3500];
+      delays.forEach((delay) => {
+        retryTimers.push(
+          window.setTimeout(() => {
+            if (cancelled || playAttempts >= maxPlayAttempts) return;
+            playAttempts += 1;
+            tryPlay();
+          }, delay)
+        );
+      });
+    };
 
     const onReady = () => tryPlay();
     const onPause = () => {
@@ -126,18 +162,31 @@ const HeroSection: React.FC = () => {
         tryPlay();
       }
     };
+    // Gesture is fallback only (Low Power Mode / strict autoplay policies) — not primary UX.
     const onFirstGesture = () => tryPlay();
 
+    video.addEventListener('loadedmetadata', onReady);
     video.addEventListener('loadeddata', onReady);
     video.addEventListener('canplay', onReady);
+    video.addEventListener('canplaythrough', onReady);
     video.addEventListener('pause', onPause);
     document.addEventListener('visibilitychange', onVisibilityChange);
     document.addEventListener('touchstart', onFirstGesture, { once: true, passive: true });
     document.addEventListener('click', onFirstGesture, { once: true });
 
+    // Assign src only after muted/playsinline are locked, then force a fresh load.
+    // Setting src in JSX before this effect can make iOS evaluate autoplay too early.
+    video.setAttribute('src', videoSrc);
+    video.load();
+    scheduleRetries();
+
     return () => {
+      cancelled = true;
+      retryTimers.forEach((id) => window.clearTimeout(id));
+      video.removeEventListener('loadedmetadata', onReady);
       video.removeEventListener('loadeddata', onReady);
       video.removeEventListener('canplay', onReady);
+      video.removeEventListener('canplaythrough', onReady);
       video.removeEventListener('pause', onPause);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       document.removeEventListener('touchstart', onFirstGesture);
@@ -192,30 +241,64 @@ const HeroSection: React.FC = () => {
     >
       <GlobalStyles
         styles={{
+          // Hide every WebKit media chrome / big play overlay on iOS.
           '.hero-bg-video::-webkit-media-controls': {
             display: 'none !important',
+            opacity: '0 !important',
+            pointerEvents: 'none !important',
+            width: '0 !important',
+            height: '0 !important',
           },
           '.hero-bg-video::-webkit-media-controls-enclosure': {
+            display: 'none !important',
+          },
+          '.hero-bg-video::-webkit-media-controls-panel': {
             display: 'none !important',
           },
           '.hero-bg-video::-webkit-media-controls-start-playback-button': {
             display: 'none !important',
             WebkitAppearance: 'none',
+            opacity: '0 !important',
+            pointerEvents: 'none !important',
+          },
+          '.hero-bg-video::-webkit-media-controls-overlay-play-button': {
+            display: 'none !important',
+            opacity: '0 !important',
+            pointerEvents: 'none !important',
+          },
+          '.hero-bg-video::-webkit-media-controls-play-button': {
+            display: 'none !important',
           },
         }}
       />
-      {/* Video background - muted/playsInline/loop for continuous iOS autoplay; no controls overlay */}
+      {/*
+        Hero bg video: JSX declares muted/autoPlay/playsInline/loop so the first paint
+        carries the right attributes. src is assigned in the effect AFTER muted is locked
+        (required for iOS WebKit autoplay without a user gesture). No controls attribute.
+        Low Power Mode on iPhone may still block autoplay — gesture remains fallback only.
+      */}
       <Box
         component="video"
-        ref={videoRef}
+        ref={(el: HTMLVideoElement | null) => {
+          videoRef.current = el;
+          // Lock mute as early as the element mounts (before effect / before src).
+          if (el) {
+            el.muted = true;
+            el.defaultMuted = true;
+            el.volume = 0;
+            el.playsInline = true;
+            el.setAttribute('muted', '');
+            el.setAttribute('playsinline', '');
+            el.setAttribute('webkit-playsinline', '');
+            el.removeAttribute('controls');
+          }
+        }}
         className="hero-bg-video"
-        src={`${process.env.PUBLIC_URL}/bg.mp4`}
         autoPlay
         muted
         loop
         playsInline
         preload="auto"
-        controls={false}
         disablePictureInPicture
         disableRemotePlayback
         aria-hidden
@@ -224,6 +307,9 @@ const HeroSection: React.FC = () => {
           const video = videoRef.current;
           if (!video) return;
           video.muted = true;
+          video.defaultMuted = true;
+          video.volume = 0;
+          video.setAttribute('muted', '');
           void video.play().catch(() => { });
         }}
         sx={{
@@ -240,6 +326,11 @@ const HeroSection: React.FC = () => {
           opacity: videoLoaded ? 1 : 0,
           transition: 'opacity 1s ease-in',
           pointerEvents: 'none',
+          // Avoid any native media UI looking like a play button.
+          '&::-webkit-media-controls-start-playback-button': {
+            display: 'none',
+            WebkitAppearance: 'none',
+          },
         }}
       />
 
