@@ -308,9 +308,6 @@ const UmbandaLinesPage: React.FC = () => {
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
             Linhas de Umbanda
           </Typography>
-          <Typography variant="h4" color="text.secondary" sx={{ fontWeight: 400, lineHeight: 1 }}>
-            —
-          </Typography>
           <ContentVisibilityControl module="umbandaLines" />
         </Stack>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>

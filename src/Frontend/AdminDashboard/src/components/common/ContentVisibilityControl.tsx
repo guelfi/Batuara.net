@@ -1,8 +1,10 @@
 import React from 'react';
 import {
+  Stack,
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
+  Typography,
 } from '@mui/material';
 import {
   Lock as LockIcon,
@@ -32,6 +34,7 @@ const ContentVisibilityControl: React.FC<ContentVisibilityControlProps> = ({
   const { user } = useAuth();
   const { getVisibility, setVisibility, savingModule, loading } = useContentVisibility();
 
+  // Dash separator + toggle only for Admin; Editors see neither.
   if (!isAdmin(user?.role)) {
     return null;
   }
@@ -45,50 +48,55 @@ const ContentVisibilityControl: React.FC<ContentVisibilityControlProps> = ({
   };
 
   return (
-    <ToggleButtonGroup
-      exclusive
-      size={size}
-      value={value}
-      disabled={disabled}
-      onChange={handleToggleChange}
-      aria-label="Visibilidade do conteúdo"
-      sx={{
-        '& .MuiToggleButton-root': {
-          px: 1.25,
-          py: 0.5,
-          textTransform: 'none',
-          gap: 0.5,
-          color: 'text.secondary',
-          borderColor: 'divider',
-          '&.Mui-selected': {
-            bgcolor: 'primary.main',
-            color: 'primary.contrastText',
-            borderColor: 'primary.main',
-            fontWeight: 600,
-            '&:hover': {
-              bgcolor: 'primary.dark',
+    <Stack direction="row" alignItems="center" spacing={1.5}>
+      <Typography variant="h4" color="text.secondary" sx={{ fontWeight: 400, lineHeight: 1 }}>
+        —
+      </Typography>
+      <ToggleButtonGroup
+        exclusive
+        size={size}
+        value={value}
+        disabled={disabled}
+        onChange={handleToggleChange}
+        aria-label="Visibilidade do conteúdo"
+        sx={{
+          '& .MuiToggleButton-root': {
+            px: 1.25,
+            py: 0.5,
+            textTransform: 'none',
+            gap: 0.5,
+            color: 'text.secondary',
+            borderColor: 'divider',
+            '&.Mui-selected': {
+              bgcolor: 'primary.main',
               color: 'primary.contrastText',
+              borderColor: 'primary.main',
+              fontWeight: 600,
+              '&:hover': {
+                bgcolor: 'primary.dark',
+                color: 'primary.contrastText',
+              },
+            },
+            '&.Mui-selected.Mui-disabled': {
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              opacity: 0.7,
             },
           },
-          '&.Mui-selected.Mui-disabled': {
-            bgcolor: 'primary.main',
-            color: 'primary.contrastText',
-            opacity: 0.7,
-          },
-        },
-      }}
-    >
-      {OPTIONS.map((option) => (
-        <ToggleButton key={option.value} value={option.value} aria-label={option.label}>
-          <Tooltip title={option.label}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              {option.icon}
-              {option.label}
-            </span>
-          </Tooltip>
-        </ToggleButton>
-      ))}
-    </ToggleButtonGroup>
+        }}
+      >
+        {OPTIONS.map((option) => (
+          <ToggleButton key={option.value} value={option.value} aria-label={option.label}>
+            <Tooltip title={option.label}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                {option.icon}
+                {option.label}
+              </span>
+            </Tooltip>
+          </ToggleButton>
+        ))}
+      </ToggleButtonGroup>
+    </Stack>
   );
 };
 
