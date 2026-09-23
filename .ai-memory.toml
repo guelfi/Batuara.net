@@ -1,0 +1,23 @@
+# Identidade do projeto para ai-memory (Cursor, Claude, Codex, …).
+# Não contém segredos. Capture ignore_paths reduz vazamento de credenciais/PII.
+
+workspace = "batuara"
+project = "batuara-net"
+project_strategy = "repo-root"
+drop_subagent_captures = "true"
+
+[briefing]
+inject_on_session_start = "true"
+max_chars = 4000
+
+[capture]
+ignore_paths = [
+  ".env",
+  ".env.*",
+  "**/.env",
+  "**/.env.*",
+  "docs/credential.md",
+  "**/*.pem",
+  "**/oci-key*",
+  "database/**",
+]
