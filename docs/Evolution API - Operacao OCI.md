@@ -11,6 +11,7 @@
 - Manager/API nao possuem acesso remoto publico. Acesso administrativo remoto somente via SSH/tunel local.
 - Validado em 2026-07-08: tunel local `127.0.0.1:18085` fechado; `8085` e `8080` inacessiveis pelo IP publico; container publica `8080/tcp -> 127.0.0.1:8085`.
 - Painel OCI ajustado para manter publicamente apenas `22`, `80` e `443`; nao reabrir `8085`.
+- Logo do Manager: o CDN `evolution-api.com/files/evo/*.svg` retorna 404. Patch local (sem restart) em `scripts/docker/patch-evolution-manager-logo.sh`. Reaplicar depois de atualizar a imagem.
 
 ## Instancia definitiva
 
