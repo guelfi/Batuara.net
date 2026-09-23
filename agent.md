@@ -5,6 +5,10 @@
 
 > **Fila de melhorias e handoff:** [`docs/PLANO-MELHORIAS.md`](docs/PLANO-MELHORIAS.md)
 
+## 0. Idioma de Comunicação
+
+- **Sempre responda em português do Brasil (pt-BR)** em todas as interações com o usuário neste repositório, incluindo mensagens de agentes de IA, resumos e descrições de PR.
+
 ## 1. Visão Geral
 
 O Batuara.net é uma plataforma web da Casa de Caridade Caboclo Batuara composta por:

@@ -224,7 +224,11 @@ appsettings.Production.json
 connectionstrings.json
 
 # Cursor IDE
-.cursor/
+.cursor/*
+# Keep the Cloud Agent environment definition tracked
+!.cursor/environment.json
+!.cursor/install.sh
+!.cursor/start.sh
 
 # Trae / Devin (local)
 .trae/

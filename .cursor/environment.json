@@ -1,0 +1,20 @@
+{
+  "name": "Batuara.net",
+  "install": "bash .cursor/install.sh",
+  "start": "bash .cursor/start.sh",
+  "terminals": [
+    {
+      "name": "API",
+      "command": "cd src/Backend/Batuara.API && ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://0.0.0.0:3003 ConnectionStrings__DefaultConnection='Host=localhost;Database=CasaBatuara;Username=postgres;Password=batuara_dev' JwtSettings__Secret='dev-only-jwt-secret-please-change-in-production-0123456789abcdef' SEED_ADMIN_PASSWORD='Batuara@2026' DB_APPLY_MIGRATIONS_ON_STARTUP=false DB_SEED_ON_STARTUP=true dotnet run --project Batuara.API.csproj -c Release"
+    },
+    {
+      "name": "PublicWebsite",
+      "command": "cd src/Frontend/PublicWebsite && PORT=3000 BROWSER=none CI=false ESLINT_NO_DEV_ERRORS=true TSC_COMPILE_ON_ERROR=true REACT_APP_API_URL=http://localhost:3003/api npm start"
+    },
+    {
+      "name": "AdminDashboard",
+      "command": "cd src/Frontend/AdminDashboard && PORT=3001 BROWSER=none CI=false ESLINT_NO_DEV_ERRORS=true TSC_COMPILE_ON_ERROR=true REACT_APP_API_URL=http://localhost:3003/api npm start"
+    }
+  ],
+  "ports": [3000, 3001, 3003]
+}
