@@ -78,6 +78,8 @@ PGPASSWORD="${LOCAL_DB_PASSWORD}" psql -h localhost -U postgres -d "${LOCAL_DB_N
 
 echo ""
 echo "==> Sincronização concluída. A chave SSH temporária foi removida (trap cleanup)."
-echo "    OBS: o usuário admin agora tem a SENHA DE PRODUÇÃO. Para login local,"
-echo "    redefina a senha do admin (ex.: gerar hash BCrypt e atualizar batuara.users)."
-echo "    Reinicie a API para refletir os dados: veja o terminal 'API'."
+echo "    Os usuários e senhas do AdminDashboard são exatamente os de PRODUÇÃO."
+echo "    NÃO redefina nem altere essas credenciais."
+echo "    O seed automático da API é idempotente (só popula tabelas vazias),"
+echo "    então não altera os dados de produção. Reinicie a API para refletir"
+echo "    os dados (terminal 'API')."
