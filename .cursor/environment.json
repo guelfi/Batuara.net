@@ -5,7 +5,7 @@
   "terminals": [
     {
       "name": "API",
-      "command": "cd src/Backend/Batuara.API && ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://0.0.0.0:3003 ConnectionStrings__DefaultConnection='Host=localhost;Database=CasaBatuara;Username=postgres;Password=batuara_dev' JwtSettings__Secret='dev-only-jwt-secret-please-change-in-production-0123456789abcdef' SEED_ADMIN_PASSWORD='Batuara@2026' DB_APPLY_MIGRATIONS_ON_STARTUP=false DB_SEED_ON_STARTUP=true dotnet run --project Batuara.API.csproj -c Release"
+      "command": "cd src/Backend/Batuara.API && ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://0.0.0.0:3003 ConnectionStrings__DefaultConnection='Host=localhost;Database=CasaBatuara;Username=postgres;Password=batuara_dev' JwtSettings__Secret='dev-only-jwt-secret-please-change-in-production-0123456789abcdef' SEED_ADMIN_PASSWORD='Batuara@2026' DB_APPLY_MIGRATIONS_ON_STARTUP=false DB_SEED_ON_STARTUP=$([ -f /workspace/.cursor/generated/.prod-synced ] && echo false || echo true) dotnet run --project Batuara.API.csproj -c Release"
     },
     {
       "name": "PublicWebsite",
