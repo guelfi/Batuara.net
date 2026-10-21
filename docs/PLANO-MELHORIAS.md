@@ -70,7 +70,7 @@ Histórico de fases: `ROADMAP.md`.
 | PM-004 | `todo` | **E2E manual — contribuição recorrente** | No Admin: criar contribuição recorrente → marcar paga → confirmar geração do mês seguinte; documentar resultado na planilha/PlanoTestes. |
 | PM-005 | `todo` | **Validar migrations no deploy OCI** | Confirmar Step 3.5 do `deploy-rolling.sh` aplica migrations (ex.: `AddMemberLoginCodes`, `AddRecurringContributionAndWhatsAppContact`) sem erro silencioso. |
 | PM-006 | `todo` | **Revisar logs Evolution API** | Sem PII/segredos em logs; config pronta antes de ativar lembretes. |
-| PM-007 | `blocked` | **Chip WhatsApp dedicado da Casa** | Substituir número temporário `5511975747470`. **Bloqueio:** aguarda chip/dispositivo da Casa. |
+| PM-007 | `doing` | **Canal WhatsApp oficial da Casa (Meta Cloud API)** | Número dedicado `+55 11 94067-7714` (eSIM NuCel) registrado na Meta (WAAC `919837401062902`, Messaging Account `1400706312217668`, phone_number_id `1431223860079260`). Empresa verificada. `WhatsAppCloudApiService` implementado com switch `WhatsApp:Provider`; token de sistema permanente no `.env.whatsapp` do host OCI. Template `casa_login_code` (AUTHENTICATION) aprovado e OTP validado E2E. Pendente: aprovação dos templates utility (`casa_contribution_reminder`, `casa_contact_response`), flip em produção e desligar instância Evolution `batuara-casa` (manter o serviço Evolution na OCI para outros projetos). |
 | PM-008 | `todo` | **Manter lembretes desligados até decisão** | `ContributionReminders.Enabled=false` em prod até OK explícito do dono do produto. (Controle operacional — não “implementar”, e sim **não ativar**.) |
 | PM-036 | `done` | **Incidente 2026-08-17 — `batuara.org.br` (apex) em branco** | ✅ Causa: `location` regex injetada no `nginx-proxy` compartilhado pelo CD do Allugme (`Alugue.me/deploy/nginx-allugme.locations.conf`) capturava `/static/...` (não estava na lista de exclusão) e desviava os assets do PublicWebsite para a API do Allugme (404). `www` mascarava o problema por cache antigo do Cloudflare (imutável, ~13 dias). Corrigido em produção (`/var/www/nginx/nginx.conf` na OCI): location `^~ /static/` dedicada para blindar contra regex de terceiros + split do server block em `batuara.org.br` (301 → `www`) e `www.batuara.org.br` (conteúdo). Cache do Cloudflare purgado. **Atualização 2026-08-17:** causa raiz corrigida no repositório Allugme (commit `bf907fa`, `static`/`assets`/`_next`/`dist` adicionados à exclusão da regex da vitrine) e implantada em produção via CI/CD do Allugme. A guarda `^~ /static/` foi removida da cópia de referência [`scripts/oracle/nginx-proxy.nginx.conf`](../scripts/oracle/nginx-proxy.nginx.conf) — **mas segue ativa na configuração real de produção** (`/var/www/nginx/nginx.conf` na OCI, mantida manualmente por SSH); removê-la de lá é opcional, pois é inofensiva e serve como defesa extra. |
 
@@ -118,7 +118,7 @@ Trabalhar **de cima para baixo**, respeitando bloqueios:
 2. **PM-004, PM-005, PM-006** — fechar confiança operacional WhatsApp/contribuições
 3. **PM-010 → PM-016** — fechar plano de testes Admin
 4. **PM-020** — upgrade .NET 10 (janela até EOS nov/2026)
-5. **PM-007** — quando o chip WhatsApp da Casa estiver disponível
+5. **PM-007** — em andamento (Meta Cloud API; falta flip em produção após templates utility)
 6. **PM-021+** — governança e produto
 
 Não ativar lembretes automáticos (PM-008) sem decisão explícita.
@@ -182,7 +182,7 @@ Não ativar lembretes automáticos (PM-008) sem decisão explícita.
 | Branch | `master` (plano criado; sem implementação de PM-xxx nesta sessão) |
 | Em andamento (`doing`) | — |
 | Próximo item sugerido | **PM-003** (CORS estrito) |
-| Bloqueios ativos | PM-007 (chip WhatsApp) |
+| Bloqueios ativos | — |
 | Ambiente | Produção em `https://www.batuara.org.br/`; lembretes WhatsApp desligados; Swagger permanece público por decisão |
 | Riscos | CORS/CSP com origins antigas possíveis; EOS .NET 8 em 2026-11-10 |
 

@@ -256,6 +256,7 @@ builder.Services.Configure<AuthCookieSettings>(builder.Configuration.GetSection(
 builder.Services.Configure<PasswordRequirements>(
     builder.Configuration.GetSection("SecuritySettings:PasswordRequirements"));
 builder.Services.Configure<EvolutionApiWhatsAppOptions>(builder.Configuration.GetSection("WhatsApp"));
+builder.Services.Configure<WhatsAppCloudApiOptions>(builder.Configuration.GetSection("WhatsApp"));
 builder.Services.Configure<ContributionReminderOptions>(builder.Configuration.GetSection("ContributionReminders"));
 
 // Register Repositories
@@ -280,14 +281,28 @@ builder.Services.AddScoped<ISpiritualContentService, SpiritualContentService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IMemberAuthService, MemberAuthService>();
 builder.Services.AddScoped<ContributionReminderProcessor>();
-builder.Services.AddHttpClient<IWhatsAppService, EvolutionApiWhatsAppService>((serviceProvider, client) =>
+var whatsappProvider = builder.Configuration.GetValue<string>("WhatsApp:Provider") ?? "EvolutionApi";
+if (string.Equals(whatsappProvider, "MetaCloud", StringComparison.OrdinalIgnoreCase))
 {
-    var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<EvolutionApiWhatsAppOptions>>().Value;
-    if (!string.IsNullOrWhiteSpace(options.BaseUrl))
+    builder.Services.AddHttpClient<IWhatsAppService, WhatsAppCloudApiService>((serviceProvider, client) =>
     {
-        client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
-    }
-});
+        var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<WhatsAppCloudApiOptions>>().Value;
+        var baseUrl = string.IsNullOrWhiteSpace(options.BaseUrl) ? "https://graph.facebook.com" : options.BaseUrl.TrimEnd('/');
+        var version = string.IsNullOrWhiteSpace(options.ApiVersion) ? "v21.0" : options.ApiVersion;
+        client.BaseAddress = new Uri($"{baseUrl}/{version}/");
+    });
+}
+else
+{
+    builder.Services.AddHttpClient<IWhatsAppService, EvolutionApiWhatsAppService>((serviceProvider, client) =>
+    {
+        var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<EvolutionApiWhatsAppOptions>>().Value;
+        if (!string.IsNullOrWhiteSpace(options.BaseUrl))
+        {
+            client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+        }
+    });
+}
 builder.Services.AddHostedService<ContributionReminderHostedService>();
 
 // Configure Rate Limiting

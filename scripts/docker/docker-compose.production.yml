@@ -83,6 +83,8 @@ services:
       - WhatsApp__ApiKey=${WHATSAPP_API_KEY:-}
       - WhatsApp__InstanceName=${WHATSAPP_INSTANCE_NAME:-batuara-casa}
       - WhatsApp__AllowedRecipients=${WHATSAPP_ALLOWED_RECIPIENTS:-}
+      - WhatsApp__AccessToken=${WHATSAPP_ACCESS_TOKEN:-}
+      - WhatsApp__PhoneNumberId=${WHATSAPP_PHONE_NUMBER_ID:-}
       - ContributionReminders__Enabled=${CONTRIBUTION_REMINDERS_ENABLED:-false}
       - ContributionReminders__IntervalMinutes=${CONTRIBUTION_REMINDERS_INTERVAL_MINUTES:-15}
       - ContributionReminders__DaysBeforeDue=${CONTRIBUTION_REMINDERS_DAYS_BEFORE_DUE:-2}

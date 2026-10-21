@@ -176,8 +176,11 @@ log_info "Step 2: Configuring environment..."
 
 WHATSAPP_ENV_FILE="$PROJECT_DIR/scripts/docker/.env.whatsapp"
 WHATSAPP_API_KEY=""
+WHATSAPP_PROVIDER="EvolutionApi"
+META_ACCESS_TOKEN=""
+META_PHONE_NUMBER_ID=""
 if [ -f "$WHATSAPP_ENV_FILE" ]; then
-    # Keep the Evolution API secret on the OCI host; do not require storing it in GitHub secrets.
+    # Keep the WhatsApp provider secrets on the OCI host; do not require storing them in GitHub secrets.
     set -a
     # shellcheck disable=SC1090
     source "$WHATSAPP_ENV_FILE"
@@ -185,7 +188,14 @@ if [ -f "$WHATSAPP_ENV_FILE" ]; then
     WHATSAPP_API_KEY="${AUTHENTICATION_API_KEY:-}"
 fi
 
-if [ -n "$WHATSAPP_API_KEY" ]; then
+if [ "$WHATSAPP_PROVIDER" = "MetaCloud" ]; then
+    if [ -n "$META_ACCESS_TOKEN" ] && [ -n "$META_PHONE_NUMBER_ID" ]; then
+        WHATSAPP_ENABLED="true"
+    else
+        WHATSAPP_ENABLED="false"
+        log_warning "Meta Cloud credentials not found at $WHATSAPP_ENV_FILE. WhatsApp sending will remain disabled."
+    fi
+elif [ -n "$WHATSAPP_API_KEY" ]; then
     WHATSAPP_ENABLED="true"
 else
     WHATSAPP_ENABLED="false"
@@ -212,12 +222,14 @@ API_PORT=3003
 API_BIND_IP=0.0.0.0
 REACT_APP_API_URL=/batuara-api/api
 ENABLE_GLOBAL_PRUNE=false
-WHATSAPP_PROVIDER=EvolutionApi
+WHATSAPP_PROVIDER=${WHATSAPP_PROVIDER}
 WHATSAPP_ENABLED=${WHATSAPP_ENABLED}
 WHATSAPP_BASE_URL=http://batuara-evolution-api:8080
 WHATSAPP_API_KEY=${WHATSAPP_API_KEY}
 WHATSAPP_INSTANCE_NAME=batuara-casa
 WHATSAPP_ALLOWED_RECIPIENTS=
+WHATSAPP_ACCESS_TOKEN=${META_ACCESS_TOKEN}
+WHATSAPP_PHONE_NUMBER_ID=${META_PHONE_NUMBER_ID}
 CONTRIBUTION_REMINDERS_ENABLED=false
 CONTRIBUTION_REMINDERS_INTERVAL_MINUTES=15
 CONTRIBUTION_REMINDERS_DAYS_BEFORE_DUE=2

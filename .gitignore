@@ -246,6 +246,7 @@ docs/especificacao-unificada/metrics/evaluations.json
 # Credenciais e controle local (nao versionar)
 docs/credential.md
 docs/testcontrol.md
+.TokenEvolutionAPI
 
 # Claude & E2E trace debug
 .claude/
