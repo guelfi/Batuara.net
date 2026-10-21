@@ -44,6 +44,7 @@ services:
       - WhatsApp__AllowedRecipients=${WHATSAPP_ALLOWED_RECIPIENTS:-5511975747470,5511995384032}
       - WhatsApp__AccessToken=${WHATSAPP_ACCESS_TOKEN:-}
       - WhatsApp__PhoneNumberId=${WHATSAPP_PHONE_NUMBER_ID:-1431223860079260}
+      - WhatsApp__WebhookVerifyToken=${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:

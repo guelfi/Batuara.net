@@ -85,6 +85,7 @@ services:
       - WhatsApp__AllowedRecipients=${WHATSAPP_ALLOWED_RECIPIENTS:-}
       - WhatsApp__AccessToken=${WHATSAPP_ACCESS_TOKEN:-}
       - WhatsApp__PhoneNumberId=${WHATSAPP_PHONE_NUMBER_ID:-}
+      - WhatsApp__WebhookVerifyToken=${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-}
       - ContributionReminders__Enabled=${CONTRIBUTION_REMINDERS_ENABLED:-false}
       - ContributionReminders__IntervalMinutes=${CONTRIBUTION_REMINDERS_INTERVAL_MINUTES:-15}
       - ContributionReminders__DaysBeforeDue=${CONTRIBUTION_REMINDERS_DAYS_BEFORE_DUE:-2}
