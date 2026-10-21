@@ -6,7 +6,7 @@ namespace Batuara.Infrastructure.Notifications
         public string AccessToken { get; set; } = string.Empty;
         public string PhoneNumberId { get; set; } = string.Empty;
         public string ApiVersion { get; set; } = "v21.0";
-        public string BaseUrl { get; set; } = "https://graph.facebook.com";
+        public string GraphApiBaseUrl { get; set; } = "https://graph.facebook.com";
         public string Language { get; set; } = "pt_BR";
         public string AuthTemplateName { get; set; } = "casa_login_code";
         public bool AuthTemplateHasCopyButton { get; set; } = true;

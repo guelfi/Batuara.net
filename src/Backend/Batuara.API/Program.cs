@@ -287,7 +287,7 @@ if (string.Equals(whatsappProvider, "MetaCloud", StringComparison.OrdinalIgnoreC
     builder.Services.AddHttpClient<IWhatsAppService, WhatsAppCloudApiService>((serviceProvider, client) =>
     {
         var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<WhatsAppCloudApiOptions>>().Value;
-        var baseUrl = string.IsNullOrWhiteSpace(options.BaseUrl) ? "https://graph.facebook.com" : options.BaseUrl.TrimEnd('/');
+        var baseUrl = string.IsNullOrWhiteSpace(options.GraphApiBaseUrl) ? "https://graph.facebook.com" : options.GraphApiBaseUrl.TrimEnd('/');
         var version = string.IsNullOrWhiteSpace(options.ApiVersion) ? "v21.0" : options.ApiVersion;
         client.BaseAddress = new Uri($"{baseUrl}/{version}/");
     });
