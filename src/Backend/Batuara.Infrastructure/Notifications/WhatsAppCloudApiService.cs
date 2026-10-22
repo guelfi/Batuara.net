@@ -50,14 +50,60 @@ namespace Batuara.Infrastructure.Notifications
 
         public async Task<string> SendContactResponseAsync(string phoneE164, string responseText, CancellationToken cancellationToken = default)
         {
-            var components = new List<object>
+            try
             {
-                new { type = "body", parameters = new[] { TextParam(responseText.Trim()) } }
+                return await SendFreeformTextAsync(phoneE164, responseText.Trim(), cancellationToken);
+            }
+            catch (HttpRequestException)
+            {
+                var components = new List<object>
+                {
+                    new { type = "body", parameters = new[] { TextParam(responseText.Trim()) } }
+                };
+                return await SendTemplateAsync(phoneE164, _options.ContactResponseTemplateName, components, cancellationToken);
+            }
+        }
+
+        private async Task<string> SendFreeformTextAsync(string phoneE164, string text, CancellationToken cancellationToken)
+        {
+            var to = ValidateRecipient(phoneE164);
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{_options.PhoneNumberId}/messages")
+            {
+                Content = JsonContent.Create(new
+                {
+                    messaging_product = "whatsapp",
+                    to,
+                    type = "text",
+                    text = new { body = text }
+                })
             };
-            return await SendTemplateAsync(phoneE164, _options.ContactResponseTemplateName, components, cancellationToken);
+            request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {_options.AccessToken}");
+            return await SendAndReadIdAsync(request, cancellationToken);
         }
 
         private async Task<string> SendTemplateAsync(string phoneE164, string templateName, List<object> components, CancellationToken cancellationToken)
+        {
+            var to = ValidateRecipient(phoneE164);
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{_options.PhoneNumberId}/messages")
+            {
+                Content = JsonContent.Create(new
+                {
+                    messaging_product = "whatsapp",
+                    to,
+                    type = "template",
+                    template = new
+                    {
+                        name = templateName,
+                        language = new { code = _options.Language },
+                        components
+                    }
+                })
+            };
+            request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {_options.AccessToken}");
+            return await SendAndReadIdAsync(request, cancellationToken);
+        }
+
+        private string ValidateRecipient(string phoneE164)
         {
             if (!_options.Enabled)
             {
@@ -77,23 +123,11 @@ namespace Batuara.Infrastructure.Notifications
                 throw new InvalidOperationException("WhatsApp Cloud API is not configured.");
             }
 
-            var request = new HttpRequestMessage(HttpMethod.Post, $"{_options.PhoneNumberId}/messages")
-            {
-                Content = JsonContent.Create(new
-                {
-                    messaging_product = "whatsapp",
-                    to,
-                    type = "template",
-                    template = new
-                    {
-                        name = templateName,
-                        language = new { code = _options.Language },
-                        components
-                    }
-                })
-            };
-            request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {_options.AccessToken}");
+            return to;
+        }
 
+        private async Task<string> SendAndReadIdAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
             var response = await _httpClient.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {

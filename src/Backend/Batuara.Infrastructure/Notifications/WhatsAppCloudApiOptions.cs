@@ -12,7 +12,7 @@ namespace Batuara.Infrastructure.Notifications
         public string AuthTemplateName { get; set; } = "casa_login_code";
         public bool AuthTemplateHasCopyButton { get; set; } = true;
         public string ContributionReminderTemplateName { get; set; } = "casa_contribution_reminder";
-        public string ContactResponseTemplateName { get; set; } = "casa_contact_response";
+        public string ContactResponseTemplateName { get; set; } = "casa_contact_reply";
         public string[] AllowedRecipients { get; set; } = [];
     }
 }
