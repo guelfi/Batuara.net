@@ -64,6 +64,15 @@ namespace Batuara.Infrastructure.Notifications
             }
         }
 
+        public async Task SendAdminNotificationAsync(string phoneE164, int pendingCount, CancellationToken cancellationToken = default)
+        {
+            var components = new List<object>
+            {
+                new { type = "body", parameters = new[] { TextParam(pendingCount.ToString()) } }
+            };
+            await SendTemplateAsync(phoneE164, _options.AdminNotificationTemplateName, components, cancellationToken);
+        }
+
         private async Task<string> SendFreeformTextAsync(string phoneE164, string text, CancellationToken cancellationToken)
         {
             var to = ValidateRecipient(phoneE164);

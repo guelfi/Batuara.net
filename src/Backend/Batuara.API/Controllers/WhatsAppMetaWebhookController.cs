@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -49,8 +51,21 @@ namespace Batuara.API.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> ReceiveWebhook([FromBody] MetaWebhookPayload payload)
+        public async Task<IActionResult> ReceiveWebhook()
         {
+            string rawBody;
+            using (var reader = new StreamReader(Request.Body, Encoding.UTF8))
+            {
+                rawBody = await reader.ReadToEndAsync();
+            }
+
+            if (!string.IsNullOrWhiteSpace(_options.AppSecret) && !IsValidSignature(rawBody))
+            {
+                _logger.LogWarning("WhatsApp Meta webhook rejected: invalid X-Hub-Signature-256");
+                return Unauthorized();
+            }
+
+            var payload = JsonSerializer.Deserialize<MetaWebhookPayload>(rawBody);
             if (payload?.Entry == null)
             {
                 return Ok(new { success = true });
@@ -79,6 +94,20 @@ namespace Batuara.API.Controllers
             }
 
             return Ok(new { success = true });
+        }
+
+        private bool IsValidSignature(string rawBody)
+        {
+            var header = Request.Headers["X-Hub-Signature-256"].FirstOrDefault();
+            if (string.IsNullOrEmpty(header) || !header.StartsWith("sha256=", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_options.AppSecret));
+            var expected = "sha256=" + Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(rawBody))).ToLowerInvariant();
+            return CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(expected), Encoding.UTF8.GetBytes(header));
         }
 
         private async Task ProcessInboundMessageAsync(MetaWebhookMessage message)

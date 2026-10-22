@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
+  Button,
   Card,
   CircularProgress,
   Container,
@@ -12,14 +13,31 @@ import {
   Typography,
 } from '@mui/material';
 import InstagramIcon from '@mui/icons-material/Instagram';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { useQuery } from '@tanstack/react-query';
 import publicApi from '../../services/api';
+import {
+  COOKIE_CONSENT_EVENT,
+  CookieConsent,
+  hasThirdPartyConsent,
+  openCookiePreferences,
+} from '../../utils/cookieConsent';
 
 const LocationSection: React.FC = () => {
   const { data: siteSettings, isLoading, isError } = useQuery({
     queryKey: ['siteSettings', 'public'],
     queryFn: () => publicApi.getSiteSettings(),
   });
+  const [mapConsent, setMapConsent] = useState(hasThirdPartyConsent);
+
+  useEffect(() => {
+    const onConsentChange = (event: Event) => {
+      const detail = (event as CustomEvent<CookieConsent>).detail;
+      setMapConsent(detail?.thirdParty === true);
+    };
+    window.addEventListener(COOKIE_CONSENT_EVENT, onConsentChange);
+    return () => window.removeEventListener(COOKIE_CONSENT_EVENT, onConsentChange);
+  }, []);
 
   return (
     <Box
@@ -101,21 +119,61 @@ const LocationSection: React.FC = () => {
                 flexDirection: 'column',
               }}
             >
-              <Box
-                component="iframe"
-                src={siteSettings.mapEmbedUrl || 'https://www.google.com/maps'}
-                title="Mapa da Casa de Caridade Caboclo Batuara"
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  minHeight: { xs: 220, sm: 280, md: 320 },
-                  border: 'none',
-                  display: 'block',
-                  flex: 1,
-                }}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
+              {mapConsent ? (
+                <Box
+                  component="iframe"
+                  src={siteSettings.mapEmbedUrl || 'https://www.google.com/maps'}
+                  title="Mapa da Casa de Caridade Caboclo Batuara"
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    minHeight: { xs: 220, sm: 280, md: 320 },
+                    border: 'none',
+                    display: 'block',
+                    flex: 1,
+                  }}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              ) : (
+                <Box
+                  sx={{
+                    flex: 1,
+                    minHeight: { xs: 220, sm: 280, md: 320 },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 1.5,
+                    p: 3,
+                    textAlign: 'center',
+                    bgcolor: 'grey.50',
+                  }}
+                >
+                  <LocationOnIcon color="primary" sx={{ fontSize: 48 }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {`${siteSettings.street}, ${siteSettings.number} - ${siteSettings.city}/${siteSettings.state}`}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', maxWidth: 420, fontSize: '0.85rem' }}>
+                    O mapa usa cookies de terceiros (Google). Aceite os cookies nas preferências
+                    para visualizá-lo aqui, ou abra diretamente no Google Maps.
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${siteSettings.street}, ${siteSettings.number}, ${siteSettings.city}, ${siteSettings.state}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Abrir no Google Maps
+                    </Button>
+                    <Button size="small" variant="outlined" onClick={() => openCookiePreferences()}>
+                      Preferências de cookies
+                    </Button>
+                  </Box>
+                </Box>
+              )}
             </Card>
 
             <Box

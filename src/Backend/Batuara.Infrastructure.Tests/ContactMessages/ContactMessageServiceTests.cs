@@ -39,6 +39,8 @@ namespace Batuara.Infrastructure.Tests.ContactMessages
                 LastResponse = responseText;
                 return Task.FromResult(Guid.NewGuid().ToString());
             }
+
+            public Task SendAdminNotificationAsync(string phoneE164, int pendingCount, CancellationToken cancellationToken = default) => Task.CompletedTask;
         }
 
         private class CapturingHandler : HttpMessageHandler

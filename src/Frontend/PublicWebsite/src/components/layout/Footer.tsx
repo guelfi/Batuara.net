@@ -3,6 +3,7 @@ import { Box, Container, Divider, Grid, IconButton, Link, Typography } from '@mu
 import InstagramIcon from '@mui/icons-material/Instagram';
 import { useQuery } from '@tanstack/react-query';
 import publicApi from '../../services/api';
+import { openCookiePreferences } from '../../utils/cookieConsent';
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
@@ -76,6 +77,26 @@ const Footer: React.FC = () => {
         <Divider sx={{ my: { xs: 1.25, md: 1.5 }, backgroundColor: 'rgba(255, 255, 255, 0.15)' }} />
 
         <Box sx={{ textAlign: 'center' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: { xs: 1.5, md: 2 }, mb: 0.5, flexWrap: 'wrap' }}>
+            <Link
+              href="/politica-de-privacidade"
+              color="inherit"
+              underline="hover"
+              sx={{ fontSize: { xs: '0.7rem', md: '0.78rem' }, opacity: 0.9 }}
+            >
+              Política de Privacidade
+            </Link>
+            <Link
+              component="button"
+              type="button"
+              color="inherit"
+              underline="hover"
+              onClick={() => openCookiePreferences()}
+              sx={{ fontSize: { xs: '0.7rem', md: '0.78rem' }, opacity: 0.9, background: 'none', border: 'none', cursor: 'pointer', p: 0 }}
+            >
+              Preferências de cookies
+            </Link>
+          </Box>
           <Typography variant="body2" sx={{ mb: 0.25, fontSize: { xs: '0.75rem', md: '0.8rem' }, lineHeight: 1.35 }}>
             © {currentYear} Casa de Caridade Caboclo Batuara. Todos os direitos reservados.
           </Typography>

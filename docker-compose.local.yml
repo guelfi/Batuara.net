@@ -45,6 +45,10 @@ services:
       - WhatsApp__AccessToken=${WHATSAPP_ACCESS_TOKEN:-}
       - WhatsApp__PhoneNumberId=${WHATSAPP_PHONE_NUMBER_ID:-1431223860079260}
       - WhatsApp__WebhookVerifyToken=${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-}
+      - WhatsApp__AppSecret=${WHATSAPP_APP_SECRET:-}
+      - AdminNotification__Enabled=${ADMIN_NOTIFICATION_ENABLED:-false}
+      - AdminNotification__Phone=${ADMIN_NOTIFICATION_PHONE:-}
+      - AdminNotification__DigestHour=${ADMIN_NOTIFICATION_DIGEST_HOUR:-19}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:

@@ -16,6 +16,8 @@ import ContactSection from './components/sections/ContactSection';
 import LocationSection from './components/sections/LocationSection';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import LoadingProvider from './components/common/LoadingProvider';
+import CookieConsentBanner from './components/common/CookieConsentBanner';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { publicApi } from './services/api';
 import { asVisibility, canShowSpiritual } from './utils/contentVisibility';
@@ -68,6 +70,8 @@ const MainSections: React.FC = () => {
 };
 
 function App() {
+  const isPrivacyPage = window.location.pathname.startsWith('/politica-de-privacidade');
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -75,7 +79,14 @@ function App() {
           <CssBaseline />
           <AuthProvider>
             <LoadingProvider>
-              <MainSections />
+              {isPrivacyPage ? (
+                <Layout>
+                  <PrivacyPolicyPage />
+                </Layout>
+              ) : (
+                <MainSections />
+              )}
+              <CookieConsentBanner />
             </LoadingProvider>
           </AuthProvider>
         </ThemeProvider>

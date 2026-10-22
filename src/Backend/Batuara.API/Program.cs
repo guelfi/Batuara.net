@@ -258,6 +258,7 @@ builder.Services.Configure<PasswordRequirements>(
 builder.Services.Configure<EvolutionApiWhatsAppOptions>(builder.Configuration.GetSection("WhatsApp"));
 builder.Services.Configure<WhatsAppCloudApiOptions>(builder.Configuration.GetSection("WhatsApp"));
 builder.Services.Configure<ContributionReminderOptions>(builder.Configuration.GetSection("ContributionReminders"));
+builder.Services.Configure<AdminNotificationOptions>(builder.Configuration.GetSection("AdminNotification"));
 
 // Register Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -304,6 +305,7 @@ else
     });
 }
 builder.Services.AddHostedService<ContributionReminderHostedService>();
+builder.Services.AddHostedService<PendingContactMessagesHostedService>();
 
 // Configure Rate Limiting
 builder.Services.AddRateLimiter(options =>

@@ -43,6 +43,12 @@ namespace Batuara.Infrastructure.Notifications
             return await SendTextAsync(phoneE164, $"Casa Batuara: {responseText.Trim()}", cancellationToken);
         }
 
+        public async Task SendAdminNotificationAsync(string phoneE164, int pendingCount, CancellationToken cancellationToken = default)
+        {
+            var plural = pendingCount == 1 ? "mensagem" : "mensagens";
+            await SendTextAsync(phoneE164, $"Casa Batuara: existem {pendingCount} {plural} de contato aguardando atendimento no AdminDashboard.", cancellationToken);
+        }
+
         private async Task<string> SendTextAsync(string phoneE164, string text, CancellationToken cancellationToken)
         {
             if (!_options.Enabled)

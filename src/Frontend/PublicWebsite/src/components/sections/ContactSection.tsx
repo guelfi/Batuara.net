@@ -12,6 +12,7 @@ import {
   CircularProgress,
   FormControlLabel,
   Checkbox,
+  Link,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -213,6 +214,15 @@ const ContactSection: React.FC = () => {
                 >
                   {submitting ? 'Enviando...' : 'Enviar Mensagem'}
                 </Button>
+              </Grid>
+              <Grid size={12}>
+                <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: 'text.secondary' }}>
+                  Ao enviar, você concorda com o tratamento dos seus dados conforme a nossa{' '}
+                  <Link href="/politica-de-privacidade" underline="hover">
+                    Política de Privacidade
+                  </Link>
+                  .
+                </Typography>
               </Grid>
             </Grid>
           </Box>

@@ -16,7 +16,6 @@ import {
   InputAdornment,
   InputLabel,
   MenuItem,
-  Menu,
   Paper,
   Select,
   Snackbar,
@@ -38,7 +37,6 @@ import {
   FilterList as FilterListIcon,
   MarkEmailRead as MarkReadIcon,
   MarkEmailUnread as MarkUnreadIcon,
-  MoreVert as MoreVertIcon,
   WhatsApp as WhatsAppIcon,
 } from '@mui/icons-material';
 import apiService from '../services/api';
@@ -70,6 +68,35 @@ const getStatusColor = (status: ContactMessageStatus): 'default' | 'warning' | '
     default:
       return 'default';
   }
+};
+
+const getWhatsAppSemaphore = (message: ContactMessage) => {
+  const lastMsg = message.whatsAppMessages && message.whatsAppMessages.length > 0
+    ? message.whatsAppMessages[message.whatsAppMessages.length - 1]
+    : null;
+
+  let color: string;
+  let tooltip: string;
+
+  if (lastMsg && !lastMsg.isFromMe) {
+    color = 'warning.main';
+    tooltip = 'Visitante respondeu — aguardando retorno da Casa';
+  } else if (message.whatsAppResponseSentAt) {
+    color = 'success.main';
+    tooltip = 'Respondida pelo WhatsApp';
+  } else if (message.wantsWhatsAppResponse) {
+    color = 'warning.main';
+    tooltip = 'Solicitou resposta pelo WhatsApp — aguardando envio';
+  } else {
+    color = 'action.disabled';
+    tooltip = 'Não solicitou resposta pelo WhatsApp';
+  }
+
+  return (
+    <Tooltip title={tooltip}>
+      <WhatsAppIcon fontSize="small" sx={{ color, verticalAlign: 'middle' }} />
+    </Tooltip>
+  );
 };
 
 const getWhatsAppChip = (message: ContactMessage) => {
@@ -111,8 +138,6 @@ const ContactMessagesPage: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [whatsAppResponse, setWhatsAppResponse] = useState('');
   const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
-  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [menuRow, setMenuRow] = useState<ContactMessage | null>(null);
   const [feedback, setFeedback] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -174,16 +199,6 @@ const ContactMessagesPage: React.FC = () => {
         window.dispatchEvent(new CustomEvent('unread-count-changed'));
       } catch (_) {}
     }
-  };
-
-  const openMenu = (event: React.MouseEvent<HTMLElement>, row: ContactMessage) => {
-    setMenuAnchorEl(event.currentTarget);
-    setMenuRow(row);
-  };
-
-  const closeMenu = () => {
-    setMenuAnchorEl(null);
-    setMenuRow(null);
   };
 
   const updateField = (field: keyof ContactMessage, value: string | number) => {
@@ -255,53 +270,61 @@ const ContactMessagesPage: React.FC = () => {
   const columns: GridColDef[] = isXs
     ? [
         {
+          field: 'isRead',
+          headerName: '',
+          width: 40,
+          sortable: false,
+          filterable: false,
+          renderCell: (params) => (
+            <Tooltip title={params.row.isRead ? 'Lida' : 'Não lida'}>
+              {params.row.isRead
+                ? <MarkReadIcon color="primary" fontSize="small" />
+                : <MarkUnreadIcon color="error" fontSize="small" />}
+            </Tooltip>
+          ),
+        },
+        {
           field: 'name',
           headerName: 'Nome',
           flex: 1,
-          minWidth: 160,
+          minWidth: 100,
           renderCell: (params) => (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {!params.row.isRead && (
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0 }} />
-              )}
-              <Typography variant="body2" sx={{ fontWeight: params.row.isRead ? 400 : 700 }}>
-                {params.row.name}
-              </Typography>
-            </Box>
+            <Typography variant="body2" sx={{ fontWeight: params.row.isRead ? 400 : 700, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {params.row.name}
+            </Typography>
           ),
         },
-        { field: 'subject', headerName: 'Assunto', flex: 1.2, minWidth: 180 },
+        {
+          field: 'subject',
+          headerName: 'Assunto',
+          flex: 1.2,
+          minWidth: 110,
+          renderCell: (params) => (
+            <Typography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {params.row.subject}
+            </Typography>
+          ),
+        },
         {
           field: 'wantsWhatsAppResponse',
-          headerName: 'WhatsApp',
-          width: 140,
+          headerName: 'WA',
+          width: 48,
           sortable: false,
-          renderCell: (params) => getWhatsAppChip(params.row),
-        },
-        {
-          field: 'status',
-          headerName: 'Status',
-          width: 130,
-          renderCell: (params) => (
-            <Chip size="small" label={getStatusLabel(params.row.status)} color={getStatusColor(params.row.status)} />
-          ),
+          filterable: false,
+          renderCell: (params) => getWhatsAppSemaphore(params.row),
         },
         {
           field: 'receivedAt',
           headerName: 'Data',
-          width: 150,
-          valueFormatter: (value) => new Date(value).toLocaleDateString('pt-BR'),
+          width: 80,
+          valueFormatter: (value) => new Date(value).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
         },
         {
-          field: 'actions',
-          headerName: '',
-          width: 64,
-          sortable: false,
-          filterable: false,
+          field: 'status',
+          headerName: 'Status',
+          width: 92,
           renderCell: (params) => (
-            <IconButton aria-label="Ações da mensagem" onClick={(e) => openMenu(e, params.row)}>
-              <MoreVertIcon />
-            </IconButton>
+            <Chip size="small" label={getStatusLabel(params.row.status)} color={getStatusColor(params.row.status)} />
           ),
         },
       ]
@@ -548,6 +571,7 @@ const ContactMessagesPage: React.FC = () => {
             onPaginationModelChange={setPaginationModel}
             pageSizeOptions={[5, 10, 20]}
             disableRowSelectionOnClick
+            onRowClick={isXs ? (params) => openDialog(params.row) : undefined}
             getRowHeight={isXs ? () => 'auto' : undefined}
             slots={{
               noRowsOverlay: () => (
@@ -569,17 +593,6 @@ const ContactMessagesPage: React.FC = () => {
           />
         </Paper>
       )}
-
-      <Menu anchorEl={menuAnchorEl} open={Boolean(menuAnchorEl)} onClose={closeMenu}>
-        <MenuItem
-          onClick={() => {
-            if (menuRow) openDialog(menuRow);
-            closeMenu();
-          }}
-        >
-          Atender
-        </MenuItem>
-      </Menu>
 
       <Dialog open={dialogOpen} onClose={closeDialog} fullWidth maxWidth="md" fullScreen={isXs}>
         <DialogTitle>
