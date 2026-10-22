@@ -185,7 +185,7 @@ const LocationSection: React.FC = () => {
                 flexShrink: 0,
               }}
             >
-              <Box sx={{ px: { xs: 1.5, md: 3 }, py: { xs: 1, md: 1.5 } }}>
+              <Box sx={{ px: { xs: 1.5, md: 3 }, py: { xs: 0.75, md: 1 } }}>
                 <Grid container spacing={{ xs: 1, md: 2 }}>
                   <Grid size={{ xs: 12, md: 6 }}>
                     <Typography
@@ -283,7 +283,7 @@ const LocationSection: React.FC = () => {
                   </Grid>
                 </Grid>
 
-                <Divider sx={{ my: { xs: 0.75, md: 1.25 }, backgroundColor: 'rgba(255, 255, 255, 0.15)' }} />
+                <Divider sx={{ mt: { xs: 0.5, md: 0.75 }, mb: { xs: 0.25, md: 0.5 }, backgroundColor: 'rgba(255, 255, 255, 0.15)' }} />
 
                 <Box sx={{ textAlign: 'center' }}>
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: { xs: 1.5, md: 2 }, mb: 0.5, flexWrap: 'wrap' }}>
