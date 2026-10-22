@@ -310,6 +310,26 @@ const LocationSection: React.FC = () => {
                 <Divider sx={{ my: { xs: 0.75, md: 1.25 }, backgroundColor: 'rgba(255, 255, 255, 0.15)' }} />
 
                 <Box sx={{ textAlign: 'center' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: { xs: 1.5, md: 2 }, mb: 0.5, flexWrap: 'wrap' }}>
+                    <Link
+                      href="/politica-de-privacidade"
+                      color="inherit"
+                      underline="hover"
+                      sx={{ fontSize: { xs: '0.7rem', md: '0.78rem' }, opacity: 0.9 }}
+                    >
+                      Política de Privacidade
+                    </Link>
+                    <Link
+                      component="button"
+                      type="button"
+                      color="inherit"
+                      underline="hover"
+                      onClick={() => openCookiePreferences()}
+                      sx={{ fontSize: { xs: '0.7rem', md: '0.78rem' }, opacity: 0.9, background: 'none', border: 'none', cursor: 'pointer', p: 0 }}
+                    >
+                      Preferências de cookies
+                    </Link>
+                  </Box>
                   <Typography
                     variant="body2"
                     sx={{
