@@ -209,19 +209,6 @@ const LocationSection: React.FC = () => {
                     <Typography
                       variant="body2"
                       sx={{
-                        fontStyle: 'italic',
-                        mb: 0.5,
-                        opacity: 0.95,
-                        lineHeight: 1.3,
-                        fontSize: { xs: '0.75rem', md: '0.875rem' },
-                      }}
-                    >
-                      "Fora da caridade não há salvação"
-                    </Typography>
-
-                    <Typography
-                      variant="body2"
-                      sx={{
                         fontWeight: 600,
                         lineHeight: 1.35,
                         opacity: 0.98,
@@ -293,17 +280,6 @@ const LocationSection: React.FC = () => {
                         @{siteSettings?.instagram}
                       </Link>
                     </Box>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontSize: '0.8rem',
-                        opacity: 0.9,
-                        lineHeight: 1.4,
-                        display: { xs: 'none', md: 'block' },
-                      }}
-                    >
-                      Siga-nos para receber atualizações sobre giras, palestras e eventos especiais.
-                    </Typography>
                   </Grid>
                 </Grid>
 
