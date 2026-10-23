@@ -58,7 +58,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [warningShown]);
 
   const initializeAuth = async () => {
-    // Drop legacy JWT from localStorage (XSS-readable); session lives in httpOnly cookies
+    // Purga unica de JWT legado deixado no localStorage de navegadores antigos (legivel por XSS);
+    // a sessao vive somente em cookies httpOnly
     clearLegacyAuthStorage();
 
     try {

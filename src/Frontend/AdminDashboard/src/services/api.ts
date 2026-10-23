@@ -89,16 +89,10 @@ class ApiService {
   }
 
   private setupInterceptors() {
-    // Optional Bearer from legacy localStorage during transition; primary auth is httpOnly cookie
+    // Auth via cookies httpOnly (withCredentials); nenhum token fica acessivel ao JavaScript
     this.api.interceptors.request.use(
       (config) => {
         (config as any).metadata = { startTime: Date.now() };
-        try {
-          const token = localStorage.getItem('authToken');
-          if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-          }
-        } catch (_) { /* ignore */ }
         if (this.shouldLog()) {
           const info = this.buildLogInfo(config);
           console.log('[API]', info.method, info.url);
@@ -158,7 +152,6 @@ class ApiService {
             }
           } catch (refreshError) {
             this.processQueue(refreshError);
-            this.clearAuthData();
             window.location.href = this.getPublicSitePath();
             return Promise.reject(refreshError);
           } finally {
@@ -190,13 +183,6 @@ class ApiService {
     });
 
     this.failedQueue = [];
-  }
-
-  private clearAuthData() {
-    try {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-    } catch (_) { /* ignore */ }
   }
 
   // Métodos genéricos
