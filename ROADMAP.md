@@ -128,7 +128,7 @@ openssl rand -base64 64
 
 ### Nota Importante
 
-O projeto `Batuara.Auth` ainda existe no repositório mas está deprecado. Toda a lógica de autenticação agora vive em `Batuara.API`.
+O projeto `Batuara.Auth` (deprecado) foi removido do repositório em 2026-10-23 (PM-020). Toda a lógica de autenticação vive em `Batuara.API`.
 
 ---
 
@@ -717,11 +717,10 @@ Pendências:
 Batuara.net/
 ├── src/
 │   ├── Backend/
-│   │   ├── Batuara.API/            # API principal (.NET 8, ASP.NET Core)
+│   │   ├── Batuara.API/            # API principal (.NET 10, ASP.NET Core)
 │   │   ├── Batuara.Application/    # Camada de aplicação (interfaces, models, DTOs)
 │   │   ├── Batuara.Domain/         # Camada de domínio (entidades)
-│   │   ├── Batuara.Infrastructure/ # Infraestrutura (EF Core, DbContext, serviços)
-│   │   └── Batuara.Auth/           # [DEPRECADO] Migrado para Batuara.API
+│   │   └── Batuara.Infrastructure/ # Infraestrutura (EF Core, DbContext, serviços)
 │   └── Frontend/
 │       ├── PublicWebsite/          # Website público (React 19 + TypeScript + MUI 7)
 │       └── AdminDashboard/         # Dashboard admin (React 19 + TypeScript + MUI 7)
@@ -741,7 +740,7 @@ Batuara.net/
 
 ### Stack Tecnológica
 
-- **Backend:** .NET 8 / ASP.NET Core / Entity Framework Core / PostgreSQL
+- **Backend:** .NET 10 / ASP.NET Core / Entity Framework Core / PostgreSQL
 - **Frontend:** React 19 / TypeScript / Material-UI (MUI 7) / React Router v6
 - **Infraestrutura:** Docker / Docker Compose / Nginx / GitHub Actions
 - **Servidor:** Oracle Cloud Infrastructure (OCI) — Ubuntu

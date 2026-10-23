@@ -71,7 +71,7 @@ A Casa de Caridade Caboclo Batuara e um espaco dedicado ao acolhimento espiritua
               +----------+                |                +---------+
               v                           v                          v
      +-----------------+      +--------------------+      +-----------------+
-     |  Public Website |      |   Admin Dashboard  |      |    API .NET 8   |
+     |  Public Website |      |   Admin Dashboard  |      |    API .NET 10   |
      |  React + MUI    |      |   React + MUI      |      |   ASP.NET Core  |
      |  Port: 3000     |      |   Port: 3001       |      |   Port: 8080    |
      +-----------------+      +--------------------+      +--------+--------+

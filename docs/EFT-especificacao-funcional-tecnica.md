@@ -228,7 +228,7 @@ curl -X POST http://localhost/batuara-api/api/auth/login \
 
 ### 7.1 Requisitos de Ambiente
 
-- .NET 8 SDK
+- .NET 10 SDK
 - Node.js 20+ recomendado
 - Docker Desktop / Docker Compose
 - PostgreSQL 15+ no ambiente local containerizado

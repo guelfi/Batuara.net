@@ -13,11 +13,11 @@ if [ "$(id -u)" -ne 0 ]; then
   SUDO="sudo"
 fi
 
-echo "==> Installing system packages (PostgreSQL 16, .NET 8 SDK)"
+echo "==> Installing system packages (PostgreSQL 16, .NET 10 SDK)"
 export DEBIAN_FRONTEND=noninteractive
 if ! command -v psql >/dev/null 2>&1 || ! command -v dotnet >/dev/null 2>&1; then
   $SUDO apt-get update -qq
-  $SUDO apt-get install -y -qq postgresql postgresql-contrib dotnet-sdk-8.0
+  $SUDO apt-get install -y -qq postgresql postgresql-contrib dotnet-sdk-10.0
 fi
 
 export PATH="$PATH:$HOME/.dotnet/tools"
@@ -43,7 +43,7 @@ cp -r "$REPO_ROOT/src/Backend" "$SCRATCH/Backend"
 cp "$REPO_ROOT/NuGet.Config" "$SCRATCH/" 2>/dev/null || true
 find "$SCRATCH" -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + 2>/dev/null || true
 rm -f "$SCRATCH/Backend/Batuara.Infrastructure/Data/Migrations/"*.cs
-dotnet tool install --global dotnet-ef --version '8.*' >/dev/null 2>&1 || true
+dotnet tool install --global dotnet-ef --version '10.*' >/dev/null 2>&1 || true
 ( cd "$SCRATCH/Backend/Batuara.Infrastructure" \
   && dotnet ef migrations add InitialSchema \
        --startup-project ../Batuara.API/Batuara.API.csproj -c BatuaraDbContext \

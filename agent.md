@@ -15,7 +15,7 @@ O Batuara.net é uma plataforma web da Casa de Caridade Caboclo Batuara composta
 
 - **PublicWebsite** — portal público institucional
 - **AdminDashboard** — painel administrativo para gestão editorial e operacional
-- **Batuara.API** — API REST em .NET 8
+- **Batuara.API** — API REST em .NET 10
 - **PostgreSQL** — persistência relacional
 - **Nginx** — reverse proxy e publicação local/produtiva
 - **Evolution API** — envio WhatsApp self-hosted na OCI para login de Filhos da Casa, lembretes de contribuição e respostas a contatos públicos
@@ -53,8 +53,7 @@ Batuara.net/
 │   │   ├── Batuara.Application/
 │   │   ├── Batuara.Domain/
 │   │   ├── Batuara.Infrastructure/
-│   │   ├── Batuara.Infrastructure.Tests/
-│   │   └── Batuara.Auth/
+│   │   └── Batuara.Infrastructure.Tests/
 │   └── Frontend/
 │       ├── PublicWebsite/
 │       └── AdminDashboard/
@@ -81,7 +80,7 @@ Batuara.net/
 
 ### 4.2 Backend
 
-- .NET 8
+- .NET 10
 - ASP.NET Core 8
 - Entity Framework Core 8
 - PostgreSQL
@@ -217,7 +216,7 @@ Batuara.net/
 
 - Docker Desktop
 - Node.js
-- .NET 8 SDK
+- .NET 10 SDK
 
 ### 8.2 Variáveis obrigatórias
 
@@ -360,7 +359,7 @@ Artefatos de QA a manter versionados: `docs/PlanoTestes.md` e a planilha `docs/P
 
 ### 2026.04.03
 
-- Atualizado para refletir React 19 / MUI 7 / API .NET 8 atual
+- Atualizado para refletir React 19 / MUI 7 / API .NET 10 atual
 - Registradas mudanças recentes em `SiteSettings` e Nossa História
 - Incluído procedimento de troubleshooting do `nginx` local
 - Ajustadas URLs, setup, módulos reais e rotas de referência

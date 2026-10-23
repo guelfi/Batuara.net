@@ -91,7 +91,7 @@ Histórico de fases: `ROADMAP.md`.
 
 | ID | Status | Item | Critério de aceite / notas |
 |----|--------|------|----------------------------|
-| PM-020 | `todo` | **Upgrade .NET 8 → .NET 10** | TFM `net10.0`, pacotes EF/Npgsql/JWT alinhados 10.x, Docker `sdk/aspnet:10.0`, CI `10.0.x`, fix `KnownNetworks`→`KnownIPNetworks`. EOS .NET 8: 2026-11-10. |
+| PM-020 | `doing` | **Upgrade .NET 8 → .NET 10** | TFM `net10.0`, pacotes EF/Npgsql/JWT alinhados 10.x, Docker `sdk/aspnet:10.0`, CI `10.0.x`, fix `KnownNetworks`→`KnownIPNetworks`. EOS .NET 8: 2026-11-10. |
 | PM-021 | `todo` | **Trilha de auditoria (EP-Audit)** | Registro consultável de create/update/delete e ações sensíveis; sem dados sensíveis em log. Ref.: histórias H-060/H-061 no Backlog. |
 | PM-022 | `todo` | **APM / monitoring além de health** | Métricas/alertas em produção (ex.: Prometheus+Grafana ou APM equivalente no Always Free). |
 | PM-023 | `todo` | **Expandir testes automatizados** | Mais unit/integration backend + testes React críticos (auth, SiteSettings, membros). |

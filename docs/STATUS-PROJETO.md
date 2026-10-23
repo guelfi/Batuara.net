@@ -8,7 +8,7 @@
 
 ## 🎯 Resumo Executivo
 
-O projeto opera com backend .NET 8 funcional, banco PostgreSQL, autenticação JWT, módulos CMS reais consumidos pelos dois frontends, RBAC/multiadmin, login de Filho da Casa por WhatsApp, lembretes de contribuição com opt-in, resposta WhatsApp para contato público e Evolution API self-hosted na OCI.
+O projeto opera com backend .NET 10 funcional, banco PostgreSQL, autenticação JWT, módulos CMS reais consumidos pelos dois frontends, RBAC/multiadmin, login de Filho da Casa por WhatsApp, lembretes de contribuição com opt-in, resposta WhatsApp para contato público e Evolution API self-hosted na OCI.
 
 Produção OCI validada em 2026-07-08 no commit `c8c7c4e`, com containers principais `healthy`. O banco de desenvolvimento local foi sincronizado a partir da produção após manutenção de dados religiosos.
 
