@@ -127,8 +127,9 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 5. **PM-004** — E2E contribuição recorrente *(fazer junto da decisão PM-008)*
 6. **PM-021** — Trilha de auditoria *(base também p/ LGPD)*
 7. **PM-010 → PM-016** — Lote de débitos do plano de testes Admin *(qualidade)*
-8. **PM-022, PM-025, PM-023** — APM, SSH hardening, cobertura de testes
-9. **PM-030 → PM-035** — Evolução de produto (inscrição calendário, MFA, WAF, cache, a11y/i18n)
+8. **PM-041, PM-042, PM-043** — Logs persistentes, healthchecks/`depends_on`, chaves de Data Protection *(confiabilidade operacional, derivados de 23/out)*
+9. **PM-022, PM-025, PM-023, PM-044** — APM, SSH hardening, cobertura de testes, Ubuntu 24.04/Node
+10. **PM-030 → PM-035** — Evolução de produto (inscrição calendário, MFA, WAF, cache, a11y/i18n)
 
 ### Encerrados / sem ação
 
@@ -241,10 +242,10 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 | ID | Status | Item | Notas |
 |----|--------|------|-------|
-| PM-040 | `todo` | **Logs da API fora do container** | Logs somem a cada deploy; montar volume persistente ou enviar a coletor. |
-| PM-041 | `todo` | **Healthchecks e `depends_on` na OCI** | 10 containers sem healthcheck (incl. Evolution API); compose de `allugme`/`barbear-ia` com `depends_on: service_healthy` no banco. |
-| PM-042 | `todo` | **Persistir chaves de Data Protection** | Hoje ficam no container (aviso no startup). |
-| PM-043 | `todo` | **Ubuntu 24.04 / Pro e Node 18 NodeSource** | Exige backup do boot volume; trocar Node 18; atualizar Gemini CLI. |
+| PM-041 | `todo` | **Logs da API fora do container** | Logs somem a cada deploy; montar volume persistente ou enviar a coletor. |
+| PM-042 | `todo` | **Healthchecks e `depends_on` na OCI** | 10 containers sem healthcheck (incl. Evolution API); compose de `allugme`/`barbear-ia` com `depends_on: service_healthy` no banco. |
+| PM-043 | `todo` | **Persistir chaves de Data Protection** | Hoje ficam no container (aviso no startup). |
+| PM-044 | `todo` | **Ubuntu 24.04 / Pro e Node 18 NodeSource** | Exige backup do boot volume; trocar Node 18; atualizar Gemini CLI. |
 
 ### 2026-10-23
 
