@@ -75,6 +75,7 @@ services:
       - JwtSettings__Secret=${JWT_SECRET}
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Production}
+      - DataProtection__KeysPath=/app/dp-keys
       - DB_APPLY_MIGRATIONS_ON_STARTUP=${DB_APPLY_MIGRATIONS_ON_STARTUP:-false}
       - DB_SEED_ON_STARTUP=${DB_SEED_ON_STARTUP:-false}
       - WhatsApp__Provider=${WHATSAPP_PROVIDER:-EvolutionApi}
@@ -96,6 +97,8 @@ services:
       - ContributionReminders__MaxMessagesPerRun=${CONTRIBUTION_REMINDERS_MAX_MESSAGES_PER_RUN:-1}
       - ContributionReminders__RetryIntervalMinutes=${CONTRIBUTION_REMINDERS_RETRY_INTERVAL_MINUTES:-60}
       - ContributionReminders__MaxAttempts=${CONTRIBUTION_REMINDERS_MAX_ATTEMPTS:-3}
+    volumes:
+      - batuara-dataprotection-keys:/app/dp-keys
     networks:
       - batuara-network
     restart: unless-stopped
@@ -180,6 +183,11 @@ networks:
 
 volumes:
   # Volumes com prefixo para isolamento
+  batuara-dataprotection-keys:
+    name: ${VOLUME_PREFIX:-batuara}-dataprotection-keys
+    labels:
+      - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
+      - "project.name=${PROJECT_NAME:-batuara}"
   batuara-db-data:
     name: ${VOLUME_PREFIX:-batuara}-db-data-pg16
     labels:

@@ -246,6 +246,9 @@ builder.Services.AddDbContext<BatuaraDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection"),
         npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "batuara")));
 
+// Data Protection: chaves persistidas em volume quando DataProtection:KeysPath estiver definido (PM-043)
+builder.Services.AddBatuaraDataProtection(builder.Configuration);
+
 // Configure Options
 builder.Services.Configure<JwtSettings>(jwtSettings);
 builder.Services.Configure<AuthCookieSettings>(builder.Configuration.GetSection(AuthCookieSettings.SectionName));
