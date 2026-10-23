@@ -96,7 +96,7 @@ Histórico de fases: `ROADMAP.md`.
 | PM-022 | `todo` | **APM / monitoring além de health** | Métricas/alertas em produção (ex.: Prometheus+Grafana ou APM equivalente no Always Free). |
 | PM-023 | `todo` | **Expandir testes automatizados** | Mais unit/integration backend + testes React críticos (auth, SiteSettings, membros). |
 | PM-024 | `done` | **Tokens Admin: remover legado localStorage** | ✅ Concluído em 23/out: interceptor do `api.ts` não lê mais `authToken` nem envia Bearer; sessão só por cookies httpOnly. Mantida purga única das chaves legadas no init do `AuthContext`. Bundle em produção sem leitura de `authToken`. |
-| PM-025 | `doing` | **SSH hardening OCI** | **Fases 1–3 feitas em 23/out:** drop-in `/etc/ssh/sshd_config.d/50-hardening.conf` (root `no`, X11 `no`, `MaxAuthTries 3`, `LoginGraceTime 30`, `AllowUsers ubuntu`, keepalive); `fail2ban` com jail `sshd` (3 falhas/10 min → ban 1h, incremental até 1 semana; exceção para os IPs de casa); `rpcbind` desligado e regras ufw 8001–8003 removidas. Backups em `~/backup-ssh-20261023` na OCI. Levantamento: ~870 tentativas/dia de usuário inexistente, nenhuma passou; senha desligada. **Pendente:** (4) chave SSH separada e restrita para o deploy (hoje a mesma chave serve a pessoa e o CI); (5) fechar a 22 via OCI Bastion ou runner self-hosted (deploy usa IPs variáveis do GitHub); revisar demais regras antigas do ufw (8004, 3500, 5000/5005) e portas Docker publicadas em `0.0.0.0` (hoje protegidas só pela Security List da OCI). |
+| PM-025 | `doing` | **SSH hardening OCI** | **Fases 1–3 feitas em 23/out:** drop-in `/etc/ssh/sshd_config.d/50-hardening.conf` (root `no`, X11 `no`, `MaxAuthTries 3`, `LoginGraceTime 30`, `AllowUsers ubuntu`, keepalive); `fail2ban` com jail `sshd` (3 falhas/10 min → ban 1h, incremental até 1 semana; exceção para os IPs de casa); `rpcbind` desligado e regras ufw 8001–8003 removidas. Backups em `~/backup-ssh-20261023` na OCI. Levantamento: ~870 tentativas/dia de usuário inexistente, nenhuma passou; senha desligada. **Fase 4 feita em 23/out:** 10 chaves de deploy (uma por projeto: Batuara.net, pet360, bela360, Barbear.IA, allugme, guelfiness, Unisystem, DriverHub, HakoInteriores, HealthCore) + 1 chave pessoal, todas ed25519; secrets atualizados via `gh` nos 10 repositórios e validados com workflow temporário (sem deploy) — login real de cada chave visto no log do servidor; chave antiga removida do `authorized_keys`. Chaves guardadas em `~/Projetos/oci-deploy-keys` (fora do git). Achado: `fail2ban` em `mode = aggressive` bania os runners do GitHub (o `ssh-keyscan` do workflow conta como falha); corrigido para `mode = normal`. **Pendente:** (5) fechar a 22 via OCI Bastion ou runner self-hosted (deploy usa IPs variáveis do GitHub); revisar demais regras antigas do ufw (8004, 3500, 5000/5005) e portas Docker publicadas em `0.0.0.0` (hoje protegidas só pela Security List da OCI). |
 | PM-045 | `done` | **Endurecer sessão do Admin (pós PM-024)** | ✅ Concluído em 23/out (commits `9f1ae0c` e SameSite): login/refresh/verify-code não devolvem mais `token`/`refreshToken` no corpo (só com `AuthCookieSettings:ReturnTokensInBody`, ligado apenas em Development); cookies de sessão com `SameSite=Strict`, `Secure`, `HttpOnly` (verificado em produção). 7 testes novos. Antiforgery/CSRF dedicado descartado por ora: com `Strict` o ganho é pequeno; reavaliar se surgir endpoint com cookie acessível cross-site. |
 
 ### P3 — Evolução de produto
@@ -123,7 +123,7 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 > Ordem aprovada em 23/out/2026 (prioridade: segurança → confiabilidade operacional → produto → qualidade).
 
-1. **PM-025** — SSH hardening OCI *(fases 1–3 feitas; faltam chave de deploy separada e fechar a 22)*
+1. **PM-025** — SSH hardening OCI *(fases 1–4 feitas; falta fechar a 22)*
 2. **PM-031** — MFA (TOTP)
 3. **PM-041** — Logs da API fora do container
 4. **PM-042** — Healthchecks e `depends_on` na OCI
@@ -205,7 +205,7 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 | Data | 2026-10-23 |
 | Branch | `master` (PM-020 concluído e em produção; commits `12e77c9`, `73f41e7`, `b5fa2ac` + correção do log de refresh token) |
 | Em andamento (`doing`) | — |
-| Próximo item sugerido | **PM-025** fases 4–5 (chave de deploy separada; fechar a 22), depois PM-031 (MFA) |
+| Próximo item sugerido | **PM-031** (MFA); PM-025 fase 5 (fechar a 22) fica opcional |
 | Bloqueios ativos | — |
 | Ambiente | Produção em `https://www.batuara.org.br/`; lembretes WhatsApp desligados; Swagger permanece público por decisão |
 | Riscos | Digest de pendências depende da aprovação Meta do template `casa_pendencias_aviso_v3` (tentativa diária às 19h SP; 2 pendentes em 23/out); logs da API se perdem a cada deploy; majors pendentes (FluentValidation 12, Swashbuckle 10, FluentAssertions 8) |
@@ -238,6 +238,8 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 ## 7. Changelog deste plano
 
 ### 2026-10-23 (infra OCI, AutoMapper e logs)
+
+- **PM-025 fase 4:** chaves SSH separadas por projeto (10 repositórios) + chave pessoal nova; chave antiga revogada. Regressão corrigida no caminho: `fail2ban` aggressive banindo runners do GitHub → `normal`. Validação por workflow temporário em cada repo (branch `ssh-key-check`, removida depois).
 
 - **PM-025 → `doing` (fases 1–3):** `sshd` endurecido, `fail2ban` ativo (3 IPs banidos logo no início), `rpcbind` desligado, regras ufw 8001–8003 removidas. 38/38 containers e domínios seguem no ar; login SSH conferido em nova sessão antes de fechar a anterior.
 
