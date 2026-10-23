@@ -22,7 +22,8 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
+  /** Só presente em desenvolvimento (AuthCookieSettings:ReturnTokensInBody); em produção a sessão vai só em cookies httpOnly */
+  token?: string;
   refreshToken?: string;
   expiresAt: string;
   user: User;

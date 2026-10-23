@@ -166,3 +166,5 @@ A API também funciona em dispositivos móveis:
 **🚀 Sistema 100% funcional e pronto para uso!**
 
 **Desenvolvido para Casa de Caridade Batuara** 🙏
+
+> **Atenção (PM-045):** em produção a API não devolve mais `token`/`refreshToken` no corpo do login/refresh; a sessão vai só em cookies httpOnly. Em desenvolvimento o corpo ainda inclui os tokens (`AuthCookieSettings:ReturnTokensInBody=true` em `appsettings.Development.json`), então a collection funciona localmente.

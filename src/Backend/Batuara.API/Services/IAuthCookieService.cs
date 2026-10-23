@@ -4,6 +4,7 @@ namespace Batuara.API.Services
     {
         string AccessTokenCookieName { get; }
         string RefreshTokenCookieName { get; }
+        bool ReturnTokensInBody { get; }
 
         void SetAccessToken(HttpResponse response, string token, DateTime expiresAtUtc);
         void SetRefreshToken(HttpResponse response, string token);

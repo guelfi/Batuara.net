@@ -40,7 +40,8 @@ namespace Batuara.API.Controllers
             {
                 var response = await _memberAuthService.VerifyCodeAsync(request, cancellationToken);
                 _authCookies.SetAccessToken(Response, response.Token, response.ExpiresAt);
-                return Ok(new { success = true, data = response });
+                var data = SessionResponseBuilder.ForMember(response, _authCookies.ReturnTokensInBody);
+                return Ok(new { success = true, data });
             }
             catch (UnauthorizedAccessException ex)
             {

@@ -19,6 +19,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Batuara.API\Batuara.API.csproj" />
     <ProjectReference Include="..\Batuara.Infrastructure\Batuara.Infrastructure.csproj" />
     <ProjectReference Include="..\Batuara.Domain\Batuara.Domain.csproj" />
     <ProjectReference Include="..\Batuara.Application\Batuara.Application.csproj" />

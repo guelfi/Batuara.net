@@ -43,17 +43,11 @@ namespace Batuara.API.Controllers
                 _authCookies.SetAccessToken(Response, response.AccessToken, response.TokenExpiration);
                 _authCookies.SetRefreshToken(Response, response.RefreshToken);
 
-                // Tokens still returned for API tools / transition; browsers should rely on httpOnly cookies
+                // Browsers usam apenas cookies httpOnly; tokens no corpo so com AuthCookieSettings:ReturnTokensInBody (dev)
                 return Ok(new
                 {
                     success = true,
-                    data = new
-                    {
-                        token = response.AccessToken,
-                        refreshToken = response.RefreshToken,
-                        expiresAt = response.TokenExpiration,
-                        user = response.User
-                    }
+                    data = SessionResponseBuilder.ForUser(response, _authCookies.ReturnTokensInBody)
                 });
             }
             catch (UnauthorizedAccessException ex)
@@ -106,13 +100,7 @@ namespace Batuara.API.Controllers
                 return Ok(new
                 {
                     success = true,
-                    data = new
-                    {
-                        token = response.AccessToken,
-                        refreshToken = response.RefreshToken,
-                        expiresAt = response.TokenExpiration,
-                        user = response.User
-                    }
+                    data = SessionResponseBuilder.ForUser(response, _authCookies.ReturnTokensInBody)
                 });
             }
             catch (UnauthorizedAccessException ex)

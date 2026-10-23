@@ -23,5 +23,12 @@ namespace Batuara.Application.Auth.Models
         /// Refresh cookie lifetime in days. Access cookie uses JWT expiry.
         /// </summary>
         public int RefreshTokenDays { get; set; } = 7;
+
+        /// <summary>
+        /// Quando true, login/refresh tambem devolvem os tokens no corpo JSON (so para ferramentas de API
+        /// em desenvolvimento). Em producao deve ficar false: o navegador usa apenas cookies httpOnly,
+        /// e um XSS nao consegue ler o token da resposta.
+        /// </summary>
+        public bool ReturnTokensInBody { get; set; } = false;
     }
 }
