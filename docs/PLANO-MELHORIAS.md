@@ -97,7 +97,7 @@ Histórico de fases: `ROADMAP.md`.
 | PM-023 | `todo` | **Expandir testes automatizados** | Mais unit/integration backend + testes React críticos (auth, SiteSettings, membros). |
 | PM-024 | `done` | **Tokens Admin: remover legado localStorage** | ✅ Concluído em 23/out: interceptor do `api.ts` não lê mais `authToken` nem envia Bearer; sessão só por cookies httpOnly. Mantida purga única das chaves legadas no init do `AuthContext`. Bundle em produção sem leitura de `authToken`. |
 | PM-025 | `todo` | **SSH hardening OCI** | Avaliar Bastion/VPN; hoje `22` público por falta de IP fixo. |
-| PM-045 | `todo` | **Endurecer sessão do Admin (pós PM-024)** | (1) parar de devolver `token`/`refreshToken` no corpo JSON de login/refresh (`AuthController`, hoje "transition") — confirmar antes que nenhuma ferramenta externa os use; (2) avaliar `SameSite=Strict` em produção e proteção CSRF (antiforgery) para endpoints com cookie; (3) teste automatizado garantindo que o corpo não expõe tokens. Depende de PM-043 se usar antiforgery. **Prioridade de segurança — ordem de execução aguardando aprovação.** |
+| PM-045 | `doing` | **Endurecer sessão do Admin (pós PM-024)** | (1) parar de devolver `token`/`refreshToken` no corpo JSON de login/refresh (`AuthController`, hoje "transition") — confirmar antes que nenhuma ferramenta externa os use; (2) avaliar `SameSite=Strict` em produção e proteção CSRF (antiforgery) para endpoints com cookie; (3) teste automatizado garantindo que o corpo não expõe tokens. Depende de PM-043 se usar antiforgery. **Prioridade de segurança — 1º da fila (ordem aprovada em 23/out).** |
 
 ### P3 — Evolução de produto
 
@@ -121,14 +121,20 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 ### Fila repriorizada
 
-1. **PM-040** — Inbox p/ mensagens WhatsApp sem thread *(gap de produto: mensagens de visitantes se perdem)*
-2. **PM-008** — Decisão: ativar lembretes de contribuição *(destravado — template `casa_contribution_reminder` aprovado)*
-3. **PM-004** — E2E contribuição recorrente *(fazer junto da decisão PM-008)*
-4. **PM-021** — Trilha de auditoria *(base também p/ LGPD)*
-5. **PM-010 → PM-016** — Lote de débitos do plano de testes Admin *(qualidade)*
-6. **PM-041, PM-042, PM-043** — Logs persistentes, healthchecks/`depends_on`, chaves de Data Protection *(confiabilidade operacional, derivados de 23/out)*
-7. **PM-022, PM-025, PM-023, PM-044** — APM, SSH hardening, cobertura de testes, Ubuntu 24.04/Node
-8. **PM-030 → PM-035** — Evolução de produto (inscrição calendário, MFA, WAF, cache, a11y/i18n)
+> Ordem aprovada em 23/out/2026 (prioridade: segurança → confiabilidade operacional → produto → qualidade).
+
+1. **PM-045** — Endurecer sessão do Admin *(segurança; complementa PM-024)*
+2. **PM-043** — Persistir chaves de Data Protection *(junto do PM-045; antiforgery depende)*
+3. **PM-025** — SSH hardening OCI *(porta 22 pública em servidor compartilhado)*
+4. **PM-031** — MFA (TOTP)
+5. **PM-041** — Logs da API fora do container
+6. **PM-042** — Healthchecks e `depends_on` na OCI
+7. **PM-040** — Inbox p/ mensagens WhatsApp sem thread
+8. **PM-008 + PM-004** — Decisão dos lembretes de contribuição + E2E recorrente
+9. **PM-021** — Trilha de auditoria *(base também p/ LGPD)*
+10. **PM-010 → PM-016, PM-023** — Débitos do plano de testes Admin + cobertura de testes
+11. **PM-022, PM-044, PM-032** — APM, Ubuntu 24.04/Node, WAF/SIEM
+12. **PM-030, PM-033, PM-034, PM-035** — Evolução de produto
 
 ### Encerrados / sem ação
 
@@ -199,7 +205,7 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 | Data | 2026-10-23 |
 | Branch | `master` (PM-020 concluído e em produção; commits `12e77c9`, `73f41e7`, `b5fa2ac` + correção do log de refresh token) |
 | Em andamento (`doing`) | — |
-| Próximo item sugerido | **PM-040** (inbox para WhatsApp de visitante sem thread) |
+| Próximo item sugerido | **PM-045** (endurecer sessão do Admin; em andamento) |
 | Bloqueios ativos | — |
 | Ambiente | Produção em `https://www.batuara.org.br/`; lembretes WhatsApp desligados; Swagger permanece público por decisão |
 | Riscos | Digest de pendências depende da aprovação Meta do template `casa_pendencias_aviso_v3` (tentativa diária às 19h SP; 2 pendentes em 23/out); logs da API se perdem a cada deploy; majors pendentes (FluentValidation 12, Swashbuckle 10, FluentAssertions 8) |
