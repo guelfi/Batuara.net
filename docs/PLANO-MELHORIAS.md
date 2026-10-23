@@ -66,7 +66,7 @@ Histórico de fases: `ROADMAP.md`.
 |----|--------|------|----------------------------|
 | PM-001 | `done` | **HTTPS + domínio próprio** (ex-ROADMAP 5.3) | ✅ Em produção: `https://www.batuara.org.br/` (Cloudflare + TLS; HSTS ativo; API `/batuara-api/health` Healthy). Confirmado em 2026-08-03. |
 | PM-002 | `cancelled` | **Restringir Swagger em produção** | ❌ Decisão de produto (2026-08-03): Swagger **permanece aberto** em produção. Não implementar. |
-| PM-003 | `doing` | **CORS estrito em produção** | Sem fallback `AllowAnyOrigin()` quando `CorsSettings:AllowedOrigins` estiver vazio em Production; Development com origins locais explícitas. **Implementado (23/out)**: fora de Development a API falha no startup se a lista estiver vazia (fail-closed); `appsettings.json` só com `https://www.batuara.org.br` e `https://batuara.org.br`; localhost/LAN movidos para `appsettings.Development.json`. Validado localmente (build + preflight por ambiente) e code review sem achados. **Pendente: validação pós-deploy** — PublicWebsite, login do AdminDashboard e `curl -X OPTIONS` com `Origin` permitida/negada em `/batuara-api/health`; então marcar `done`. |
+| PM-003 | `done` | **CORS estrito em produção** | ✅ Concluído em 23/out (commit `54c4cd0`): sem fallback `AllowAnyOrigin()` quando `CorsSettings:AllowedOrigins` estiver vazio fora de Development; API falha no startup com erro claro (fail-closed); `appsettings.json` só com `https://www.batuara.org.br` e `https://batuara.org.br`; localhost/LAN movidos para `appsettings.Development.json`. Validado localmente (build + preflight por ambiente) e code review sem achados. |
 | PM-004 | `todo` | **E2E manual — contribuição recorrente** | No Admin: criar contribuição recorrente → marcar paga → confirmar geração do mês seguinte; documentar resultado na planilha/PlanoTestes. |
 | PM-005 | `todo` | **Validar migrations no deploy OCI** | Step 3.5 do `deploy-rolling.sh` aplica SQL ad-hoc **com erros suprimidos** (`> /dev/null 2>&1`) — falha de migration passa invisível e corrompe deploy. Revisar para falhar ruidosamente e confirmar migrations aplicadas. |
 | PM-006 | `cancelled` | ~~**Revisar logs Evolution API**~~ | ❌ Reescopo (22/out): `batuara-casa` desconectada e Batuara 100% na Meta Cloud API — Evolution só serve outros projetos. Se necessário, reabrir como "revisão de PII nos logs da API Batuara". |
@@ -120,20 +120,20 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 ### Fila repriorizada
 
-1. **PM-003** — CORS estrito em produção *(segurança, quick win; hoje há fallback `AllowAnyOrigin()`)*
-2. **PM-020** — Upgrade .NET 8 → .NET 10 *(deadline fixo: EOS 10/nov/2026)*
-3. **PM-005** — Migrations no deploy sem erro silencioso *(confiabilidade: falha hoje passa invisível)*
-4. **PM-024** — Remover auth legado `localStorage` *(segurança; httpOnly cookie já é primário — só cleanup)*
-5. **PM-040** — Inbox p/ mensagens WhatsApp sem thread *(gap de produto: mensagens de visitantes se perdem)*
-6. **PM-008** — Decisão: ativar lembretes de contribuição *(destravado — template `casa_contribution_reminder` aprovado)*
-7. **PM-004** — E2E contribuição recorrente *(fazer junto da decisão PM-008)*
-8. **PM-021** — Trilha de auditoria *(base também p/ LGPD)*
-9. **PM-010 → PM-016** — Lote de débitos do plano de testes Admin *(qualidade)*
-10. **PM-022, PM-025, PM-023** — APM, SSH hardening, cobertura de testes
-11. **PM-030 → PM-035** — Evolução de produto (inscrição calendário, MFA, WAF, cache, a11y/i18n)
+1. **PM-020** — Upgrade .NET 8 → .NET 10 *(deadline fixo: EOS 10/nov/2026)*
+2. **PM-005** — Migrations no deploy sem erro silencioso *(confiabilidade: falha hoje passa invisível)*
+3. **PM-024** — Remover auth legado `localStorage` *(segurança; httpOnly cookie já é primário — só cleanup)*
+4. **PM-040** — Inbox p/ mensagens WhatsApp sem thread *(gap de produto: mensagens de visitantes se perdem)*
+5. **PM-008** — Decisão: ativar lembretes de contribuição *(destravado — template `casa_contribution_reminder` aprovado)*
+6. **PM-004** — E2E contribuição recorrente *(fazer junto da decisão PM-008)*
+7. **PM-021** — Trilha de auditoria *(base também p/ LGPD)*
+8. **PM-010 → PM-016** — Lote de débitos do plano de testes Admin *(qualidade)*
+9. **PM-022, PM-025, PM-023** — APM, SSH hardening, cobertura de testes
+10. **PM-030 → PM-035** — Evolução de produto (inscrição calendário, MFA, WAF, cache, a11y/i18n)
 
 ### Encerrados / sem ação
 
+- **PM-003** — ✅ *done* — CORS fail-closed e origins explícitas (commit `54c4cd0`)
 - **PM-006** ❌ *cancelled* — Evolution fora do fluxo Batuara; reescopar se necessário
 - **PM-007** — Concluído operacionalmente; residual = aprovação de `casa_contact_reply` e `casa_pendencias_aviso_v3` (Meta, automático via webhook `message_template_status`)
 - **PM-037, PM-039** — ✅ done
@@ -195,12 +195,12 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 | Campo | Valor |
 |-------|-------|
 | Data | 2026-10-23 |
-| Branch | `master` (PM-003 implementado e commitado; ainda não deployado) |
-| Em andamento (`doing`) | **PM-003** — falta deploy + validação em produção (ver nota na §3) |
-| Próximo item sugerido | Validar PM-003 pós-deploy → **PM-020** (.NET 10, EOS 10/nov) |
+| Branch | `master` (PM-003 concluído no commit `54c4cd0`; deploy/validação acompanhados na entrega) |
+| Em andamento (`doing`) | — |
+| Próximo item sugerido | **PM-020** (.NET 10, EOS 10/nov) |
 | Bloqueios ativos | — |
 | Ambiente | Produção em `https://www.batuara.org.br/`; lembretes WhatsApp desligados; Swagger permanece público por decisão |
-| Riscos | CORS/CSP com origins antigas possíveis; EOS .NET 8 em 2026-11-10 |
+| Riscos | EOS .NET 8 em 2026-11-10 |
 
 ### 6.2 Template (copiar para próxima sessão)
 
@@ -231,7 +231,7 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 ### 2026-10-23
 
-- **PM-003 → `doing`:** CORS fail-closed fora de Development (sem fallback `AllowAnyOrigin()`), origins de produção em `appsettings.json` e lista local em `appsettings.Development.json`. Corrige também a aceitação indevida de origins `localhost`/LAN em produção (antes herdadas do `appsettings.json` base). Aguarda validação pós-deploy para `done`.
+- **PM-003 → `done`:** CORS fail-closed fora de Development (sem fallback `AllowAnyOrigin()`), origins de produção em `appsettings.json` e lista local em `appsettings.Development.json` (commit `54c4cd0`). Corrige também a aceitação indevida de origins `localhost`/LAN em produção (antes herdadas do `appsettings.json` base).
 
 ### 2026-08-17
 
@@ -253,3 +253,4 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 |----|--------------|-------|
 | PM-001 | 2026-08-03 (reconhecido) | `https://www.batuara.org.br/` com TLS/HSTS; health API Healthy |
 | PM-002 | 2026-08-03 (cancelled) | Swagger permanece aberto em produção — decisão de produto |
+| PM-003 | 2026-10-23 | CORS fail-closed fora de Development; origins de produção explícitas (commit `54c4cd0`) |
