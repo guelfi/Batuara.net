@@ -91,7 +91,7 @@ Histórico de fases: `ROADMAP.md`.
 
 | ID | Status | Item | Critério de aceite / notas |
 |----|--------|------|----------------------------|
-| PM-020 | `doing` | **Upgrade .NET 8 → .NET 10** | TFM `net10.0`, pacotes EF/Npgsql/JWT alinhados 10.x, Docker `sdk/aspnet:10.0`, CI `10.0.x`, fix `KnownNetworks`→`KnownIPNetworks`. EOS .NET 8: 2026-11-10. |
+| PM-020 | `done` | **Upgrade .NET 8 → .NET 10** | ✅ Concluído em 23/out (commit `12e77c9` + ajustes de acabamento): TFM `net10.0`, EF/Npgsql/JwtBearer 10.x (patch 10.0.13, igual ao runtime de produção), Docker `sdk/aspnet:10.0`, CI `10.0.x`, `KnownIPNetworks`, `Batuara.Auth` removido. CI/CD verdes; `/health` Healthy; CORS e rotas de auth validados em produção. Login interativo do Admin ainda sem teste manual. |
 | PM-021 | `todo` | **Trilha de auditoria (EP-Audit)** | Registro consultável de create/update/delete e ações sensíveis; sem dados sensíveis em log. Ref.: histórias H-060/H-061 no Backlog. |
 | PM-022 | `todo` | **APM / monitoring além de health** | Métricas/alertas em produção (ex.: Prometheus+Grafana ou APM equivalente no Always Free). |
 | PM-023 | `todo` | **Expandir testes automatizados** | Mais unit/integration backend + testes React críticos (auth, SiteSettings, membros). |
@@ -120,20 +120,20 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 ### Fila repriorizada
 
-1. **PM-020** — Upgrade .NET 8 → .NET 10 *(deadline fixo: EOS 10/nov/2026)*
-2. **PM-005** — Migrations no deploy sem erro silencioso *(confiabilidade: falha hoje passa invisível)*
-3. **PM-024** — Remover auth legado `localStorage` *(segurança; httpOnly cookie já é primário — só cleanup)*
-4. **PM-040** — Inbox p/ mensagens WhatsApp sem thread *(gap de produto: mensagens de visitantes se perdem)*
-5. **PM-008** — Decisão: ativar lembretes de contribuição *(destravado — template `casa_contribution_reminder` aprovado)*
-6. **PM-004** — E2E contribuição recorrente *(fazer junto da decisão PM-008)*
-7. **PM-021** — Trilha de auditoria *(base também p/ LGPD)*
-8. **PM-010 → PM-016** — Lote de débitos do plano de testes Admin *(qualidade)*
-9. **PM-022, PM-025, PM-023** — APM, SSH hardening, cobertura de testes
-10. **PM-030 → PM-035** — Evolução de produto (inscrição calendário, MFA, WAF, cache, a11y/i18n)
+1. **PM-005** — Migrations no deploy sem erro silencioso *(confiabilidade: falha hoje passa invisível)*
+2. **PM-024** — Remover auth legado `localStorage` *(segurança; httpOnly cookie já é primário — só cleanup)*
+3. **PM-040** — Inbox p/ mensagens WhatsApp sem thread *(gap de produto: mensagens de visitantes se perdem)*
+4. **PM-008** — Decisão: ativar lembretes de contribuição *(destravado — template `casa_contribution_reminder` aprovado)*
+5. **PM-004** — E2E contribuição recorrente *(fazer junto da decisão PM-008)*
+6. **PM-021** — Trilha de auditoria *(base também p/ LGPD)*
+7. **PM-010 → PM-016** — Lote de débitos do plano de testes Admin *(qualidade)*
+8. **PM-022, PM-025, PM-023** — APM, SSH hardening, cobertura de testes
+9. **PM-030 → PM-035** — Evolução de produto (inscrição calendário, MFA, WAF, cache, a11y/i18n)
 
 ### Encerrados / sem ação
 
 - **PM-003** — ✅ *done* — CORS fail-closed e origins explícitas (commit `54c4cd0`)
+- **PM-020** — ✅ *done* — Upgrade .NET 8 → 10 (commit `12e77c9`)
 - **PM-006** ❌ *cancelled* — Evolution fora do fluxo Batuara; reescopar se necessário
 - **PM-007** — Concluído operacionalmente; residual = aprovação de `casa_contact_reply` e `casa_pendencias_aviso_v3` (Meta, automático via webhook `message_template_status`)
 - **PM-037, PM-039** — ✅ done
@@ -195,12 +195,12 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 | Campo | Valor |
 |-------|-------|
 | Data | 2026-10-23 |
-| Branch | `master` (PM-003 concluído no commit `54c4cd0`; deploy/validação acompanhados na entrega) |
+| Branch | `master` (PM-020 concluído e em produção; commit `12e77c9` + acabamento) |
 | Em andamento (`doing`) | — |
-| Próximo item sugerido | **PM-020** (.NET 10, EOS 10/nov) |
+| Próximo item sugerido | **PM-005** (migrations no deploy sem erro silencioso) |
 | Bloqueios ativos | — |
 | Ambiente | Produção em `https://www.batuara.org.br/`; lembretes WhatsApp desligados; Swagger permanece público por decisão |
-| Riscos | EOS .NET 8 em 2026-11-10 |
+| Riscos | Login interativo do Admin pós-.NET 10 sem teste manual; majors pendentes (FluentValidation 12, Swashbuckle 10, FluentAssertions 8) |
 
 ### 6.2 Template (copiar para próxima sessão)
 
@@ -231,6 +231,7 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 ### 2026-10-23
 
+- **PM-020 → `done`:** migração para .NET 10 em produção (runtime 10.0.13 na OCI). CI/CD verdes, `/health` Healthy, CORS e rotas de auth conferidos. Acabamento: pacotes `Microsoft.*` em 10.0.13, aviso CS0105 e NU1510 eliminados, `gitleaks-action@v3` (Node 24, `GITLEAKS_CONFIG`) e `ubuntu-24.04` fixado nos workflows.
 - **PM-003 → `done`:** CORS fail-closed fora de Development (sem fallback `AllowAnyOrigin()`), origins de produção em `appsettings.json` e lista local em `appsettings.Development.json` (commit `54c4cd0`). Corrige também a aceitação indevida de origins `localhost`/LAN em produção (antes herdadas do `appsettings.json` base).
 
 ### 2026-08-17
@@ -254,3 +255,4 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 | PM-001 | 2026-08-03 (reconhecido) | `https://www.batuara.org.br/` com TLS/HSTS; health API Healthy |
 | PM-002 | 2026-08-03 (cancelled) | Swagger permanece aberto em produção — decisão de produto |
 | PM-003 | 2026-10-23 | CORS fail-closed fora de Development; origins de produção explícitas (commit `54c4cd0`) |
+| PM-020 | 2026-10-23 | Upgrade .NET 8 → 10 em produção (commit `12e77c9` + acabamento) |

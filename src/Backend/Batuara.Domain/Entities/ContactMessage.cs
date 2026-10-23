@@ -1,5 +1,4 @@
 using Batuara.Domain.Common;
-using Batuara.Domain.Common;
 using Batuara.Domain.Enums;
 
 namespace Batuara.Domain.Entities

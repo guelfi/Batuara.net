@@ -9,22 +9,21 @@ on:
 jobs:
   secret-scanning:
     name: Secret Scanning
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          config-path: .gitleaks.toml
+          GITLEAKS_CONFIG: .gitleaks.toml
 
   audit-dependencies:
     name: Audit Dependencies
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
 
@@ -72,7 +71,7 @@ jobs:
 
   build-api:
     name: Build .NET API
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
 
@@ -92,7 +91,7 @@ jobs:
 
   test-api:
     name: Test .NET Backend
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
 
@@ -115,7 +114,7 @@ jobs:
 
   build-public-website:
     name: Build Public Website
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
 
@@ -139,7 +138,7 @@ jobs:
 
   build-admin-dashboard:
     name: Build Admin Dashboard
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
 
@@ -163,7 +162,7 @@ jobs:
 
   docker-build:
     name: Docker Build Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [build-api, test-api, build-public-website, build-admin-dashboard, secret-scanning, audit-dependencies]
     steps:
       - uses: actions/checkout@v6
