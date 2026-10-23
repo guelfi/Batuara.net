@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using AutoMapper;
 using Batuara.Application.Auth.Models;
 using Batuara.Application.Auth.Services;
 using Batuara.Domain.Entities;
@@ -14,20 +13,17 @@ namespace Batuara.Infrastructure.Auth.Services
         private readonly IUserRepository _userRepository;
         private readonly IJwtService _jwtService;
         private readonly IPasswordService _passwordService;
-        private readonly IMapper _mapper;
         private readonly ILogger<AuthService> _logger;
 
         public AuthService(
             IUserRepository userRepository,
             IJwtService jwtService,
             IPasswordService passwordService,
-            IMapper mapper,
             ILogger<AuthService> logger)
         {
             _userRepository = userRepository;
             _jwtService = jwtService;
             _passwordService = passwordService;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -81,7 +77,7 @@ namespace Batuara.Infrastructure.Auth.Services
                 AccessToken = jwtToken,
                 RefreshToken = refreshToken,
                 TokenExpiration = tokenExpiration,
-                User = _mapper.Map<UserDto>(user)
+                User = user.ToDto()
             };
         }
 
@@ -109,7 +105,7 @@ namespace Batuara.Infrastructure.Auth.Services
                 AccessToken = newJwtToken,
                 RefreshToken = newRefreshToken,
                 TokenExpiration = tokenExpiration,
-                User = _mapper.Map<UserDto>(user)
+                User = user.ToDto()
             };
         }
 
@@ -163,7 +159,7 @@ namespace Batuara.Infrastructure.Auth.Services
 
             _logger.LogInformation("New user registered: {Email} with role {Role}", user.Email, user.Role);
 
-            return _mapper.Map<UserDto>(user);
+            return user.ToDto();
         }
 
         public async Task<UserDto> RegisterFirstAdminAsync(RegisterUserRequest request)
@@ -242,7 +238,7 @@ namespace Batuara.Infrastructure.Auth.Services
             await _userRepository.UpdateAsync(user);
             _logger.LogInformation("User profile updated: {Email}", user.Email);
 
-            return _mapper.Map<UserDto>(user);
+            return user.ToDto();
         }
 
         public async Task<bool> ChangePasswordAsync(int userId, ChangePasswordRequest request)
@@ -277,7 +273,7 @@ namespace Batuara.Infrastructure.Auth.Services
         public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
         {
             var users = await _userRepository.GetAllAsync();
-            return users.Select(u => _mapper.Map<UserDto>(u));
+            return users.Select(u => u.ToDto());
         }
 
         public async Task<UserDto> AdminUpdateUserAsync(int userId, AdminUpdateUserRequest request)
@@ -322,7 +318,7 @@ namespace Batuara.Infrastructure.Auth.Services
             await _userRepository.UpdateAsync(user);
             _logger.LogInformation("Admin updated user: {Email}", user.Email);
 
-            return _mapper.Map<UserDto>(user);
+            return user.ToDto();
         }
 
         public async Task<bool> DeleteUserAsync(int userId)

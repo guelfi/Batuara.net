@@ -7,7 +7,6 @@ using Microsoft.OpenApi.Models;
 using Batuara.Application.Auth.Models;
 using Batuara.Application.Auth.Services;
 using Batuara.Application.Calendar.Services;
-using Batuara.Application.Common.Mappings;
 using Batuara.Application.ContactMessages.Services;
 using Batuara.Application.Events.Services;
 using Batuara.Application.Guides.Services;
@@ -90,7 +89,7 @@ builder.Services.AddControllers()
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
-builder.Services.AddValidatorsFromAssemblyContaining<MappingProfile>();
+builder.Services.AddValidatorsFromAssemblyContaining<UserDto>();
 
 // Configure CORS using allowed origins from configuration.
 // AllowCredentials is required for httpOnly auth cookies shared across /admin and /.
@@ -246,11 +245,6 @@ builder.Services.AddDbContext<BatuaraDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "batuara")));
-
-// Configure AutoMapper
-builder.Services.AddAutoMapper(cfg => {
-    cfg.AddProfile<MappingProfile>();
-});
 
 // Configure Options
 builder.Services.Configure<JwtSettings>(jwtSettings);
