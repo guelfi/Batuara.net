@@ -202,13 +202,22 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 | Campo | Valor |
 |-------|-------|
-| Data | 2026-10-23 |
-| Branch | `master` (PM-020 concluído e em produção; commits `12e77c9`, `73f41e7`, `b5fa2ac` + correção do log de refresh token) |
-| Em andamento (`doing`) | — |
-| Próximo item sugerido | **PM-031** (MFA); PM-025 fase 5 (fechar a 22) fica opcional |
-| Bloqueios ativos | — |
-| Ambiente | Produção em `https://www.batuara.org.br/`; lembretes WhatsApp desligados; Swagger permanece público por decisão |
-| Riscos | Digest de pendências depende da aprovação Meta do template `casa_pendencias_aviso_v3` (tentativa diária às 19h SP; 2 pendentes em 23/out); logs da API se perdem a cada deploy; majors pendentes (FluentValidation 12, Swashbuckle 10, FluentAssertions 8) |
+| Data | 2026-10-23 (encerramento da sessão) |
+| Branch | `master`, limpa e sincronizada; último código em produção: `f47a387` (PM-043); depois só commits de documentação |
+| Em andamento (`doing`) | PM-025 (fases 1–4 feitas; fase 5 opcional), PM-007 e PM-038 (aguardam aprovação Meta) |
+| Próximo item sugerido | **PM-031** (MFA/TOTP): começar levantando o fluxo de login do Admin e propondo o desenho para aprovação |
+| Bloqueios ativos | Aprovação Meta do template `casa_pendencias_aviso_v3` (digest tenta diariamente às 19h SP) |
+| Ambiente | Produção em `https://www.batuara.org.br/`; .NET 10; lembretes WhatsApp desligados; Swagger público por decisão. OCI: 2 OCPU / 12 GB / 100 GB, Ubuntu 22.04.5, 38 containers |
+| Riscos | Logs da API se perdem a cada deploy (PM-041); 10 containers sem healthcheck e corrida com o banco no boot (PM-042); chaves do Data Protection sem criptografia em repouso; teste Jest do Admin quebrado (`TextEncoder`); majors pendentes (FluentValidation 12, Swashbuckle 10, FluentAssertions 8) |
+
+#### Fatos operacionais de 23/out (não deriváveis do código)
+
+- **SSH da OCI:** `ssh -i ~/Projetos/oci-deploy-keys/oci-pessoal-20261023 ubuntu@129.153.86.168`. Só chave; senha desligada; `AllowUsers ubuntu`; root `no`; `fail2ban` (`mode = normal`, **não** usar `aggressive`: bane os runners do GitHub por causa do `ssh-keyscan`). Configs em `/etc/ssh/sshd_config.d/50-hardening.conf` e `/etc/fail2ban/jail.d/sshd-batuara.local`; backups em `~/backup-ssh-20261023` na OCI. A recuperação em caso de perda da chave é pelo Console da OCI.
+- **Chaves de deploy:** uma por projeto (10) em `~/Projetos/oci-deploy-keys` (fora do git), já nos secrets dos 10 repositórios (`OCI_SSH_PRIVATE_KEY`, `OCI_SSH_KEY` ou `SSH_PRIVATE_KEY`, conforme o repo). Chaves antigas removidas do disco e da OCI.
+- **Migrations em produção:** o app não migra no startup; o Step 3.5 de `scripts/ci/deploy-rolling.sh` aplica SQL idempotente em transação única e falha o deploy se uma migration do código não estiver no histórico. **Toda migration nova precisa de um `apply_migration` nesse script.**
+- **Sessão do Admin:** tokens só em cookies httpOnly (`SameSite=Strict`); o corpo das respostas de login/refresh não traz token (exceto `AuthCookieSettings:ReturnTokensInBody=true`, só em Development).
+- **Data Protection:** chaves no volume Docker `batuara-dataprotection-keys` (`/app/dp-keys`).
+- **Backup:** `~/backups/batuara-orixas-umbanda-pre-unify-20261023.sql` na OCI (pré-`UnifyDescriptionFields`).
 
 ### 6.2 Template (copiar para próxima sessão)
 
