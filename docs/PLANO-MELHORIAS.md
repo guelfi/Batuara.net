@@ -66,7 +66,7 @@ Histórico de fases: `ROADMAP.md`.
 |----|--------|------|----------------------------|
 | PM-001 | `done` | **HTTPS + domínio próprio** (ex-ROADMAP 5.3) | ✅ Em produção: `https://www.batuara.org.br/` (Cloudflare + TLS; HSTS ativo; API `/batuara-api/health` Healthy). Confirmado em 2026-08-03. |
 | PM-002 | `cancelled` | **Restringir Swagger em produção** | ❌ Decisão de produto (2026-08-03): Swagger **permanece aberto** em produção. Não implementar. |
-| PM-003 | `todo` | **CORS estrito em produção** | Sem fallback `AllowAnyOrigin()` quando `CorsSettings:AllowedOrigins` estiver vazio em Production; Development com origins locais explícitas. |
+| PM-003 | `doing` | **CORS estrito em produção** | Sem fallback `AllowAnyOrigin()` quando `CorsSettings:AllowedOrigins` estiver vazio em Production; Development com origins locais explícitas. **Implementado (23/out)**: fora de Development a API falha no startup se a lista estiver vazia (fail-closed); `appsettings.json` só com `https://www.batuara.org.br` e `https://batuara.org.br`; localhost/LAN movidos para `appsettings.Development.json`. Validado localmente (build + preflight por ambiente) e code review sem achados. **Pendente: validação pós-deploy** — PublicWebsite, login do AdminDashboard e `curl -X OPTIONS` com `Origin` permitida/negada em `/batuara-api/health`; então marcar `done`. |
 | PM-004 | `todo` | **E2E manual — contribuição recorrente** | No Admin: criar contribuição recorrente → marcar paga → confirmar geração do mês seguinte; documentar resultado na planilha/PlanoTestes. |
 | PM-005 | `todo` | **Validar migrations no deploy OCI** | Step 3.5 do `deploy-rolling.sh` aplica SQL ad-hoc **com erros suprimidos** (`> /dev/null 2>&1`) — falha de migration passa invisível e corrompe deploy. Revisar para falhar ruidosamente e confirmar migrations aplicadas. |
 | PM-006 | `cancelled` | ~~**Revisar logs Evolution API**~~ | ❌ Reescopo (22/out): `batuara-casa` desconectada e Batuara 100% na Meta Cloud API — Evolution só serve outros projetos. Se necessário, reabrir como "revisão de PII nos logs da API Batuara". |
@@ -194,10 +194,10 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 | Campo | Valor |
 |-------|-------|
-| Data | 2026-08-03 |
-| Branch | `master` (plano criado; sem implementação de PM-xxx nesta sessão) |
-| Em andamento (`doing`) | — |
-| Próximo item sugerido | **PM-003** (CORS estrito) |
+| Data | 2026-10-23 |
+| Branch | `master` (PM-003 implementado e commitado; ainda não deployado) |
+| Em andamento (`doing`) | **PM-003** — falta deploy + validação em produção (ver nota na §3) |
+| Próximo item sugerido | Validar PM-003 pós-deploy → **PM-020** (.NET 10, EOS 10/nov) |
 | Bloqueios ativos | — |
 | Ambiente | Produção em `https://www.batuara.org.br/`; lembretes WhatsApp desligados; Swagger permanece público por decisão |
 | Riscos | CORS/CSP com origins antigas possíveis; EOS .NET 8 em 2026-11-10 |
@@ -228,6 +228,10 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 ---
 
 ## 7. Changelog deste plano
+
+### 2026-10-23
+
+- **PM-003 → `doing`:** CORS fail-closed fora de Development (sem fallback `AllowAnyOrigin()`), origins de produção em `appsettings.json` e lista local em `appsettings.Development.json`. Corrige também a aceitação indevida de origins `localhost`/LAN em produção (antes herdadas do `appsettings.json` base). Aguarda validação pós-deploy para `done`.
 
 ### 2026-08-17
 

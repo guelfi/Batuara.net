@@ -95,6 +95,15 @@ builder.Services.AddValidatorsFromAssemblyContaining<MappingProfile>();
 // Configure CORS using allowed origins from configuration.
 // AllowCredentials is required for httpOnly auth cookies shared across /admin and /.
 var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() ?? [];
+
+// Fail closed: outside Development the API must never fall back to an open CORS policy.
+if (allowedOrigins.Length == 0 && !builder.Environment.IsDevelopment())
+{
+    throw new InvalidOperationException(
+        $"CorsSettings:AllowedOrigins is empty in environment '{builder.Environment.EnvironmentName}'. " +
+        "Configure explicit origins in appsettings.json or via environment variables CorsSettings__AllowedOrigins__0, __1, ...");
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowProxy", policy =>
@@ -108,25 +117,18 @@ builder.Services.AddCors(options =>
             return;
         }
 
-        if (builder.Environment.IsDevelopment())
-        {
-            // Credentials cannot be used with AllowAnyOrigin — fall back to common local origins
-            policy.WithOrigins(
-                    "http://localhost:3000",
-                    "http://localhost:3001",
-                    "http://localhost:8081",
-                    "http://127.0.0.1:3000",
-                    "http://127.0.0.1:3001",
-                    "http://127.0.0.1:8081")
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .AllowCredentials();
-            return;
-        }
-
-        policy.AllowAnyOrigin()
+        // Only reachable in Development (guarded above).
+        // Credentials cannot be used with AllowAnyOrigin — fall back to common local origins
+        policy.WithOrigins(
+                "http://localhost:3000",
+                "http://localhost:3001",
+                "http://localhost:8081",
+                "http://127.0.0.1:3000",
+                "http://127.0.0.1:3001",
+                "http://127.0.0.1:8081")
             .AllowAnyMethod()
-            .AllowAnyHeader();
+            .AllowAnyHeader()
+            .AllowCredentials();
     });
 });
 
