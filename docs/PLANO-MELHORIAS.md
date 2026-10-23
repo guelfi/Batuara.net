@@ -97,6 +97,7 @@ Histórico de fases: `ROADMAP.md`.
 | PM-023 | `todo` | **Expandir testes automatizados** | Mais unit/integration backend + testes React críticos (auth, SiteSettings, membros). |
 | PM-024 | `done` | **Tokens Admin: remover legado localStorage** | ✅ Concluído em 23/out: interceptor do `api.ts` não lê mais `authToken` nem envia Bearer; sessão só por cookies httpOnly. Mantida purga única das chaves legadas no init do `AuthContext`. Bundle em produção sem leitura de `authToken`. |
 | PM-025 | `todo` | **SSH hardening OCI** | Avaliar Bastion/VPN; hoje `22` público por falta de IP fixo. |
+| PM-045 | `todo` | **Endurecer sessão do Admin (pós PM-024)** | (1) parar de devolver `token`/`refreshToken` no corpo JSON de login/refresh (`AuthController`, hoje "transition") — confirmar antes que nenhuma ferramenta externa os use; (2) avaliar `SameSite=Strict` em produção e proteção CSRF (antiforgery) para endpoints com cookie; (3) teste automatizado garantindo que o corpo não expõe tokens. Depende de PM-043 se usar antiforgery. **Prioridade de segurança — ordem de execução aguardando aprovação.** |
 
 ### P3 — Evolução de produto
 
