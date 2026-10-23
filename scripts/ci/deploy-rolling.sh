@@ -277,18 +277,31 @@ DB_NAME="${DB_NAME:-batuara_db}"
 apply_migration() {
     local migration_id=$1
     local sql=$2
-    # Check if migration already applied
-    ALREADY=$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -tAc \
-        "SELECT COUNT(*) FROM batuara.\"__EFMigrationsHistory\" WHERE \"MigrationId\"='${migration_id}';" 2>/dev/null || echo "0")
-    if [ "${ALREADY:-0}" = "0" ]; then
+    local applied
+    # Falha ruidosa: se nao der para consultar o historico, NAO assume "0" (reaplicaria migration)
+    if ! applied=$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -tAc \
+        "SELECT COUNT(*) FROM batuara.\"__EFMigrationsHistory\" WHERE \"MigrationId\"='${migration_id}';"); then
+        migration_failed "$migration_id" "nao foi possivel consultar batuara.__EFMigrationsHistory"
+    fi
+    if [ "${applied//[[:space:]]/}" = "0" ]; then
         log_info "  Applying migration: $migration_id"
-        docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "$sql" > /dev/null 2>&1
-        docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c \
-            "INSERT INTO batuara.\"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ('${migration_id}', '8.0.0') ON CONFLICT DO NOTHING;" > /dev/null 2>&1
+        # Uma unica transacao (-1) com ON_ERROR_STOP: o SQL e o registro no historico
+        # entram juntos ou nao entram; stderr do psql fica visivel no log do deploy.
+        if ! printf '%s\nINSERT INTO batuara."__EFMigrationsHistory" ("MigrationId", "ProductVersion") VALUES (%s, %s) ON CONFLICT DO NOTHING;\n' \
+            "$sql" "'${migration_id}'" "'10.0.0'" \
+            | docker exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -1 -q; then
+            migration_failed "$migration_id" "erro ao executar o SQL (transacao revertida)"
+        fi
         log_success "  Migration applied: $migration_id"
     else
         log_info "  Migration already applied: $migration_id (skipping)"
     fi
+}
+
+migration_failed() {
+    log_error "Migration $1 FALHOU: $2"
+    log_error "Deploy abortado ANTES de recriar os containers; a versao anterior segue no ar."
+    exit 1
 }
 
 apply_migration "20260623140000_AddIsReadToContactMessages" \
@@ -311,6 +324,27 @@ apply_migration "20260916010000_RemoveViewerAddUserHouseMember" \
 
 apply_migration "20260916020000_AddContentVisibilityFlags" \
     "ALTER TABLE batuara.\"SiteSettings\" ADD COLUMN IF NOT EXISTS \"OrixasVisibility\" integer NOT NULL DEFAULT 0; ALTER TABLE batuara.\"SiteSettings\" ADD COLUMN IF NOT EXISTS \"GuidesVisibility\" integer NOT NULL DEFAULT 0; ALTER TABLE batuara.\"SiteSettings\" ADD COLUMN IF NOT EXISTS \"UmbandaLinesVisibility\" integer NOT NULL DEFAULT 0; ALTER TABLE batuara.\"SiteSettings\" ADD COLUMN IF NOT EXISTS \"PrayersVisibility\" integer NOT NULL DEFAULT 0;"
+
+apply_migration "20260623120000_UnifyDescriptionFields" \
+    "DO \$\$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='batuara' AND table_name='Orixas' AND column_name='Origin') THEN UPDATE batuara.\"Orixas\" SET \"Description\" = CONCAT_WS(E'\\n\\n', NULLIF(TRIM(\"Description\"), ''), NULLIF(TRIM(\"Origin\"), ''), NULLIF(TRIM(\"BatuaraTeaching\"), '')); ALTER TABLE batuara.\"Orixas\" ALTER COLUMN \"Description\" TYPE character varying(10000); ALTER TABLE batuara.\"Orixas\" DROP COLUMN \"Origin\"; ALTER TABLE batuara.\"Orixas\" DROP COLUMN \"BatuaraTeaching\"; END IF; IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='batuara' AND table_name='UmbandaLines' AND column_name='Characteristics') THEN UPDATE batuara.\"UmbandaLines\" SET \"Description\" = CONCAT_WS(E'\\n\\n', NULLIF(TRIM(\"Description\"), ''), NULLIF(TRIM(\"Characteristics\"), ''), NULLIF(TRIM(\"BatuaraInterpretation\"), '')); ALTER TABLE batuara.\"UmbandaLines\" ALTER COLUMN \"Description\" TYPE character varying(15000); ALTER TABLE batuara.\"UmbandaLines\" DROP COLUMN \"Characteristics\"; ALTER TABLE batuara.\"UmbandaLines\" DROP COLUMN \"BatuaraInterpretation\"; END IF; END \$\$;"
+
+# --- Guarda de drift: toda migration do codigo precisa estar no historico do banco ---
+# Impede que uma migration nova seja esquecida nesta lista (o app nao migra no startup:
+# DB_APPLY_MIGRATIONS_ON_STARTUP=false) e o deploy siga com schema defasado.
+MIGRATIONS_DIR="src/Backend/Batuara.Infrastructure/Data/Migrations"
+APPLIED_IDS=$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -tAc \
+    "SELECT \"MigrationId\" FROM batuara.\"__EFMigrationsHistory\";") \
+    || migration_failed "(verificacao)" "nao foi possivel ler o historico de migrations"
+MISSING=""
+for f in "$MIGRATIONS_DIR"/*.cs; do
+    base=$(basename "$f" .cs)
+    case "$base" in *.Designer|*Snapshot) continue ;; esac
+    echo "$APPLIED_IDS" | grep -qx "$base" || MISSING="$MISSING $base"
+done
+if [ -n "$MISSING" ]; then
+    migration_failed "(drift)" "migrations no codigo sem registro no banco e sem apply_migration neste script:$MISSING"
+fi
+log_success "Todas as migrations do codigo constam no historico do banco"
 
 log_success "Database migrations complete"
 
