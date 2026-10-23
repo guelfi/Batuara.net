@@ -68,7 +68,7 @@ Histórico de fases: `ROADMAP.md`.
 | PM-002 | `cancelled` | **Restringir Swagger em produção** | ❌ Decisão de produto (2026-08-03): Swagger **permanece aberto** em produção. Não implementar. |
 | PM-003 | `done` | **CORS estrito em produção** | ✅ Concluído em 23/out (commit `54c4cd0`): sem fallback `AllowAnyOrigin()` quando `CorsSettings:AllowedOrigins` estiver vazio fora de Development; API falha no startup com erro claro (fail-closed); `appsettings.json` só com `https://www.batuara.org.br` e `https://batuara.org.br`; localhost/LAN movidos para `appsettings.Development.json`. Validado localmente (build + preflight por ambiente) e code review sem achados. |
 | PM-004 | `todo` | **E2E manual — contribuição recorrente** | No Admin: criar contribuição recorrente → marcar paga → confirmar geração do mês seguinte; documentar resultado na planilha/PlanoTestes. |
-| PM-005 | `todo` | **Validar migrations no deploy OCI** | Step 3.5 do `deploy-rolling.sh` aplica SQL ad-hoc **com erros suprimidos** (`> /dev/null 2>&1`) — falha de migration passa invisível e corrompe deploy. Revisar para falhar ruidosamente e confirmar migrations aplicadas. |
+| PM-005 | `done` | **Validar migrations no deploy OCI** | ✅ Concluído em 23/out (commit `ec159ae`): Step 3.5 do `deploy-rolling.sh` roda SQL + registro no histórico em transação única (`ON_ERROR_STOP`), erros visíveis, aborta antes de recriar containers e tem guarda de drift (migration do código ausente do histórico falha o deploy). Descobriu e aplicou `20260623120000_UnifyDescriptionFields`, que nunca tinha sido aplicada em produção (colunas `NOT NULL` órfãs em Orixas/UmbandaLines). Backup prévio em `~/backups` na OCI. `deploy-rolling-staging.sh` segue tolerante de propósito. |
 | PM-006 | `cancelled` | ~~**Revisar logs Evolution API**~~ | ❌ Reescopo (22/out): `batuara-casa` desconectada e Batuara 100% na Meta Cloud API — Evolution só serve outros projetos. Se necessário, reabrir como "revisão de PII nos logs da API Batuara". |
 | PM-007 | `doing` | **Canal WhatsApp oficial da Casa (Meta Cloud API)** | **EM PRODUÇÃO**: OTP de login sai do número oficial `+55 11 94067-7714` via Meta Cloud API (validado E2E, commit `1becc37`). Empresa verificada; `casa_login_code` (AUTHENTICATION) aprovado; app Meta publicado. Evolution `batuara-casa` desconectada — número pessoal liberado (Evolution segue na OCI para outros projetos). Webhook Meta deployado (`/api/webhooks/whatsapp-meta`, commit `7faff76`), verificado, campo `messages` assinado, app inscrito na WABA e PMA `1400706312217668` — mensagens reais de visitantes entregues e processadas (validado 22/out). **Fluxo de contato bidirecional validado E2E em produção (22/out)**: visitante envia formulário com opt-in WhatsApp → admin responde no AdminDashboard → texto livre entregue na janela 24h (grátis, sem template, commit `8efbf09`) → réplica do visitante anexada na thread via webhook e exibida no dashboard. Webhook agora valida `X-Hub-Signature-256` quando `WhatsApp:AppSecret` configurado (commit `11919b6`). Digest diário 19h (SP) notifica admin via WhatsApp c/ contagem de pendências (`casa_pendencias_aviso_v3`, commit `11919b6`). `casa_contribution_reminder` (UTILITY) **APROVADO**; pendente: `casa_contact_reply` e `casa_pendencias_aviso_v3` (ambos em revisão) p/ envios fora da janela 24h. |
 | PM-008 | `todo` | **Decidir ativação dos lembretes de contribuição** | `ContributionReminders.Enabled=false` em prod até OK explícito do dono do produto. **Destravado**: template `casa_contribution_reminder` (UTILITY) aprovado pela Meta e send-time 10h00 SP configurável — basta setar `CONTRIBUTION_REMINDERS_ENABLED=true` no `.env.whatsapp` e redeploy. (Controle operacional — decisão, não implementação.) |
@@ -120,20 +120,20 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 ### Fila repriorizada
 
-1. **PM-005** — Migrations no deploy sem erro silencioso *(confiabilidade: falha hoje passa invisível)*
-2. **PM-024** — Remover auth legado `localStorage` *(segurança; httpOnly cookie já é primário — só cleanup)*
-3. **PM-040** — Inbox p/ mensagens WhatsApp sem thread *(gap de produto: mensagens de visitantes se perdem)*
-4. **PM-008** — Decisão: ativar lembretes de contribuição *(destravado — template `casa_contribution_reminder` aprovado)*
-5. **PM-004** — E2E contribuição recorrente *(fazer junto da decisão PM-008)*
-6. **PM-021** — Trilha de auditoria *(base também p/ LGPD)*
-7. **PM-010 → PM-016** — Lote de débitos do plano de testes Admin *(qualidade)*
-8. **PM-041, PM-042, PM-043** — Logs persistentes, healthchecks/`depends_on`, chaves de Data Protection *(confiabilidade operacional, derivados de 23/out)*
-9. **PM-022, PM-025, PM-023, PM-044** — APM, SSH hardening, cobertura de testes, Ubuntu 24.04/Node
-10. **PM-030 → PM-035** — Evolução de produto (inscrição calendário, MFA, WAF, cache, a11y/i18n)
+1. **PM-024** — Remover auth legado `localStorage` *(segurança; httpOnly cookie já é primário — só cleanup)*
+2. **PM-040** — Inbox p/ mensagens WhatsApp sem thread *(gap de produto: mensagens de visitantes se perdem)*
+3. **PM-008** — Decisão: ativar lembretes de contribuição *(destravado — template `casa_contribution_reminder` aprovado)*
+4. **PM-004** — E2E contribuição recorrente *(fazer junto da decisão PM-008)*
+5. **PM-021** — Trilha de auditoria *(base também p/ LGPD)*
+6. **PM-010 → PM-016** — Lote de débitos do plano de testes Admin *(qualidade)*
+7. **PM-041, PM-042, PM-043** — Logs persistentes, healthchecks/`depends_on`, chaves de Data Protection *(confiabilidade operacional, derivados de 23/out)*
+8. **PM-022, PM-025, PM-023, PM-044** — APM, SSH hardening, cobertura de testes, Ubuntu 24.04/Node
+9. **PM-030 → PM-035** — Evolução de produto (inscrição calendário, MFA, WAF, cache, a11y/i18n)
 
 ### Encerrados / sem ação
 
 - **PM-003** — ✅ *done* — CORS fail-closed e origins explícitas (commit `54c4cd0`)
+- **PM-005** — ✅ *done* — Migrations no deploy sem erro silencioso (commit `ec159ae`)
 - **PM-020** — ✅ *done* — Upgrade .NET 8 → 10 (commit `12e77c9`)
 - **PM-006** ❌ *cancelled* — Evolution fora do fluxo Batuara; reescopar se necessário
 - **PM-007** — Concluído operacionalmente; residual = aprovação de `casa_contact_reply` e `casa_pendencias_aviso_v3` (Meta, automático via webhook `message_template_status`)
@@ -198,7 +198,7 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 | Data | 2026-10-23 |
 | Branch | `master` (PM-020 concluído e em produção; commits `12e77c9`, `73f41e7`, `b5fa2ac` + correção do log de refresh token) |
 | Em andamento (`doing`) | — |
-| Próximo item sugerido | **PM-005** (migrations no deploy sem erro silencioso) |
+| Próximo item sugerido | **PM-024** (remover legado `localStorage` dos tokens do Admin) |
 | Bloqueios ativos | — |
 | Ambiente | Produção em `https://www.batuara.org.br/`; lembretes WhatsApp desligados; Swagger permanece público por decisão |
 | Riscos | Digest de pendências depende da aprovação Meta do template `casa_pendencias_aviso_v3` (tentativa diária às 19h SP; 2 pendentes em 23/out); logs da API se perdem a cada deploy; majors pendentes (FluentValidation 12, Swashbuckle 10, FluentAssertions 8) |
@@ -231,6 +231,8 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 ## 7. Changelog deste plano
 
 ### 2026-10-23 (infra OCI, AutoMapper e logs)
+
+- **PM-005 → `done`** (commit `ec159ae`): deploy de migrations falha ruidosamente e com transação; guarda de drift código × histórico. Aplicou em produção a `UnifyDescriptionFields` (pendente desde junho): 12 Orixás e Linhas de Umbanda com textos unificados em `Description`, colunas antigas removidas.
 
 - **AutoMapper removido** (commit `b5fa2ac`): `User → UserDto` agora é `ToDto()` manual (`UserMappingExtensions`) com 2 testes; `MappingProfile` e o pacote saíram; aviso de licença comercial eliminado. 35 testes passam. Logins Admin e Filho da Casa (OTP WhatsApp) validados em produção.
 - **Log de refresh token corrigido:** `AuthService.GetUserByRefreshTokenAsync` não grava mais o valor do token no aviso "Refresh token not found or not active".
@@ -273,4 +275,5 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 | PM-001 | 2026-08-03 (reconhecido) | `https://www.batuara.org.br/` com TLS/HSTS; health API Healthy |
 | PM-002 | 2026-08-03 (cancelled) | Swagger permanece aberto em produção — decisão de produto |
 | PM-003 | 2026-10-23 | CORS fail-closed fora de Development; origins de produção explícitas (commit `54c4cd0`) |
+| PM-005 | 2026-10-23 | Migrations do deploy sem erro silencioso + guarda de drift (commit `ec159ae`) |
 | PM-020 | 2026-10-23 | Upgrade .NET 8 → 10 em produção (commit `12e77c9` + acabamento) |
