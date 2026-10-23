@@ -97,7 +97,7 @@ Histórico de fases: `ROADMAP.md`.
 | PM-023 | `todo` | **Expandir testes automatizados** | Mais unit/integration backend + testes React críticos (auth, SiteSettings, membros). |
 | PM-024 | `done` | **Tokens Admin: remover legado localStorage** | ✅ Concluído em 23/out: interceptor do `api.ts` não lê mais `authToken` nem envia Bearer; sessão só por cookies httpOnly. Mantida purga única das chaves legadas no init do `AuthContext`. Bundle em produção sem leitura de `authToken`. |
 | PM-025 | `todo` | **SSH hardening OCI** | Avaliar Bastion/VPN; hoje `22` público por falta de IP fixo. |
-| PM-045 | `doing` | **Endurecer sessão do Admin (pós PM-024)** | (1) parar de devolver `token`/`refreshToken` no corpo JSON de login/refresh (`AuthController`, hoje "transition") — confirmar antes que nenhuma ferramenta externa os use; (2) avaliar `SameSite=Strict` em produção e proteção CSRF (antiforgery) para endpoints com cookie; (3) teste automatizado garantindo que o corpo não expõe tokens. Depende de PM-043 se usar antiforgery. **Prioridade de segurança — 1º da fila (ordem aprovada em 23/out).** |
+| PM-045 | `done` | **Endurecer sessão do Admin (pós PM-024)** | ✅ Concluído em 23/out (commits `9f1ae0c` e SameSite): login/refresh/verify-code não devolvem mais `token`/`refreshToken` no corpo (só com `AuthCookieSettings:ReturnTokensInBody`, ligado apenas em Development); cookies de sessão com `SameSite=Strict`, `Secure`, `HttpOnly` (verificado em produção). 7 testes novos. Antiforgery/CSRF dedicado descartado por ora: com `Strict` o ganho é pequeno; reavaliar se surgir endpoint com cookie acessível cross-site. |
 
 ### P3 — Evolução de produto
 
@@ -123,22 +123,22 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 > Ordem aprovada em 23/out/2026 (prioridade: segurança → confiabilidade operacional → produto → qualidade).
 
-1. **PM-045** — Endurecer sessão do Admin *(segurança; complementa PM-024)*
-2. **PM-043** — Persistir chaves de Data Protection *(junto do PM-045; antiforgery depende)*
-3. **PM-025** — SSH hardening OCI *(porta 22 pública em servidor compartilhado)*
-4. **PM-031** — MFA (TOTP)
-5. **PM-041** — Logs da API fora do container
-6. **PM-042** — Healthchecks e `depends_on` na OCI
-7. **PM-040** — Inbox p/ mensagens WhatsApp sem thread
-8. **PM-008 + PM-004** — Decisão dos lembretes de contribuição + E2E recorrente
-9. **PM-021** — Trilha de auditoria *(base também p/ LGPD)*
-10. **PM-010 → PM-016, PM-023** — Débitos do plano de testes Admin + cobertura de testes
-11. **PM-022, PM-044, PM-032** — APM, Ubuntu 24.04/Node, WAF/SIEM
-12. **PM-030, PM-033, PM-034, PM-035** — Evolução de produto
+1. **PM-043** — Persistir chaves de Data Protection *(em andamento)*
+2. **PM-025** — SSH hardening OCI *(porta 22 pública em servidor compartilhado)*
+3. **PM-031** — MFA (TOTP)
+4. **PM-041** — Logs da API fora do container
+5. **PM-042** — Healthchecks e `depends_on` na OCI
+6. **PM-040** — Inbox p/ mensagens WhatsApp sem thread
+7. **PM-008 + PM-004** — Decisão dos lembretes de contribuição + E2E recorrente
+8. **PM-021** — Trilha de auditoria *(base também p/ LGPD)*
+9. **PM-010 → PM-016, PM-023** — Débitos do plano de testes Admin + cobertura de testes
+10. **PM-022, PM-044, PM-032** — APM, Ubuntu 24.04/Node, WAF/SIEM
+11. **PM-030, PM-033, PM-034, PM-035** — Evolução de produto
 
 ### Encerrados / sem ação
 
 - **PM-003** — ✅ *done* — CORS fail-closed e origins explícitas (commit `54c4cd0`)
+- **PM-045** — ✅ *done* — Sessão do Admin endurecida (sem tokens no corpo, `SameSite=Strict`)
 - **PM-024** — ✅ *done* — Legado `localStorage` removido
 - **PM-005** — ✅ *done* — Migrations no deploy sem erro silencioso (commit `ec159ae`)
 - **PM-020** — ✅ *done* — Upgrade .NET 8 → 10 (commit `12e77c9`)
@@ -205,7 +205,7 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 | Data | 2026-10-23 |
 | Branch | `master` (PM-020 concluído e em produção; commits `12e77c9`, `73f41e7`, `b5fa2ac` + correção do log de refresh token) |
 | Em andamento (`doing`) | — |
-| Próximo item sugerido | **PM-045** (endurecer sessão do Admin; em andamento) |
+| Próximo item sugerido | **PM-043** (persistir chaves de Data Protection; em andamento), depois PM-025 |
 | Bloqueios ativos | — |
 | Ambiente | Produção em `https://www.batuara.org.br/`; lembretes WhatsApp desligados; Swagger permanece público por decisão |
 | Riscos | Digest de pendências depende da aprovação Meta do template `casa_pendencias_aviso_v3` (tentativa diária às 19h SP; 2 pendentes em 23/out); logs da API se perdem a cada deploy; majors pendentes (FluentValidation 12, Swashbuckle 10, FluentAssertions 8) |
@@ -239,6 +239,8 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 ### 2026-10-23 (infra OCI, AutoMapper e logs)
 
+- **PM-045 → `done`:** tokens fora do corpo das respostas de login/refresh/verify-code em produção e cookies `SameSite=Strict`. Logins Admin e Filho validados em produção após o primeiro deploy.
+
 - **PM-024 → `done`:** removido o fallback de token em `localStorage` do Admin; sessão só por cookies httpOnly. Obs.: a única suíte do Admin (`EventsPage.mobile.test.tsx`) já falhava antes por `TextEncoder is not defined` no Jest — dívida de testes (PM-023).
 
 - **PM-005 → `done`** (commit `ec159ae`): deploy de migrations falha ruidosamente e com transação; guarda de drift código × histórico. Aplicou em produção a `UnifyDescriptionFields` (pendente desde junho): 12 Orixás e Linhas de Umbanda com textos unificados em `Description`, colunas antigas removidas.
@@ -255,7 +257,7 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 |----|--------|------|-------|
 | PM-041 | `todo` | **Logs da API fora do container** | Logs somem a cada deploy; montar volume persistente ou enviar a coletor. |
 | PM-042 | `todo` | **Healthchecks e `depends_on` na OCI** | 10 containers sem healthcheck (incl. Evolution API); compose de `allugme`/`barbear-ia` com `depends_on: service_healthy` no banco. |
-| PM-043 | `todo` | **Persistir chaves de Data Protection** | Hoje ficam no container (aviso no startup). |
+| PM-043 | `doing` | **Persistir chaves de Data Protection** | Hoje ficam no container (aviso no startup). |
 | PM-044 | `todo` | **Ubuntu 24.04 / Pro e Node 18 NodeSource** | Exige backup do boot volume; trocar Node 18; atualizar Gemini CLI. |
 
 ### 2026-10-23
@@ -284,6 +286,7 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 | PM-001 | 2026-08-03 (reconhecido) | `https://www.batuara.org.br/` com TLS/HSTS; health API Healthy |
 | PM-002 | 2026-08-03 (cancelled) | Swagger permanece aberto em produção — decisão de produto |
 | PM-003 | 2026-10-23 | CORS fail-closed fora de Development; origins de produção explícitas (commit `54c4cd0`) |
+| PM-045 | 2026-10-23 | Sessão do Admin: sem tokens no corpo + `SameSite=Strict` |
 | PM-024 | 2026-10-23 | Legado `localStorage` de tokens removido do Admin |
 | PM-005 | 2026-10-23 | Migrations do deploy sem erro silencioso + guarda de drift (commit `ec159ae`) |
 | PM-020 | 2026-10-23 | Upgrade .NET 8 → 10 em produção (commit `12e77c9` + acabamento) |
