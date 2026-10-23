@@ -91,7 +91,7 @@ Histórico de fases: `ROADMAP.md`.
 
 | ID | Status | Item | Critério de aceite / notas |
 |----|--------|------|----------------------------|
-| PM-020 | `done` | **Upgrade .NET 8 → .NET 10** | ✅ Concluído em 23/out (commit `12e77c9` + ajustes de acabamento): TFM `net10.0`, EF/Npgsql/JwtBearer 10.x (patch 10.0.13, igual ao runtime de produção), Docker `sdk/aspnet:10.0`, CI `10.0.x`, `KnownIPNetworks`, `Batuara.Auth` removido. CI/CD verdes; `/health` Healthy; CORS e rotas de auth validados em produção. Login interativo do Admin ainda sem teste manual. |
+| PM-020 | `done` | **Upgrade .NET 8 → .NET 10** | ✅ Concluído em 23/out (commit `12e77c9` + ajustes de acabamento): TFM `net10.0`, EF/Npgsql/JwtBearer 10.x (patch 10.0.13, igual ao runtime de produção), Docker `sdk/aspnet:10.0`, CI `10.0.x`, `KnownIPNetworks`, `Batuara.Auth` removido. CI/CD verdes; `/health` Healthy; CORS e rotas de auth validados em produção. Logins Admin e Filho da Casa (código WhatsApp) validados em produção após o deploy (23/out). |
 | PM-021 | `todo` | **Trilha de auditoria (EP-Audit)** | Registro consultável de create/update/delete e ações sensíveis; sem dados sensíveis em log. Ref.: histórias H-060/H-061 no Backlog. |
 | PM-022 | `todo` | **APM / monitoring além de health** | Métricas/alertas em produção (ex.: Prometheus+Grafana ou APM equivalente no Always Free). |
 | PM-023 | `todo` | **Expandir testes automatizados** | Mais unit/integration backend + testes React críticos (auth, SiteSettings, membros). |
@@ -195,12 +195,12 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 | Campo | Valor |
 |-------|-------|
 | Data | 2026-10-23 |
-| Branch | `master` (PM-020 concluído e em produção; commit `12e77c9` + acabamento) |
+| Branch | `master` (PM-020 concluído e em produção; commits `12e77c9`, `73f41e7`, `b5fa2ac` + correção do log de refresh token) |
 | Em andamento (`doing`) | — |
 | Próximo item sugerido | **PM-005** (migrations no deploy sem erro silencioso) |
 | Bloqueios ativos | — |
 | Ambiente | Produção em `https://www.batuara.org.br/`; lembretes WhatsApp desligados; Swagger permanece público por decisão |
-| Riscos | Login interativo do Admin pós-.NET 10 sem teste manual; majors pendentes (FluentValidation 12, Swashbuckle 10, FluentAssertions 8) |
+| Riscos | Digest de pendências depende da aprovação Meta do template `casa_pendencias_aviso_v3` (tentativa diária às 19h SP; 2 pendentes em 23/out); logs da API se perdem a cada deploy; majors pendentes (FluentValidation 12, Swashbuckle 10, FluentAssertions 8) |
 
 ### 6.2 Template (copiar para próxima sessão)
 
@@ -228,6 +228,23 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 ---
 
 ## 7. Changelog deste plano
+
+### 2026-10-23 (infra OCI, AutoMapper e logs)
+
+- **AutoMapper removido** (commit `b5fa2ac`): `User → UserDto` agora é `ToDto()` manual (`UserMappingExtensions`) com 2 testes; `MappingProfile` e o pacote saíram; aviso de licença comercial eliminado. 35 testes passam. Logins Admin e Filho da Casa (OTP WhatsApp) validados em produção.
+- **Log de refresh token corrigido:** `AuthService.GetUserByRefreshTokenAsync` não grava mais o valor do token no aviso "Refresh token not found or not active".
+- **OCI redimensionada (Always Free):** 2 OCPU / 12 GB RAM / boot volume 100 GB (limite do edit-in-place; máx. Free Tier 4 OCPU/24 GB e 200 GB). Disco em 14% de uso (85 GB livres) após limpeza de imagens antigas, CLIs antigos (Claude/Codex), `.nvm` e `node-gyp`.
+- **Higiene do Ubuntu 22.04.5:** pacotes atualizados e reboot; 38/38 containers voltaram. `allugme-api` e `barbear-ia-api` ficaram `unhealthy` por corrida com o banco no boot (reiniciados). Backup das fontes apt em `~/backup-apt-sources-20261023` no servidor.
+- **Digest de pendências:** aguardando aprovação Meta de `casa_pendencias_aviso_v3`; `casa_login_code` e `casa_contribution_reminder` aprovados. Fluxo de resposta do Admin ao contato validado.
+
+**Novos itens derivados (não iniciados):**
+
+| ID | Status | Item | Notas |
+|----|--------|------|-------|
+| PM-040 | `todo` | **Logs da API fora do container** | Logs somem a cada deploy; montar volume persistente ou enviar a coletor. |
+| PM-041 | `todo` | **Healthchecks e `depends_on` na OCI** | 10 containers sem healthcheck (incl. Evolution API); compose de `allugme`/`barbear-ia` com `depends_on: service_healthy` no banco. |
+| PM-042 | `todo` | **Persistir chaves de Data Protection** | Hoje ficam no container (aviso no startup). |
+| PM-043 | `todo` | **Ubuntu 24.04 / Pro e Node 18 NodeSource** | Exige backup do boot volume; trocar Node 18; atualizar Gemini CLI. |
 
 ### 2026-10-23
 

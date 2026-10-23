@@ -343,7 +343,7 @@ namespace Batuara.Infrastructure.Auth.Services
 
             if (user == null)
             {
-                _logger.LogWarning("Refresh token not found or not active: {Token}", refreshToken);
+                _logger.LogWarning("Refresh token not found or not active");
                 throw new UnauthorizedAccessException("Invalid refresh token");
             }
 
