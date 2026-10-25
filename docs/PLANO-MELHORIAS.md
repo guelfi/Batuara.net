@@ -70,7 +70,7 @@ Histórico de fases: `ROADMAP.md`.
 | PM-004 | `todo` | **E2E manual — contribuição recorrente** | No Admin: criar contribuição recorrente → marcar paga → confirmar geração do mês seguinte; documentar resultado na planilha/PlanoTestes. |
 | PM-005 | `done` | **Validar migrations no deploy OCI** | ✅ Concluído em 23/out (commit `ec159ae`): Step 3.5 do `deploy-rolling.sh` roda SQL + registro no histórico em transação única (`ON_ERROR_STOP`), erros visíveis, aborta antes de recriar containers e tem guarda de drift (migration do código ausente do histórico falha o deploy). Descobriu e aplicou `20260623120000_UnifyDescriptionFields`, que nunca tinha sido aplicada em produção (colunas `NOT NULL` órfãs em Orixas/UmbandaLines). Backup prévio em `~/backups` na OCI. `deploy-rolling-staging.sh` segue tolerante de propósito. |
 | PM-006 | `cancelled` | ~~**Revisar logs Evolution API**~~ | ❌ Reescopo (22/out): `batuara-casa` desconectada e Batuara 100% na Meta Cloud API — Evolution só serve outros projetos. Se necessário, reabrir como "revisão de PII nos logs da API Batuara". |
-| PM-007 | `doing` | **Canal WhatsApp oficial da Casa (Meta Cloud API)** | **EM PRODUÇÃO**: OTP de login sai do número oficial `+55 11 94067-7714` via Meta Cloud API (validado E2E, commit `1becc37`). Empresa verificada; `casa_login_code` (AUTHENTICATION) aprovado; app Meta publicado. Evolution `batuara-casa` desconectada — número pessoal liberado (Evolution segue na OCI para outros projetos). Webhook Meta deployado (`/api/webhooks/whatsapp-meta`, commit `7faff76`), verificado, campo `messages` assinado, app inscrito na WABA e PMA `1400706312217668` — mensagens reais de visitantes entregues e processadas (validado 22/out). **Fluxo de contato bidirecional validado E2E em produção (22/out)**: visitante envia formulário com opt-in WhatsApp → admin responde no AdminDashboard → texto livre entregue na janela 24h (grátis, sem template, commit `8efbf09`) → réplica do visitante anexada na thread via webhook e exibida no dashboard. Webhook agora valida `X-Hub-Signature-256` quando `WhatsApp:AppSecret` configurado (commit `11919b6`). Digest diário 19h (SP) notifica admin via WhatsApp c/ contagem de pendências (`casa_pendencias_aviso_v3`, commit `11919b6`). `casa_contribution_reminder` (UTILITY) **APROVADO**; pendente: `casa_contact_reply` e `casa_pendencias_aviso_v3` (ambos em revisão) p/ envios fora da janela 24h. |
+| PM-007 | `done` | **Canal WhatsApp oficial da Casa (Meta Cloud API)** | **EM PRODUÇÃO**: OTP de login sai do número oficial `+55 11 94067-7714` via Meta Cloud API (validado E2E, commit `1becc37`). Empresa verificada; `casa_login_code` (AUTHENTICATION) aprovado; app Meta publicado. Evolution `batuara-casa` desconectada — número pessoal liberado (Evolution segue na OCI para outros projetos). Webhook Meta deployado (`/api/webhooks/whatsapp-meta`, commit `7faff76`), verificado, campo `messages` assinado, app inscrito na WABA e PMA `1400706312217668` — mensagens reais de visitantes entregues e processadas (validado 22/out). **Fluxo de contato bidirecional validado E2E em produção (22/out)**: visitante envia formulário com opt-in WhatsApp → admin responde no AdminDashboard → texto livre entregue na janela 24h (grátis, sem template, commit `8efbf09`) → réplica do visitante anexada na thread via webhook e exibida no dashboard. Webhook agora valida `X-Hub-Signature-256` quando `WhatsApp:AppSecret` configurado (commit `11919b6`). Digest diário 19h (SP) notifica admin via WhatsApp c/ contagem de pendências (`casa_pendencias_aviso_v3`, commit `11919b6`). Templates **todos APROVADOS** (conferido no WhatsApp Manager em 25/out): `casa_login_code` (AUTHENTICATION), `casa_pendencias_aviso_v3`, `casa_contact_reply` e `casa_contribution_reminder` (UTILITY). Residual: aviso da Meta sobre 4 modelos de utilidade sinalizados/reclassificados como marketing (ver §6.1). |
 | PM-008 | `todo` | **Decidir ativação dos lembretes de contribuição** | `ContributionReminders.Enabled=false` em prod até OK explícito do dono do produto. **Destravado**: template `casa_contribution_reminder` (UTILITY) aprovado pela Meta e send-time 10h00 SP configurável — basta setar `CONTRIBUTION_REMINDERS_ENABLED=true` no `.env.whatsapp` e redeploy. (Controle operacional — decisão, não implementação.) |
 | PM-040 | `todo` | **Inbox p/ WhatsApp de visitante sem thread** | Mensagens recebidas no número oficial sem `ContactMessage` ativa são descartadas após log ("nenhuma mensagem de contato ativa") — visitante fala e ninguém vê. Opções: notificar Douglas dessas soltas (incluir no digest) ou listar numa inbox do Admin. |
 | PM-036 | `done` | **Incidente 2026-08-17 — `batuara.org.br` (apex) em branco** | ✅ Causa: `location` regex injetada no `nginx-proxy` compartilhado pelo CD do Allugme (`Alugue.me/deploy/nginx-allugme.locations.conf`) capturava `/static/...` (não estava na lista de exclusão) e desviava os assets do PublicWebsite para a API do Allugme (404). `www` mascarava o problema por cache antigo do Cloudflare (imutável, ~13 dias). Corrigido em produção (`/var/www/nginx/nginx.conf` na OCI): location `^~ /static/` dedicada para blindar contra regex de terceiros + split do server block em `batuara.org.br` (301 → `www`) e `www.batuara.org.br` (conteúdo). Cache do Cloudflare purgado. **Atualização 2026-08-17:** causa raiz corrigida no repositório Allugme (commit `bf907fa`, `static`/`assets`/`_next`/`dist` adicionados à exclusão da regex da vitrine) e implantada em produção via CI/CD do Allugme. A guarda `^~ /static/` foi removida da cópia de referência [`scripts/oracle/nginx-proxy.nginx.conf`](../scripts/oracle/nginx-proxy.nginx.conf) — **mas segue ativa na configuração real de produção** (`/var/www/nginx/nginx.conf` na OCI, mantida manualmente por SSH); removê-la de lá é opcional, pois é inofensiva e serve como defesa extra. |
@@ -105,7 +105,7 @@ Histórico de fases: `ROADMAP.md`.
 |----|--------|------|----------------------------|
 | PM-030 | `todo` | **Inscrição pública em calendário (H-011)** | Vagas, idempotência, rate limit; escopo grande — só após P0/P1 estáveis. |
 | PM-037 | `done` | **Conformidade LGPD no PublicWebsite** | Página `/politica-de-privacidade` (controlador, dados, finalidades, compartilhamento Meta/Google, retenção, direitos Art. 18), banner de consentimento de cookies (necessários x terceiros, localStorage + evento de preferências), mapa do Google só carrega após opt-in, links no rodapé e nota no formulário de contato (commit `11919b6`). ✅ Operacional concluído: URL `/politica-de-privacidade` configurada no app Meta e `META_APP_SECRET`/`ADMIN_NOTIFICATION_*` aplicados no servidor (22/out). |
-| PM-038 | `doing` | **Notificação WhatsApp de pendências ao admin** | Hosted service diário (19h SP) conta `ContactMessage` Nova/EmAtendimento e envia template `casa_pendencias_aviso_v3` ao número em `AdminNotification:Phone` (commit `11919b6`). Env vars aplicadas no servidor (22/out); **aguarda só a aprovação do template na Meta**. |
+| PM-038 | `done` | **Notificação WhatsApp de pendências ao admin** | Hosted service diário (19h SP) conta `ContactMessage` Nova/EmAtendimento e envia template `casa_pendencias_aviso_v3` ao número em `AdminNotification:Phone` (commit `11919b6`). Env vars aplicadas no servidor (22/out); template aprovado pela Meta; **digest validado em produção e recebimento confirmado pelo Douglas na sexta, 23/10/2026**. |
 | PM-039 | `done` | **Mobile AdminDashboard — lista de mensagens compacta** | Colunas: envelope (vermelho não lida / azul lida), nome, assunto, semáforo WhatsApp (amarelo pendente / verde respondida / cinza não solicitou), data, status; clique na linha abre atendimento (commit `11919b6`). |
 | PM-031 | `todo` | **MFA (TOTP)** | Login admin com MFA opcional/obrigatório. |
 | PM-032 | `todo` | **WAF / SIEM básico** | Proteção de borda + correlação de logs. |
@@ -122,17 +122,18 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 ### Fila repriorizada
 
 > Ordem aprovada em 23/out/2026 (prioridade: segurança → confiabilidade operacional → produto → qualidade).
+> Reordenada em 25/10/2026: **PM-025 e PM-031 passaram ao final da fila** — as alterações implementadas desde a última ordenação melhoraram de forma significativa os itens relacionados a segurança; **PM-041 e PM-042** passaram a ser os próximos passos.
 
-1. **PM-025** — SSH hardening OCI *(fases 1–4 feitas; falta fechar a 22)*
-2. **PM-031** — MFA (TOTP)
-3. **PM-041** — Logs da API fora do container
-4. **PM-042** — Healthchecks e `depends_on` na OCI
-5. **PM-040** — Inbox p/ mensagens WhatsApp sem thread
-6. **PM-008 + PM-004** — Decisão dos lembretes de contribuição + E2E recorrente
-7. **PM-021** — Trilha de auditoria *(base também p/ LGPD)*
-8. **PM-010 → PM-016, PM-023** — Débitos do plano de testes Admin + cobertura de testes
-9. **PM-022, PM-044, PM-032** — APM, Ubuntu 24.04/Node, WAF/SIEM
-10. **PM-030, PM-033, PM-034, PM-035** — Evolução de produto
+1. **PM-041** — Logs da API fora do container
+2. **PM-042** — Healthchecks e `depends_on` na OCI
+3. **PM-040** — Inbox p/ mensagens WhatsApp sem thread
+4. **PM-008 + PM-004** — Decisão dos lembretes de contribuição + E2E recorrente
+5. **PM-021** — Trilha de auditoria *(base também p/ LGPD)*
+6. **PM-010 → PM-016, PM-023** — Débitos do plano de testes Admin + cobertura de testes
+7. **PM-022, PM-044, PM-032** — APM, Ubuntu 24.04/Node, WAF/SIEM
+8. **PM-030, PM-033, PM-034, PM-035** — Evolução de produto
+9. **PM-025** — SSH hardening OCI *(fases 1–4 feitas; falta fechar a 22)*
+10. **PM-031** — MFA (TOTP)
 
 ### Encerrados / sem ação
 
@@ -143,9 +144,9 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 - **PM-005** — ✅ *done* — Migrations no deploy sem erro silencioso (commit `ec159ae`)
 - **PM-020** — ✅ *done* — Upgrade .NET 8 → 10 (commit `12e77c9`)
 - **PM-006** ❌ *cancelled* — Evolution fora do fluxo Batuara; reescopar se necessário
-- **PM-007** — Concluído operacionalmente; residual = aprovação de `casa_contact_reply` e `casa_pendencias_aviso_v3` (Meta, automático via webhook `message_template_status`)
+- **PM-007** — ✅ done; templates `casa_login_code`, `casa_pendencias_aviso_v3`, `casa_contact_reply` e `casa_contribution_reminder` aprovados (25/out)
 - **PM-037, PM-039** — ✅ done
-- **PM-038** — Implementado; residual = mesma aprovação do `casa_pendencias_aviso_v3`
+- **PM-038** — ✅ done; digest validado e recebimento confirmado pelo Douglas (23/10)
 
 ---
 
@@ -202,13 +203,13 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 | Campo | Valor |
 |-------|-------|
-| Data | 2026-10-23 (encerramento da sessão) |
+| Data | 2026-10-25 (sessão atual) |
 | Branch | `master`, limpa e sincronizada; último código em produção: `f47a387` (PM-043); depois só commits de documentação |
-| Em andamento (`doing`) | PM-025 (fases 1–4 feitas; fase 5 opcional), PM-007 e PM-038 (aguardam aprovação Meta) |
-| Próximo item sugerido | **PM-031** (MFA/TOTP): começar levantando o fluxo de login do Admin e propondo o desenho para aprovação |
-| Bloqueios ativos | Aprovação Meta do template `casa_pendencias_aviso_v3` (digest tenta diariamente às 19h SP) |
+| Em andamento (`doing`) | PM-041 e PM-042 (código pronto, aguardam deploy + validação na OCI); PM-025 com fase 5 opcional pendente |
+| Próximo item sugerido | **PM-041** (logs da API): volume persistente `/app/logs` (sink Serilog já configurado) implementado no compose; aguarda deploy + validação no OCI. |
+| Bloqueios ativos | Nenhum. Templates Meta aprovados (25/out). Atenção: aviso da Meta sobre 4 modelos de utilidade sinalizados/reclassificados como marketing (24 h p/ pedir análise após a notificação); o painel não lista quais — abrir o link "Analisar atualizações de categoria" e conferir se `casa_pendencias_aviso_v3`, `casa_contact_reply` ou `casa_contribution_reminder` estão entre eles (reclassificação encarece o envio e exige opt-in de marketing). |
 | Ambiente | Produção em `https://www.batuara.org.br/`; .NET 10; lembretes WhatsApp desligados; Swagger público por decisão. OCI: 2 OCPU / 12 GB / 100 GB, Ubuntu 22.04.5, 38 containers |
-| Riscos | Logs da API se perdem a cada deploy (PM-041); 10 containers sem healthcheck e corrida com o banco no boot (PM-042); chaves do Data Protection sem criptografia em repouso; teste Jest do Admin quebrado (`TextEncoder`); majors pendentes (FluentValidation 12, Swashbuckle 10, FluentAssertions 8) |
+| Riscos | Logs da API mitigados via volume `batuara-api-logs` → `/app/logs` (PM-041); healthchecks e `depends_on: service_healthy` aplicados ao api/Evolution (PM-042, aguardando deploy/validação; o `up --no-deps` do `deploy-rolling.sh` ignora o `depends_on`, então o ganho vale para boot da máquina e `restart`, não para o deploy rolling, que já sobe o `db` antes). Chaves do Data Protection sem criptografia em repouso; teste Jest do Admin quebrado (`TextEncoder`); majors pendentes (FluentValidation 12, Swashbuckle 10, FluentAssertions 8) |
 
 #### Fatos operacionais de 23/out (não deriváveis do código)
 
@@ -246,6 +247,13 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 ## 7. Changelog deste plano
 
+### 2026-10-25 (reordenação de fila e PM-041/PM-042)
+
+- **Fila reordenada (§4):** PM-025 e PM-031 passaram ao final da fila ativa — as alterações implementadas desde a última ordenação (endurecimento de segurança) melhoraram de forma significativa os itens relacionados a segurança; PM-041 e PM-042 passaram a ser os próximos passos.
+- **PM-041 implementado (código):** logs da API persistidos em volume Docker (`batuara-api-logs` → `/app/logs`; sink Serilog File já configurado com rolling daily) — antes viviam no FS efêmero do container e se perdiam a cada deploy/recreate.
+- **PM-042 implementado (código):** `api` sobe com `depends_on: db: condition: service_healthy`; Evolution API com healthcheck (Node fetch `/health`) e dependências `service_healthy`; Evolution Redis com healthcheck (`redis-cli ping`); Evolution Postgres mantém `pg_isready`. **Correção na revisão:** o healthcheck da Evolution usava `/health`, que devolve 404 na imagem em produção (testado na OCI); passou a usar `/` (200). Na OCI, 28 de 38 containers têm healthcheck; dos 10 sem, só `batuara-evolution-api` e `batuara-evolution-redis` são do Batuara (cobertos aqui); os demais são de outros projetos (guelfiness, unisystem, driverhub, hako, pet360, nginx-proxy, allugme-redis, barbear-ia-redis), fora do escopo deste repositório.
+- **PM-007 e PM-038 → `done`:** digest de pendências validado em produção; o Douglas confirmou o recebimento na sexta, 23/10/2026. Aprovação dos templates conferida no WhatsApp Manager (WABA `1400706312217668`) em 25/out: `casa_login_code`, `casa_pendencias_aviso_v3`, `casa_contact_reply` e `casa_contribution_reminder` aprovados. Pendente de conferência: aviso da Meta sobre reclassificação para marketing (ver §6.1).
+
 ### 2026-10-23 (infra OCI, AutoMapper e logs)
 
 - **PM-025 fase 4:** chaves SSH separadas por projeto (10 repositórios) + chave pessoal nova; chave antiga revogada. Regressão corrigida no caminho: `fail2ban` aggressive banindo runners do GitHub → `normal`. Validação por workflow temporário em cada repo (branch `ssh-key-check`, removida depois).
@@ -264,14 +272,14 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 - **Log de refresh token corrigido:** `AuthService.GetUserByRefreshTokenAsync` não grava mais o valor do token no aviso "Refresh token not found or not active".
 - **OCI redimensionada (Always Free):** 2 OCPU / 12 GB RAM / boot volume 100 GB (limite do edit-in-place; máx. Free Tier 4 OCPU/24 GB e 200 GB). Disco em 14% de uso (85 GB livres) após limpeza de imagens antigas, CLIs antigos (Claude/Codex), `.nvm` e `node-gyp`.
 - **Higiene do Ubuntu 22.04.5:** pacotes atualizados e reboot; 38/38 containers voltaram. `allugme-api` e `barbear-ia-api` ficaram `unhealthy` por corrida com o banco no boot (reiniciados). Backup das fontes apt em `~/backup-apt-sources-20261023` no servidor.
-- **Digest de pendências:** aguardando aprovação Meta de `casa_pendencias_aviso_v3`; `casa_login_code` e `casa_contribution_reminder` aprovados. Fluxo de resposta do Admin ao contato validado.
+- **Digest de pendências:** `casa_pendencias_aviso_v3` aprovado e digest validado (recebimento confirmado pelo Douglas em 23/10); todos os templates em uso aprovados. Fluxo de resposta do Admin ao contato validado.
 
 **Novos itens derivados (não iniciados):**
 
 | ID | Status | Item | Notas |
 |----|--------|------|-------|
-| PM-041 | `todo` | **Logs da API fora do container** | Logs somem a cada deploy; montar volume persistente ou enviar a coletor. |
-| PM-042 | `todo` | **Healthchecks e `depends_on` na OCI** | 10 containers sem healthcheck (incl. Evolution API); compose de `allugme`/`barbear-ia` com `depends_on: service_healthy` no banco. |
+| PM-041 | `doing` | **Logs da API fora do container** | Logs somem a cada deploy. **Código pronto (25/out):** volume `batuara-api-logs` → `/app/logs` (retenção já limitada no Serilog: 30/60/90 arquivos). Falta deploy + validar que o log sobrevive a um recreate. |
+| PM-042 | `doing` | **Healthchecks e `depends_on` na OCI** | 10 containers sem healthcheck (incl. Evolution API); compose de `allugme`/`barbear-ia` com `depends_on: service_healthy` no banco. **Código pronto (25/out):** api (`db` healthy), Evolution API (healthcheck em `/`) e Evolution Redis. Os outros containers sem healthcheck são de outros projetos. Falta deploy + validação. |
 | PM-043 | `done` | **Persistir chaves de Data Protection** | ✅ Concluído em 23/out (commit `f47a387`): `AddBatuaraDataProtection` com `DataProtection:KeysPath`; compose de produção monta o volume `batuara-dataprotection-keys` em `/app/dp-keys`. Verificado na OCI: chave gravada no volume e mantida após restart do container. Residual: chaves em repouso sem criptografia (aviso "No XML encryptor"; volume acessível só ao root) — avaliar certificado se passar a proteger dados sensíveis. |
 | PM-044 | `todo` | **Ubuntu 24.04 / Pro e Node 18 NodeSource** | Exige backup do boot volume; trocar Node 18; atualizar Gemini CLI. |
 

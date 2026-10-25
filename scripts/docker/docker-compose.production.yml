@@ -99,6 +99,7 @@ services:
       - ContributionReminders__MaxAttempts=${CONTRIBUTION_REMINDERS_MAX_ATTEMPTS:-3}
     volumes:
       - batuara-dataprotection-keys:/app/dp-keys
+      - batuara-api-logs:/app/logs
     networks:
       - batuara-network
     restart: unless-stopped
@@ -107,7 +108,8 @@ services:
       - "project.name=${PROJECT_NAME:-batuara}"
       - "service.type=backend"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
       interval: 30s
@@ -183,6 +185,11 @@ networks:
 
 volumes:
   # Volumes com prefixo para isolamento
+  batuara-api-logs:
+    name: ${VOLUME_PREFIX:-batuara}-api-logs
+    labels:
+      - "com.docker.compose.project=${COMPOSE_PROJECT_NAME:-batuara-net}"
+      - "project.name=${PROJECT_NAME:-batuara}"
   batuara-dataprotection-keys:
     name: ${VOLUME_PREFIX:-batuara}-dataprotection-keys
     labels:
