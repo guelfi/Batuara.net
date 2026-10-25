@@ -16,6 +16,8 @@ namespace Batuara.API.Controllers
     [Route("api/webhooks/whatsapp-meta")]
     public class WhatsAppMetaWebhookController : ControllerBase
     {
+        internal const string InboundSubject = "Mensagem recebida pelo WhatsApp";
+
         private readonly BatuaraDbContext _db;
         private readonly WhatsAppCloudApiOptions _options;
         private readonly ILogger<WhatsAppMetaWebhookController> _logger;
@@ -88,7 +90,9 @@ namespace Batuara.API.Controllers
 
                     foreach (var message in messages)
                     {
-                        await ProcessInboundMessageAsync(message);
+                        var profileName = change.Value?.Contacts?
+                            .FirstOrDefault(c => c.WaId == message.From)?.Profile?.Name;
+                        await ProcessInboundMessageAsync(message, profileName);
                     }
                 }
             }
@@ -110,7 +114,7 @@ namespace Batuara.API.Controllers
                 Encoding.UTF8.GetBytes(expected), Encoding.UTF8.GetBytes(header));
         }
 
-        private async Task ProcessInboundMessageAsync(MetaWebhookMessage message)
+        internal async Task ProcessInboundMessageAsync(MetaWebhookMessage message, string? profileName = null)
         {
             if (string.IsNullOrWhiteSpace(message.From) || string.IsNullOrWhiteSpace(message.Text?.Body))
             {
@@ -149,7 +153,16 @@ namespace Batuara.API.Controllers
             }
             else
             {
-                _logger.LogWarning("Nenhuma mensagem de contato ativa com autorização de WhatsApp encontrada para o número: {Phone}", phone);
+                // PM-040: o visitante iniciou a conversa pelo WhatsApp sem formulário recente; abre uma
+                // thread para que apareça no Admin, entre no digest e possa ser respondida (janela de 24h aberta).
+                var name = string.IsNullOrWhiteSpace(profileName) ? "Visitante WhatsApp" : profileName.Trim();
+                var created = new Batuara.Domain.Entities.ContactMessage(
+                    name, null, InboundSubject, body, phone, wantsWhatsAppResponse: true);
+                created.AddWhatsAppMessage(messageId, phone, "sistema", body, false, DateTime.UtcNow);
+
+                _db.ContactMessages.Add(created);
+                await _db.SaveChangesAsync();
+                _logger.LogInformation("Mensagem recebida via WhatsApp (Meta) sem contato prévio: nova mensagem de contato {Id} criada", created.Id);
             }
         }
     }
@@ -183,8 +196,26 @@ namespace Batuara.API.Controllers
 
     public class MetaWebhookValue
     {
+        [JsonPropertyName("contacts")]
+        public List<MetaWebhookContact>? Contacts { get; set; }
+
         [JsonPropertyName("messages")]
         public List<MetaWebhookMessage>? Messages { get; set; }
+    }
+
+    public class MetaWebhookContact
+    {
+        [JsonPropertyName("wa_id")]
+        public string? WaId { get; set; }
+
+        [JsonPropertyName("profile")]
+        public MetaWebhookProfile? Profile { get; set; }
+    }
+
+    public class MetaWebhookProfile
+    {
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
     }
 
     public class MetaWebhookMessage

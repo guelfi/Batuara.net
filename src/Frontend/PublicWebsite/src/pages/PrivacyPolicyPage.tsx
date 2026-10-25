@@ -38,6 +38,11 @@ const PrivacyPolicyPage: React.FC = () => (
         receber resposta pelo WhatsApp.
       </P>
       <P>
+        <strong>Mensagem direta pelo WhatsApp:</strong> se você enviar uma mensagem ao número oficial da Casa,
+        registramos seu telefone, o nome do seu perfil no WhatsApp e o texto enviado, para que a administração
+        possa responder. Mensagens de áudio, imagem e outras mídias não são armazenadas.
+      </P>
+      <P>
         <strong>Área de filhos da casa:</strong> telefone utilizado para autenticação por código enviado via WhatsApp,
         e dados cadastrais fornecidos pela administração (nome, histórico de participação e contribuições).
       </P>

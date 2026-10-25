@@ -29,4 +29,8 @@
     <ProjectReference Include="..\Batuara.Infrastructure\Batuara.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Batuara.Infrastructure.Tests" />
+  </ItemGroup>
+
 </Project>
