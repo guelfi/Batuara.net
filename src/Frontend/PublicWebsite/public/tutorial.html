@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tutorial do Site da Casa Batuara</title>
+<style>
+  :root{
+    --azul:#1976d2; --azul-esc:#1565c0; --azul-cl:#e3f0fc; --dourado:#ffc107; --dourado-cl:#fff6d6;
+    --txt:#212121; --txt2:#555; --bg:#f4f7fb; --card:#fff; --ok:#2e7d32; --ok-cl:#e6f4e7; --erro:#c62828;
+    --borda:#d8e1ec; --sombra:0 6px 22px rgba(25,60,110,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --txt:#eef2f7; --txt2:#b7c2d0; --bg:#0f1722; --card:#18212e; --azul-cl:#16314f; --dourado-cl:#3a3010;
+           --ok-cl:#17301a; --borda:#2b384a; --sombra:0 6px 22px rgba(0,0,0,.4); }
+  }
+  *{box-sizing:border-box}
+  html{font-size:112.5%}               /* letra maior para facilitar a leitura */
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.55}
+  .topo{background:var(--azul);color:#fff;padding:.7rem 1rem;display:flex;align-items:center;gap:.7rem}
+  .topo img{height:34px;width:auto;background:#fff;border-radius:8px;padding:3px}
+  .topo b{font-size:1rem;line-height:1.2}
+  main{max-width:880px;margin:0 auto;padding:1.2rem 1rem 3rem}
+  .card{background:var(--card);border-radius:18px;box-shadow:var(--sombra);padding:1.4rem 1.3rem;margin-bottom:1rem}
+  h1{font-size:1.55rem;line-height:1.25;margin:.2rem 0 .8rem}
+  h2{font-size:1.3rem;line-height:1.3;margin:.2rem 0 .7rem}
+  p{margin:.6rem 0}
+  .grande{font-size:1.1rem}
+  .destaque{background:var(--dourado-cl);border-left:6px solid var(--dourado);padding:.8rem 1rem;border-radius:10px;margin:1rem 0}
+  .dica{background:var(--azul-cl);border-left:6px solid var(--azul);padding:.8rem 1rem;border-radius:10px;margin:1rem 0}
+  .ok{background:var(--ok-cl);border-left:6px solid var(--ok);padding:.8rem 1rem;border-radius:10px;margin:1rem 0}
+  .escolhas{display:grid;gap:.9rem;grid-template-columns:1fr;margin-top:1.1rem}
+  @media(min-width:640px){.escolhas{grid-template-columns:1fr 1fr}}
+  button{font:inherit;cursor:pointer}
+  .opcao{border:3px solid var(--azul);background:var(--card);color:var(--txt);border-radius:18px;padding:1.2rem 1rem;text-align:center;
+         display:flex;flex-direction:column;align-items:center;gap:.4rem;min-height:150px;justify-content:center}
+  .opcao:hover,.opcao:focus-visible{background:var(--azul-cl)}
+  .opcao .ico{font-size:2.6rem;line-height:1}
+  .opcao strong{font-size:1.25rem}
+  .opcao span.sub{color:var(--txt2);font-size:.95rem}
+  .nav{display:flex;gap:.7rem;margin-top:1.2rem;flex-wrap:wrap}
+  .btn{border:0;border-radius:14px;padding:.95rem 1.3rem;font-size:1.1rem;font-weight:700;min-height:54px}
+  .btn.prim{background:var(--azul);color:#fff;flex:1 1 180px}
+  .btn.prim:hover{background:var(--azul-esc)}
+  .btn.sec{background:transparent;color:var(--azul);border:2px solid var(--azul);flex:0 1 140px}
+  .btn.link{background:none;border:0;color:var(--azul);text-decoration:underline;padding:.5rem;font-weight:600;min-height:44px}
+  .progresso{display:flex;gap:6px;margin:.2rem 0 1rem}
+  .progresso i{flex:1;height:8px;border-radius:5px;background:var(--borda)}
+  .progresso i.on{background:var(--azul)}
+  .passo-n{display:inline-block;background:var(--azul);color:#fff;border-radius:999px;padding:.15rem .8rem;font-weight:700;font-size:.95rem}
+  .cena{display:flex;justify-content:center;margin:1rem 0 .4rem}
+  [hidden]{display:none!important}
+
+  /* ===== desenhos (maquetes) ===== */
+  .celular{width:270px;border:10px solid #263238;border-radius:34px;background:#fff;overflow:hidden;position:relative;height:480px;box-shadow:0 10px 26px rgba(0,0,0,.28);color:#212121}
+  .celular .barra{background:var(--azul);color:#fff;height:50px;display:flex;align-items:center;padding:0 10px;gap:6px;font-size:.78rem;font-weight:600}
+  .celular .barra img{height:22px;background:#fff;border-radius:4px;padding:1px}
+  .celular .barra .nome{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hamb{width:36px;height:34px;display:flex;flex-direction:column;justify-content:center;gap:5px;align-items:center;border-radius:8px}
+  .hamb i{display:block;width:22px;height:3px;background:#fff;border-radius:2px}
+  .celular .corpo{padding:14px 12px;font-size:.78rem;color:#444}
+  .celular .corpo h4{margin:.2rem 0 .4rem;font-size:.95rem;color:#1565c0}
+  .faixa{height:64px;border-radius:10px;background:linear-gradient(120deg,#42a5f5,#1565c0);margin-bottom:10px}
+  .linhas span{display:block;height:8px;border-radius:4px;background:#e3e8ee;margin:7px 0}
+  .linhas span:nth-child(2){width:82%}.linhas span:nth-child(3){width:64%}
+  .gaveta{position:absolute;top:0;right:0;bottom:0;width:78%;background:#fff;box-shadow:-6px 0 14px rgba(0,0,0,.25);padding:6px 0;overflow:hidden}
+  .gaveta .x{text-align:right;padding:2px 12px;font-size:1.3rem;color:#555}
+  .gaveta .sub{font-weight:700;font-size:.78rem;padding:2px 16px;color:#777}
+  .gaveta .it{padding:7px 16px;font-size:.85rem;border-radius:0}
+  .gaveta .it.d{color:var(--azul);font-weight:700}
+  .fundo-escuro{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+  .alvo{position:relative;outline:3px solid var(--dourado);outline-offset:2px;border-radius:10px;animation:pisca 1.3s infinite}
+  .gaveta .it.alvo{background:var(--dourado-cl);outline-offset:-3px}
+  @keyframes pisca{0%,100%{box-shadow:0 0 0 0 rgba(255,193,7,.9)}50%{box-shadow:0 0 0 9px rgba(255,193,7,0)}}
+  @media (prefers-reduced-motion:reduce){.alvo{animation:none}}
+  .tela-form{padding:14px 14px}
+  .tela-form .tit{font-weight:700;color:#1565c0;font-size:.95rem;text-align:center;margin:.1rem 0}
+  .tela-form .sub2{text-align:center;color:#777;font-size:.75rem;margin-bottom:8px}
+  .tabs{display:flex;border:1px solid #cfd8dc;border-radius:8px;overflow:hidden;margin:6px 0 10px;font-size:.72rem}
+  .tabs div{flex:1;text-align:center;padding:6px 2px;color:#555}
+  .tabs div.sel{background:var(--azul);color:#fff;font-weight:700}
+  .campo{border:1px solid #90a4ae;border-radius:6px;padding:7px 8px;font-size:.78rem;color:#37474f;margin:7px 0;background:#fff}
+  .campo small{display:block;color:#78909c;font-size:.62rem}
+  .botao{background:var(--azul);color:#fff;text-align:center;border-radius:8px;padding:9px 4px;font-weight:700;font-size:.78rem;margin-top:8px}
+  .msg-ok{color:#2e7d32;font-size:.68rem;margin:4px 0}
+  .zap{background:#e5ddd5;height:100%;padding:12px 10px;font-size:.78rem}
+  .zap .topo-zap{background:#075e54;color:#fff;margin:-12px -10px 10px;padding:10px;font-weight:700}
+  .bolha{background:#fff;border-radius:0 10px 10px 10px;padding:8px 10px;max-width:92%;box-shadow:0 1px 1px rgba(0,0,0,.15)}
+  .bolha b.cod{display:block;font-size:1.5rem;letter-spacing:5px;color:#111;margin:4px 0;text-align:center}
+  .perfil-tela{padding:12px}
+  .perfil-tela .tit{font-weight:700;font-size:1rem;color:#212121}
+  .caixa{border:1px solid #cfd8dc;border-radius:8px;padding:8px;margin-top:8px;font-size:.72rem;color:#546e7a}
+
+  /* navegador (versão computador) */
+  .navegador{width:100%;max-width:640px;border:2px solid #90a4ae;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 8px 22px rgba(0,0,0,.2);color:#212121}
+  .navegador .abas{background:#dfe5ea;padding:6px 10px;font-size:.7rem;display:flex;gap:6px;align-items:center}
+  .navegador .url{background:#fff;border-radius:999px;padding:3px 12px;flex:1;color:#37474f;font-size:.75rem}
+  .navegador .site{min-height:250px}
+  .menu-pc{background:var(--azul);color:#fff;padding:7px 8px 6px;font-size:.62rem}
+  .menu-pc .l1{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.72rem;margin-bottom:5px}
+  .menu-pc .l1 img{height:20px;background:#fff;border-radius:4px;padding:1px}
+  .menu-pc .itens{display:flex;flex-wrap:wrap;gap:3px 10px;justify-content:center}
+  .menu-pc .itens span{padding:2px 5px;border-radius:5px}
+  .menu-pc .itens span.alvo{background:rgba(255,255,255,.18);outline-color:var(--dourado)}
+  .navegador .conteudo{padding:12px 16px;font-size:.75rem;color:#444}
+  .navegador .conteudo .faixa{height:90px}
+  .navegador.login .site{display:flex;justify-content:center;padding:14px}
+  .navegador.login .tela-form{width:250px;border:1px solid #e0e6ec;border-radius:12px}
+  .navegador.zapweb{max-width:340px}
+  .legenda{text-align:center;color:var(--txt2);font-size:.95rem;margin:.2rem 0 1rem}
+
+  .faq details{border:1px solid var(--borda);border-radius:12px;padding:.7rem 1rem;margin:.6rem 0;background:var(--card)}
+  .faq summary{font-weight:700;cursor:pointer;min-height:36px;display:flex;align-items:center}
+  .rodape{text-align:center;color:var(--txt2);font-size:.9rem;margin-top:1.5rem}
+  ol.lista{padding-left:1.3rem} ol.lista li{margin:.5rem 0}
+</style>
+</head>
+<body>
+<header class="topo">
+  <img alt="Logo da Casa Batuara" src="data:image/png;base64,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">
+  <b>Casa de Caridade Caboclo Batuara<br><small style="font-weight:400">Tutorial do site</small></b>
+</header>
+
+<main id="app" aria-live="polite"></main>
+
+<script>
+(function(){
+  var SITE = "www.batuara.org.br";
+
+  /* ---------- pedaços reutilizáveis de desenho ---------- */
+  var LOGO = document.querySelector('.topo img').src;
+
+  function celular(inner){ return '<div class="cena"><div class="celular" role="img" aria-label="Desenho de um celular mostrando a tela descrita">'+inner+'</div></div>'; }
+  function barraCel(alvoHamb){
+    return '<div class="barra"><img alt="" src="'+LOGO+'"><div class="nome">Casa de Caridade Caboclo Batuara</div>'+
+           '<div class="hamb'+(alvoHamb?' alvo':'')+'"><i></i><i></i><i></i></div></div>';
+  }
+  function corpoSite(){
+    return '<div class="corpo"><div class="faixa"></div><h4>Bem-vindo à Casa Batuara</h4><div class="linhas"><span></span><span></span><span></span></div>'+
+           '<div class="linhas"><span></span><span></span><span></span></div></div>';
+  }
+  function gaveta(alvo){
+    var itens=['Início','Nossa História','Nossa Missão','Calendário','Eventos e Festas','Doações','Contato','Localização','Filhos'];
+    var h='<div class="fundo-escuro"></div><div class="gaveta"><div class="x">✕</div><div class="sub">Público</div>';
+    itens.forEach(function(t){ h+='<div class="it'+(t===alvo?' alvo d':'')+'">'+t+'</div>'; });
+    return h+'</div>';
+  }
+  function telaLogin(estado){
+    var campos, rotulo;
+    if(estado==='tel'){
+      campos='<div class="campo alvo"><small>Celular com DDD</small>(11) 9XXXX-XXXX</div>'+
+             '<div class="campo"><small>Código recebido</small>&nbsp;</div>';
+      rotulo='Receber código no WhatsApp';
+    } else {
+      campos='<div class="campo"><small>Celular com DDD</small>(11) 9XXXX-XXXX</div><div class="msg-ok">Código enviado! Verifique seu WhatsApp.</div>'+
+             '<div class="campo alvo"><small>Código recebido</small>1 2 3 4 5 6</div>';
+      rotulo='Entrar com código';
+    }
+    return '<div class="tela-form"><div class="tit">Casa de Caridade Batuara</div><div class="sub2">Acesso Batuara.net</div>'+
+           '<div class="tabs"><div>Administração</div><div class="sel">Filho da Casa</div></div>'+campos+
+           '<div class="botao">'+rotulo+'</div></div>';
+  }
+  function whats(){
+    return '<div class="zap"><div class="topo-zap">Casa de Caridade Caboclo Batuara</div>'+
+           '<div class="bolha">Seu código de verificação é <b class="alvo">123456</b>. Para sua segurança, não o compartilhe.</div></div>';
+  }
+  function perfil(menuAberto){
+    var base='<div class="barra"><img alt="" src="'+LOGO+'"><div class="nome">Casa Batuara</div></div>'+
+      '<div class="perfil-tela"><div class="tit">Meu Cadastro</div>'+
+      '<div class="caixa">Atualize seus dados pessoais e endereço.</div>'+
+      '<div class="caixa">Dados pessoais<br>Endereço<br>Minha contribuição</div></div>';
+    return base;
+  }
+  function gavetaLogado(alvo){
+    var h='<div class="fundo-escuro"></div><div class="gaveta"><div class="x">✕</div><div class="sub">Público</div>';
+    ['Início','Nossa História','Calendário','Doações','Contato'].forEach(function(t){h+='<div class="it">'+t+'</div>';});
+    h+='<div class="it">…</div><div class="sub" style="margin-top:6px;border-top:1px solid #ddd;padding-top:6px">Área autenticada</div>';
+    ['Perfil','Sair'].forEach(function(t){h+='<div class="it'+(t===alvo?' alvo d':'')+'">'+t+'</div>';});
+    return h+'</div>';
+  }
+
+  /* navegador (computador) */
+  function pcMenu(alvo, logado){
+    var it=['Início','Nossa História','Nossa Missão','Calendário','Eventos e Festas','Doações','Contato','Localização'];
+    if(!logado) it.push('Filhos'); else it=it.concat(['Perfil','Sair']);
+    var h='<div class="menu-pc"><div class="l1"><img alt="" src="'+LOGO+'">Casa de Caridade Caboclo Batuara</div><div class="itens">';
+    it.forEach(function(t){h+='<span class="'+(t===alvo?'alvo':'')+'">'+t+'</span>';});
+    return h+'</div></div>';
+  }
+  function navegador(url, inner, cls){
+    return '<div class="cena"><div class="navegador '+(cls||'')+'" role="img" aria-label="Desenho de um navegador no computador"><div class="abas">● ● ● <div class="url">'+url+'</div></div><div class="site">'+inner+'</div></div></div>';
+  }
+  function siteCorpoPC(){ return '<div class="conteudo"><div class="faixa"></div><div class="linhas"><span></span><span></span><span></span></div></div>'; }
+
+  /* ---------- roteiros ---------- */
+  var comum = {
+    abrir: {
+      t:'Abra o site da Casa',
+      txt:'<p class="grande">Abra o navegador do aparelho (<b>Chrome</b>, <b>Safari</b> ou o que você usa) e digite na barra de cima o endereço:</p><div class="destaque grande" style="text-align:center"><b style="font-size:1.35rem;word-break:break-all">'+SITE+'</b></div><p>Depois toque em <b>Ir</b> (ou aperte <b>Enter</b> no computador).</p>'
+    }
+  };
+
+  var MOBILE = [
+    { t:'Abra o site da Casa', html:function(){return comum.abrir.txt + celular(barraCel(false)+corpoSite()) + '<p class="legenda">Assim o site aparece no celular. Repare nas <b>3 listrinhas</b> no canto de cima, à direita.</p>';},
+      dica:'Dica: guarde o site na tela inicial do celular. No Chrome: toque nos <b>3 pontinhos</b> › <b>Adicionar à tela inicial</b>. Assim você abre com um toque, como um aplicativo.' },
+    { t:'Encontre o botão do menu (as 3 listrinhas)', html:function(){return '<p class="grande">No celular, o menu do site fica escondido. Para abrir, toque no botão com <b>3 listrinhas</b> (chamado de <b>menu hambúrguer</b>), no <b>canto superior direito</b> da tela.</p>'+celular(barraCel(true)+corpoSite())+'<p class="legenda">O botão que está piscando em amarelo é o menu.</p>';} },
+    { t:'Toque no menu e veja as opções', html:function(){return '<p class="grande">Ao tocar, o menu abre pela direita com a lista de opções do site: <b>Início</b>, <b>Nossa História</b>, <b>Calendário</b>, <b>Doações</b>, <b>Contato</b> e outras. Toque em qualquer uma para ir até ela.</p>'+celular(barraCel(false)+corpoSite()+gaveta('Filhos'))+'<p class="legenda">Para fechar o menu sem escolher nada, toque no <b>✕</b> ou fora da lista.</p>';},
+      dica:'Cada opção leva você para um trecho do mesmo site. Para voltar ao começo, toque na <b>logo da Casa</b> no topo.' },
+    { t:'Toque em “Filhos” (a última opção)', html:function(){return '<p class="grande">A opção <b>Filhos</b> fica no <b>final da lista</b>. É por ela que você entra na sua área, usando o seu número de celular.</p>'+celular(barraCel(false)+corpoSite()+gaveta('Filhos'))+'<p class="legenda">Toque em <b>Filhos</b>.</p>';} },
+    { t:'Digite o seu número de celular', html:function(){return '<p class="grande">Abre a tela <b>Acesso Batuara.net</b> já na aba <b>Filho da Casa</b>. No campo <b>Celular com DDD</b>, digite o <b>mesmo número de WhatsApp</b> que a Casa tem no seu cadastro. Exemplo: <b>(11) 9XXXX-XXXX</b>.</p>'+celular(telaLogin('tel'))+'<p class="legenda">Depois toque em <b>Receber código no WhatsApp</b>.</p>';},
+      aviso:'Não precisa de senha. Cada vez que entrar, você recebe um código novo no WhatsApp.' },
+    { t:'Abra o WhatsApp e veja o código', html:function(){return '<p class="grande">Em poucos segundos chega uma mensagem no <b>seu WhatsApp</b>, vinda do número oficial da Casa, com um <b>código de 6 números</b> (o desenho abaixo é só um exemplo).</p>'+celular(whats())+'<p class="legenda">Guarde o código na cabeça (ou deixe o WhatsApp aberto) e <b>volte para o site</b>.</p>';},
+      aviso:'O código vale por <b>10 minutos</b> e serve só para você. <b>Nunca passe o código para ninguém.</b>' },
+    { t:'Digite o código e entre', html:function(){return '<p class="grande">De volta ao site, a tela mostra <b>“Código enviado! Verifique seu WhatsApp.”</b> Digite os 6 números no campo <b>Código recebido</b> e toque em <b>Entrar com código</b>.</p>'+celular(telaLogin('tel-ok'))+'<p class="legenda">Se errar, é só digitar de novo. Você tem até 5 tentativas por código.</p>';} },
+    { t:'Pronto! Você está na sua área', html:function(){return '<p class="grande">Você entrou! A primeira tela é o <b>Meu Cadastro</b>, onde você confere e atualiza seus dados (endereço, telefone, e-mail) e registra sua contribuição.</p>'+celular(perfil())+'<p class="legenda">As informações religiosas e o status do cadastro são mantidos pela direção da Casa.</p>';} },
+    { t:'Como voltar ao site e como sair', html:function(){return '<p class="grande">Agora, quando você abre o menu (as 3 listrinhas) do site, aparece uma parte nova chamada <b>Área autenticada</b>, com <b>Perfil</b> (seus dados) e <b>Sair</b>. Conteúdos exclusivos dos filhos, quando a direção liberar, também aparecem aí.</p>'+celular(barraCel(false)+corpoSite()+gavetaLogado('Sair'))+'<p class="legenda">Ao terminar, toque em <b>Sair</b>, principalmente se o celular for emprestado.</p>';},
+      aviso:'Para entrar de novo outro dia, repita: menu › <b>Filhos</b> › número › código.' }
+  ];
+
+  var DESK = [
+    { t:'Abra o site da Casa', html:function(){return comum.abrir.txt + navegador(SITE, pcMenu(null)+siteCorpoPC()) + '<p class="legenda">No computador o menu aparece <b>aberto, em faixas, no alto da tela</b>. Não existe o botão de listrinhas.</p>';},
+      dica:'Dica: salve o site nos favoritos (aperte <b>Ctrl + D</b>) para voltar rápido.' },
+    { t:'Conheça o menu do alto da tela', html:function(){return '<p class="grande">As opções ficam lado a lado no alto: <b>Início</b>, <b>Nossa História</b>, <b>Nossa Missão</b>, <b>Calendário</b>, <b>Eventos e Festas</b>, <b>Doações</b>, <b>Contato</b>, <b>Localização</b> e <b>Filhos</b>. Clique em uma para a página descer até aquele assunto.</p>'+navegador(SITE, pcMenu('Calendário')+siteCorpoPC())+'<p class="legenda">O menu acompanha você enquanto a página rola.</p>';} },
+    { t:'Clique em “Filhos”', html:function(){return '<p class="grande">A opção <b>Filhos</b> é a <b>última do menu</b>, à direita. É a porta de entrada da sua área.</p>'+navegador(SITE, pcMenu('Filhos')+siteCorpoPC())+'<p class="legenda">Clique em <b>Filhos</b>.</p>';} },
+    { t:'Digite o seu número de celular', html:function(){return '<p class="grande">Abre a tela <b>Acesso Batuara.net</b> na aba <b>Filho da Casa</b>. Digite, em <b>Celular com DDD</b>, o <b>mesmo número de WhatsApp</b> que a Casa tem no seu cadastro, e clique em <b>Receber código no WhatsApp</b>.</p>'+navegador(SITE+'/admin/login',telaLogin('tel'),'login')+'<p class="legenda">Não precisa de senha.</p>';},
+      aviso:'O código chega no <b>WhatsApp do celular</b> cadastrado. Deixe o celular por perto.' },
+    { t:'Pegue o código no WhatsApp', html:function(){return '<p class="grande">Pegue o celular e abra o WhatsApp. Chega uma mensagem do número oficial da Casa com um <b>código de 6 números</b>.</p>'+celular(whats())+'<p class="legenda">Se você usa o <b>WhatsApp Web</b> no computador, a mensagem também aparece lá.</p>';},
+      aviso:'O código vale por <b>10 minutos</b> e é só seu. <b>Nunca passe o código para ninguém.</b>' },
+    { t:'Digite o código e entre', html:function(){return '<p class="grande">Volte para o computador. Digite os 6 números em <b>Código recebido</b> e clique em <b>Entrar com código</b>.</p>'+navegador(SITE+'/admin/login',telaLogin('tel-ok'),'login')+'<p class="legenda">Você tem até 5 tentativas por código.</p>';} },
+    { t:'Pronto! Você está na sua área', html:function(){return '<p class="grande">Você entrou! A primeira tela é o <b>Meu Cadastro</b>: confira e atualize seus dados e registre sua contribuição.</p>'+navegador(SITE+'/admin/profile','<div style="padding:12px 16px;font-size:.8rem"><b style="font-size:1rem">Meu Cadastro</b><div class="caixa">Atualize seus dados pessoais e endereço.</div><div class="caixa">Dados pessoais · Endereço · Minha contribuição</div></div>')+'<p class="legenda">As informações religiosas e o status do cadastro são mantidos pela direção da Casa.</p>';} },
+    { t:'Como voltar ao site e como sair', html:function(){return '<p class="grande">Voltando ao site, o menu do alto ganha as opções <b>Perfil</b> (seus dados) e <b>Sair</b>. Conteúdos exclusivos dos filhos, quando a direção liberar, aparecem ali também.</p>'+navegador(SITE, pcMenu('Sair', true)+siteCorpoPC())+'<p class="legenda">Ao terminar, clique em <b>Sair</b>, principalmente em computador de outra pessoa.</p>';},
+      aviso:'Para entrar de novo outro dia, repita: <b>Filhos</b> › número › código.' }
+  ];
+
+  /* ---------- telas ---------- */
+  var app = document.getElementById('app');
+  var modo=null, i=0;
+
+  function inicio(){
+    modo=null; i=0;
+    app.innerHTML =
+      '<section class="card">'+
+      '<h1>Bem-vindo ao Tutorial passo a passo do site do Batuara</h1>'+
+      '<div class="destaque">Filhos acessam a <b>área restrita</b> usando o <b>número de celular que consta no seu cadastro</b>. Filhos novos podem ainda não ter o número informado; nesse caso, entrar em contato com a <b>direção</b>.</div>'+
+      '<h2 style="margin-top:1.3rem">Você deseja conhecer a versão para…</h2>'+
+      '<div class="escolhas">'+
+        '<button class="opcao" data-modo="mobile"><span class="ico" aria-hidden="true">📱</span><strong>Celular</strong><span class="sub">Com o menu das 3 listrinhas (hambúrguer)</span></button>'+
+        '<button class="opcao" data-modo="desk"><span class="ico" aria-hidden="true">💻</span><strong>Computador</strong><span class="sub">Com o menu aberto no alto da tela</span></button>'+
+      '</div>'+
+      '</section>'+ faq();
+    bind();
+  }
+
+  function passos(){ return modo==='mobile'?MOBILE:DESK; }
+
+  function passo(){
+    var p=passos()[i], total=passos().length, ult=(i===total-1);
+    var barras=''; for(var k=0;k<total;k++) barras+='<i class="'+(k<=i?'on':'')+'"></i>';
+    app.innerHTML =
+      '<section class="card">'+
+      '<p style="margin:0;color:var(--txt2)">Versão para <b>'+(modo==='mobile'?'celular 📱':'computador 💻')+'</b> · <button class="btn link" data-acao="trocar">trocar</button></p>'+
+      '<div class="progresso" aria-hidden="true">'+barras+'</div>'+
+      '<span class="passo-n">Passo '+(i+1)+' de '+total+'</span>'+
+      '<h2 style="margin-top:.6rem">'+p.t+'</h2>'+
+      p.html()+
+      (p.aviso?'<div class="destaque">'+p.aviso+'</div>':'')+
+      (p.dica?'<div class="dica">'+p.dica+'</div>':'')+
+      '<div class="nav">'+
+        (i>0?'<button class="btn sec" data-acao="ant">‹ Voltar</button>':'<button class="btn sec" data-acao="inicio">‹ Início</button>')+
+        (ult?'<button class="btn prim" data-acao="fim">Concluir ✓</button>':'<button class="btn prim" data-acao="prox">Próximo ›</button>')+
+      '</div></section>';
+    bind(); window.scrollTo({top:0});
+  }
+
+  function fim(){
+    app.innerHTML =
+      '<section class="card"><h1>Tudo certo! 🎉</h1>'+
+      '<div class="ok grande">Agora você já sabe usar o site da Casa Batuara e entrar na sua área com o número do celular.</div>'+
+      '<p class="grande">Resumo rápido:</p>'+
+      (modo==='mobile'
+        ? '<ol class="lista grande"><li>Abra <b>'+SITE+'</b>.</li><li>Toque nas <b>3 listrinhas</b> (canto de cima, à direita).</li><li>Toque em <b>Filhos</b>.</li><li>Digite o <b>celular</b> e toque em <b>Receber código no WhatsApp</b>.</li><li>Digite o <b>código</b> e toque em <b>Entrar com código</b>.</li></ol>'
+        : '<ol class="lista grande"><li>Abra <b>'+SITE+'</b>.</li><li>Clique em <b>Filhos</b> no menu do alto.</li><li>Digite o <b>celular</b> e clique em <b>Receber código no WhatsApp</b>.</li><li>Digite o <b>código</b> e clique em <b>Entrar com código</b>.</li></ol>')+
+      '<div class="nav"><button class="btn prim" data-modo="'+(modo==='mobile'?'desk':'mobile')+'">Ver também a versão para '+(modo==='mobile'?'computador 💻':'celular 📱')+'</button><button class="btn sec" data-acao="inicio" style="flex:1 1 140px">Início</button></div></section>'+faq();
+    bind(); window.scrollTo({top:0});
+  }
+
+  function faq(){
+    return '<section class="card faq"><h2>Dúvidas comuns</h2>'+
+      '<details><summary>O código não chegou no WhatsApp</summary><p>Espere 1 minuto e confira se o número digitado é o mesmo do seu WhatsApp (com DDD). Veja também se o WhatsApp está com internet. Pode pedir um código novo tocando em <b>Trocar celular</b> e repetindo. Se ainda assim não chegar, fale com a direção para conferir o seu cadastro.</p></details>'+
+      '<details><summary>Apareceu “Se o número estiver cadastrado…”, mas nada chega</summary><p>Por segurança, o site responde isso para qualquer número. Se o seu número não estiver no cadastro da Casa, o código não é enviado. Peça à direção para conferir ou atualizar o seu número.</p></details>'+
+      '<details><summary>“Código inválido ou expirado”</summary><p>O código vale <b>10 minutos</b> e permite <b>5 tentativas</b>. Se passou do tempo ou errou muitas vezes, peça um código novo (<b>Trocar celular</b> › <b>Receber código no WhatsApp</b>).</p></details>'+
+      '<details><summary>Não acho a opção “Filhos”</summary><p>No celular, abra o menu das <b>3 listrinhas</b> (canto superior direito) e role até o <b>final da lista</b>. Se você já estiver dentro da sua área, a opção <b>Filhos</b> some e aparecem <b>Perfil</b> e <b>Sair</b>.</p></details>'+
+      '<details><summary>Troquei de número de celular</summary><p>Avise a direção da Casa para atualizar o número no seu cadastro. Sem isso, o código continuará sendo enviado para o número antigo ou não será enviado.</p></details>'+
+      '<details><summary>Posso entrar usando um aparelho emprestado?</summary><p>O código só é enviado para o <b>WhatsApp do número cadastrado como filho da Casa</b>, e não para qualquer número digitado. Por isso, só dá para entrar em um aparelho emprestado se o <b>seu chip (ou e-SIM) e o seu WhatsApp</b> estiverem nele. Em um computador de outra pessoa, você ainda precisa do seu celular para receber o código. Ao terminar, abra o menu e toque em <b>Sair</b>, para que ninguém mais entre no seu cadastro.</p></details>'+
+      '<details><summary>Posso passar o código para outra pessoa ajudar?</summary><p>Não. O código é pessoal. A Casa <b>nunca</b> pede o seu código por mensagem ou ligação.</p></details>'+
+      '</section><p class="rodape">Casa de Caridade Caboclo Batuara · Guarulhos/SP · '+SITE+'</p>';
+  }
+
+  function bind(){
+    Array.prototype.forEach.call(app.querySelectorAll('[data-modo]'),function(b){
+      b.addEventListener('click',function(){ modo=b.getAttribute('data-modo'); i=0; passo(); });
+    });
+    Array.prototype.forEach.call(app.querySelectorAll('[data-acao]'),function(b){
+      b.addEventListener('click',function(){
+        var a=b.getAttribute('data-acao');
+        if(a==='prox'){i++;passo();} else if(a==='ant'){i--;passo();}
+        else if(a==='fim'){fim();} else {inicio();}
+      });
+    });
+  }
+  /* atalho: TutorialBatuara.html#celular-4  ou  #computador-2 */
+  var m=/^#(celular|computador)(?:-(\d+))?$/.exec(location.hash||'');
+  if(m){ modo=(m[1]==='celular')?'mobile':'desk'; i=Math.max(0,Math.min(passos().length-1,(parseInt(m[2],10)||1)-1)); passo(); }
+  else { inicio(); }
+})();
+</script>
+</body>
+</html>
