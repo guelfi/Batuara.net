@@ -203,13 +203,25 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 | Campo | Valor |
 |-------|-------|
-| Data | 2026-10-25 (sessão atual) |
-| Branch | `master`, limpa e sincronizada; último código em produção: `3f640c7` (PM-040) |
-| Em andamento (`doing`) | PM-025 com fase 5 opcional pendente (item no fim da fila) |
-| Próximo item sugerido | **PM-008 + PM-004** (decidir lembretes de contribuição + E2E recorrente): decisão do dono do produto. Aviso da Meta já conferido (sem pendência). |
+| Data | 2026-10-26 (sessão atual) |
+| Branch | `master`, sincronizada com o remoto; último commit: `6607f58` (tutorial publicado em `/tutorial.html`). Código de API em produção: `3f640c7` (PM-040). |
+| Em andamento (`doing`) | PM-025 com fase 5 opcional pendente (item no fim da fila). **Frente nova (sem ID no plano): templates Meta de comunicação com os filhos + tutorial de acesso** (ver bloco abaixo) |
+| Próximo item sugerido | **1)** Conferir no WhatsApp Manager o status dos 4 templates enviados em 26/out (ver bloco abaixo) e, aprovados, implementar o envio no backend. **2)** **PM-008 + PM-004** (decidir lembretes de contribuição + E2E recorrente): decisão do dono do produto. |
 | Bloqueios ativos | Nenhum. Templates Meta em uso aprovados e em categoria barata (25/out). Aviso da Meta ("4 modelos de utilidade reclassificados como marketing") **verificado em 25/out**: os 4 são `casa_teste_variavel`, `casa_teste_simples`, `casa_admin_notification` e `casa_contact_response` — todos de teste/legado, sem referência no código nem nos `.env` da OCI; sem impacto de custo. Prazo p/ pedir análise: 20–22/12/2026 (opcional; dá para excluí-los no painel). |
 | Ambiente | Produção em `https://www.batuara.org.br/`; .NET 10; lembretes WhatsApp desligados; Swagger público por decisão. OCI: 2 OCPU / 12 GB / 100 GB, Ubuntu 22.04.5, 38 containers |
 | Riscos | Logs da API em volume `batuara-api-logs` → `/app/logs` (PM-041, em produção); healthchecks e `depends_on: service_healthy` no api/Evolution (PM-042, em produção; o `up --no-deps` do `deploy-rolling.sh` ignora o `depends_on`, então o ganho vale para boot da máquina e `restart`, não para o deploy rolling, que já sobe o `db` antes). Chaves do Data Protection sem criptografia em repouso; teste Jest do Admin quebrado (`TextEncoder`); majors pendentes (FluentValidation 12, Swashbuckle 10, FluentAssertions 8) |
+
+#### Frente de 26/out: templates Meta para os filhos + tutorial de acesso
+
+- **Tutorial publicado:** `https://www.batuara.org.br/tutorial.html` (fonte: `docs/tutorial/TutorialBatuara.html`, cópia em `src/Frontend/PublicWebsite/public/tutorial.html`; commits `82b1a57` e `6607f58`). Página única, sem dependências, versões celular e computador, cobre só o login por código no WhatsApp. O desenho do WhatsApp segue a mensagem real do `casa_login_code`. **Ainda não há link para ele no site nem na tela de login dos filhos.** Ao editar, lembrar de atualizar as duas cópias.
+- **Templates enviados à Meta em 26/out (WABA `1400706312217668`, pt_BR), todos "Em análise" quando esta nota foi escrita (≈13:41 BRT):**
+  - `casa_aniversario` (Marketing): "Olá, {{1}}! A Casa de Caridade Caboclo Batuara deseja a você um feliz aniversário, com muita luz, saúde e paz! Axé!"
+  - `casa_evento_convite` (Marketing): variáveis {{1}} nome, {{2}} evento, {{3}} data.
+  - `casa_aviso_filho` (Marketing): {{1}} nome, {{2}} texto do aviso. Foi cadastrado como Utilidade e a Meta avisou que seria rejeitado; trocado para Marketing.
+  - `casa_tutorial_site` (Utilidade, pode ser reclassificado): {{1}} nome, {{2}} link do tutorial.
+- **Ainda não existe código que use esses templates.** Falta: nomes em `WhatsAppCloudApiOptions`, métodos em `WhatsAppCloudApiService`, endpoint/job no Admin com opt-in e limite diário. Marketing é cobrado por mensagem; envio em massa só com opt-in registrado.
+- **Dica de cadastro no WhatsApp Manager:** digitar `{{` no corpo cria a variável sozinho; variável não pode abrir nem fechar o texto; cada variável exige amostra (usar dado fictício). Sobre inatividade de templates: nenhuma fonte oficial da Meta confirma expiração; um fornecedor terceiro cita arquivamento após 12 meses sem uso (não confirmado).
+- **Ao retomar:** abrir a lista de modelos e conferir o status. Se algum for rejeitado, ler o motivo antes de reenviar. Havia um loop de checagem a cada 30 min até as 18h de 26/10; ele morre com o reinício do notebook.
 
 #### Fatos operacionais de 23/out (não deriváveis do código)
 
@@ -246,6 +258,11 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 ---
 
 ## 7. Changelog deste plano
+
+### 2026-10-26 (tutorial dos filhos e templates Meta)
+
+- **Tutorial de acesso dos filhos publicado** em `/tutorial.html` (`82b1a57`, `6607f58`), com textos revisados e desenho do WhatsApp alinhado à mensagem real.
+- **4 templates enviados à Meta** (`casa_aniversario`, `casa_evento_convite`, `casa_aviso_filho`, `casa_tutorial_site`), aguardando análise; detalhes no §6.1. Sem código de envio ainda.
 
 ### 2026-10-25 (reordenação de fila e PM-041/PM-042/PM-040)
 
