@@ -73,6 +73,42 @@ namespace Batuara.Infrastructure.Notifications
             await SendTemplateAsync(phoneE164, _options.AdminNotificationTemplateName, components, cancellationToken);
         }
 
+        public async Task SendBirthdayGreetingAsync(string phoneE164, string memberName, CancellationToken cancellationToken = default)
+        {
+            var components = new List<object>
+            {
+                new { type = "body", parameters = new[] { TextParam(FirstName(memberName)) } }
+            };
+            await SendTemplateAsync(phoneE164, _options.BirthdayTemplateName, components, cancellationToken);
+        }
+
+        public async Task SendEventInviteAsync(string phoneE164, string memberName, string eventName, string eventDate, CancellationToken cancellationToken = default)
+        {
+            var components = new List<object>
+            {
+                new { type = "body", parameters = new[] { TextParam(FirstName(memberName)), TextParam(eventName.Trim()), TextParam(eventDate.Trim()) } }
+            };
+            await SendTemplateAsync(phoneE164, _options.EventInviteTemplateName, components, cancellationToken);
+        }
+
+        public async Task SendMemberNoticeAsync(string phoneE164, string memberName, string noticeText, CancellationToken cancellationToken = default)
+        {
+            var components = new List<object>
+            {
+                new { type = "body", parameters = new[] { TextParam(FirstName(memberName)), TextParam(SanitizeTemplateText(noticeText)) } }
+            };
+            await SendTemplateAsync(phoneE164, _options.MemberNoticeTemplateName, components, cancellationToken);
+        }
+
+        public async Task SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default)
+        {
+            var components = new List<object>
+            {
+                new { type = "body", parameters = new[] { TextParam(FirstName(memberName)), TextParam(tutorialUrl.Trim()) } }
+            };
+            await SendTemplateAsync(phoneE164, _options.SiteTutorialTemplateName, components, cancellationToken);
+        }
+
         private async Task<string> SendFreeformTextAsync(string phoneE164, string text, CancellationToken cancellationToken)
         {
             var to = ValidateRecipient(phoneE164);
@@ -170,6 +206,20 @@ namespace Batuara.Infrastructure.Notifications
         }
 
         private static object TextParam(string text) => new { type = "text", text };
+
+        private static string FirstName(string memberName)
+        {
+            return string.IsNullOrWhiteSpace(memberName)
+                ? "Filho da Casa"
+                : memberName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "Filho da Casa";
+        }
+
+        // A Meta rejeita parâmetro de template com quebra de linha, tab ou 4+ espaços seguidos.
+        private static string SanitizeTemplateText(string text)
+        {
+            var singleLine = text.Replace("\r", " ").Replace("\n", " ").Replace("\t", " ");
+            return System.Text.RegularExpressions.Regex.Replace(singleLine, " {2,}", " ").Trim();
+        }
 
         private static string NormalizeToWhatsAppNumber(string phone)
         {

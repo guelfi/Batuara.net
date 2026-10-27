@@ -107,6 +107,8 @@ Histórico de fases: `ROADMAP.md`.
 | PM-037 | `done` | **Conformidade LGPD no PublicWebsite** | Página `/politica-de-privacidade` (controlador, dados, finalidades, compartilhamento Meta/Google, retenção, direitos Art. 18), banner de consentimento de cookies (necessários x terceiros, localStorage + evento de preferências), mapa do Google só carrega após opt-in, links no rodapé e nota no formulário de contato (commit `11919b6`). ✅ Operacional concluído: URL `/politica-de-privacidade` configurada no app Meta e `META_APP_SECRET`/`ADMIN_NOTIFICATION_*` aplicados no servidor (22/out). |
 | PM-038 | `done` | **Notificação WhatsApp de pendências ao admin** | Hosted service diário (19h SP) conta `ContactMessage` Nova/EmAtendimento e envia template `casa_pendencias_aviso_v3` ao número em `AdminNotification:Phone` (commit `11919b6`). Env vars aplicadas no servidor (22/out); template aprovado pela Meta; **digest validado em produção e recebimento confirmado pelo Douglas na sexta, 23/10/2026**. |
 | PM-039 | `done` | **Mobile AdminDashboard — lista de mensagens compacta** | Colunas: envelope (vermelho não lida / azul lida), nome, assunto, semáforo WhatsApp (amarelo pendente / verde respondida / cinza não solicitou), data, status; clique na linha abre atendimento (commit `11919b6`). |
+| PM-046 | `todo` | **Campanha WhatsApp: site liberado para os filhos** | **Só planejamento; nada será enviado até decisão.** Plano em §6.2-A. Usa `casa_aviso_filho` (Marketing). Depende de: base de opt-in (não existe hoje), tabela de entregas/idempotência, endpoint Admin com *dry-run*, teste na allowlist. |
+| PM-047 | `todo` | **Envio do link do tutorial aos filhos** | Sequência da PM-046: `casa_tutorial_site` (Utilidade) com `https://www.batuara.org.br/tutorial.html`. Reaproveita a infraestrutura da PM-046. Plano em §6.2-A. Antes: linkar o tutorial no site e na tela de login dos filhos. |
 | PM-031 | `todo` | **MFA (TOTP)** | Login admin com MFA opcional/obrigatório. |
 | PM-032 | `todo` | **WAF / SIEM básico** | Proteção de borda + correlação de logs. |
 | PM-033 | `todo` | **Cache de endpoints públicos** | In-memory/Nginx; Redis só se volume justificar. |
@@ -127,7 +129,8 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 1. ~~**PM-041** — Logs da API fora do container~~ ✅
 2. ~~**PM-042** — Healthchecks e `depends_on` na OCI~~ ✅
 3. ~~**PM-040** — Inbox p/ mensagens WhatsApp sem thread~~ ✅
-4. **PM-008 + PM-004** — Decisão dos lembretes de contribuição + E2E recorrente
+4. **PM-046 → PM-047** — Campanha de lançamento do site aos filhos e envio do tutorial *(planejar antes; envio só com aprovação explícita)*
+   **PM-008 + PM-004** — Decisão dos lembretes de contribuição + E2E recorrente
 5. **PM-021** — Trilha de auditoria *(base também p/ LGPD)*
 6. **PM-010 → PM-016, PM-023** — Débitos do plano de testes Admin + cobertura de testes
 7. **PM-022, PM-044, PM-032** — APM, Ubuntu 24.04/Node, WAF/SIEM
@@ -206,7 +209,7 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 | Data | 2026-10-26 (sessão atual) |
 | Branch | `master`, sincronizada com o remoto; último commit: `6607f58` (tutorial publicado em `/tutorial.html`). Código de API em produção: `3f640c7` (PM-040). |
 | Em andamento (`doing`) | PM-025 com fase 5 opcional pendente (item no fim da fila). **Frente nova (sem ID no plano): templates Meta de comunicação com os filhos + tutorial de acesso** (ver bloco abaixo) |
-| Próximo item sugerido | **1)** Conferir no WhatsApp Manager o status dos 4 templates enviados em 26/out (ver bloco abaixo) e, aprovados, implementar o envio no backend. **2)** **PM-008 + PM-004** (decidir lembretes de contribuição + E2E recorrente): decisão do dono do produto. |
+| Próximo item sugerido | **1)** Fechar as decisões abertas do §6.2-A e implementar PM-046/PM-047 (aviso de site liberado + link do tutorial). **Nada deve ser enviado aos filhos sem aprovação explícita do dono do produto.** **2)** **PM-008 + PM-004** (decidir lembretes de contribuição + E2E recorrente): decisão do dono do produto. |
 | Bloqueios ativos | Nenhum. Templates Meta em uso aprovados e em categoria barata (25/out). Aviso da Meta ("4 modelos de utilidade reclassificados como marketing") **verificado em 25/out**: os 4 são `casa_teste_variavel`, `casa_teste_simples`, `casa_admin_notification` e `casa_contact_response` — todos de teste/legado, sem referência no código nem nos `.env` da OCI; sem impacto de custo. Prazo p/ pedir análise: 20–22/12/2026 (opcional; dá para excluí-los no painel). |
 | Ambiente | Produção em `https://www.batuara.org.br/`; .NET 10; lembretes WhatsApp desligados; Swagger público por decisão. OCI: 2 OCPU / 12 GB / 100 GB, Ubuntu 22.04.5, 38 containers |
 | Riscos | Logs da API em volume `batuara-api-logs` → `/app/logs` (PM-041, em produção); healthchecks e `depends_on: service_healthy` no api/Evolution (PM-042, em produção; o `up --no-deps` do `deploy-rolling.sh` ignora o `depends_on`, então o ganho vale para boot da máquina e `restart`, não para o deploy rolling, que já sobe o `db` antes). Chaves do Data Protection sem criptografia em repouso; teste Jest do Admin quebrado (`TextEncoder`); majors pendentes (FluentValidation 12, Swashbuckle 10, FluentAssertions 8) |
@@ -219,9 +222,42 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
   - `casa_evento_convite` (Marketing): variáveis {{1}} nome, {{2}} evento, {{3}} data.
   - `casa_aviso_filho` (Marketing): {{1}} nome, {{2}} texto do aviso. Foi cadastrado como Utilidade e a Meta avisou que seria rejeitado; trocado para Marketing.
   - `casa_tutorial_site` (Utilidade, pode ser reclassificado): {{1}} nome, {{2}} link do tutorial.
-- **Ainda não existe código que use esses templates.** Falta: nomes em `WhatsAppCloudApiOptions`, métodos em `WhatsAppCloudApiService`, endpoint/job no Admin com opt-in e limite diário. Marketing é cobrado por mensagem; envio em massa só com opt-in registrado.
+- **Aprovados em 27/out** (WhatsApp Manager: "Ativo — Qualidade pendente"; `casa_tutorial_site` ficou em Utilidade, os outros três em Marketing). 0 envios até aqui.
+- **Camada de envio implementada em 27/out (sem gatilho):** `IWhatsAppService` ganhou `SendBirthdayGreetingAsync`, `SendEventInviteAsync`, `SendMemberNoticeAsync` e `SendSiteTutorialLinkAsync`; nomes em `WhatsAppCloudApiOptions` (`BirthdayTemplateName`, `EventInviteTemplateName`, `MemberNoticeTemplateName`, `SiteTutorialTemplateName`, sobrescrevíveis por `WhatsApp__*`); Evolution com texto equivalente; 5 testes novos (52 no total). **Nenhum job, endpoint ou chamada usa esses métodos ainda** — nada é enviado. `SendMemberNoticeAsync` achata quebras de linha e espaços repetidos (a Meta rejeita isso em parâmetro de template).
+- **Falta (PM-046/PM-047):** opt-in registrado, tabela de entregas, endpoint/job no Admin com *dry-run* e limite diário. Marketing é cobrado por mensagem; envio em massa só com opt-in registrado.
 - **Dica de cadastro no WhatsApp Manager:** digitar `{{` no corpo cria a variável sozinho; variável não pode abrir nem fechar o texto; cada variável exige amostra (usar dado fictício). Sobre inatividade de templates: nenhuma fonte oficial da Meta confirma expiração; um fornecedor terceiro cita arquivamento após 12 meses sem uso (não confirmado).
-- **Ao retomar:** abrir a lista de modelos e conferir o status. Se algum for rejeitado, ler o motivo antes de reenviar. Havia um loop de checagem a cada 30 min até as 18h de 26/10; ele morre com o reinício do notebook.
+- **Ao retomar:** ler o §6.2-A (plano da campanha) e resolver as decisões abertas antes de codar o envio.
+
+#### 6.2-A Plano: campanha "site liberado" (PM-046) + link do tutorial (PM-047)
+
+**Objetivo:** avisar os filhos da Casa, por WhatsApp, que o site está pronto e liberado para acesso e, na sequência, enviar o passo a passo (`/tutorial.html`). **Não enviar nada até o dono do produto aprovar texto, público e data.**
+
+**Mensagens (dois templates já aprovados):**
+
+| Ordem | Template | Categoria | Variáveis | Conteúdo sugerido |
+|-------|----------|-----------|-----------|-------------------|
+| 1 | `casa_aviso_filho` | Marketing | {{1}} primeiro nome, {{2}} aviso | Aviso: "O site da Casa já está no ar. Agora você pode acessar a sua área com um código enviado por WhatsApp, em batuara.org.br." (uma linha, sem quebra) |
+| 2 | `casa_tutorial_site` | Utilidade | {{1}} primeiro nome, {{2}} link | `https://www.batuara.org.br/tutorial.html` |
+
+Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não tiver acessado; o aviso 1 já pode citar que o passo a passo vai chegar.
+
+**Público:** `HouseMember` ativo, com `MobilePhone` válido (normalizado por `PhoneNumberNormalizer`), **e** opt-in registrado.
+
+**Decisões abertas (dono do produto):**
+1. **Opt-in:** não existe campo de consentimento no `HouseMember` (só `AllowWhatsAppReminder` por contribuição). O aviso é Marketing e a Meta exige opt-in. Opções: (a) campo novo `WhatsAppOptIn` + data + origem no `HouseMember`, preenchido pelo Admin após confirmação da direção; (b) tratar o cadastro presencial como consentimento e registrar a data em lote. Recomendação: (a), com a origem "cadastro presencial/direção" documentada.
+2. **Texto final** do aviso e se o tutorial segue no mesmo dia ou no seguinte.
+3. **Quem dispara:** botão no Admin (manual, com confirmação) em vez de job automático. Recomendação: manual, uma campanha por vez.
+4. **Link do tutorial** no site e na tela de login dos filhos antes do envio (hoje não existe).
+
+**Desenho técnico proposto:**
+- Tabela `WhatsAppBroadcastDelivery` (`CampaignKey`, `HouseMemberId`, `TemplateName`, `Status` Pending/Sent/Failed/Skipped, `MessageId`, `Error`, `SentAt`, índice único `CampaignKey+HouseMemberId`) para idempotência: reexecutar não duplica envio.
+- Endpoint Admin `POST /api/house-members/broadcast/{campaign}` (`Admin`) com `dryRun=true` por padrão: devolve quantos receberiam, quantos ficam de fora (sem telefone, inativo, sem opt-in) e a prévia do texto, sem enviar.
+- Envio real: lotes pequenos com intervalo (ex.: 20 por minuto), limite diário configurável, falha de um destinatário não interrompe os demais, tudo registrado na tabela.
+- Teste primeiro só com a allowlist (`WhatsApp__AllowedRecipients`) e 1–2 números da direção; só depois liberar o público.
+- Aproveitar o webhook Meta para marcar falhas de entrega (status `failed`) na tabela.
+- Testes: dry-run não envia; idempotência; exclusão de sem opt-in/inativo/sem telefone; falha parcial.
+
+**Ordem de execução:** (1) decisões acima → (2) migration + opt-in no Admin → (3) tabela de entregas + endpoint com dry-run → (4) teste na allowlist → (5) linkar tutorial no site e no login → (6) **aprovação explícita** → (7) disparo do aviso → (8) disparo do tutorial.
 
 #### Fatos operacionais de 23/out (não deriváveis do código)
 
@@ -259,10 +295,16 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 ## 7. Changelog deste plano
 
+### 2026-10-27 (templates aprovados e camada de envio)
+
+- **Templates aprovados na Meta:** `casa_aniversario`, `casa_evento_convite`, `casa_aviso_filho` (Marketing) e `casa_tutorial_site` (Utilidade) estão "Ativo — Qualidade pendente".
+- **Camada de envio implementada, sem gatilho:** 4 métodos novos em `IWhatsAppService`/`WhatsAppCloudApiService`/Evolution, nomes de template em `WhatsAppCloudApiOptions`, 5 testes novos (52 no total). Nada envia mensagem ainda.
+- **Itens novos PM-046 e PM-047** (campanha "site liberado" e link do tutorial), só planejados no §6.2-A; envio depende de decisões do dono do produto e de opt-in.
+
 ### 2026-10-26 (tutorial dos filhos e templates Meta)
 
 - **Tutorial de acesso dos filhos publicado** em `/tutorial.html` (`82b1a57`, `6607f58`), com textos revisados e desenho do WhatsApp alinhado à mensagem real.
-- **4 templates enviados à Meta** (`casa_aniversario`, `casa_evento_convite`, `casa_aviso_filho`, `casa_tutorial_site`), aguardando análise; detalhes no §6.1. Sem código de envio ainda.
+- **4 templates enviados à Meta** (`casa_aniversario`, `casa_evento_convite`, `casa_aviso_filho`, `casa_tutorial_site`); aprovados em 27/out, detalhes no §6.1.
 
 ### 2026-10-25 (reordenação de fila e PM-041/PM-042/PM-040)
 

@@ -49,6 +49,33 @@ namespace Batuara.Infrastructure.Notifications
             await SendTextAsync(phoneE164, $"Casa Batuara: existem {pendingCount} {plural} de contato aguardando atendimento no AdminDashboard.", cancellationToken);
         }
 
+        public async Task SendBirthdayGreetingAsync(string phoneE164, string memberName, CancellationToken cancellationToken = default)
+        {
+            await SendTextAsync(phoneE164, $"Casa Batuara: Olá, {FirstName(memberName)}! A Casa de Caridade Caboclo Batuara deseja a você um feliz aniversário, com muita luz, saúde e paz! Axé!", cancellationToken);
+        }
+
+        public async Task SendEventInviteAsync(string phoneE164, string memberName, string eventName, string eventDate, CancellationToken cancellationToken = default)
+        {
+            await SendTextAsync(phoneE164, $"Casa Batuara: Olá, {FirstName(memberName)}! Você está convidado(a) para {eventName.Trim()}, no dia {eventDate.Trim()}, na Casa de Caridade Caboclo Batuara.", cancellationToken);
+        }
+
+        public async Task SendMemberNoticeAsync(string phoneE164, string memberName, string noticeText, CancellationToken cancellationToken = default)
+        {
+            await SendTextAsync(phoneE164, $"Casa Batuara: Olá, {FirstName(memberName)}. Aviso da direção: {noticeText.Trim()}", cancellationToken);
+        }
+
+        public async Task SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default)
+        {
+            await SendTextAsync(phoneE164, $"Casa Batuara: Olá, {FirstName(memberName)}! Passo a passo para acessar a sua área no site: {tutorialUrl.Trim()}", cancellationToken);
+        }
+
+        private static string FirstName(string memberName)
+        {
+            return string.IsNullOrWhiteSpace(memberName)
+                ? "Filho da Casa"
+                : memberName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "Filho da Casa";
+        }
+
         private async Task<string> SendTextAsync(string phoneE164, string text, CancellationToken cancellationToken)
         {
             if (!_options.Enabled)

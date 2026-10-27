@@ -15,6 +15,10 @@ namespace Batuara.Infrastructure.Notifications
         public string ContributionReminderTemplateName { get; set; } = "casa_contribution_reminder";
         public string ContactResponseTemplateName { get; set; } = "casa_contact_reply";
         public string AdminNotificationTemplateName { get; set; } = "casa_pendencias_aviso_v3";
+        public string BirthdayTemplateName { get; set; } = "casa_aniversario";
+        public string EventInviteTemplateName { get; set; } = "casa_evento_convite";
+        public string MemberNoticeTemplateName { get; set; } = "casa_aviso_filho";
+        public string SiteTutorialTemplateName { get; set; } = "casa_tutorial_site";
         public string[] AllowedRecipients { get; set; } = [];
     }
 }

@@ -19,6 +19,14 @@ namespace Batuara.Infrastructure.Tests.HouseMembers
     {
         private class FakeWhatsAppService : IWhatsAppService
         {
+            public Task SendBirthdayGreetingAsync(string phoneE164, string memberName, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+            public Task SendEventInviteAsync(string phoneE164, string memberName, string eventName, string eventDate, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+            public Task SendMemberNoticeAsync(string phoneE164, string memberName, string noticeText, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+            public Task SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
             public int ReminderCount { get; private set; }
 
             public Task SendAuthCodeAsync(string phoneE164, string code, CancellationToken cancellationToken = default) => Task.CompletedTask;
