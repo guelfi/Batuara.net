@@ -143,7 +143,7 @@ Endpoints novos:
 
 Arquivos novos:
 - `src/Frontend/AdminDashboard/src/pages/UsersPage.tsx`
-- `src/Frontend/AdminDashboard/src/pages/MemberProfilePage.tsx`
+- ~~`src/Frontend/AdminDashboard/src/pages/MemberProfilePage.tsx`~~ (removido em 27/out: substituído por `UnifiedProfilePage.tsx`)
 - `src/Frontend/AdminDashboard/src/utils/roles.ts`
 - `src/Frontend/AdminDashboard/src/utils/phone.ts`
 

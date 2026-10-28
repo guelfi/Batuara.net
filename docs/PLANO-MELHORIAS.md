@@ -109,6 +109,7 @@ Histórico de fases: `ROADMAP.md`.
 | PM-039 | `done` | **Mobile AdminDashboard — lista de mensagens compacta** | Colunas: envelope (vermelho não lida / azul lida), nome, assunto, semáforo WhatsApp (amarelo pendente / verde respondida / cinza não solicitou), data, status; clique na linha abre atendimento (commit `11919b6`). |
 | PM-046 | `todo` | **Campanha WhatsApp: site liberado para os filhos** | **Só planejamento; nada será enviado até decisão.** Plano em §6.2-A. Usa `casa_aviso_filho` (Marketing). Depende de: base de opt-in (não existe hoje), tabela de entregas/idempotência, endpoint Admin com *dry-run*, teste na allowlist. |
 | PM-047 | `todo` | **Envio do link do tutorial aos filhos** | Sequência da PM-046: `casa_tutorial_site` (Utilidade) com `https://www.batuara.org.br/tutorial.html`. Reaproveita a infraestrutura da PM-046. Plano em §6.2-A. Antes: linkar o tutorial no site e na tela de login dos filhos. |
+| PM-048 | `blocked` | **Reativar "Minha contribuição" na tela do Filho da Casa** | **Oculta na fase 1 do site (27/out):** nesta fase o filho só completa os dados cadastrais; a declaração de valor, recorrência e autorização de lembrete por WhatsApp saiu da tela `UnifiedProfilePage` (rota `/profile`). Código preservado em `src/Frontend/AdminDashboard/src/components/member/MemberContributionSection.tsx` (autocontido, **não renderizado**). Para reativar: importar o componente na `UnifiedProfilePage` e renderizá-lo sob `memberSession`, passando `member`, `onMemberUpdated={applyMemberData}`, `onFeedback={setMemberFeedback}` e `onError={setMemberError}`. **Backend intacto** (`addMyMemberContribution`, lembretes desligados). Depende do redesenho do fluxo de controle de contribuições (PM-008/PM-004) e do opt-in de WhatsApp (PM-046). |
 | PM-031 | `todo` | **MFA (TOTP)** | Login admin com MFA opcional/obrigatório. |
 | PM-032 | `todo` | **WAF / SIEM básico** | Proteção de borda + correlação de logs. |
 | PM-033 | `todo` | **Cache de endpoints públicos** | In-memory/Nginx; Redis só se volume justificar. |
@@ -296,6 +297,9 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 ## 7. Changelog deste plano
 
 ### 2026-10-27 (templates aprovados e camada de envio)
+
+- **"Minha contribuição" oculta na tela do filho (fase 1 = só dados cadastrais):** seção removida da `UnifiedProfilePage` e preservada em `components/member/MemberContributionSection.tsx` (não renderizada). Reativação registrada como **PM-048**.
+- **`pages/MemberProfilePage.tsx` removido:** versão antiga da tela do filho, sem rota nem import (substituída pela `UnifiedProfilePage`); só aparecia numa lista de arquivos do doc de status.
 
 - **Templates aprovados na Meta:** `casa_aniversario`, `casa_evento_convite`, `casa_aviso_filho` (Marketing) e `casa_tutorial_site` (Utilidade) estão "Ativo — Qualidade pendente".
 - **Camada de envio implementada, sem gatilho:** 4 métodos novos em `IWhatsAppService`/`WhatsAppCloudApiService`/Evolution, nomes de template em `WhatsAppCloudApiOptions`, 5 testes novos (52 no total). Nada envia mensagem ainda.
