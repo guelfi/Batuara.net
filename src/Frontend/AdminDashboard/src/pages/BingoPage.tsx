@@ -1900,7 +1900,7 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
     );
   }
 
-  const photoUrl = (id: number) => `${apiService.defaults.baseURL}/bingo/admin/comandas-foto/${id}/foto`;
+  const photoUrl = (id: number) => `/batuara-api/api/bingo/admin/comandas-foto/${id}/foto`;
 
   return (
     <Stack spacing={3}>
