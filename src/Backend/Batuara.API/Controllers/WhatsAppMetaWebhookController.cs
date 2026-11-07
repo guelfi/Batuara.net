@@ -142,6 +142,7 @@ namespace Batuara.API.Controllers
             if (contactMessage != null)
             {
                 contactMessage.AddWhatsAppMessage(messageId, phone, "sistema", body, false, DateTime.UtcNow);
+                contactMessage.MarkAsUnread();
 
                 if (contactMessage.Status == ContactMessageStatus.Resolved)
                 {

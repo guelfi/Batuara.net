@@ -1,8 +1,5 @@
 using Batuara.Application.Notifications.Services;
-using Batuara.Domain.Enums;
-using Batuara.Infrastructure.Data;
 using Batuara.Infrastructure.Notifications;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace Batuara.API.Services
@@ -12,6 +9,7 @@ namespace Batuara.API.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly AdminNotificationOptions _options;
         private readonly ILogger<PendingContactMessagesHostedService> _logger;
+        private static readonly TimeSpan RetryDelay = TimeSpan.FromHours(1);
         private static readonly TimeZoneInfo SaoPauloTimeZone = ResolveSaoPauloTimeZone();
 
         public PendingContactMessagesHostedService(
@@ -36,19 +34,37 @@ namespace Batuara.API.Services
             {
                 try
                 {
-                    var delay = GetDelayUntilNextDigest();
-                    await Task.Delay(delay, stoppingToken);
-                    await SendDigestAsync(stoppingToken);
+                    await Task.Delay(GetDelayUntilNextDigest(), stoppingToken);
+
+                    if (!await TrySendDigestAsync(stoppingToken))
+                    {
+                        // Uma unica nova tentativa 1h depois, no mesmo dia.
+                        await Task.Delay(RetryDelay, stoppingToken);
+                        await TrySendDigestAsync(stoppingToken);
+                    }
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
                     break;
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Pending contact messages notification failed");
-                    await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
-                }
+            }
+        }
+
+        private async Task<bool> TrySendDigestAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await SendDigestAsync(cancellationToken);
+                return true;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Pending contact messages notification failed");
+                return false;
             }
         }
 
@@ -69,21 +85,12 @@ namespace Batuara.API.Services
         private async Task SendDigestAsync(CancellationToken cancellationToken)
         {
             using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<BatuaraDbContext>();
+            var digest = scope.ServiceProvider.GetRequiredService<IPendingDigestService>();
             var whatsApp = scope.ServiceProvider.GetRequiredService<IWhatsAppService>();
 
-            var pending = await db.ContactMessages.CountAsync(
-                x => x.Status == ContactMessageStatus.New || x.Status == ContactMessageStatus.InProgress,
+            await digest.RunAsync(
+                (count, ct) => whatsApp.SendAdminNotificationAsync(_options.Phone, count, ct),
                 cancellationToken);
-
-            if (pending == 0)
-            {
-                _logger.LogInformation("No pending contact messages; admin digest skipped");
-                return;
-            }
-
-            await whatsApp.SendAdminNotificationAsync(_options.Phone, pending, cancellationToken);
-            _logger.LogInformation("Admin digest sent: {Count} pending contact messages", pending);
         }
 
         private static TimeZoneInfo ResolveSaoPauloTimeZone()

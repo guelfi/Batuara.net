@@ -271,6 +271,7 @@ builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
 builder.Services.AddScoped<IGuideService, GuideService>();
 builder.Services.AddScoped<IHouseMemberService, HouseMemberService>();
 builder.Services.AddScoped<IContactMessageService, ContactMessageService>();
+builder.Services.AddScoped<IPendingDigestService, PendingContactDigestService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IEventDomainService, EventDomainService>();
 builder.Services.AddScoped<IOrixaService, OrixaService>();
