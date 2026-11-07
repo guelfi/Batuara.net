@@ -649,7 +649,10 @@ const QrTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
   const [dataUrl, setDataUrl] = useState('');
 
   useEffect(() => {
-    if (!full || !mesa) return;
+    if (!mesa) {
+      setDataUrl('');
+      return;
+    }
     let cancelled = false;
     QRCode.toDataURL(bingoQrUrl(Number(mesa)), { width: 900, margin: 2, errorCorrectionLevel: 'M' })
       .then((u) => {
@@ -661,7 +664,7 @@ const QrTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
     return () => {
       cancelled = true;
     };
-  }, [full, mesa]);
+  }, [mesa]);
 
   return (
     <Stack spacing={2}>
@@ -672,9 +675,18 @@ const QrTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
           </MenuItem>
         ))}
       </TextField>
-      <Button variant="contained" sx={BIG} disabled={!mesa} onClick={() => setFull(true)}>
-        Mostrar QR para o cliente
-      </Button>
+      {mesa && dataUrl && (
+        <Box sx={{ textAlign: 'center' }}>
+          <Box
+            component="img"
+            src={dataUrl}
+            alt={`QR code da mesa ${mesa}`}
+            onClick={() => setFull(true)}
+            sx={{ width: 'min(88vw, 55vh)', height: 'min(88vw, 55vh)', cursor: 'zoom-in', border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}
+          />
+          <Typography variant="body2" sx={{ mt: 0.5, opacity: 0.7 }}>Toque no QR para ampliar</Typography>
+        </Box>
+      )}
 
       {full && (
         <Box

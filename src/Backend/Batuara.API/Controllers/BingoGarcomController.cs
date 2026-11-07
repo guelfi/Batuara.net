@@ -76,6 +76,18 @@ namespace Batuara.API.Controllers
             return Ok(new { success = true });
         }
 
+        [HttpGet("saida/{tabId:guid}")]
+        public async Task<IActionResult> GetExit(Guid tabId, CancellationToken cancellationToken)
+        {
+            return Ok(new { success = true, data = await service.GetExitCheckAsync(tabId, cancellationToken) });
+        }
+
+        [HttpPost("saida/{tabId:guid}/liberar")]
+        public async Task<IActionResult> ReleaseExit(Guid tabId, CancellationToken cancellationToken)
+        {
+            return Ok(new { success = true, data = await service.ReleaseExitAsync(GetHouseMemberId(), tabId, cancellationToken) });
+        }
+
         [HttpGet("contas")]
         public async Task<IActionResult> GetAccounts([FromQuery] bool todas, CancellationToken cancellationToken)
         {

@@ -47,6 +47,24 @@ export const savedTabId = {
   clear: () => safeStorage.remove(TAB_ID_KEY),
 };
 
+const PROFILE_KEY = 'bingo_profile';
+
+/** Nome e celular do cliente neste aparelho, para reabrir comanda so escolhendo a mesa. */
+export const savedProfile = {
+  get: (): { name: string; phone: string } | null => {
+    try {
+      const raw = safeStorage.get(PROFILE_KEY);
+      if (!raw) return null;
+      const v = JSON.parse(raw);
+      return typeof v?.name === 'string' && typeof v?.phone === 'string' && v.name && v.phone ? { name: v.name, phone: v.phone } : null;
+    } catch {
+      return null;
+    }
+  },
+  set: (name: string, phone: string) => safeStorage.set(PROFILE_KEY, JSON.stringify({ name, phone })),
+  clear: () => safeStorage.remove(PROFILE_KEY),
+};
+
 /** Extrai a mensagem de erro da API ou devolve um texto padrão. */
 export const apiErrorMessage = (error: any, fallback = 'Não foi possível concluir. Tente novamente.'): string => {
   const data = error?.response?.data;

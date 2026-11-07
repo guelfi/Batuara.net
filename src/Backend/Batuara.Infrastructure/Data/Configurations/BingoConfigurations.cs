@@ -200,6 +200,7 @@ namespace Batuara.Infrastructure.Data.Configurations
             builder.Property(x => x.PaymentMethodName).HasMaxLength(60);
             builder.Property(x => x.PaidByName).HasMaxLength(150);
             builder.Property(x => x.PaidNote).HasMaxLength(200);
+            builder.Property(x => x.ExitCheckedByName).HasMaxLength(150);
             builder.Property(x => x.AmountPaid).HasPrecision(10, 2);
             builder.Ignore(x => x.AmountDue);
             builder.Ignore(x => x.UndeliveredCount);

@@ -26,7 +26,8 @@ import {
   ChevronRight as ChevronRightIcon,
   Remove as RemoveIcon,
 } from '@mui/icons-material';
-import { bingoApi, apiErrorMessage, httpStatus, savedTabId, undeliveredFromError } from '../../services/bingoApi';
+import QRCode from 'qrcode';
+import { bingoApi, apiErrorMessage, httpStatus, savedProfile, savedTabId, undeliveredFromError } from '../../services/bingoApi';
 import { BingoPublicInfo, BingoTabItem, BingoTabView, BingoUndeliveredItem } from '../../types/bingo';
 import { formatBRL, useNoIndex, usePolling } from './bingoHooks';
 
@@ -64,8 +65,9 @@ const goTo = (path: string) => {
 const CustomerForm: React.FC = () => {
   const [info, setInfo] = useState<BingoPublicInfo | null>(null);
   const [loadError, setLoadError] = useState('');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [profile, setProfile] = useState(savedProfile.get());
+  const [name, setName] = useState(profile?.name ?? '');
+  const [phone, setPhone] = useState(profile?.phone ?? '');
   const [mesa, setMesa] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -117,6 +119,7 @@ const CustomerForm: React.FC = () => {
     try {
       const res = await bingoApi.createTab({ customerName: name.trim(), phone: digits, mesa: Number(mesa) });
       savedTabId.set(res.tabId);
+      savedProfile.set(name.trim(), digits);
       goTo(`/bingo/comanda/${res.tabId}`);
     } catch (err) {
       setError(apiErrorMessage(err, 'Não foi possível abrir a comanda. Confira os dados e tente de novo.'));
@@ -155,7 +158,13 @@ const CustomerForm: React.FC = () => {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <Stack spacing={2}>
-        <TextField
+        {profile && (
+          <Alert severity="success" icon={false} sx={{ fontWeight: 600 }}
+            action={<Button color="inherit" size="small" onClick={() => { savedProfile.clear(); setProfile(null); setName(''); setPhone(''); }}>Não sou eu</Button>}>
+            Olá, {profile.name.split(' ')[0]}! Escolha sua mesa para abrir a comanda.
+          </Alert>
+        )}
+        {!profile && (<TextField
           label="Seu nome"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -163,8 +172,8 @@ const CustomerForm: React.FC = () => {
           required
           fullWidth
           slotProps={{ htmlInput: { maxLength: 100, style: { minHeight: 28 } } }}
-        />
-        <TextField
+        />)}
+        {!profile && (<TextField
           label="Celular (com DDD)"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
@@ -180,7 +189,7 @@ const CustomerForm: React.FC = () => {
               : 'Já tem comanda? Informe o mesmo celular para voltar a ela.'
           }
           slotProps={{ htmlInput: { inputMode: 'tel', style: { minHeight: 28 } } }}
-        />
+        />)}
         <TextField
           select
           label="Sua mesa"
@@ -210,6 +219,26 @@ const CustomerForm: React.FC = () => {
 };
 
 // ------------------------------------------------------------------- comanda
+
+/** QR de saida: quem confere abre o link logado como garcom e o servidor confirma o pagamento. */
+const ExitQr: React.FC<{ tabId: string }> = ({ tabId }) => {
+  const [dataUrl, setDataUrl] = useState('');
+  useEffect(() => {
+    let cancelled = false;
+    QRCode.toDataURL(`${window.location.origin}/admin/bingo-saida/${tabId}`, { width: 360, margin: 2, errorCorrectionLevel: 'M' })
+      .then((u) => { if (!cancelled) setDataUrl(u); })
+      .catch(() => { if (!cancelled) setDataUrl(''); });
+    return () => { cancelled = true; };
+  }, [tabId]);
+  if (!dataUrl) return null;
+  return (
+    <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center', mb: 2 }}>
+      <Typography sx={{ fontWeight: 700 }}>Pagamento confirmado</Typography>
+      <Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>Mostre este QR na saída.</Typography>
+      <Box component="img" src={dataUrl} alt="QR de saída" sx={{ width: 'min(70vw, 260px)', height: 'min(70vw, 260px)' }} />
+    </Paper>
+  );
+};
 
 const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
   const [tab, setTab] = useState<BingoTabView | null>(null);
@@ -703,6 +732,7 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
                   Encerrar a conta
                 </Button>
               )}
+              {isPaid && <ExitQr tabId={tabId} />}
               {isPaid && (
                 <Button variant="contained" sx={{ minHeight: 46, fontWeight: 700 }} onClick={newTab}>
                   Abrir nova comanda

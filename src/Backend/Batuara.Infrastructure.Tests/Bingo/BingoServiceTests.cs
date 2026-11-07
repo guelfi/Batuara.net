@@ -746,6 +746,43 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public async Task New_Tab_Of_Verified_Phone_Inherits_Verification_Without_New_Code()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var first = await f.NewTabAsync();
+            await f.Public.ConfirmPhoneAsync(first.TabId, f.Dispatcher.Sent[0].Code);
+            await f.PayAdminAsync(first.TabId, f.CardId);
+            var sent = f.Dispatcher.Sent.Count;
+
+            var second = await f.NewTabAsync(mesa: 2);
+
+            second.TabId.Should().NotBe(first.TabId);
+            (await f.Public.GetTabAsync(second.TabId)).PhoneVerified.Should().BeTrue();
+            f.Dispatcher.Sent.Count.Should().Be(sent);
+        }
+
+        [Fact]
+        public async Task Exit_Check_Requires_Payment_And_Registers_Only_First_Release()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var tab = await f.NewTabAsync();
+            var waiterId = await f.ScheduleWaiterAsync();
+
+            (await f.Waiter.GetExitCheckAsync(tab.TabId)).Paid.Should().BeFalse();
+            await ShouldThrowAsync(() => f.Waiter.ReleaseExitAsync(waiterId, tab.TabId), BingoErrorKind.Conflict);
+
+            await f.PayAdminAsync(tab.TabId, f.CardId);
+            var first = await f.Waiter.ReleaseExitAsync(waiterId, tab.TabId);
+            first.Paid.Should().BeTrue();
+            first.ExitCheckedByName.Should().NotBeNullOrWhiteSpace();
+
+            var again = await f.Waiter.ReleaseExitAsync(waiterId, tab.TabId);
+            again.ExitCheckedAt.Should().Be(first.ExitCheckedAt);
+        }
+
+        [Fact]
         public async Task ConfirmPhone_Should_Reject_Wrong_Or_Expired_Code()
         {
             var f = new Fixture();

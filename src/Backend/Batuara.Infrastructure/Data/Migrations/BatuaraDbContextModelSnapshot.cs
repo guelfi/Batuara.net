@@ -760,6 +760,13 @@ namespace Batuara.Infrastructure.Data.Migrations
                     b.Property<int>("EventId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("ExitCheckedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ExitCheckedByName")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
                     b.Property<DateTime?>("LinkLastAttemptAt")
                         .HasColumnType("timestamp with time zone");
 

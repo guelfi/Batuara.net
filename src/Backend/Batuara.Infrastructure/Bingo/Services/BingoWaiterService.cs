@@ -1,5 +1,6 @@
 using Batuara.Application.Bingo.Models;
 using Batuara.Application.Bingo.Services;
+using Batuara.Domain.Entities;
 using Batuara.Domain.Enums;
 using Batuara.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,46 @@ namespace Batuara.Infrastructure.Bingo.Services
         public BingoWaiterService(BatuaraDbContext db) : base(db)
         {
         }
+
+        public async Task<BingoExitCheckDto> GetExitCheckAsync(Guid tabId, CancellationToken cancellationToken = default)
+        {
+            var tab = await Db.BingoTabs.Include(x => x.Items).FirstOrDefaultAsync(x => x.Id == tabId, cancellationToken)
+                ?? throw new BingoException(BingoErrorKind.NotFound, "Comanda não encontrada.");
+            return ToExitDto(tab);
+        }
+
+        public async Task<BingoExitCheckDto> ReleaseExitAsync(int houseMemberId, Guid tabId, CancellationToken cancellationToken = default)
+        {
+            var tab = await Db.BingoTabs.Include(x => x.Items).FirstOrDefaultAsync(x => x.Id == tabId, cancellationToken)
+                ?? throw new BingoException(BingoErrorKind.NotFound, "Comanda não encontrada.");
+            if (!tab.IsPaid)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Esta comanda ainda não foi paga.");
+            }
+
+            if (tab.ExitCheckedAt == null)
+            {
+                var name = await Db.HouseMembers.Where(x => x.Id == houseMemberId).Select(x => x.FullName).FirstOrDefaultAsync(cancellationToken) ?? "Garçom";
+                tab.ReleaseExit(name, DateTime.UtcNow);
+                await Db.SaveChangesAsync(cancellationToken);
+            }
+
+            return ToExitDto(tab);
+        }
+
+        private static BingoExitCheckDto ToExitDto(BingoTab tab) => new()
+        {
+            Paid = tab.IsPaid,
+            Mesa = tab.TableNumber,
+            CustomerName = tab.CustomerName,
+            Status = tab.Status,
+            Total = tab.Total,
+            AmountDue = tab.IsPaid ? tab.PaidAmount : tab.AmountDue,
+            PaymentMethod = tab.PaymentLabel,
+            PaidAt = tab.PaidAt,
+            ExitCheckedAt = tab.ExitCheckedAt,
+            ExitCheckedByName = tab.ExitCheckedByName
+        };
 
         public async Task<BingoWaiterMeDto> GetMeAsync(int houseMemberId, CancellationToken cancellationToken = default)
         {

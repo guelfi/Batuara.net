@@ -4,7 +4,41 @@ import { ContestAction, WaiterBill, WaiterPaymentMethod } from '../types/bingoWa
 const asArray = (v: any): any[] => (Array.isArray(v) ? v : []);
 const n = (v: any): number => (typeof v === 'number' ? v : Number(v) || 0);
 
+export interface ExitCheck {
+  paid: boolean;
+  mesa: number;
+  customerName: string;
+  total: number;
+  amountDue: number;
+  paymentMethod: string | null;
+  paidAt: string | null;
+  exitCheckedAt: string | null;
+  exitCheckedByName: string | null;
+}
+
+const toExit = (d: any): ExitCheck => ({
+  paid: !!d?.paid,
+  mesa: n(d?.mesa),
+  customerName: d?.customerName ?? '',
+  total: n(d?.total),
+  amountDue: n(d?.amountDue),
+  paymentMethod: d?.paymentMethod ?? null,
+  paidAt: d?.paidAt ?? null,
+  exitCheckedAt: d?.exitCheckedAt ?? null,
+  exitCheckedByName: d?.exitCheckedByName ?? null,
+});
+
 const bingoWaiterApi = {
+  async getExit(tabId: string): Promise<ExitCheck> {
+    const r = await apiService.get<any>(`/bingo/garcom/saida/${tabId}`);
+    return toExit(r.data);
+  },
+
+  async releaseExit(tabId: string): Promise<ExitCheck> {
+    const r = await apiService.post<any>(`/bingo/garcom/saida/${tabId}/liberar`, {});
+    return toExit(r.data);
+  },
+
   /** Formas de pagamento ativas. */
   async getPaymentMethods(): Promise<WaiterPaymentMethod[]> {
     const r = await apiService.get<any>('/bingo/garcom/formas-pagamento');

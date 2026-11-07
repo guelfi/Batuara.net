@@ -226,6 +226,20 @@ namespace Batuara.Application.Bingo.Models
         public List<BingoOrderLineRequest> Items { get; set; } = new();
     }
 
+    public class BingoExitCheckDto
+    {
+        public bool Paid { get; set; }
+        public int Mesa { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
+        public BingoTabStatus Status { get; set; }
+        public decimal Total { get; set; }
+        public decimal AmountDue { get; set; }
+        public string? PaymentMethod { get; set; }
+        public DateTime? PaidAt { get; set; }
+        public DateTime? ExitCheckedAt { get; set; }
+        public string? ExitCheckedByName { get; set; }
+    }
+
     public class BingoWaiterMeDto
     {
         public bool IsWaiter { get; set; }

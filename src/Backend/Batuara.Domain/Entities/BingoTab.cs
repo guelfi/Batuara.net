@@ -32,6 +32,8 @@ namespace Batuara.Domain.Entities
         public DateTime? CodeLastSentAt { get; private set; }
         public DateTime? CodeWindowStartedAt { get; private set; }
         public int CodeSendCount { get; private set; }
+        public DateTime? ExitCheckedAt { get; private set; }
+        public string? ExitCheckedByName { get; private set; }
         public DateTime? ReminderSentAt { get; private set; }
         public string? ReminderMessageId { get; private set; }
         public string? ReminderDeliveryStatus { get; private set; }
@@ -88,6 +90,18 @@ namespace Batuara.Domain.Entities
                 Status = BingoTabStatus.CloseRequested;
                 Touch();
             }
+        }
+
+        public void ReleaseExit(string checkedByName, DateTime utcNow)
+        {
+            ExitCheckedAt = utcNow;
+            ExitCheckedByName = checkedByName;
+            Touch();
+        }
+
+        public void InheritPhoneVerification(DateTime verifiedAt)
+        {
+            PhoneVerifiedAt = verifiedAt;
         }
 
         public void CancelClose()

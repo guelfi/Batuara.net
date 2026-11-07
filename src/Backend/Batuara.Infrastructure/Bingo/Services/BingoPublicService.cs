@@ -74,7 +74,20 @@ namespace Batuara.Infrastructure.Bingo.Services
 
             if (!reused)
             {
-                await IssueAndDispatchCodeAsync(tab, phone, cancellationToken);
+                // Quem volta a abrir comanda no mesmo evento com o mesmo celular ja confirmado nao precisa de novo codigo.
+                var verifiedAt = await Db.BingoTabs
+                    .Where(x => x.EventId == ev.Id && x.Phone == phone && x.PhoneVerifiedAt != null)
+                    .Select(x => x.PhoneVerifiedAt)
+                    .FirstOrDefaultAsync(cancellationToken);
+                if (verifiedAt != null)
+                {
+                    tab.InheritPhoneVerification(verifiedAt.Value);
+                    await Db.SaveChangesAsync(cancellationToken);
+                }
+                else
+                {
+                    await IssueAndDispatchCodeAsync(tab, phone, cancellationToken);
+                }
             }
 
             return new BingoCreateTabResult { TabId = tab.Id, Reused = reused };
