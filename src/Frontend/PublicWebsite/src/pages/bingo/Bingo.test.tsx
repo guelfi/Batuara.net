@@ -13,7 +13,6 @@ jest.mock('../../services/bingoApi', () => {
       createTab: jest.fn(),
       addItems: jest.fn(),
       closeTab: jest.fn(),
-      resendLink: jest.fn(),
     },
   };
 });
@@ -64,6 +63,23 @@ test('comanda: esgotado sem botão, pedido enviado e pendente exibido', async ()
   expect(await screen.findByText('Pedido enviado! Um garçom levará à sua mesa.')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('tab', { name: /Pedido/ }));
   expect(await screen.findByText('Pendente')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Reenviar link/ })).toBeNull();
+});
+
+test('comanda: item retirado aparece como A caminho', async () => {
+  window.history.pushState({}, '', `/bingo/comanda/${tabView.id}`);
+  api.getTab.mockResolvedValue({ ...tabView, items: [{ ...tabView.items[0], status: 'Retrieved' as const }] });
+  render(<BingoCustomerPage />);
+  await screen.findByText(/Maria/);
+  fireEvent.click(screen.getByRole('tab', { name: /Pedido/ }));
+  expect(await screen.findByText('A caminho')).toBeInTheDocument();
+});
+
+test('formulário mostra a dica de voltar à comanda com o mesmo celular', async () => {
+  window.history.pushState({}, '', '/bingo');
+  api.getInfo.mockResolvedValue({ isOpen: true, closeAllRequested: false, mesas: [1], menu: [] });
+  render(<BingoCustomerPage />);
+  expect(await screen.findByText('Já tem comanda? Informe o mesmo celular para voltar a ela.')).toBeInTheDocument();
 });
 
 test('sem evento aberto mostra aviso amigável no formulário', async () => {

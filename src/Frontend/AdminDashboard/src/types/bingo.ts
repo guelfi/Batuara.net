@@ -2,7 +2,7 @@
 
 export type BingoPaymentMethod = 'Card' | 'Pix' | 'Cash';
 export type BingoTabStatus = 'Open' | 'CloseRequested' | 'Paid';
-export type BingoItemStatus = 'Pending' | 'Delivered';
+export type BingoItemStatus = 'Pending' | 'Retrieved' | 'Delivered';
 
 export type BingoEventStatus = 'Draft' | 'Open' | 'Closed';
 
@@ -53,6 +53,7 @@ export interface BingoTab {
 export interface BingoPanel {
   closeAllRequested?: boolean;
   totalSold?: number;
+  retrievedItems?: number;
   tabs: BingoTab[];
 }
 
@@ -88,6 +89,9 @@ export interface WaiterOrderItem {
   name: string;
   quantity: number;
   createdAt: string;
+  status: 'Pending' | 'Retrieved';
+  retrievedByName: string | null;
+  retrievedByMe: boolean;
 }
 
 export interface WaiterOrderGroup {

@@ -9,6 +9,7 @@ import {
   BingoSummaryLine,
   BingoTab,
   BingoWaiter,
+  BingoOrderItem,
   WaiterAccount,
   WaiterOrderGroup,
   WaiterStatus,
@@ -42,7 +43,8 @@ const normalizeTab = (t: any): BingoTab => {
     name: i.name ?? i.itemName ?? '',
     unitPrice: num(i.unitPrice),
     quantity: num(i.quantity, 1),
-    status: (i.status === 1 || i.status === 'Delivered' ? 'Delivered' : 'Pending') as 'Pending' | 'Delivered',
+    status: (i.status === 2 || i.status === 'Delivered' ? 'Delivered'
+      : i.status === 1 || i.status === 'Retrieved' ? 'Retrieved' : 'Pending') as BingoOrderItem['status'],
     createdAt: i.createdAt,
   }));
   const status: BingoTab['status'] =
@@ -136,7 +138,9 @@ export const bingoApi = {
     const d = r.data ?? {};
     const tabs = asArray(pick(d, 'comandas', 'tabs')).map(normalizeTab);
     const sold = pick(d, 'totalSold', 'totalVendido');
+    const retrieved = d.counts?.retrievedItems;
     return {
+      retrievedItems: retrieved !== undefined && retrieved !== null ? num(retrieved) : undefined,
       closeAllRequested: pick(d, 'closeAllRequested'),
       totalSold: sold !== undefined ? num(sold) : undefined,
       tabs,
@@ -205,8 +209,20 @@ export const bingoApi = {
 
   async getWaiterOrders(): Promise<WaiterOrderGroup[]> {
     const r = await apiService.get<WaiterOrderGroup[]>('/bingo/garcom/pedidos');
-    return asArray(r.data);
+    return asArray(r.data).map((g: any) => ({
+      ...g,
+      items: asArray(g.items).map((i: any) => ({
+        ...i,
+        status: i.status === 'Retrieved' ? 'Retrieved' : 'Pending',
+        retrievedByName: i.retrievedByName ?? null,
+        retrievedByMe: !!i.retrievedByMe,
+      })),
+    }));
   },
+
+  retrieveItem: (itemId: string) => apiService.post<any>(`/bingo/garcom/itens/${itemId}/retirar`),
+
+  returnItem: (itemId: string) => apiService.post<any>(`/bingo/garcom/itens/${itemId}/devolver`),
 
   deliverItem: (itemId: string) => apiService.post<any>(`/bingo/garcom/itens/${itemId}/entregar`),
 

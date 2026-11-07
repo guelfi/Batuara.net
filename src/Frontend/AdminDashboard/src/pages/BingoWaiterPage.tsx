@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  Badge,
   Box,
   Button,
   Checkbox,
@@ -76,29 +77,28 @@ function usePolling(fn: () => void | Promise<void>) {
 
 // ------------------------------------------------------------------ pedidos
 
-const OrdersTab: React.FC = () => {
-  const [groups, setGroups] = useState<WaiterOrderGroup[] | null>(null);
-  const [error, setError] = useState('');
+const pendingCount = (groups: WaiterOrderGroup[] | null): number =>
+  (groups ?? []).reduce((s, g) => s + g.items.filter((i) => i.status === 'Pending').length, 0);
+
+interface OrdersTabProps {
+  groups: WaiterOrderGroup[] | null;
+  loadError: string;
+  reload: () => Promise<void>;
+}
+
+const OrdersTab: React.FC<OrdersTabProps> = ({ groups, loadError, reload }) => {
+  const [actionError, setActionError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    try {
-      setGroups(await bingoApi.getWaiterOrders());
-      setError('');
-    } catch (e) {
-      setError('Sem conexão. Tentando novamente...');
-    }
-  }, []);
-
-  usePolling(load);
-
-  const deliver = async (itemId: string) => {
+  const act = async (itemId: string, fn: (id: string) => Promise<any>, fallback: string) => {
     setBusyId(itemId);
+    setActionError('');
     try {
-      await bingoApi.deliverItem(itemId);
-      await load();
-    } catch (e) {
-      setError(errorMessage(e, 'Não foi possível dar baixa no item.'));
+      await fn(itemId);
+      await reload();
+    } catch (e: any) {
+      setActionError(errorMessage(e, fallback));
+      if (e?.response?.status === 409) await reload();
     } finally {
       setBusyId(null);
     }
@@ -110,9 +110,13 @@ const OrdersTab: React.FC = () => {
     return [...(groups ?? [])].sort((a, b) => oldest(a) - oldest(b));
   }, [groups]);
 
+  const small = { minHeight: 44, minWidth: 84, fontWeight: 700, px: 1.5 } as const;
+
   return (
     <Box>
-      {error && <Alert severity="warning" sx={{ mb: 2 }}>{error}</Alert>}
+      {(actionError || loadError) && (
+        <Alert severity="warning" sx={{ mb: 2 }}>{actionError || loadError}</Alert>
+      )}
       {groups && sorted.length === 0 && <Typography sx={{ opacity: 0.7 }}>Nenhum pedido pendente.</Typography>}
       <Stack spacing={2}>
         {sorted.map((g) => (
@@ -120,23 +124,61 @@ const OrdersTab: React.FC = () => {
             <Typography sx={{ fontWeight: 700, fontSize: '1.15rem' }}>
               Mesa {g.mesa} - {g.customerName}
             </Typography>
-            <Stack spacing={1} sx={{ mt: 1 }}>
-              {g.items.map((i) => (
-                <Box key={i.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography sx={{ flex: 1 }}>
-                    {i.quantity}x {i.name}
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    color="success"
-                    sx={{ minHeight: 52, minWidth: 110, fontWeight: 700 }}
-                    disabled={busyId === i.id}
-                    onClick={() => deliver(i.id)}
-                  >
-                    Entregue
-                  </Button>
-                </Box>
-              ))}
+            <Stack spacing={1.5} sx={{ mt: 1 }}>
+              {g.items.map((i) => {
+                const retrieved = i.status === 'Retrieved';
+                const others = retrieved && !i.retrievedByMe;
+                const statusLabel = !retrieved
+                  ? 'Pendente'
+                  : i.retrievedByMe
+                    ? 'Retirado por você'
+                    : `Com ${i.retrievedByName ?? 'outro garçom'}`;
+                return (
+                  <Box key={i.id} sx={{ opacity: others ? 0.6 : 1 }}>
+                    <Typography sx={{ fontWeight: 600 }}>
+                      {i.quantity}x {i.name}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: !retrieved ? 'warning.main' : i.retrievedByMe ? 'info.main' : 'text.secondary', fontWeight: 600 }}
+                    >
+                      {statusLabel}
+                    </Typography>
+                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 0.5 }}>
+                      {!retrieved && (
+                        <Button
+                          variant="outlined"
+                          color="info"
+                          sx={small}
+                          disabled={busyId === i.id}
+                          onClick={() => act(i.id, bingoApi.retrieveItem, 'Não foi possível retirar o item.')}
+                        >
+                          Retirei na cozinha
+                        </Button>
+                      )}
+                      <Button
+                        variant="contained"
+                        color="success"
+                        sx={small}
+                        disabled={busyId === i.id}
+                        onClick={() => act(i.id, bingoApi.deliverItem, 'Não foi possível dar baixa no item.')}
+                      >
+                        {retrieved ? 'Entregue na mesa' : 'Entregue'}
+                      </Button>
+                      {retrieved && (
+                        <Button
+                          variant="outlined"
+                          sx={small}
+                          disabled={busyId === i.id}
+                          onClick={() => act(i.id, bingoApi.returnItem, 'Não foi possível devolver o item.')}
+                        >
+                          Devolver
+                        </Button>
+                      )}
+                    </Stack>
+                  </Box>
+                );
+              })}
             </Stack>
           </Paper>
         ))}
@@ -412,6 +454,41 @@ const BingoWaiterPage: React.FC = () => {
   const [statusError, setStatusError] = useState(false);
   const [tab, setTab] = useState(0);
   const [mesas, setMesas] = useState<number[]>([]);
+  const [groups, setGroups] = useState<WaiterOrderGroup[] | null>(null);
+  const [ordersError, setOrdersError] = useState('');
+  const [flash, setFlash] = useState(false);
+  const lastPending = useRef<number | null>(null);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const loadOrders = useCallback(async () => {
+    try {
+      const list = await bingoApi.getWaiterOrders();
+      setGroups(list);
+      setOrdersError('');
+      const n = pendingCount(list);
+      const prev = lastPending.current;
+      lastPending.current = n;
+      if (prev !== null && n > prev) {
+        try {
+          navigator.vibrate?.(200);
+        } catch {
+          // vibração indisponível
+        }
+        setFlash(true);
+        if (flashTimer.current) clearTimeout(flashTimer.current);
+        flashTimer.current = setTimeout(() => setFlash(false), 2500);
+      }
+    } catch {
+      setOrdersError('Sem conexão. Tentando novamente...');
+    }
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (flashTimer.current) clearTimeout(flashTimer.current);
+    },
+    []
+  );
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -425,6 +502,11 @@ const BingoWaiterPage: React.FC = () => {
   usePolling(refreshStatus);
 
   const active = !!status?.isWaiter && !!status?.eventOpen;
+  const activeRef = useRef(active);
+  activeRef.current = active;
+  usePolling(async () => {
+    if (activeRef.current) await loadOrders();
+  });
 
   useEffect(() => {
     if (!active) return;
@@ -459,11 +541,23 @@ const BingoWaiterPage: React.FC = () => {
         </Typography>
       )}
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth" sx={{ mb: 2 }}>
-        <Tab label="Pedidos" sx={{ minHeight: 56, fontWeight: 700 }} />
+        <Tab
+          label={
+            <Badge badgeContent={pendingCount(groups)} color="error" max={99} sx={{ '& .MuiBadge-badge': { right: -14 } }}>
+              <span>Pedidos</span>
+            </Badge>
+          }
+          sx={{
+            minHeight: 56,
+            fontWeight: 700,
+            bgcolor: flash ? 'warning.light' : undefined,
+            transition: 'background-color 0.4s',
+          }}
+        />
         <Tab label="Contas" sx={{ minHeight: 56, fontWeight: 700 }} />
         <Tab label="QR" sx={{ minHeight: 56, fontWeight: 700 }} />
       </Tabs>
-      {tab === 0 && <OrdersTab />}
+      {tab === 0 && <OrdersTab groups={groups} loadError={ordersError} reload={loadOrders} />}
       {tab === 1 && <AccountsTab mesas={mesas} />}
       {tab === 2 && <QrTab mesas={mesas} />}
     </Box>

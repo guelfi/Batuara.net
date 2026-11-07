@@ -151,7 +151,11 @@ const CustomerForm: React.FC = () => {
           required
           fullWidth
           error={phone.length > 0 && !phoneOk}
-          helperText={phone.length > 0 && !phoneOk ? 'Informe um celular com DDD' : ' '}
+          helperText={
+            phone.length > 0 && !phoneOk
+              ? 'Informe um celular com DDD'
+              : 'Já tem comanda? Informe o mesmo celular para voltar a ela.'
+          }
           slotProps={{ htmlInput: { inputMode: 'tel', style: { minHeight: 28 } } }}
         />
         <TextField
@@ -275,26 +279,6 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
       await load();
     } catch (e) {
       setMessage({ severity: 'error', text: apiErrorMessage(e, 'Não foi possível encerrar a conta.') });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const resend = async () => {
-    setBusy(true);
-    setMessage(null);
-    try {
-      await bingoApi.resendLink(tabId);
-      setMessage({ severity: 'success', text: 'Link reenviado para o seu WhatsApp.' });
-    } catch (e) {
-      if (httpStatus(e) === 429) {
-        setMessage({
-          severity: 'info',
-          text: 'O link já foi enviado há pouco. Aguarde alguns minutos para pedir de novo.',
-        });
-      } else {
-        setMessage({ severity: 'error', text: apiErrorMessage(e, 'Não foi possível reenviar o link agora.') });
-      }
     } finally {
       setBusy(false);
     }
@@ -483,11 +467,12 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
                         px: 0.9,
                         py: 0.2,
                         borderRadius: 1,
-                        bgcolor: i.status === 'Delivered' ? 'success.light' : 'warning.light',
+                        bgcolor:
+                          i.status === 'Delivered' ? 'success.light' : i.status === 'Retrieved' ? 'info.light' : 'warning.light',
                         color: 'common.black',
                       }}
                     >
-                      {i.status === 'Delivered' ? 'Entregue' : 'Pendente'}
+                      {i.status === 'Delivered' ? 'Entregue' : i.status === 'Retrieved' ? 'A caminho' : 'Pendente'}
                     </Typography>
                   </Box>
                 ))}
@@ -499,11 +484,6 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
               {!isPaid && !closeRequested && (
                 <Button variant="outlined" color="warning" sx={{ minHeight: 46, fontWeight: 700 }} disabled={busy} onClick={() => setConfirmClose(true)}>
                   Encerrar a conta
-                </Button>
-              )}
-              {!isPaid && (
-                <Button variant="outlined" sx={{ minHeight: 46, fontWeight: 700 }} disabled={busy} onClick={resend}>
-                  Reenviar link no WhatsApp
                 </Button>
               )}
               {isPaid && (
