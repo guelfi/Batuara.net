@@ -49,9 +49,11 @@ const PrivacyPolicyPage: React.FC = () => (
       <P>
         <strong>Bingo (comanda pelo celular):</strong> nome, celular e número da mesa, informados por você para abrir
         a comanda do bingo e fazer pedidos. Usamos esses dados apenas para identificar sua comanda, entregar os
-        pedidos e cobrar a conta (execução do serviço solicitado – Art. 7º, V). Seu nome e celular são anonimizados
-        em até 30 dias após o fim do evento; mantemos apenas itens e valores, sem identificação, para histórico.
-        O link da comanda pode ser enviado ao seu WhatsApp.
+        pedidos e cobrar a conta (execução do serviço solicitado – Art. 7º, V). Seu nome e celular são usados só
+        para a comanda do bingo e são apagados (anonimizados) em até 30 dias depois do evento se a conta estiver
+        paga; mantemos apenas itens e valores, sem identificação, para histórico. Se a conta ficar em aberto, o
+        celular pode ser usado para enviar um lembrete de pagamento por WhatsApp e é guardado por até 90 dias.
+        O link da comanda e um código de confirmação do celular podem ser enviados ao seu WhatsApp.
       </P>
       <P>
         <strong>Cookies:</strong> utilizamos armazenamento local apenas para manter sua sessão de acesso e registrar

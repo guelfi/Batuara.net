@@ -47,6 +47,7 @@ export interface BingoTabView {
   total: number;
   closeAllRequested: boolean;
   isOpen: boolean;
+  phoneVerified?: boolean;
   eventName?: string;
   menu: BingoMenuItem[];
   items: BingoTabItem[];

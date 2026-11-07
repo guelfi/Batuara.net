@@ -13,6 +13,8 @@ jest.mock('../../services/bingoApi', () => {
       createTab: jest.fn(),
       addItems: jest.fn(),
       closeTab: jest.fn(),
+      confirmPhone: jest.fn(),
+      resendCode: jest.fn(),
     },
   };
 });
@@ -87,4 +89,38 @@ test('sem evento aberto mostra aviso amigável no formulário', async () => {
   api.getInfo.mockResolvedValue({ isOpen: false, closeAllRequested: false, mesas: [], menu: [] });
   render(<BingoCustomerPage />);
   expect(await screen.findByText(/ainda não foram abertos/)).toBeInTheDocument();
+});
+
+test('bloco de confirmação de celular aparece sem phoneVerified e some ao confirmar', async () => {
+  window.history.pushState({}, '', `/bingo/comanda/${tabView.id}`);
+  api.getTab.mockResolvedValue(tabView);
+  api.confirmPhone.mockResolvedValue();
+  render(<BingoCustomerPage />);
+  expect(await screen.findByText(/Confirme seu celular/)).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Código de confirmação'), { target: { value: '123456' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
+  await waitFor(() => expect(api.confirmPhone).toHaveBeenCalledWith(tabView.id, '123456'));
+  await waitFor(() => expect(screen.queryByText(/Confirme seu celular/)).toBeNull());
+  expect(screen.getByText(/Celular confirmado/)).toBeInTheDocument();
+});
+
+test('bloco de confirmação não aparece com phoneVerified true', async () => {
+  window.history.pushState({}, '', `/bingo/comanda/${tabView.id}`);
+  api.getTab.mockResolvedValue({ ...tabView, phoneVerified: true });
+  render(<BingoCustomerPage />);
+  await screen.findByText(/Maria/);
+  expect(screen.queryByText(/Confirme seu celular/)).toBeNull();
+  expect(screen.getByText(/Celular confirmado/)).toBeInTheDocument();
+});
+
+test('código inválido mostra a mensagem do servidor', async () => {
+  window.history.pushState({}, '', `/bingo/comanda/${tabView.id}`);
+  api.getTab.mockResolvedValue(tabView);
+  api.confirmPhone.mockRejectedValue({ response: { status: 400, data: { message: 'Código inválido ou expirado.' } } });
+  render(<BingoCustomerPage />);
+  await screen.findByText(/Confirme seu celular/);
+  fireEvent.change(screen.getByLabelText('Código de confirmação'), { target: { value: '000000' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
+  expect(await screen.findByText('Código inválido ou expirado.')).toBeInTheDocument();
+  expect(screen.getByText(/Confirme seu celular/)).toBeInTheDocument();
 });

@@ -175,7 +175,7 @@ const CustomerForm: React.FC = () => {
         </TextField>
 
         <Alert severity="info" icon={false} sx={{ fontSize: '0.85rem' }}>
-          Usamos seu nome e celular apenas para a comanda do bingo. Eles são apagados em até 30 dias.
+          Usamos seu nome e celular apenas para a comanda do bingo. Eles são apagados em até 30 dias depois do evento se a conta estiver paga. Se a conta ficar em aberto, o celular pode ser usado para um lembrete de pagamento por WhatsApp e é guardado por até 90 dias.
         </Alert>
 
         <Button type="submit" variant="contained" size="large" disabled={!canSubmit} sx={BIG_BUTTON}>
@@ -196,6 +196,9 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
   const [message, setMessage] = useState<{ severity: 'success' | 'error' | 'info'; text: string } | null>(null);
   const [confirmClose, setConfirmClose] = useState(false);
   const [view, setView] = useState<'menu' | 'orders'>('menu');
+  const [code, setCode] = useState('');
+  const [codeBusy, setCodeBusy] = useState(false);
+  const [codeMsg, setCodeMsg] = useState<{ severity: 'error' | 'success'; text: string } | null>(null);
 
   useEffect(() => {
     if (!message || message.severity === 'error') return undefined;
@@ -284,6 +287,34 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
     }
   };
 
+  const confirmPhone = async () => {
+    if (code.length !== 6) return;
+    setCodeBusy(true);
+    setCodeMsg(null);
+    try {
+      await bingoApi.confirmPhone(tabId, code);
+      setCode('');
+      setTab((t) => (t ? { ...t, phoneVerified: true } : t));
+    } catch (e) {
+      setCodeMsg({ severity: 'error', text: apiErrorMessage(e, 'Código inválido ou expirado.') });
+    } finally {
+      setCodeBusy(false);
+    }
+  };
+
+  const resendCode = async () => {
+    setCodeBusy(true);
+    setCodeMsg(null);
+    try {
+      await bingoApi.resendCode(tabId);
+      setCodeMsg({ severity: 'success', text: 'Código reenviado no WhatsApp.' });
+    } catch (e) {
+      setCodeMsg({ severity: 'error', text: apiErrorMessage(e, 'Não foi possível reenviar o código.') });
+    } finally {
+      setCodeBusy(false);
+    }
+  };
+
   const newTab = () => {
     savedTabId.clear();
     goTo('/bingo');
@@ -348,6 +379,11 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
         </Typography>
         <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', opacity: 0.75, lineHeight: 1.3 }}>
           {tab.customerName} · Nº {tab.id.slice(0, 8).toUpperCase()}
+          {tab.phoneVerified && (
+            <Box component="span" sx={{ ml: 0.75, color: 'success.main', fontWeight: 600 }}>
+              ✓ Celular confirmado
+            </Box>
+          )}
         </Typography>
         <Tabs
           value={activeView}
@@ -358,6 +394,35 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
           <Tab value="menu" label="Cardápio" disabled={!canOrder} />
           <Tab value="orders" label={orderCount > 0 ? `Pedido (${orderCount})` : 'Pedido'} />
         </Tabs>
+        {!tab.phoneVerified && (
+          <Box data-testid="phone-confirm" sx={{ py: 0.5 }}>
+            <Typography sx={{ fontSize: '0.78rem', fontWeight: 600, lineHeight: 1.2, mb: 0.5 }}>
+              Confirme seu celular: digite o código que chegou no WhatsApp
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <TextField
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="000000"
+                size="small"
+                slotProps={{
+                  htmlInput: { inputMode: 'numeric', maxLength: 6, 'aria-label': 'Código de confirmação', style: { padding: '6px 8px', width: 84, letterSpacing: 2 } },
+                }}
+              />
+              <Button size="small" variant="contained" disabled={codeBusy || code.length !== 6} onClick={confirmPhone}>
+                Confirmar
+              </Button>
+              <Button size="small" variant="text" disabled={codeBusy} onClick={resendCode} sx={{ textTransform: 'none', fontSize: '0.75rem', minWidth: 0 }}>
+                Reenviar código
+              </Button>
+            </Stack>
+            {codeMsg && (
+              <Typography role={codeMsg.severity === 'error' ? 'alert' : 'status'} variant="caption" sx={{ display: 'block', color: codeMsg.severity === 'error' ? 'error.main' : 'success.main' }}>
+                {codeMsg.text}
+              </Typography>
+            )}
+          </Box>
+        )}
         {message && (
           <Alert
             severity={message.severity}

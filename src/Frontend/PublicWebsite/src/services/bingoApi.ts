@@ -82,4 +82,12 @@ export const bingoApi = {
   async closeTab(tabId: string): Promise<void> {
     await http.post(`/bingo/public/comandas/${tabId}/encerrar`);
   },
+
+  async confirmPhone(tabId: string, code: string): Promise<void> {
+    await http.post(`/bingo/public/comandas/${tabId}/confirmar-celular`, { code });
+  },
+
+  async resendCode(tabId: string): Promise<void> {
+    await http.post(`/bingo/public/comandas/${tabId}/reenviar-codigo`);
+  },
 };
