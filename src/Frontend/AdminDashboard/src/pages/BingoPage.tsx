@@ -944,7 +944,8 @@ const QrBlock: React.FC<{ size: number; dataUrl: string }> = ({ size, dataUrl })
   <Box component="img" src={dataUrl} alt="QR Code do bingo" sx={{ width: size, maxWidth: '100%', height: 'auto' }} />
 );
 
-const TablesTab: React.FC<{ notify: Notify }> = ({ notify }) => {
+const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ notify, event }) => {
+  const locked = !!event && event.status !== 'Draft';
   const [count, setCount] = useState('');
   const [loading, setLoading] = useState(true);
   const [qr, setQr] = useState('');
@@ -976,31 +977,58 @@ const TablesTab: React.FC<{ notify: Notify }> = ({ notify }) => {
 
   if (loading) return <CircularProgress />;
   return (
-    <Stack spacing={3}>
+    <Stack spacing={2}>
       <Paper sx={{ p: 2 }}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
-          <TextField label="Quantidade de mesas" type="number" value={count}
-            onChange={(e) => setCount(e.target.value)} inputProps={{ min: 1, max: 500 }} />
-          <Button variant="contained" onClick={save}>Salvar</Button>
-        </Stack>
-      </Paper>
-
-      <Paper sx={{ p: 2 }}>
-        <Stack direction="row" spacing={1} sx={{ mb: 2 }} className="bingo-no-print">
-          <Button variant="contained" startIcon={<PrintIcon />} onClick={() => window.print()} disabled={!qr}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          alignItems={{ sm: 'center' }}
+          className="bingo-no-print"
+        >
+          <TextField
+            label="Quantidade de mesas"
+            type="number"
+            size="small"
+            value={count}
+            disabled={locked}
+            onChange={(e) => setCount(e.target.value)}
+            inputProps={{ min: 1, max: 500 }}
+            sx={{ width: 190 }}
+          />
+          <Button variant="contained" onClick={save} disabled={locked}>Salvar</Button>
+          <Button variant="contained" color="secondary" startIcon={<PrintIcon />} onClick={() => window.print()} disabled={!qr}>
             Imprimir
           </Button>
           <Button variant="outlined" startIcon={<ProjectIcon />} onClick={() => setProjecting(true)} disabled={!qr}>
             Projetar QR
           </Button>
         </Stack>
+        {locked && (
+          <Alert severity="info" sx={{ mt: 2 }} className="bingo-no-print">
+            Evento em andamento ou encerrado: o número de mesas fica bloqueado para não afetar comandas abertas.
+            Para mudar, crie um novo evento.
+          </Alert>
+        )}
+      </Paper>
+
+      <Paper sx={{ p: 2 }}>
         <Box
           className="bingo-print-sheet"
-          sx={{ textAlign: 'center', p: 2, border: '1px dashed', borderColor: 'divider' }}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+            p: 1.5,
+            border: '1px dashed',
+            borderColor: 'divider',
+          }}
         >
-          <Typography variant="h3" sx={{ fontWeight: 700, mb: 2 }}>Aponte a câmera para pedir</Typography>
-          {qr && <QrBlock size={480} dataUrl={qr} />}
-          <Typography variant="h4" sx={{ mt: 2, wordBreak: 'break-all' }}>{BINGO_URL}</Typography>
+          <Typography className="sheet-title" variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+            Aponte a câmera para pedir
+          </Typography>
+          {qr && <QrBlock size={300} dataUrl={qr} />}
+          <Typography className="sheet-url" variant="h6" sx={{ mt: 1, wordBreak: 'break-all' }}>{BINGO_URL}</Typography>
         </Box>
       </Paper>
 
@@ -1026,6 +1054,8 @@ const TablesTab: React.FC<{ notify: Notify }> = ({ notify }) => {
             border: none !important; background: #fff; color: #000;
           }
           .bingo-print-sheet img { width: 16cm !important; }
+          .bingo-print-sheet .sheet-title { font-size: 40pt !important; margin-bottom: 24pt !important; }
+          .bingo-print-sheet .sheet-url { font-size: 22pt !important; margin-top: 24pt !important; }
           @page { size: A4 portrait; margin: 1.5cm; }
         }
       `}</style>
@@ -1717,7 +1747,7 @@ const BingoPage: React.FC = () => {
           {tab === 2 && (
             <MenuTab notify={notify} confirm={setConfirmState} addOpen={addMenuOpen} onAddClose={() => setAddMenuOpen(false)} />
           )}
-          {tab === 3 && <TablesTab notify={notify} />}
+          {tab === 3 && <TablesTab notify={notify} event={current} />}
           {tab === 4 && <WaitersTab notify={notify} confirm={setConfirmState} />}
           {tab === 5 && (
             <PaymentMethodsTab notify={notify} addOpen={addPayOpen} onAddClose={() => setAddPayOpen(false)} />

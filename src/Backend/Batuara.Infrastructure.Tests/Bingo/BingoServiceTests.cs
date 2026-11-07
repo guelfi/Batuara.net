@@ -1103,8 +1103,8 @@ namespace Batuara.Infrastructure.Tests.Bingo
         public async Task Public_Endpoints_Should_Use_The_Currently_Open_Event()
         {
             var f = new Fixture();
-            await f.OpenEventAsync(2);
             await f.Admin.SetTablesAsync(2, 5);
+            await f.OpenEventAsync(2);
 
             var info = await f.Public.GetInfoAsync();
 
@@ -1174,16 +1174,22 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
-        public async Task Tables_Cannot_Shrink_Below_An_Open_Tab()
+        public async Task Tables_Can_Only_Change_While_Event_Is_Draft()
         {
             var f = new Fixture();
+            var draft = await f.Admin.SetTablesAsync(null, 40);
+            draft.Mesas.Should().HaveCount(40);
+
             await f.OpenEventAsync();
             await f.NewTabAsync(mesa: 25);
 
             await ShouldThrowAsync(() => f.Admin.SetTablesAsync(null, 10), BingoErrorKind.Conflict);
+            await ShouldThrowAsync(() => f.Admin.SetTablesAsync(null, 60), BingoErrorKind.Conflict);
+            (await f.Admin.GetTablesAsync(null)).Mesas.Should().HaveCount(40);
 
-            var grown = await f.Admin.SetTablesAsync(null, 40);
-            grown.Mesas.Should().HaveCount(40);
+            var openEventId = (await f.Admin.GetSettingsAsync(null)).EventId;
+            await f.Admin.CloseEventAsync(openEventId);
+            await ShouldThrowAsync(() => f.Admin.SetTablesAsync(openEventId, 20), BingoErrorKind.Conflict);
         }
 
         [Fact]

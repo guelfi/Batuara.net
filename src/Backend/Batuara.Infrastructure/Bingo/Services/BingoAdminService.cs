@@ -86,6 +86,12 @@ namespace Batuara.Infrastructure.Bingo.Services
             }
 
             var ev = await ResolveAdminEventAsync(eventId, cancellationToken);
+            if (ev.Status != BingoEventStatus.Draft)
+            {
+                throw new BingoException(BingoErrorKind.Conflict,
+                    "O número de mesas só pode ser alterado antes de o evento começar.");
+            }
+
             var tables = await Db.BingoTables.Where(x => x.EventId == ev.Id).ToListAsync(cancellationToken);
 
             var blocked = await Db.BingoTabs

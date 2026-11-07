@@ -181,6 +181,22 @@ const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
   const firstNavItemRef = useRef<HTMLDivElement | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
 
+  // Telas largas como o Bingo recolhem o menu lateral ao entrar e o restauram ao sair.
+  const inBingoPage = location.pathname === '/bingo' || location.pathname.startsWith('/bingo/');
+  const autoCollapsedRef = useRef(false);
+  useEffect(() => {
+    if (inBingoPage) {
+      if (desktopOpen) {
+        autoCollapsedRef.current = true;
+        setDesktopOpen(false);
+      }
+    } else if (autoCollapsedRef.current) {
+      autoCollapsedRef.current = false;
+      setDesktopOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inBingoPage]);
+
   const handleDrawerToggle = () => {
     setMobileOpen((prev) => !prev);
   };
