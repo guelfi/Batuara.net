@@ -41,6 +41,11 @@ namespace Batuara.API.Filters
         };
     }
 
+    [AttributeUsage(AttributeTargets.Method)]
+    public sealed class BingoSkipWaiterAccessAttribute : Attribute
+    {
+    }
+
     public class BingoWaiterAccessFilter : IAsyncActionFilter
     {
         private readonly IBingoWaiterService _waiterService;
@@ -53,7 +58,8 @@ namespace Batuara.API.Filters
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             var endpoint = context.HttpContext.GetEndpoint();
-            if (endpoint?.Metadata.GetMetadata<IAllowAnonymous>() == null)
+            if (endpoint?.Metadata.GetMetadata<IAllowAnonymous>() == null
+                && endpoint?.Metadata.GetMetadata<BingoSkipWaiterAccessAttribute>() == null)
             {
                 var claim = context.HttpContext.User.FindFirst("houseMemberId")?.Value;
                 if (!int.TryParse(claim, out var houseMemberId))

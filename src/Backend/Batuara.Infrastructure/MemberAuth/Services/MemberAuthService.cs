@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Batuara.Application.Auth.Services;
+using Batuara.Application.Bingo.Models;
 using Batuara.Application.Common.PhoneNumbers;
 using Batuara.Application.MemberAuth.Models;
 using Batuara.Application.MemberAuth.Services;
@@ -9,6 +10,7 @@ using Batuara.Domain.Enums;
 using Batuara.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Batuara.Infrastructure.MemberAuth.Services
 {
@@ -21,14 +23,17 @@ namespace Batuara.Infrastructure.MemberAuth.Services
         private readonly IJwtService _jwtService;
         private readonly IWhatsAppService _whatsAppService;
         private readonly ILogger<MemberAuthService> _logger;
+        private readonly BingoOptions _bingoOptions;
 
         public MemberAuthService(
             BatuaraDbContext db,
             IPasswordService passwordService,
             IJwtService jwtService,
             IWhatsAppService whatsAppService,
-            ILogger<MemberAuthService> logger)
+            ILogger<MemberAuthService> logger,
+            IOptions<BingoOptions>? bingoOptions = null)
         {
+            _bingoOptions = bingoOptions?.Value ?? new BingoOptions();
             _db = db;
             _passwordService = passwordService;
             _jwtService = jwtService;
@@ -59,30 +64,11 @@ namespace Batuara.Infrastructure.MemberAuth.Services
             await _whatsAppService.SendAuthCodeAsync(normalizedPhone, code, cancellationToken);
         }
 
-        public Task<MemberLoginResponse> VerifyCodeAsync(MemberVerifyCodeRequest request, CancellationToken cancellationToken = default)
-        {
-            return VerifyCodeCoreAsync(request, null, null, cancellationToken);
-        }
-
-        public Task<MemberLoginResponse> VerifyCodeAsync(MemberVerifyCodeRequest request, TimeSpan tokenLifetime, Func<int, CancellationToken, Task> precondition, CancellationToken cancellationToken = default)
-        {
-            return VerifyCodeCoreAsync(request, tokenLifetime, precondition, cancellationToken);
-        }
-
-        private async Task<MemberLoginResponse> VerifyCodeCoreAsync(
-            MemberVerifyCodeRequest request,
-            TimeSpan? tokenLifetime,
-            Func<int, CancellationToken, Task>? precondition,
-            CancellationToken cancellationToken)
+        public async Task<MemberLoginResponse> VerifyCodeAsync(MemberVerifyCodeRequest request, CancellationToken cancellationToken = default)
         {
             var normalizedPhone = PhoneNumberNormalizer.NormalizeBrazilMobile(request.MobilePhone);
             var member = await FindActiveMemberByPhoneAsync(normalizedPhone, cancellationToken)
                 ?? throw new UnauthorizedAccessException("Código inválido ou expirado.");
-
-            if (precondition != null)
-            {
-                await precondition(member.Id, cancellationToken);
-            }
 
             var utcNow = DateTime.UtcNow;
             var loginCode = await _db.MemberLoginCodes
@@ -106,8 +92,8 @@ namespace Batuara.Infrastructure.MemberAuth.Services
             loginCode.Consume(utcNow);
             await _db.SaveChangesAsync(cancellationToken);
 
-            var token = tokenLifetime.HasValue
-                ? _jwtService.GenerateMemberJwtToken(member.Id, member.FullName, member.MobilePhone, tokenLifetime.Value)
+            var token = await IsActiveWaiterOfOpenEventAsync(member.Id, cancellationToken)
+                ? _jwtService.GenerateMemberJwtToken(member.Id, member.FullName, member.MobilePhone, TimeSpan.FromHours(WaiterSessionHours))
                 : _jwtService.GenerateMemberJwtToken(member.Id, member.FullName, member.MobilePhone);
             return new MemberLoginResponse
             {
@@ -123,6 +109,16 @@ namespace Batuara.Infrastructure.MemberAuth.Services
                     IsActive = member.IsActive
                 }
             };
+        }
+
+        private double WaiterSessionHours => _bingoOptions.WaiterSessionHours > 0 ? _bingoOptions.WaiterSessionHours : 10;
+
+        private Task<bool> IsActiveWaiterOfOpenEventAsync(int houseMemberId, CancellationToken cancellationToken)
+        {
+            return (from w in _db.BingoWaiters
+                    join e in _db.BingoEvents on w.EventId equals e.Id
+                    where w.HouseMemberId == houseMemberId && w.IsActive && e.Status == BingoEventStatus.Open
+                    select w.Id).AnyAsync(cancellationToken);
         }
 
         private async Task<HouseMember?> FindActiveMemberByPhoneAsync(string normalizedPhone, CancellationToken cancellationToken)

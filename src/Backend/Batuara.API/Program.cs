@@ -419,7 +419,6 @@ builder.Services.AddRateLimiter(options =>
     AddBingoPolicy("bingo-read", 3000, 6000);
     AddBingoPolicy("bingo-write", 150, 1000);
     AddBingoPolicy("bingo-garcom", 600, 2000);
-    AddBingoPolicy("bingo-garcom-login", 20, 200);
     AddBingoPolicy("bingo-admin", 300, 2000);
 
     options.AddPolicy("authenticated", context =>

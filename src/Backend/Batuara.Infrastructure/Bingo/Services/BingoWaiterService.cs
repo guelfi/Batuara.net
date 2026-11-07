@@ -1,7 +1,5 @@
 using Batuara.Application.Bingo.Models;
 using Batuara.Application.Bingo.Services;
-using Batuara.Application.MemberAuth.Models;
-using Batuara.Application.MemberAuth.Services;
 using Batuara.Domain.Enums;
 using Batuara.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -10,40 +8,21 @@ namespace Batuara.Infrastructure.Bingo.Services
 {
     public class BingoWaiterService : BingoServiceBase, IBingoWaiterService
     {
-        public static readonly TimeSpan TokenLifetime = TimeSpan.FromHours(10);
-
-        private readonly IMemberAuthService _memberAuthService;
-
-        public BingoWaiterService(BatuaraDbContext db, IMemberAuthService memberAuthService) : base(db)
+        public BingoWaiterService(BatuaraDbContext db) : base(db)
         {
-            _memberAuthService = memberAuthService;
         }
 
-        public async Task<BingoWaiterLoginResponse> VerifyCodeAsync(BingoWaiterVerifyCodeRequest request, CancellationToken cancellationToken = default)
+        public async Task<BingoWaiterMeDto> GetMeAsync(int houseMemberId, CancellationToken cancellationToken = default)
         {
-            var ev = await FindOpenEventAsync(cancellationToken)
-                ?? throw new BingoException(BingoErrorKind.Forbidden, "O bingo não está aberto no momento.");
-
-            var response = await _memberAuthService.VerifyCodeAsync(
-                new MemberVerifyCodeRequest { MobilePhone = request.Phone, Code = request.Code },
-                TokenLifetime,
-                async (houseMemberId, ct) =>
-                {
-                    var scheduled = await Db.BingoWaiters.AnyAsync(
-                        x => x.EventId == ev.Id && x.HouseMemberId == houseMemberId && x.IsActive, ct);
-                    if (!scheduled)
-                    {
-                        throw new BingoException(BingoErrorKind.Forbidden, "Você não está escalado para o bingo.");
-                    }
-                },
-                cancellationToken);
-
-            return new BingoWaiterLoginResponse
+            var ev = await FindOpenEventAsync(cancellationToken);
+            if (ev == null)
             {
-                Token = response.Token,
-                ExpiresAt = response.ExpiresAt,
-                Name = response.User.Name
-            };
+                return new BingoWaiterMeDto { IsWaiter = false, EventOpen = false, EventName = null };
+            }
+
+            var isWaiter = await Db.BingoWaiters.AnyAsync(
+                x => x.EventId == ev.Id && x.HouseMemberId == houseMemberId && x.IsActive, cancellationToken);
+            return new BingoWaiterMeDto { IsWaiter = isWaiter, EventOpen = true, EventName = ev.Name };
         }
 
         public async Task EnsureAccessAsync(int houseMemberId, CancellationToken cancellationToken = default)

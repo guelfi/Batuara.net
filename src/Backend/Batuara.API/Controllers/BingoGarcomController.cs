@@ -15,12 +15,11 @@ namespace Batuara.API.Controllers
     [Route("api/bingo/garcom")]
     public class BingoGarcomController(IBingoWaiterService service) : ControllerBase
     {
-        [HttpPost("verify-code")]
-        [AllowAnonymous]
-        [EnableRateLimiting("bingo-garcom-login")]
-        public async Task<IActionResult> VerifyCode([FromBody] BingoWaiterVerifyCodeRequest request, CancellationToken cancellationToken)
+        [HttpGet("me")]
+        [BingoSkipWaiterAccess]
+        public async Task<IActionResult> Me(CancellationToken cancellationToken)
         {
-            return Ok(new { success = true, data = await service.VerifyCodeAsync(request, cancellationToken) });
+            return Ok(new { success = true, data = await service.GetMeAsync(GetHouseMemberId(), cancellationToken) });
         }
 
         [HttpGet("pedidos")]

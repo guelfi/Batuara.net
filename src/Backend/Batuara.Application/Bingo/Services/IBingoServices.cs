@@ -19,7 +19,7 @@ namespace Batuara.Application.Bingo.Services
 
     public interface IBingoWaiterService
     {
-        Task<BingoWaiterLoginResponse> VerifyCodeAsync(BingoWaiterVerifyCodeRequest request, CancellationToken cancellationToken = default);
+        Task<BingoWaiterMeDto> GetMeAsync(int houseMemberId, CancellationToken cancellationToken = default);
         Task EnsureAccessAsync(int houseMemberId, CancellationToken cancellationToken = default);
         Task<List<BingoWaiterOrderDto>> GetOrdersAsync(CancellationToken cancellationToken = default);
         Task DeliverAsync(int houseMemberId, int itemId, CancellationToken cancellationToken = default);

@@ -96,7 +96,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
 
                 Public = new BingoPublicService(Db, Dispatcher, Options.Create(new BingoOptions { PublicBaseUrl = "https://exemplo.test/" }));
                 Admin = new BingoAdminService(Db);
-                Waiter = new BingoWaiterService(Db, memberAuth);
+                Waiter = new BingoWaiterService(Db);
             }
 
             public static BatuaraDbContext CreateDb(string name)
@@ -443,14 +443,9 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await ShouldThrowAsync(() => f.Waiter.EnsureAccessAsync(waiterId), BingoErrorKind.Unauthorized);
         }
 
-        [Fact]
-        public async Task Waiter_VerifyCode_Should_Issue_Ten_Hour_Token_Only_For_Scheduled_Members()
+        private static MemberAuthService CreateMemberAuth(Fixture f, BingoOptions? options = null)
         {
-            var f = new Fixture();
-            await f.OpenEventAsync();
-            var waiterId = await f.ScheduleWaiterAsync("11911112222");
-            await f.CreateMemberAsync("11922223333", "Nao Escalado");
-            var memberAuth = new MemberAuthService(f.Db, f.Passwords, new JwtService(
+            var jwt = new JwtService(
                 Options.Create(new JwtSettings
                 {
                     Secret = "test-secret-key-with-at-least-32-characters-long",
@@ -458,30 +453,75 @@ namespace Batuara.Infrastructure.Tests.Bingo
                     Audience = "batuara-tests",
                     AccessTokenExpirationMinutes = 60,
                     RefreshTokenExpirationDays = 7
-                }), NullLogger<JwtService>.Instance), f.WhatsApp, NullLogger<MemberAuthService>.Instance);
+                }), NullLogger<JwtService>.Instance);
+            return new MemberAuthService(f.Db, f.Passwords, jwt, f.WhatsApp, NullLogger<MemberAuthService>.Instance, Options.Create(options ?? new BingoOptions()));
+        }
 
-            await memberAuth.RequestCodeAsync(new MemberRequestCodeRequest { MobilePhone = "11922223333" }, null);
-            await ShouldThrowAsync(
-                () => f.Waiter.VerifyCodeAsync(new BingoWaiterVerifyCodeRequest { Phone = "11922223333", Code = f.WhatsApp.LastCode! }),
-                BingoErrorKind.Forbidden);
+        private static async Task<MemberLoginResponse> LoginAsync(Fixture f, MemberAuthService auth, string phone)
+        {
+            await auth.RequestCodeAsync(new MemberRequestCodeRequest { MobilePhone = phone }, null);
+            return await auth.VerifyCodeAsync(new MemberVerifyCodeRequest { MobilePhone = phone, Code = f.WhatsApp.LastCode! });
+        }
 
-            await memberAuth.RequestCodeAsync(new MemberRequestCodeRequest { MobilePhone = "11911112222" }, null);
-            var login = await f.Waiter.VerifyCodeAsync(new BingoWaiterVerifyCodeRequest { Phone = "11911112222", Code = f.WhatsApp.LastCode! });
+        [Fact]
+        public async Task Normal_Login_Should_Issue_Ten_Hour_Token_Only_For_Scheduled_Waiters()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiterId = await f.ScheduleWaiterAsync("11911112222");
+            await f.CreateMemberAsync("11922223333", "Nao Escalado");
+            var auth = CreateMemberAuth(f);
 
-            login.Name.Should().Be("Filho Garcom");
+            var other = await LoginAsync(f, auth, "11922223333");
+            (other.ExpiresAt - DateTime.UtcNow).Should().BeCloseTo(TimeSpan.FromMinutes(60), TimeSpan.FromMinutes(1));
+
+            var login = await LoginAsync(f, auth, "11911112222");
+            login.User.Name.Should().Be("Filho Garcom");
             var jwt = new JwtSecurityTokenHandler().ReadJwtToken(login.Token);
             jwt.Claims.Should().Contain(c => c.Type == "houseMemberId" && c.Value == waiterId.ToString());
             (login.ExpiresAt - DateTime.UtcNow).Should().BeCloseTo(TimeSpan.FromHours(10), TimeSpan.FromMinutes(1));
         }
 
         [Fact]
-        public async Task Waiter_VerifyCode_Should_Fail_When_Event_Is_Closed()
+        public async Task Normal_Login_Should_Honor_Configured_Waiter_Hours_And_Ignore_Closed_Events()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            await f.ScheduleWaiterAsync("11911112222");
+
+            var login = await LoginAsync(f, CreateMemberAuth(f, new BingoOptions { WaiterSessionHours = 4 }), "11911112222");
+            (login.ExpiresAt - DateTime.UtcNow).Should().BeCloseTo(TimeSpan.FromHours(4), TimeSpan.FromMinutes(1));
+
+            await f.Admin.CloseEventAsync(1);
+            var after = await LoginAsync(f, CreateMemberAuth(f), "11911112222");
+            (after.ExpiresAt - DateTime.UtcNow).Should().BeCloseTo(TimeSpan.FromMinutes(60), TimeSpan.FromMinutes(1));
+        }
+
+        [Fact]
+        public async Task Me_Should_Report_Scheduled_Not_Scheduled_And_No_Open_Event()
         {
             var f = new Fixture();
 
-            await ShouldThrowAsync(
-                () => f.Waiter.VerifyCodeAsync(new BingoWaiterVerifyCodeRequest { Phone = "11911112222", Code = "123456" }),
-                BingoErrorKind.Forbidden);
+            var none = await f.Waiter.GetMeAsync(1);
+            none.IsWaiter.Should().BeFalse();
+            none.EventOpen.Should().BeFalse();
+            none.EventName.Should().BeNull();
+
+            await f.OpenEventAsync();
+            var waiterId = await f.ScheduleWaiterAsync("11911112222");
+            var outsider = await f.CreateMemberAsync("11922223333", "Nao Escalado");
+
+            var yes = await f.Waiter.GetMeAsync(waiterId);
+            yes.IsWaiter.Should().BeTrue();
+            yes.EventOpen.Should().BeTrue();
+            yes.EventName.Should().NotBeNullOrEmpty();
+
+            var no = await f.Waiter.GetMeAsync(outsider);
+            no.IsWaiter.Should().BeFalse();
+            no.EventOpen.Should().BeTrue();
+
+            await f.Admin.RemoveWaiterAsync(null, waiterId);
+            (await f.Waiter.GetMeAsync(waiterId)).IsWaiter.Should().BeFalse();
         }
 
         [Fact]

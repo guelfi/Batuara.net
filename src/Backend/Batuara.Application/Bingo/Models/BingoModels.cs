@@ -6,6 +6,7 @@ namespace Batuara.Application.Bingo.Models
     {
         public const string SectionName = "Bingo";
         public string PublicBaseUrl { get; set; } = "https://www.batuara.org.br";
+        public double WaiterSessionHours { get; set; } = 10;
     }
 
     public enum BingoErrorKind
@@ -95,17 +96,11 @@ namespace Batuara.Application.Bingo.Models
         public List<BingoOrderLineRequest> Items { get; set; } = new();
     }
 
-    public class BingoWaiterVerifyCodeRequest
+    public class BingoWaiterMeDto
     {
-        public string Phone { get; set; } = string.Empty;
-        public string Code { get; set; } = string.Empty;
-    }
-
-    public class BingoWaiterLoginResponse
-    {
-        public string Token { get; set; } = string.Empty;
-        public DateTime ExpiresAt { get; set; }
-        public string Name { get; set; } = string.Empty;
+        public bool IsWaiter { get; set; }
+        public bool EventOpen { get; set; }
+        public string? EventName { get; set; }
     }
 
     public class BingoWaiterOrderItemDto

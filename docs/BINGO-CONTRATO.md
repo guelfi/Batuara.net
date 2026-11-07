@@ -13,7 +13,7 @@ Evento: sábado 07/11/2026, 16h–0h (pode passar da meia-noite). Código final 
 - **Pedido vai direto aos garçons.** Item: `Pending` → `Delivered` (garçom dá baixa; guarda quem e quando).
 - **Encerrar conta:** cliente toca "Encerrar a conta" → `CloseRequested`. Garçom cobra na maquininha e marca paga (`Card`, `Pix`, `Cash`) → `Paid`; **pode pagar várias comandas da mesma mesa de uma vez**. Douglas também marca paga.
 - **Fechamento geral** (Douglas): `CloseAllRequested`; clientes veem aviso "Por favor, encerre sua conta"; garçons veem todas as contas não pagas (nome, mesa, total).
-- **Garçons** = filhos (HouseMember ativo com celular) escalados pelo Douglas. Login: `POST /api/member-auth/request-code` (existente, template `casa_login_code`) + `POST /api/bingo/garcom/verify-code` (novo, token de **10 h**). Todo request de garçom valida no servidor: filho escalado e ativo + evento aberto. "Encerrar sessões dos garçons" desativa a escala (próximo request = 401); remover um garçom idem.
+- **Garçons** = filhos (HouseMember ativo com celular) escalados pelo Douglas. **Sem login próprio:** o garçom entra pelo login normal de filhos (`POST /api/member-auth/request-code` + `POST /api/member-auth/verify-code`, cookie httpOnly do AdminDashboard); se estiver escalado no evento aberto, o AdminDashboard mostra o item do garçom e usa `/api/bingo/garcom/*` com a mesma sessão. Sessão longa: se o filho for garçom ativo do evento `Open` no momento do login, token e cookie duram **10 h** (`Bingo:WaiterSessionHours`, padrão 10); caso contrário, 60 min como qualquer filho. Todo request de garçom valida no servidor: filho escalado e ativo + evento aberto. "Encerrar sessões dos garçons" desativa a escala (próximo request = 401); remover um garçom idem.
 - **Evento** (`BingoSettings`, 1 linha): `IsOpen` (pedidos e acessos), `CloseAllRequested`. "Encerrar evento" trava novos pedidos. **"Zerar dados do evento"** (Admin, com confirmação) apaga comandas e itens (mantém cardápio, mesas e escala) — usado após os testes.
 - Polling (3–5 s) nas telas; sem SignalR. Páginas do bingo com `noindex`. Retenção: job/limpeza não é necessário agora; o botão de zerar basta.
 
@@ -33,8 +33,8 @@ Respostas `{ success, data | errors }` como o restante da API. Datas em UTC. `{t
 - `POST /api/bingo/public/comandas/{tabId}/encerrar`
 - `POST /api/bingo/public/comandas/{tabId}/reenviar-link` (respeita o limite; 429 quando excedido)
 
-### Garçom (`Authorize` Member + escalado + evento aberto, exceto verify-code)
-- `POST /api/bingo/garcom/verify-code` `{ phone, code }` → `{ token, expiresAt, name }` (403 se não escalado)
+### Garçom (`Authorize` Member + escalado + evento aberto, exceto `me`)
+- `GET  /api/bingo/garcom/me` (qualquer filho autenticado, não exige evento aberto) → `{ success:true, data:{ isWaiter, eventOpen, eventName } }`; sem evento aberto: `isWaiter=false, eventOpen=false, eventName=null`
 - `GET  /api/bingo/garcom/pedidos` → `[{ mesa, tabId, customerName, items:[{id,name,quantity,createdAt}] }]` só itens `Pending`, mais antigos primeiro
 - `POST /api/bingo/garcom/itens/{itemId}/entregar`
 - `POST /api/bingo/garcom/comandas/{tabId}/mesa` `{ mesa }`
@@ -54,5 +54,5 @@ Respostas `{ success, data | errors }` como o restante da API. Datas em UTC. `{t
 ## Telas
 
 - **Cliente** (PublicWebsite, `/bingo` e `/bingo/comanda/:tabId`; aceita `?mesa=`): formulário nome/celular/mesa com aviso LGPD → cardápio (esgotado em cinza) → carrinho → "meus pedidos" e total → "Encerrar a conta" → "Reenviar link"; banner de fechamento geral e de evento fechado. Mobile first, botões grandes, polling 4 s, `noindex`. O PublicWebsite hoje não usa router (a política de privacidade é detectada por `window.location.pathname` em `App.tsx`): seguir o mesmo padrão; garantir que o nginx de produção sirva o index do PublicWebsite para `/bingo*` (conferir `nginx/` e os Dockerfiles).
-- **Garçom** (PublicWebsite, `/bingo/garcom`): login por celular + código; fila de pedidos por mesa/nome com "Entregue"; aba "Contas" (selecionar várias comandas da mesma mesa e marcar paga com forma de pagamento); corrigir mesa; botão **"Mostrar QR para o cliente"** (tela cheia, QR de `https://www.batuara.org.br/bingo?mesa=N`, endereço escrito embaixo, escolher mesa antes). Polling 4 s. Token guardado em localStorage; ao receber 401, volta ao login.
+- **Garçom** (PublicWebsite, `/bingo/garcom`): fila de pedidos por mesa/nome com "Entregue"; aba "Contas" (selecionar várias comandas da mesma mesa e marcar paga com forma de pagamento); corrigir mesa; botão **"Mostrar QR para o cliente"** (tela cheia, QR de `https://www.batuara.org.br/bingo?mesa=N`, endereço escrito embaixo, escolher mesa antes). Polling 4 s. Autenticação pelo cookie da sessão de filho (sem login próprio); ao receber 401, volta ao login normal.
 - **Admin** (AdminDashboard, item de menu "Bingo", `adminOnly`, rota `/bingo`): abas **Painel ao vivo** (pedidos, contas, "Pedir fechamento geral", abrir/encerrar evento, total vendido), **Cardápio** (preço + interruptor disponível), **Mesas** (quantidade; folha imprimível do QR único e botão "Projetar QR" em tela cheia), **Garçons** (escalar filhos, status conectado/não entrou, entregas, remover, encerrar sessões) e **Resumo** (com "Zerar dados do evento").
