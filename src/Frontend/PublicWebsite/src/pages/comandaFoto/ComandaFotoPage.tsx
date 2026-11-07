@@ -20,20 +20,6 @@ interface Item {
   unitPrice: number;
   matched: boolean;
 }
-interface Comanda {
-  id: number;
-  label: string;
-  total: number;
-  createdAt: string;
-  items: Item[];
-}
-interface Report {
-  eventName: string;
-  count: number;
-  grandTotal: number;
-  itemTotals: Item[];
-  comandas: Comanda[];
-}
 
 const TOKEN_KEY = 'comanda_foto_token';
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -73,30 +59,29 @@ const ComandaFotoPage: React.FC = () => {
   ).current;
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [report, setReport] = useState<Report | null>(null);
+  const [eventName, setEventName] = useState<string>('');
   const [photo, setPhoto] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [label, setLabel] = useState('');
   const [notes, setNotes] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showReport, setShowReport] = useState(false);
 
   const errMsg = (e: any) =>
     e?.response?.status === 401 ? 'Link sem permissão. Peça o link correto ao administrador.' : e?.response?.data?.message || 'Falha de conexão.';
 
-  const load = useCallback(async () => {
+  const loadEventName = useCallback(async () => {
     try {
       const r = await http.get('/comanda-foto/relatorio');
-      setReport(r.data.data);
+      setEventName(r.data.data?.eventName ?? 'Evento');
     } catch (e) {
       setError(errMsg(e));
     }
   }, [http]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    loadEventName();
+  }, [loadEventName]);
 
   const onFile = async (file?: File) => {
     if (!file) return;
@@ -125,15 +110,16 @@ const ComandaFotoPage: React.FC = () => {
   const patch = (idx: number, p: Partial<Item>) => setItems((l) => l.map((it, i) => (i === idx ? { ...it, ...p } : it)));
 
   const save = async () => {
-    setBusy('Salvando...');
+    setBusy('Fechando comanda...');
     setError(null);
     try {
       await http.post('/comanda-foto', { label, items, imageBase64: photo });
+      // Limpa tudo e volta ao estado inicial
       setPhoto(null);
       setItems([]);
       setLabel('');
       setNotes(null);
-      await load();
+      setError(null);
     } catch (e) {
       setError(errMsg(e));
     } finally {
@@ -141,25 +127,13 @@ const ComandaFotoPage: React.FC = () => {
     }
   };
 
-  const discard = async (id: number) => {
-    if (!window.confirm('Descartar esta comanda?')) return;
-    try {
-      await http.delete(`/comanda-foto/${id}`);
-      await load();
-    } catch (e) {
-      setError(errMsg(e));
-    }
-  };
-
-  const photoUrl = (id: number) => `${resolveBaseUrl()}/comanda-foto/${id}/foto?t=${encodeURIComponent(token)}`;
-
   return (
     <Container maxWidth="sm" sx={{ py: 2 }}>
       <Typography variant="h5" fontWeight={700}>
-        Fechamento por foto
+        Fechamento de Comanda
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        {report?.eventName ?? 'Evento'} — fotografe a comanda de papel ao fechar a conta.
+        {eventName} — fotografe a comanda de papel para fechar a conta.
       </Typography>
 
       {error && (
@@ -224,74 +198,14 @@ const ComandaFotoPage: React.FC = () => {
               Descartar
             </Button>
             <Button fullWidth variant="contained" size="large" onClick={save} disabled={!!busy || items.length === 0}>
-              Confirmar e guardar
+              Fechar comanda
             </Button>
           </Stack>
         </Paper>
       ) : (
-        <Button fullWidth variant="contained" size="large" sx={{ py: 2, mb: 2 }} disabled={!!busy} onClick={() => fileRef.current?.click()}>
+        <Button fullWidth variant="contained" size="large" sx={{ py: 2 }} disabled={!!busy} onClick={() => fileRef.current?.click()}>
           📷 Fotografar comanda
         </Button>
-      )}
-
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="baseline">
-          <Typography fontWeight={700}>Comandas fechadas: {report?.count ?? 0}</Typography>
-          <Typography variant="h6" fontWeight={800}>
-            {brl(report?.grandTotal ?? 0)}
-          </Typography>
-        </Stack>
-        {report?.comandas.slice().reverse().map((c) => (
-          <Stack key={c.id} direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
-            <Box component="a" href={photoUrl(c.id)} target="_blank" rel="noreferrer" sx={{ flex: 1, textDecoration: 'none', color: 'inherit' }}>
-              #{c.id} {c.label && `· ${c.label}`} · {new Date(c.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-            </Box>
-            <Typography fontWeight={700}>{brl(c.total)}</Typography>
-            <Button size="small" color="error" onClick={() => discard(c.id)}>
-              Descartar
-            </Button>
-          </Stack>
-        ))}
-      </Paper>
-
-      <Button fullWidth variant="outlined" onClick={() => { setShowReport((v) => !v); load(); }}>
-        {showReport ? 'Ocultar relatório consolidado' : 'Ver relatório consolidado'}
-      </Button>
-
-      {showReport && report && (
-        <Paper sx={{ p: 2, mt: 2 }} className="comanda-relatorio">
-          <Typography variant="h6" fontWeight={700}>
-            Relatório Consolidado — {report.eventName}
-          </Typography>
-          <Typography variant="h4" fontWeight={800} sx={{ my: 1 }}>
-            {brl(report.grandTotal)}
-          </Typography>
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            {report.count} comandas fotografadas
-          </Typography>
-          {report.itemTotals.map((i) => (
-            <Stack key={i.name} direction="row" justifyContent="space-between">
-              <span>
-                {i.quantity}× {i.name}
-              </span>
-              <span>{brl(i.unitPrice)}</span>
-            </Stack>
-          ))}
-          <Typography variant="subtitle2" sx={{ mt: 2 }}>
-            Comandas
-          </Typography>
-          {report.comandas.map((c) => (
-            <Box key={c.id} sx={{ mt: 1, breakInside: 'avoid' }}>
-              <Typography variant="body2" fontWeight={700}>
-                #{c.id} {c.label && `· ${c.label}`} — {brl(c.total)}
-              </Typography>
-              <Box component="img" src={photoUrl(c.id)} alt={`Comanda ${c.id}`} loading="lazy" sx={{ width: '100%', maxWidth: 360 }} />
-            </Box>
-          ))}
-          <Button sx={{ mt: 2 }} variant="contained" onClick={() => window.print()}>
-            Imprimir / salvar PDF
-          </Button>
-        </Paper>
       )}
     </Container>
   );
