@@ -5,6 +5,8 @@ import {
   BingoMenuItemInput,
   BingoPanel,
   BingoPaymentMethod,
+  BingoPayMethod,
+  BingoPayMethodInput,
   BingoSummary,
   BingoSummaryLine,
   BingoTab,
@@ -39,27 +41,55 @@ const pick = (o: any, ...keys: string[]) => {
   return undefined;
 };
 
+const ITEM_STATUS: BingoOrderItem['status'][] = ['Pending', 'Retrieved', 'Delivered', 'Contested', 'Cancelled'];
+const normalizeItemStatus = (st: any): BingoOrderItem['status'] => {
+  if (typeof st === 'string' && (ITEM_STATUS as string[]).includes(st)) return st as BingoOrderItem['status'];
+  if (typeof st === 'number' && ITEM_STATUS[st]) return ITEM_STATUS[st];
+  return 'Pending';
+};
+
+const normalizeItem = (i: any): BingoOrderItem => ({
+  id: String(i.id),
+  menuItemId: i.menuItemId != null ? String(i.menuItemId) : null,
+  name: i.name ?? i.itemName ?? '',
+  unitPrice: num(i.unitPrice),
+  quantity: num(i.quantity, 1),
+  status: normalizeItemStatus(i.status),
+  createdAt: i.createdAt,
+  deliveredAt: i.deliveredAt ?? null,
+  deliveredByName: i.deliveredByName ?? null,
+  contestedAt: i.contestedAt ?? null,
+  contestNote: i.contestNote ?? null,
+  cancelledAt: i.cancelledAt ?? null,
+  cancelledByName: i.cancelledByName ?? null,
+  cancelReason: i.cancelReason ?? null,
+});
+
 const normalizeTab = (t: any): BingoTab => {
-  const items = asArray(t.items).map((i: any) => ({
-    id: String(i.id),
-    name: i.name ?? i.itemName ?? '',
-    unitPrice: num(i.unitPrice),
-    quantity: num(i.quantity, 1),
-    status: (i.status === 2 || i.status === 'Delivered' ? 'Delivered'
-      : i.status === 1 || i.status === 'Retrieved' ? 'Retrieved' : 'Pending') as BingoOrderItem['status'],
-    createdAt: i.createdAt,
-  }));
+  const items = asArray(t.items).map(normalizeItem);
   const status: BingoTab['status'] =
     t.status === 'Paid' || t.status === 2 ? 'Paid'
       : t.status === 'CloseRequested' || t.status === 1 ? 'CloseRequested' : 'Open';
   const total = pick(t, 'total', 'totalAmount');
+  const active = items.filter((i) => i.status !== 'Cancelled');
+  const sumTotal = active.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+  const amountDue = pick(t, 'amountDue');
+  const undelivered = pick(t, 'undeliveredCount');
+  const contested = pick(t, 'contestedCount');
   return {
     tabId: String(pick(t, 'tabId', 'id')),
     mesa: pick(t, 'mesa', 'tableNumber') ?? '-',
     customerName: t.customerName ?? '',
     status,
-    total: total !== undefined ? num(total) : items.reduce((s, i) => s + i.unitPrice * i.quantity, 0),
+    total: total !== undefined ? num(total) : sumTotal,
+    amountDue: amountDue !== undefined ? num(amountDue)
+      : items.filter((i) => i.status === 'Delivered').reduce((s, i) => s + i.unitPrice * i.quantity, 0),
+    undeliveredCount: undelivered !== undefined ? num(undelivered)
+      : items.filter((i) => i.status === 'Pending' || i.status === 'Retrieved').length,
+    contestedCount: contested !== undefined ? num(contested) : items.filter((i) => i.status === 'Contested').length,
     paymentMethod: t.paymentMethod ?? null,
+    paidByName: t.paidByName ?? null,
+    paidAt: t.paidAt ?? null,
     items,
     phoneVerified: t.phoneVerified === undefined || t.phoneVerified === null ? undefined : !!t.phoneVerified,
     codeDeliveryStatus: t.codeDeliveryStatus ?? null,
@@ -69,6 +99,13 @@ const normalizeTab = (t: any): BingoTab => {
   };
 };
 
+const normalizePayMethod = (m: any): BingoPayMethod => ({
+  id: num(m.id),
+  name: m.name ?? '',
+  isActive: m.isActive === undefined ? true : !!m.isActive,
+  sortOrder: num(m.sortOrder),
+});
+
 const normalizeLines = (v: any, labelKeys: string[]): BingoSummaryLine[] => {
   if (Array.isArray(v)) {
     return v.map((l: any) => {
@@ -76,6 +113,7 @@ const normalizeLines = (v: any, labelKeys: string[]): BingoSummaryLine[] => {
       return {
         label: String(pick(l, ...labelKeys) ?? '-'),
         quantity: q !== undefined ? num(q) : undefined,
+        count: l.count !== undefined ? num(l.count) : undefined,
         total: num(pick(l, 'total', 'value', 'valor', 'amount')),
       };
     });
@@ -112,6 +150,14 @@ const normalizeSummary = (d: any): BingoSummary => {
       ['method', 'paymentMethod', 'formaPagamento', 'label'],
     ),
     byItem: normalizeLines(pick(d, 'byItem', 'porItem', 'items'), ['name', 'itemName', 'item', 'label']),
+    cancelledTotal: num(d.cancelledTotal),
+    contestedOpen: num(d.contestedOpen),
+    byWaiter: asArray(d.byWaiter).map((w: any) => ({
+      name: w.name ?? '-',
+      count: num(w.count),
+      total: num(w.total),
+      byMethod: asArray(w.byMethod).map((m: any) => ({ method: String(m.method ?? '-'), total: num(m.total) })),
+    })),
   };
 };
 
@@ -173,6 +219,8 @@ export const bingoApi = {
       phoneVerifiedCount: d.counts?.phoneVerified !== undefined ? num(d.counts.phoneVerified) : undefined,
       phoneNotVerifiedCount: d.counts?.phoneNotVerified !== undefined ? num(d.counts.phoneNotVerified) : undefined,
       codeDeliveryFailedCount: d.counts?.codeDeliveryFailed !== undefined ? num(d.counts.codeDeliveryFailed) : undefined,
+      contestedItems: d.counts?.contestedItems !== undefined ? num(d.counts.contestedItems) : undefined,
+      cancelledItems: d.counts?.cancelledItems !== undefined ? num(d.counts.cancelledItems) : undefined,
       closeAllRequested: pick(d, 'closeAllRequested'),
       totalSold: sold !== undefined ? num(sold) : undefined,
       tabs,
@@ -274,8 +322,30 @@ export const bingoApi = {
     return normalizeSummary(r.data);
   },
 
-  payTab: (tabId: string, method: BingoPaymentMethod) =>
-    apiService.post<any>(`${BASE}/comandas/${tabId}/pagar`, { method }),
+  // ---- Formas de pagamento ----
+  async getPaymentMethods(): Promise<BingoPayMethod[]> {
+    const r = await apiService.get<any>(`${BASE}/formas-pagamento`);
+    return asArray(r.data).map(normalizePayMethod).sort((a, b) => a.sortOrder - b.sortOrder);
+  },
+  createPaymentMethod: (data: BingoPayMethodInput) => apiService.post<any>(`${BASE}/formas-pagamento`, data),
+  updatePaymentMethod: (id: number, data: BingoPayMethodInput) =>
+    apiService.put<any>(`${BASE}/formas-pagamento/${id}`, data),
+  deletePaymentMethod: (id: number) => apiService.delete<any>(`${BASE}/formas-pagamento/${id}`),
+
+  // ---- Fechamento no caixa ----
+  async getTableTabs(mesa: number | string): Promise<BingoTab[]> {
+    const r = await apiService.get<any>(`${BASE}/mesas/${mesa}/comandas`);
+    return asArray(Array.isArray(r.data) ? r.data : pick(r.data, 'comandas', 'tabs')).map(normalizeTab);
+  },
+  cancelItem: (itemId: string, reason: string) =>
+    apiService.post<any>(`${BASE}/itens/${itemId}/cancelar`, { reason }),
+  resolveContest: (itemId: string, action: 'ConfirmDelivered' | 'Cancel', note?: string) =>
+    apiService.post<any>(`${BASE}/itens/${itemId}/resolver-contestacao`, { action, ...(note ? { note } : {}) }),
+  deliverItemAdmin: (itemId: string) => apiService.post<any>(`${BASE}/itens/${itemId}/entregar`),
+  async payTabsAdmin(tabIds: string[], paymentMethodId: number, note?: string): Promise<{ paidCount: number; total: number }> {
+    const r = await apiService.post<any>(`${BASE}/comandas/pagar`, { tabIds, paymentMethodId, ...(note ? { note } : {}) });
+    return { paidCount: num(r.data?.paidCount), total: num(r.data?.total) };
+  },
 
   resetEvent: () => apiService.post<any>(`${BASE}/zerar-evento`, { confirmar: true }),
 };
