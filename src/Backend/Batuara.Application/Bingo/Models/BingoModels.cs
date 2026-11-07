@@ -118,6 +118,7 @@ namespace Batuara.Application.Bingo.Models
         public BingoOrderItemStatus Status { get; set; }
         public DateTime? DeliveredAt { get; set; }
         public string? DeliveredByName { get; set; }
+        public string? RetrievedByName { get; set; }
         public DateTime? ContestedAt { get; set; }
         public string? ContestNote { get; set; }
         public DateTime? CancelledAt { get; set; }

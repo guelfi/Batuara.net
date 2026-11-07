@@ -496,7 +496,7 @@ const LivePanel: React.FC<{
   const closing = tabs.filter((t) => t.status === 'CloseRequested');
   const paid = tabs.filter((t) => t.status === 'Paid');
   const itemsText = (items: BingoTab['items']) =>
-    items.map((i) => `${i.quantity}x ${i.name}${i.status === 'Retrieved' ? ' (a caminho)' : ''}`).join(', ');
+    items.map((i) => `${i.quantity}x ${i.name}${i.status === 'Retrieved' ? ` (a caminho${i.retrievedByName ? ` - ${i.retrievedByName}` : ''})` : ''}`).join(', ');
   const mesaRows = tabs
     .filter((t) => (filter === 'paid' ? true : t.status !== 'Paid'))
     .filter(matchesFilter)

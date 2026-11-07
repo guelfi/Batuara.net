@@ -196,6 +196,11 @@ namespace Batuara.Infrastructure.Bingo.Services
             var ev = await ResolveAdminEventAsync(eventId, cancellationToken);
             var tabs = await LoadTabsAsync(ev.Id, cancellationToken);
             var unpaid = tabs.Where(x => !x.IsPaid).ToList();
+            var retrieverIds = tabs.SelectMany(x => x.Items)
+                .Where(i => i.Status == BingoOrderItemStatus.Retrieved && i.RetrievedByHouseMemberId != null)
+                .Select(i => i.RetrievedByHouseMemberId!.Value).Distinct().ToList();
+            var retrieverNames = await Db.HouseMembers.Where(x => retrieverIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id, x => x.FullName, cancellationToken);
 
             return new BingoPanelDto
             {
@@ -217,7 +222,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                     PhoneNotVerified = tabs.Count(x => !x.IsPhoneVerified),
                     CodeDeliveryFailed = tabs.Count(x => x.CodeDeliveryStatus == "Failed")
                 },
-                Tabs = tabs.Select(ToPanelTab).ToList(),
+                Tabs = tabs.Select(t => ToPanelTab(t, retrieverNames)).ToList(),
                 PendingByTable = tabs
                     .GroupBy(x => x.TableNumber)
                     .Select(g => new BingoPendingByTableDto
@@ -536,7 +541,7 @@ namespace Batuara.Infrastructure.Bingo.Services
             };
         }
 
-        private BingoPanelTabDto ToPanelTab(BingoTab tab)
+        private BingoPanelTabDto ToPanelTab(BingoTab tab, IReadOnlyDictionary<int, string>? retrieverNames = null)
         {
             return new BingoPanelTabDto
             {
@@ -555,7 +560,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 PhoneVerified = tab.IsPhoneVerified,
                 CodeDeliveryStatus = tab.CodeDeliveryStatus,
                 CodeDeliveryError = tab.CodeDeliveryError,
-                Items = ToItemDtos(tab.Items)
+                Items = ToItemDtos(tab.Items, retrieverNames: retrieverNames)
             };
         }
 

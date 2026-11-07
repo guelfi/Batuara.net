@@ -43,7 +43,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 ?? throw new BingoException(BingoErrorKind.Conflict, "Nenhum evento de bingo cadastrado.");
         }
 
-        protected static List<BingoTabItemDto> ToItemDtos(IEnumerable<BingoOrderItem> items, bool firstNameOnly = false)
+        protected static List<BingoTabItemDto> ToItemDtos(IEnumerable<BingoOrderItem> items, bool firstNameOnly = false, IReadOnlyDictionary<int, string>? retrieverNames = null)
         {
             return items
                 .OrderBy(x => x.CreatedAt)
@@ -58,6 +58,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                     Status = x.Status,
                     DeliveredAt = x.DeliveredAt,
                     DeliveredByName = firstNameOnly ? FirstName(x.DeliveredByName) : x.DeliveredByName,
+                    RetrievedByName = x.RetrievedByHouseMemberId != null && retrieverNames != null && retrieverNames.TryGetValue(x.RetrievedByHouseMemberId.Value, out var rn) ? rn : null,
                     ContestedAt = x.ContestedAt,
                     ContestNote = x.ContestNote,
                     CancelledAt = x.CancelledAt,

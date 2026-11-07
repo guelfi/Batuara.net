@@ -58,6 +58,7 @@ const normalizeItem = (i: any): BingoOrderItem => ({
   createdAt: i.createdAt,
   deliveredAt: i.deliveredAt ?? null,
   deliveredByName: i.deliveredByName ?? null,
+  retrievedByName: i.retrievedByName ?? null,
   contestedAt: i.contestedAt ?? null,
   contestNote: i.contestNote ?? null,
   cancelledAt: i.cancelledAt ?? null,

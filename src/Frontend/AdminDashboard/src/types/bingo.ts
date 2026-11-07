@@ -41,6 +41,7 @@ export interface BingoOrderItem {
   menuItemId?: string | null;
   deliveredAt?: string | null;
   deliveredByName?: string | null;
+  retrievedByName?: string | null;
   contestedAt?: string | null;
   contestNote?: string | null;
   cancelledAt?: string | null;
