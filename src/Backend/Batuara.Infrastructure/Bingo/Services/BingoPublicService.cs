@@ -158,6 +158,25 @@ namespace Batuara.Infrastructure.Bingo.Services
             await Db.SaveChangesAsync(cancellationToken);
         }
 
+        public async Task CancelOwnItemAsync(Guid tabId, int itemId, CancellationToken cancellationToken = default)
+        {
+            var tab = await LoadTabAsync(tabId, cancellationToken);
+            var item = tab.Items.FirstOrDefault(x => x.Id == itemId)
+                ?? throw new BingoException(BingoErrorKind.NotFound, "Item não encontrado.");
+            if (tab.IsPaid)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Esta comanda já foi paga.");
+            }
+
+            if (item.Status != BingoOrderItemStatus.Pending)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Este item já foi retirado por um garçom e não pode mais ser cancelado.");
+            }
+
+            item.Cancel("Cancelado pelo cliente", tab.CustomerName, DateTime.UtcNow);
+            await Db.SaveChangesAsync(cancellationToken);
+        }
+
         public async Task ContestItemAsync(Guid tabId, int itemId, string? note, CancellationToken cancellationToken = default)
         {
             var tab = await LoadTabAsync(tabId, cancellationToken);

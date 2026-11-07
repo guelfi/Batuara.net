@@ -119,6 +119,10 @@ export const bingoApi = {
     await http.post(`/bingo/public/comandas/${tabId}/reabrir`, {});
   },
 
+  async cancelItem(tabId: string, itemId: string): Promise<void> {
+    await http.post(`/bingo/public/comandas/${tabId}/itens/${itemId}/cancelar`, {});
+  },
+
   async contestItem(tabId: string, itemId: string, note?: string): Promise<void> {
     await http.post(`/bingo/public/comandas/${tabId}/itens/${itemId}/contestar`, note ? { note } : {});
   },

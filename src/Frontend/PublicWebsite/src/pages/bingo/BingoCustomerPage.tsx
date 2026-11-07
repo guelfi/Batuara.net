@@ -377,6 +377,24 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
     }
   };
 
+  const [cancelTarget, setCancelTarget] = useState<BingoTabItem | null>(null);
+  const sendCancel = async () => {
+    if (!cancelTarget) return;
+    const item = cancelTarget;
+    setCancelTarget(null);
+    setBusy(true);
+    setMessage(null);
+    try {
+      await bingoApi.cancelItem(tabId, item.id);
+      setMessage({ severity: 'success', text: 'Item cancelado.' });
+    } catch (e) {
+      setMessage({ severity: 'error', text: apiErrorMessage(e, 'Não foi possível cancelar o item.') });
+    } finally {
+      await load();
+      setBusy(false);
+    }
+  };
+
   const sendContest = async () => {
     if (!contestTarget) return;
     const item = contestTarget;
@@ -707,6 +725,20 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
                           {st.label}
                         </Typography>
                       </Box>
+                      {i.status === 'Pending' && !isPaid && (
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.25 }}>
+                          <Button
+                            size="small"
+                            color="error"
+                            variant="outlined"
+                            disabled={busy}
+                            onClick={() => setCancelTarget(i)}
+                            sx={{ minHeight: 26, py: 0, px: 1, fontSize: '0.75rem', textTransform: 'none' }}
+                          >
+                            Cancelar item
+                          </Button>
+                        </Box>
+                      )}
                       {i.status === 'Delivered' && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.25 }}>
                           <Typography variant="caption" sx={{ flex: 1, opacity: 0.75 }}>
@@ -847,6 +879,20 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
           <Button variant="outlined" color="warning" sx={BIG_BUTTON} onClick={() => closeTab(true)}>
             Cancelar esses itens e encerrar
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={cancelTarget !== null} onClose={() => setCancelTarget(null)} fullWidth maxWidth="xs">
+        <DialogTitle>Cancelar este item?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {cancelTarget ? `${cancelTarget.quantity}x ${cancelTarget.name}` : ''}
+          </DialogContentText>
+          <DialogContentText sx={{ mt: 1 }}>Só é possível enquanto o garçom ainda não retirou o item.</DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setCancelTarget(null)} sx={{ minHeight: 48 }}>Voltar</Button>
+          <Button variant="contained" color="error" onClick={sendCancel} sx={{ minHeight: 48 }}>Cancelar item</Button>
         </DialogActions>
       </Dialog>
 

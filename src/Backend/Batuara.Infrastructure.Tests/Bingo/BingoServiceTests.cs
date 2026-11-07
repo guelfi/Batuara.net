@@ -794,6 +794,24 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public async Task Customer_Can_Cancel_Own_Item_Only_While_Pending()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var tab = await f.NewTabAsync();
+            var waiterId = await f.ScheduleWaiterAsync();
+            await f.OrderAsync(tab.TabId, "Salada", 1);
+            await f.OrderAsync(tab.TabId, "Cachorro-quente", 1);
+            var items = (await f.Public.GetTabAsync(tab.TabId)).Items;
+
+            await f.Public.CancelOwnItemAsync(tab.TabId, items[0].Id);
+            (await f.Public.GetTabAsync(tab.TabId)).Items.Single(i => i.Id == items[0].Id).Status.Should().Be(BingoOrderItemStatus.Cancelled);
+
+            await f.Waiter.RetrieveAsync(waiterId, items[1].Id);
+            await ShouldThrowAsync(() => f.Public.CancelOwnItemAsync(tab.TabId, items[1].Id), BingoErrorKind.Conflict);
+        }
+
+        [Fact]
         public async Task Exit_Check_Requires_Payment_And_Registers_Only_First_Release()
         {
             var f = new Fixture();
