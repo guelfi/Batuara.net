@@ -700,13 +700,11 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
                   const cancelled = i.status === 'Cancelled';
                   const st = ITEM_STATUS[i.status] ?? ITEM_STATUS.Pending;
                   return (
-                    <Box key={i.id} data-testid={`order-${i.id}`} sx={{ py: 0.75, borderBottom: 1, borderColor: 'divider' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box key={i.id} data-testid={`order-${i.id}`} sx={{ py: 0.75, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography
                           noWrap
                           sx={{
-                            flex: 1,
-                            minWidth: 0,
                             fontSize: '0.92rem',
                             fontWeight: 600,
                             textDecoration: cancelled ? 'line-through' : 'none',
@@ -715,36 +713,44 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
                         >
                           {i.quantity}x {i.name}
                         </Typography>
+                        {i.status === 'Delivered' && (
+                          <Typography variant="caption" sx={{ display: 'block', opacity: 0.75 }}>
+                            {i.deliveredAt ? `Entregue às ${formatTime(i.deliveredAt)}` : 'Entregue'}
+                            {i.deliveredByName ? ` por ${i.deliveredByName}` : ''}
+                          </Typography>
+                        )}
+                        {cancelled && i.cancelReason && (
+                          <Typography variant="caption" sx={{ display: 'block', opacity: 0.7 }}>
+                            Motivo: {i.cancelReason}
+                          </Typography>
+                        )}
+                      </Box>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontSize: '0.85rem', whiteSpace: 'nowrap', textDecoration: cancelled ? 'line-through' : 'none', color: cancelled ? 'text.disabled' : 'text.primary' }}
+                      >
+                        {formatBRL(i.unitPrice * i.quantity)}
+                      </Typography>
+                      <Box sx={{ width: 104, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                         <Typography
-                          variant="body2"
-                          sx={{ fontSize: '0.85rem', whiteSpace: 'nowrap', textDecoration: cancelled ? 'line-through' : 'none', color: cancelled ? 'text.disabled' : 'text.primary' }}
+                          variant="caption"
+                          sx={{ height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, borderRadius: 1, bgcolor: st.bg, color: st.color }}
                         >
-                          {formatBRL(i.unitPrice * i.quantity)}
-                        </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 700, px: 0.9, py: 0.2, borderRadius: 1, bgcolor: st.bg, color: st.color }}>
                           {st.label}
                         </Typography>
-                      </Box>
-                      {i.status === 'Pending' && !isPaid && (
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.25 }}>
+                        {i.status === 'Pending' && !isPaid && (
                           <Button
                             size="small"
                             color="error"
                             variant="outlined"
                             disabled={busy}
                             onClick={() => setCancelTarget(i)}
-                            sx={{ minHeight: 26, py: 0, px: 1, fontSize: '0.75rem', textTransform: 'none' }}
+                            sx={{ height: 26, minHeight: 26, py: 0, px: 0.5, fontSize: '0.75rem', textTransform: 'none' }}
                           >
                             Cancelar item
                           </Button>
-                        </Box>
-                      )}
-                      {i.status === 'Delivered' && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.25 }}>
-                          <Typography variant="caption" sx={{ flex: 1, opacity: 0.75 }}>
-                            {i.deliveredAt ? `Entregue às ${formatTime(i.deliveredAt)}` : 'Entregue'}
-                            {i.deliveredByName ? ` por ${i.deliveredByName}` : ''}
-                          </Typography>
+                        )}
+                        {i.status === 'Delivered' && (
                           <Button
                             size="small"
                             color="warning"
@@ -754,17 +760,12 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
                               setContestNote('');
                               setContestTarget(i);
                             }}
-                            sx={{ minHeight: 26, py: 0, px: 1, fontSize: '0.75rem', textTransform: 'none' }}
+                            sx={{ height: 26, minHeight: 26, py: 0, px: 0.5, fontSize: '0.75rem', textTransform: 'none' }}
                           >
                             Não recebi
                           </Button>
-                        </Box>
-                      )}
-                      {cancelled && i.cancelReason && (
-                        <Typography variant="caption" sx={{ display: 'block', opacity: 0.7 }}>
-                          Motivo: {i.cancelReason}
-                        </Typography>
-                      )}
+                        )}
+                      </Box>
                     </Box>
                   );
                 })}
