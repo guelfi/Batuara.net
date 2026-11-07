@@ -51,7 +51,7 @@ namespace Batuara.Application.Bingo.Models
     {
         public const string SectionName = "Anthropic";
         public string ApiKey { get; set; } = string.Empty;
-        public string Model { get; set; } = "claude-sonnet-5-5";
+        public string Model { get; set; } = "claude-3-5-sonnet-20241022";
     }
 }
 
