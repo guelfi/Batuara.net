@@ -1763,7 +1763,7 @@ namespace Batuara.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("AmaciDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime>("BirthDate")
+                    b.Property<DateTime?>("BirthDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("City")

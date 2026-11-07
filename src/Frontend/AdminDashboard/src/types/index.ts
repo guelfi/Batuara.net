@@ -209,7 +209,7 @@ export interface HouseMemberContribution {
 export interface HouseMember {
   id: number;
   fullName: string;
-  birthDate: string;
+  birthDate: string | null;
   entryDate: string | null;
   headOrixaFront: string | null;
   headOrixaBack: string | null;

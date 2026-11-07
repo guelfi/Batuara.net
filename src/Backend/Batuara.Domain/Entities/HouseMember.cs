@@ -8,7 +8,7 @@ namespace Batuara.Domain.Entities
         private readonly List<HouseMemberContribution> _contributions = new();
 
         public string FullName { get; private set; } = string.Empty;
-        public DateTime BirthDate { get; private set; }
+        public DateTime? BirthDate { get; private set; }
         public DateTime? EntryDate { get; private set; }
         public string? HeadOrixaFront { get; private set; }
         public string? HeadOrixaBack { get; private set; }
@@ -36,7 +36,7 @@ namespace Batuara.Domain.Entities
 
         public HouseMember(
             string fullName,
-            DateTime birthDate,
+            DateTime? birthDate,
             DateTime? entryDate,
             string? headOrixaFront,
             string? headOrixaBack,
@@ -72,7 +72,7 @@ namespace Batuara.Domain.Entities
 
         public void UpdateProfile(
             string fullName,
-            DateTime birthDate,
+            DateTime? birthDate,
             DateTime? entryDate,
             string? headOrixaFront,
             string? headOrixaBack,
@@ -86,7 +86,7 @@ namespace Batuara.Domain.Entities
             HeadOrixaRonda = NullableString(headOrixaRonda);
             Email = NullableString(email);
             MobilePhone = NullableString(mobilePhone);
-            BirthDate = NormalizeDate(birthDate);
+            BirthDate = birthDate.HasValue ? NormalizeDate(birthDate.Value) : null;
             EntryDate = entryDate.HasValue ? NormalizeDate(entryDate.Value) : null;
             UpdateTimestamp();
         }

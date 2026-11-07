@@ -35,7 +35,7 @@ namespace Batuara.Application.HouseMembers.Models
     {
         public int Id { get; set; }
         public string FullName { get; set; } = string.Empty;
-        public DateTime BirthDate { get; set; }
+        public DateTime? BirthDate { get; set; }
         public DateTime? EntryDate { get; set; }
         public string? HeadOrixaFront { get; set; }
         public string? HeadOrixaBack { get; set; }
@@ -66,7 +66,7 @@ namespace Batuara.Application.HouseMembers.Models
     public class CreateHouseMemberRequest
     {
         public string FullName { get; set; } = string.Empty;
-        public DateTime BirthDate { get; set; }
+        public DateTime? BirthDate { get; set; }
         public DateTime? EntryDate { get; set; }
         public string? HeadOrixaFront { get; set; }
         public string? HeadOrixaBack { get; set; }

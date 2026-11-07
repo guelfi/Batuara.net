@@ -34,6 +34,7 @@ namespace Batuara.Application.MemberAuth.Models
     public class MemberSelfUpdateRequest
     {
         public string FullName { get; set; } = string.Empty;
+        public DateTime? BirthDate { get; set; }
         public string? Email { get; set; }
         public string? MobilePhone { get; set; }
         public string? ZipCode { get; set; }

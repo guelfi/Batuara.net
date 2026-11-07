@@ -95,9 +95,16 @@ namespace Batuara.Infrastructure.HouseMembers.Services
                     }
                 }
 
+                var newDigits = PhoneDigits(request.MobilePhone);
+                var phones = await _db.HouseMembers.AsNoTracking().Where(x => x.MobilePhone != null).Select(x => x.MobilePhone!).ToListAsync();
+                if (phones.Any(p => PhoneDigits(p) == newDigits))
+                {
+                    return (null, new[] { "Já existe um filho da casa com este celular." }, true);
+                }
+
                 var entity = new HouseMember(
                     request.FullName,
-                    NormalizeDateOnlyUtc(request.BirthDate),
+                    NormalizeNullableDateOnlyUtc(request.BirthDate),
                     request.EntryDate.HasValue ? NormalizeDateOnlyUtc(request.EntryDate.Value) : null,
                     request.HeadOrixaFront,
                     request.HeadOrixaBack,
@@ -157,7 +164,7 @@ namespace Batuara.Infrastructure.HouseMembers.Services
 
                 entity.UpdateProfile(
                     request.FullName,
-                    NormalizeDateOnlyUtc(request.BirthDate),
+                    NormalizeNullableDateOnlyUtc(request.BirthDate),
                     request.EntryDate.HasValue ? NormalizeDateOnlyUtc(request.EntryDate.Value) : null,
                     request.HeadOrixaFront,
                     request.HeadOrixaBack,
@@ -231,9 +238,14 @@ namespace Batuara.Infrastructure.HouseMembers.Services
                     }
                 }
 
+                if (request.BirthDate.HasValue && request.BirthDate.Value.Date >= DateTime.UtcNow.Date)
+                {
+                    return (null, new[] { "A data de nascimento deve estar no passado." }, false);
+                }
+
                 entity.UpdateProfile(
                     request.FullName,
-                    entity.BirthDate,
+                    request.BirthDate.HasValue ? NormalizeDateOnlyUtc(request.BirthDate.Value) : entity.BirthDate,
                     entity.EntryDate,
                     entity.HeadOrixaFront,
                     entity.HeadOrixaBack,
@@ -375,7 +387,7 @@ namespace Batuara.Infrastructure.HouseMembers.Services
             {
                 Id = entity.Id,
                 FullName = entity.FullName,
-                BirthDate = NormalizeDateOnlyUtc(entity.BirthDate),
+                BirthDate = NormalizeNullableDateOnlyUtc(entity.BirthDate),
                 EntryDate = entity.EntryDate.HasValue ? NormalizeDateOnlyUtc(entity.EntryDate.Value) : null,
                 HeadOrixaFront = entity.HeadOrixaFront,
                 HeadOrixaBack = entity.HeadOrixaBack,
@@ -457,6 +469,12 @@ namespace Batuara.Infrastructure.HouseMembers.Services
         private static DateTime NormalizeDateOnlyUtc(DateTime value)
         {
             return DateTime.SpecifyKind(value.Date, DateTimeKind.Utc);
+        }
+
+        private static string PhoneDigits(string? phone)
+        {
+            var d = new string((phone ?? string.Empty).Where(char.IsDigit).ToArray());
+            return d.Length > 11 ? d.Substring(d.Length - 11) : d;
         }
 
         private static DateTime? NormalizeNullableDateOnlyUtc(DateTime? value)

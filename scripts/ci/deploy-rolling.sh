@@ -346,6 +346,9 @@ apply_migration "20261107082947_AddBingoContestationAndPaymentMethods" \
 apply_migration "20261107155915_AddBingoExitCheck" \
     "ALTER TABLE batuara.\"BingoTabs\" ADD COLUMN IF NOT EXISTS \"ExitCheckedAt\" timestamp with time zone NULL; ALTER TABLE batuara.\"BingoTabs\" ADD COLUMN IF NOT EXISTS \"ExitCheckedByName\" character varying(150) NULL;"
 
+apply_migration "20261107182149_MakeHouseMemberBirthDateOptional" \
+    "ALTER TABLE batuara.\"HouseMembers\" ALTER COLUMN \"BirthDate\" DROP NOT NULL;"
+
 # --- Guarda de drift: toda migration do codigo precisa estar no historico do banco ---
 # Impede que uma migration nova seja esquecida nesta lista (o app nao migra no startup:
 # DB_APPLY_MIGRATIONS_ON_STARTUP=false) e o deploy siga com schema defasado.

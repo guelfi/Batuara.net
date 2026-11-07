@@ -63,6 +63,7 @@ interface ActivityResponseData {
 
 const emptyMemberForm = {
   fullName: '',
+  birthDate: '',
   email: '',
   mobilePhone: '',
   zipCode: '',
@@ -139,6 +140,7 @@ const UnifiedProfilePage: React.FC = () => {
     setMember(data);
     setMemberForm({
       fullName: data.fullName || '',
+      birthDate: data.birthDate ? data.birthDate.slice(0, 10) : '',
       email: data.email || '',
       mobilePhone: data.mobilePhone || '',
       zipCode: data.zipCode || '',
@@ -267,12 +269,12 @@ const UnifiedProfilePage: React.FC = () => {
     setMemberError(null);
     try {
       if (useSelfServiceApi || memberSession) {
-        const response = await apiService.updateMyMemberProfile(memberForm);
+        const response = await apiService.updateMyMemberProfile({ ...memberForm, birthDate: memberForm.birthDate || null });
         applyMemberData(response.data);
       } else if (member) {
         const response = await apiService.updateHouseMember(String(member.id), {
           fullName: memberForm.fullName,
-          birthDate: member.birthDate,
+          birthDate: memberForm.birthDate || null,
           entryDate: member.entryDate,
           headOrixaFront: member.headOrixaFront,
           headOrixaBack: member.headOrixaBack,
@@ -515,6 +517,16 @@ const UnifiedProfilePage: React.FC = () => {
                       onChange={(e) => updateMemberForm('fullName', e.target.value)}
                       fullWidth
                       required
+                    />
+                  </Box>
+                  <Box sx={{ gridColumn: { xs: '1', md: 'span 6' } }}>
+                    <TextField
+                      label="Data de nascimento"
+                      type="date"
+                      value={memberForm.birthDate}
+                      onChange={(e) => updateMemberForm('birthDate', e.target.value)}
+                      slotProps={{ inputLabel: { shrink: true } }}
+                      fullWidth
                     />
                   </Box>
                   <Box sx={{ gridColumn: { xs: '1', md: 'span 6' } }}>

@@ -371,7 +371,7 @@ const MembersPage: React.FC = () => {
       setEditingItem(item);
       setForm({
         fullName: item.fullName,
-        birthDate: item.birthDate.slice(0, 10),
+        birthDate: item.birthDate ? item.birthDate.slice(0, 10) : '',
         entryDate: item.entryDate?.slice(0, 10) ?? '',
         headOrixaFront: item.headOrixaFront ?? '',
         headOrixaBack: item.headOrixaBack ?? '',
@@ -475,8 +475,6 @@ const MembersPage: React.FC = () => {
   const handleSubmit = async () => {
     const nextErrors: typeof formErrors = {};
     if (!form.fullName.trim()) nextErrors.fullName = 'Nome completo é obrigatório.';
-    if (!form.headOrixaFront.trim()) nextErrors.headOrixaFront = 'Orixá de frente é obrigatório.';
-    if (!form.birthDate.trim()) nextErrors.birthDate = 'Data de nascimento é obrigatória.';
 
     const emailValue = form.email.trim();
     if (emailValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
@@ -484,7 +482,9 @@ const MembersPage: React.FC = () => {
     }
 
     const phoneDigits = onlyDigits(form.mobilePhone);
-    if (form.mobilePhone.trim() && phoneDigits.length !== 10 && phoneDigits.length !== 11) {
+    if (!editingItem && !form.mobilePhone.trim()) {
+      nextErrors.mobilePhone = 'Celular é obrigatório (DDD + número).';
+    } else if (form.mobilePhone.trim() && phoneDigits.length !== 10 && phoneDigits.length !== 11) {
       nextErrors.mobilePhone = 'Informe um celular válido (DDD + número).';
     }
 
@@ -506,7 +506,7 @@ const MembersPage: React.FC = () => {
     const today = new Date().toISOString().slice(0, 10);
     const payload = {
       fullName: form.fullName.trim(),
-      birthDate: form.birthDate,
+      birthDate: form.birthDate || null,
       entryDate: form.entryDate || today,
       headOrixaFront: form.headOrixaFront.trim() || null,
       headOrixaBack: form.headOrixaBack.trim() || null,
@@ -803,6 +803,7 @@ const MembersPage: React.FC = () => {
                   />
                   <TextField
                     label="Celular"
+                    required={!editingItem}
                     value={form.mobilePhone}
                     onChange={(e) => setForm((prev) => ({ ...prev, mobilePhone: formatPhoneBr(e.target.value) }))}
                     error={!!formErrors.mobilePhone}
@@ -819,7 +820,6 @@ const MembersPage: React.FC = () => {
                     onChange={(e) => setForm((prev) => ({ ...prev, birthDate: e.target.value }))}
                     InputLabelProps={{ shrink: true }}
                     fullWidth
-                    required
                     error={!!formErrors.birthDate}
                     helperText={formErrors.birthDate}
                   />

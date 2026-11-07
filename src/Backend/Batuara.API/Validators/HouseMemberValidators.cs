@@ -24,6 +24,10 @@ namespace Batuara.API.Validators
             RuleFor(x => x.HeadOrixaRonda).MaximumLength(100).When(x => x.HeadOrixaRonda != null);
             RuleFor(x => x.Email).EmailAddress().MaximumLength(200).When(x => !string.IsNullOrWhiteSpace(x.Email));
             RuleFor(x => x.MobilePhone).MaximumLength(50).When(x => x.MobilePhone != null);
+            RuleFor(x => x.MobilePhone)
+                .Must(p => !string.IsNullOrWhiteSpace(p) && new string(p.Where(char.IsDigit).ToArray()).Length is 10 or 11)
+                .WithMessage("Informe o celular com DDD (10 ou 11 dígitos).")
+                .When(x => x is not UpdateHouseMemberRequest);
             RuleFor(x => x.ZipCode).MaximumLength(20).When(x => x.ZipCode != null);
             RuleFor(x => x.Street).MaximumLength(300).When(x => x.Street != null);
             RuleFor(x => x.Number).MaximumLength(20).When(x => x.Number != null);
@@ -31,7 +35,7 @@ namespace Batuara.API.Validators
             RuleFor(x => x.District).MaximumLength(120).When(x => x.District != null);
             RuleFor(x => x.City).MaximumLength(120).When(x => x.City != null);
             RuleFor(x => x.State).MaximumLength(10).When(x => x.State != null);
-            RuleFor(x => x.BirthDate).NotEmpty().LessThan(DateTime.UtcNow.Date);
+            RuleFor(x => x.BirthDate).LessThan(DateTime.UtcNow.Date).When(x => x.BirthDate.HasValue);
             RuleFor(x => x.EntryDate).LessThanOrEqualTo(DateTime.UtcNow.Date.AddYears(1)).When(x => x.EntryDate.HasValue);
             RuleFor(x => x.SmallParent).MaximumLength(200).When(x => x.SmallParent != null);
             RuleFor(x => x.ReligiousLeader).MaximumLength(200).When(x => x.ReligiousLeader != null);
