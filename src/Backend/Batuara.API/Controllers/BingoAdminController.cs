@@ -12,7 +12,7 @@ namespace Batuara.API.Controllers
     [Authorize(Roles = "Admin")]
     [EnableRateLimiting("bingo-admin")]
     [Route("api/bingo/admin")]
-    public class BingoAdminController(IBingoAdminService service, IBingoReminderService reminders) : ControllerBase
+    public class BingoAdminController(IBingoAdminService service, IBingoReminderService reminders, IComandaFotoService comandaFoto) : ControllerBase
     {
         [HttpGet("settings")]
         public async Task<IActionResult> GetSettings([FromQuery] int? eventoId, CancellationToken ct)
@@ -177,5 +177,23 @@ namespace Batuara.API.Controllers
         [HttpPost("eventos/{id:int}/lembretes/enviar")]
         public async Task<IActionResult> SendReminders(int id, [FromBody] BingoConfirmReminderRequest request, CancellationToken ct)
             => Ok(new { success = true, data = await reminders.SendAsync(id, request?.Confirmar ?? false, ct) });
+
+        [HttpGet("comandas-foto")]
+        public async Task<IActionResult> GetPhotoTabs(CancellationToken ct)
+            => Ok(new { success = true, data = await comandaFoto.GetReportAsync(ct) });
+
+        [HttpGet("comandas-foto/{id:int}/foto")]
+        public async Task<IActionResult> GetPhotoTabImage(int id, CancellationToken ct)
+        {
+            var photo = await comandaFoto.GetPhotoAsync(id, ct);
+            return photo is null ? NotFound() : File(photo.Value.Data, photo.Value.ContentType);
+        }
+
+        [HttpDelete("comandas-foto/{id:int}")]
+        public async Task<IActionResult> DiscardPhotoTab(int id, CancellationToken ct)
+        {
+            await comandaFoto.DiscardAsync(id, ct);
+            return Ok(new { success = true });
+        }
     }
 }

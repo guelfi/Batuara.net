@@ -255,13 +255,13 @@ const ComandaFotoPage: React.FC = () => {
       </Paper>
 
       <Button fullWidth variant="outlined" onClick={() => { setShowReport((v) => !v); load(); }}>
-        {showReport ? 'Ocultar fechamento do evento' : 'Fechar evento (relatório total)'}
+        {showReport ? 'Ocultar relatório consolidado' : 'Ver relatório consolidado'}
       </Button>
 
       {showReport && report && (
         <Paper sx={{ p: 2, mt: 2 }} className="comanda-relatorio">
           <Typography variant="h6" fontWeight={700}>
-            Fechamento — {report.eventName}
+            Relatório Consolidado — {report.eventName}
           </Typography>
           <Typography variant="h4" fontWeight={800} sx={{ my: 1 }}>
             {brl(report.grandTotal)}

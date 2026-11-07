@@ -1780,6 +1780,7 @@ const BingoPage: React.FC = () => {
           <Tab label="Garçons" />
           <Tab label="Formas de pagamento" />
           <Tab label="Resumo" />
+          <Tab label="Comandas Foto" />
         </Tabs>
         <Box sx={{ flex: 1 }} />
         {tab === 2 && (
@@ -1809,6 +1810,9 @@ const BingoPage: React.FC = () => {
           {tab === 6 && (
             <SummaryTab events={events} current={current} notify={notify} confirm={setConfirmState} onEventChanged={loadEvents} />
           )}
+          {tab === 7 && (
+            <PhotoTabsTab notify={notify} current={current} />
+          )}
         </>
       )}
 
@@ -1824,6 +1828,190 @@ const BingoPage: React.FC = () => {
         </Alert>
       </Snackbar>
     </Box>
+  );
+};
+
+interface PhotoTabItem {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+interface PhotoTabData {
+  id: number;
+  label: string;
+  total: number;
+  createdAt: string;
+  items: PhotoTabItem[];
+}
+
+interface PhotoTabReport {
+  eventName: string;
+  count: number;
+  grandTotal: number;
+  itemTotals: PhotoTabItem[];
+  comandas: PhotoTabData[];
+}
+
+const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = ({ notify, current }) => {
+  const [report, setReport] = useState<PhotoTabReport | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
+
+  const load = useCallback(async () => {
+    if (!current) return;
+    setLoading(true);
+    try {
+      const r = await apiService.get<any>('/bingo/admin/comandas-foto');
+      setReport(r.data?.data ?? null);
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível carregar as comandas fotografadas.'), 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [current, notify]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleDiscard = async (id: number) => {
+    if (!window.confirm('Descartar esta comanda fotografada?')) return;
+    try {
+      await apiService.delete(`/bingo/admin/comandas-foto/${id}`);
+      notify('Comanda descartada com sucesso.', 'success');
+      await load();
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível descartar a comanda.'), 'error');
+    }
+  };
+
+  if (!current) {
+    return <Alert severity="info">Não há evento atual. Abra um evento na aba Eventos.</Alert>;
+  }
+
+  if (loading) {
+    return <CircularProgress />;
+  }
+
+  if (!report || report.count === 0) {
+    return (
+      <Alert severity="info">
+        Nenhuma comanda fotografada neste evento. As comandas de papel fotografadas aparecerão aqui.
+      </Alert>
+    );
+  }
+
+  const photoUrl = (id: number) => `${apiService.defaults.baseURL}/bingo/admin/comandas-foto/${id}/foto`;
+
+  return (
+    <Stack spacing={3}>
+      <Paper sx={{ p: 2 }}>
+        <Typography variant="h6" fontWeight={700} gutterBottom>
+          Comandas Fotografadas — {report.eventName}
+        </Typography>
+        <Stack direction="row" spacing={2} alignItems="baseline">
+          <Typography variant="body1">
+            <strong>{report.count}</strong> comandas
+          </Typography>
+          <Typography variant="h5" fontWeight={800} color="primary">
+            Total: {money(report.grandTotal)}
+          </Typography>
+        </Stack>
+      </Paper>
+
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>#</TableCell>
+              <TableCell>Mesa / Nome</TableCell>
+              <TableCell>Data/Hora</TableCell>
+              <TableCell align="right">Total</TableCell>
+              <TableCell align="center">Ações</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {report.comandas.map((comanda) => (
+              <TableRow key={comanda.id}>
+                <TableCell>{comanda.id}</TableCell>
+                <TableCell>{comanda.label || '—'}</TableCell>
+                <TableCell>
+                  {new Date(comanda.createdAt).toLocaleString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </TableCell>
+                <TableCell align="right">
+                  <strong>{money(comanda.total)}</strong>
+                </TableCell>
+                <TableCell align="center">
+                  <Stack direction="row" spacing={1} justifyContent="center">
+                    <Button size="small" variant="outlined" onClick={() => setSelectedPhoto(comanda.id)}>
+                      Ver Foto
+                    </Button>
+                    <Button size="small" color="error" onClick={() => handleDiscard(comanda.id)}>
+                      Descartar
+                    </Button>
+                  </Stack>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {report.itemTotals.length > 0 && (
+        <Paper sx={{ p: 2 }}>
+          <Typography variant="h6" fontWeight={700} gutterBottom>
+            Consolidado por Item
+          </Typography>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Item</TableCell>
+                  <TableCell align="right">Quantidade</TableCell>
+                  <TableCell align="right">Total</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {report.itemTotals.map((item, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell align="right">{item.quantity}</TableCell>
+                    <TableCell align="right">{money(item.unitPrice)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
+
+      <Dialog open={selectedPhoto !== null} onClose={() => setSelectedPhoto(null)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          Foto da Comanda #{selectedPhoto}
+          <IconButton
+            onClick={() => setSelectedPhoto(null)}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {selectedPhoto && (
+            <Box
+              component="img"
+              src={photoUrl(selectedPhoto)}
+              alt={`Comanda ${selectedPhoto}`}
+              sx={{ width: '100%', height: 'auto' }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </Stack>
   );
 };
 
