@@ -13,7 +13,7 @@ import {
   UmbandaLine,
 } from '../types';
 
-const resolveBaseUrl = (): string => {
+export const resolveBaseUrl = (): string => {
   const envUrl = process.env.REACT_APP_API_URL;
   if (envUrl && envUrl.trim()) {
     const trimmed = envUrl.trim().replace(/\/+$/, '');

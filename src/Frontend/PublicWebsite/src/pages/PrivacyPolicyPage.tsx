@@ -47,6 +47,13 @@ const PrivacyPolicyPage: React.FC = () => (
         e dados cadastrais fornecidos pela administração (nome, histórico de participação e contribuições).
       </P>
       <P>
+        <strong>Bingo (comanda pelo celular):</strong> nome, celular e número da mesa, informados por você para abrir
+        a comanda do bingo e fazer pedidos. Usamos esses dados apenas para identificar sua comanda, entregar os
+        pedidos e cobrar a conta (execução do serviço solicitado – Art. 7º, V). Seu nome e celular são anonimizados
+        em até 30 dias após o fim do evento; mantemos apenas itens e valores, sem identificação, para histórico.
+        O link da comanda pode ser enviado ao seu WhatsApp.
+      </P>
+      <P>
         <strong>Cookies:</strong> utilizamos armazenamento local apenas para manter sua sessão de acesso e registrar
         sua escolha de cookies. Cookies de terceiros (Google Maps) são carregados somente mediante seu consentimento.
       </P>
