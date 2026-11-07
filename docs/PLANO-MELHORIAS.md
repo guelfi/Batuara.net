@@ -110,6 +110,7 @@ Histórico de fases: `ROADMAP.md`.
 | PM-046 | `todo` | **Campanha WhatsApp: site liberado para os filhos** | **Só planejamento; nada será enviado até decisão.** Plano em §6.2-A. Usa `casa_aviso_filho` (Marketing). Depende de: base de opt-in (não existe hoje), tabela de entregas/idempotência, endpoint Admin com *dry-run*, teste na allowlist. |
 | PM-047 | `todo` | **Envio do link do tutorial aos filhos** | Sequência da PM-046: `casa_tutorial_site` (Utilidade) com `https://www.batuara.org.br/tutorial.html`. Reaproveita a infraestrutura da PM-046. Plano em §6.2-A. Antes: linkar o tutorial no site e na tela de login dos filhos. |
 | PM-048 | `blocked` | **Reativar "Minha contribuição" na tela do Filho da Casa** | **Oculta na fase 1 do site (27/out):** nesta fase o filho só completa os dados cadastrais; a declaração de valor, recorrência e autorização de lembrete por WhatsApp saiu da tela `UnifiedProfilePage` (rota `/profile`). Código preservado em `src/Frontend/AdminDashboard/src/components/member/MemberContributionSection.tsx` (autocontido, **não renderizado**). Para reativar: importar o componente na `UnifiedProfilePage` e renderizá-lo sob `memberSession`, passando `member`, `onMemberUpdated={applyMemberData}`, `onFeedback={setMemberFeedback}` e `onError={setMemberError}`. **Backend intacto** (`addMyMemberContribution`, lembretes desligados). Depende do redesenho do fluxo de controle de contribuições (PM-008/PM-004) e do opt-in de WhatsApp (PM-046). |
+| PM-050 | `in_progress` | **Bingo / comandas digitais (evento 07/11/2026), multi-evento** | Contrato em `docs/BINGO-CONTRATO.md`. **Backend pronto:** entidades `BingoEvents` (Draft/Open/Closed, `IsTest`), cardápio, mesas, garçons, comandas e itens por evento (migration `AddBingoEvents` + `apply_migration` em `scripts/ci/deploy-rolling.sh`, seed com "Bingo 07/11/2026" e "Teste"); API pública (`/api/bingo/public`), garçom (`/api/bingo/garcom`, JWT de 10 h, validação por request) e admin (`/api/bingo/admin`, incl. `eventos`, histórico e resumo por evento); no máximo 1 evento aberto; "zerar dados" só em evento de teste; anonimização LGPD diária (telefone apagado e nome reduzido às iniciais 30 dias após o encerramento). Telas (PublicWebsite/Admin) em andamento. Pendente: abrir o evento pelo Admin no dia, política de privacidade com o parágrafo do bingo. |
 | PM-031 | `todo` | **MFA (TOTP)** | Login admin com MFA opcional/obrigatório. |
 | PM-032 | `todo` | **WAF / SIEM básico** | Proteção de borda + correlação de logs. |
 | PM-033 | `todo` | **Cache de endpoints públicos** | In-memory/Nginx; Redis só se volume justificar. |
@@ -295,6 +296,10 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 ---
 
 ## 7. Changelog deste plano
+
+### 2026-11-07 (Bingo / comandas digitais)
+
+- **PM-050 (Bingo):** backend multi-evento implementado (entidades, migration `AddBingoEvents` com seed, SQL idempotente no `deploy-rolling.sh`, serviços, controllers público/garçom/admin, rate limit próprio, envio do link da comanda por WhatsApp fora do caminho crítico com limite de 1 envio por número a cada 3 min, anonimização diária de eventos encerrados há mais de 30 dias) e 40 testes unitários novos (suíte: 92 testes).
 
 ### 2026-10-27 (templates aprovados e camada de envio)
 
