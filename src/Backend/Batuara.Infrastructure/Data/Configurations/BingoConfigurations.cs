@@ -197,6 +197,15 @@ namespace Batuara.Infrastructure.Data.Configurations
                     value => value.HasValue ? value.Value.ToString() : null,
                     value => value == null ? null : Enum.Parse<BingoPaymentMethod>(value))
                 .HasMaxLength(20);
+            builder.Property(x => x.PaymentMethodName).HasMaxLength(60);
+            builder.Property(x => x.PaidByName).HasMaxLength(150);
+            builder.Property(x => x.PaidNote).HasMaxLength(200);
+            builder.Property(x => x.AmountPaid).HasPrecision(10, 2);
+            builder.Ignore(x => x.AmountDue);
+            builder.Ignore(x => x.UndeliveredCount);
+            builder.Ignore(x => x.ContestedCount);
+            builder.Ignore(x => x.PaidAmount);
+            builder.Ignore(x => x.PaymentLabel);
             builder.Property(x => x.VerificationCodeHash).HasMaxLength(200);
             builder.Property(x => x.VerificationAttempts).HasDefaultValue(0);
             builder.Property(x => x.CodeMessageId).HasMaxLength(200);
@@ -237,6 +246,11 @@ namespace Batuara.Infrastructure.Data.Configurations
                 .HasConversion(value => value.ToString(), value => Enum.Parse<BingoOrderItemStatus>(value))
                 .HasMaxLength(20)
                 .IsRequired();
+            builder.Property(x => x.DeliveredByName).HasMaxLength(150);
+            builder.Property(x => x.ContestNote).HasMaxLength(200);
+            builder.Property(x => x.CancelledByName).HasMaxLength(150);
+            builder.Property(x => x.CancelReason).HasMaxLength(200);
+            builder.Property(x => x.ResolvedByName).HasMaxLength(150);
             builder.Property(x => x.CreatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
             builder.Property(x => x.UpdatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
             builder.Property(x => x.IsActive).IsRequired().HasDefaultValue(true);
@@ -244,6 +258,22 @@ namespace Batuara.Infrastructure.Data.Configurations
             builder.HasOne<BingoMenuItem>().WithMany().HasForeignKey(x => x.MenuItemId).OnDelete(DeleteBehavior.Restrict);
             builder.HasIndex(x => x.TabId);
             builder.HasIndex(x => x.Status);
+        }
+    }
+
+    public class BingoPaymentOptionConfiguration : IEntityTypeConfiguration<BingoPaymentOption>
+    {
+        public void Configure(EntityTypeBuilder<BingoPaymentOption> builder)
+        {
+            builder.ToTable("BingoPaymentMethods");
+            builder.HasKey(x => x.Id);
+            builder.Property(x => x.Id).ValueGeneratedOnAdd();
+            builder.Property(x => x.Name).IsRequired().HasMaxLength(60);
+            builder.Property(x => x.SortOrder).IsRequired();
+            builder.Property(x => x.CreatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
+            builder.Property(x => x.UpdatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
+            builder.Property(x => x.IsActive).IsRequired().HasDefaultValue(true);
+            // Unicidade case-insensitive: indice unico em lower("Name") criado por SQL na migration (e conferido no servico).
         }
     }
 }

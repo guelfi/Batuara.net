@@ -25,6 +25,8 @@ namespace Batuara.Domain.Enums
     {
         Pending,
         Retrieved,
-        Delivered
+        Delivered,
+        Contested,
+        Cancelled
     }
 }
