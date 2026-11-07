@@ -1,3 +1,4 @@
+import ClosingReport from '../components/bingo/ClosingReport';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
@@ -65,6 +66,8 @@ import { HouseMember } from '../types';
 
 const BINGO_URL = 'https://www.batuara.org.br/bingo';
 const POLL_MS = 4000;
+
+type TabFilter = 'open' | 'closing' | 'paid' | 'verified' | 'unverified';
 
 const money = (v: number) => (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const apiError = (e: any, fallback: string) =>
@@ -477,13 +480,26 @@ const LivePanel: React.FC<{
   }, [load]);
 
   const tabs = panel?.tabs ?? [];
+  const [filter, setFilter] = useState<TabFilter | null>(null);
+  const toggleFilter = (f: TabFilter) => setFilter((cur) => (cur === f ? null : f));
+  const matchesFilter = (t: BingoTab) => {
+    switch (filter) {
+      case 'open': return t.status === 'Open';
+      case 'closing': return t.status === 'CloseRequested';
+      case 'paid': return t.status === 'Paid';
+      case 'verified': return !!t.phoneVerified;
+      case 'unverified': return !t.phoneVerified;
+      default: return true;
+    }
+  };
   const open = tabs.filter((t) => t.status === 'Open');
   const closing = tabs.filter((t) => t.status === 'CloseRequested');
   const paid = tabs.filter((t) => t.status === 'Paid');
   const itemsText = (items: BingoTab['items']) =>
     items.map((i) => `${i.quantity}x ${i.name}${i.status === 'Retrieved' ? ' (a caminho)' : ''}`).join(', ');
   const mesaRows = tabs
-    .filter((t) => t.status !== 'Paid')
+    .filter((t) => (filter === 'paid' ? true : t.status !== 'Paid'))
+    .filter(matchesFilter)
     .map((t) => ({
       tab: t,
       toDeliver: t.items.filter((i) => i.status === 'Pending' || i.status === 'Retrieved'),
@@ -499,6 +515,13 @@ const LivePanel: React.FC<{
   const contestedCount = panel?.contestedItems ?? countItems('Contested');
   const totalSold = panel?.totalSold ?? paid.reduce((s, t) => s + t.total, 0);
   const closeAll = panel?.closeAllRequested ?? event?.closeAllRequested ?? false;
+
+  const chipFilter = (f: TabFilter) => ({
+    clickable: true,
+    onClick: () => toggleFilter(f),
+    variant: (filter === f ? 'filled' : 'outlined') as 'filled' | 'outlined',
+    sx: filter === f ? { outline: '2px solid', outlineColor: 'text.primary', outlineOffset: 1 } : undefined,
+  });
 
   const run = async (fn: () => Promise<any>, ok: string) => {
     setBusy(true);
@@ -523,18 +546,18 @@ const LivePanel: React.FC<{
       <Paper sx={{ p: 2 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }} justifyContent="space-between">
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Chip label={`Em aberto: ${open.length}`} />
-            <Chip color="warning" label={`Pediram a conta: ${closing.length}`} />
-            <Chip color="success" label={`Pagas: ${paid.length}`} />
-            <Chip color="info" label={`Itens pendentes: ${pendingCount}`} />
-            <Chip color="secondary" label={`Itens retirados: ${retrievedCount}`} />
+            <Chip {...chipFilter('open')} label={`Em aberto: ${open.length}`} />
+            <Chip {...chipFilter('closing')} color="warning" label={`Pediram a conta: ${closing.length}`} />
+            <Chip {...chipFilter('paid')} color="success" label={`Pagas: ${paid.length}`} />
+            <Chip color="info" variant="outlined" label={`Itens pendentes: ${pendingCount}`} />
+            <Chip color="secondary" variant="outlined" label={`Itens retirados: ${retrievedCount}`} />
             {contestedCount > 0 && <Chip color="error" label={`Em contestação: ${contestedCount}`} />}
-            <Chip color="primary" label={`Total vendido: ${money(totalSold)}`} />
+            <Chip color="primary" variant="outlined" label={`Total vendido: ${money(totalSold)}`} />
             {panel?.phoneVerifiedCount !== undefined && (
-              <Chip color="success" variant="outlined" label={`Celular confirmado: ${panel.phoneVerifiedCount}`} />
+              <Chip {...chipFilter('verified')} color="success" label={`Celular confirmado: ${panel.phoneVerifiedCount}`} />
             )}
             {panel?.phoneNotVerifiedCount !== undefined && (
-              <Chip variant="outlined" label={`Não confirmado: ${panel.phoneNotVerifiedCount}`} />
+              <Chip {...chipFilter('unverified')} label={`Não confirmado: ${panel.phoneNotVerifiedCount}`} />
             )}
             {!!panel?.codeDeliveryFailedCount && (
               <Chip color="error" variant="outlined" label={`Falha de entrega: ${panel.codeDeliveryFailedCount}`} />
@@ -635,7 +658,7 @@ const LivePanel: React.FC<{
             </TableRow>
           </TableHead>
           <TableBody>
-            {[...closing, ...open, ...paid].map((t) => (
+            {[...closing, ...open, ...paid].filter(matchesFilter).map((t) => (
               <TableRow key={t.tabId} sx={t.status === 'CloseRequested' ? { bgcolor: 'warning.light' } : undefined}>
                 <TableCell>{t.mesa}</TableCell>
                 <TableCell>{t.customerName}</TableCell>
@@ -982,7 +1005,8 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           spacing={2}
-          alignItems={{ sm: 'center' }}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          justifyContent="center"
           className="bingo-no-print"
         >
           <TextField
@@ -1004,7 +1028,7 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
           </Button>
           <Box
             className="bingo-print-sheet"
-            sx={{ ml: { sm: 'auto' }, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}
+            sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}
           >
             <Typography className="sheet-title" variant="h5" sx={{ fontWeight: 700, display: 'none' }}>
               Aponte a câmera para pedir
@@ -1297,6 +1321,20 @@ const SummaryTab: React.FC<{
   const [eventId, setEventId] = useState<string>(current?.id ?? '');
   const [summary, setSummary] = useState<BingoSummary | null>(null);
   const [loading, setLoading] = useState(false);
+  const [report, setReport] = useState<BingoTab[] | null>(null);
+  const [preparing, setPreparing] = useState(false);
+
+  const printClosing = async () => {
+    setPreparing(true);
+    try {
+      setReport(await bingoApi.getEventTabs(eventId));
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível preparar o fechamento.'), 'error');
+    } finally {
+      setPreparing(false);
+    }
+  };
+  const endReport = useCallback(() => setReport(null), []);
 
   useEffect(() => {
     if (!eventId && current) setEventId(current.id);
@@ -1331,6 +1369,16 @@ const SummaryTab: React.FC<{
         </Select>
       </FormControl>
       {loading && <CircularProgress size={24} />}
+      {summary && (
+        <Box>
+          <Button variant="contained" color="secondary" startIcon={<PrintIcon />} onClick={printClosing} disabled={preparing || loading}>
+            Imprimir fechamento
+          </Button>
+        </Box>
+      )}
+      {summary && selected && report && (
+        <ClosingReport event={selected} summary={summary} tabs={report} onDone={endReport} />
+      )}
       {summary && <SummaryView summary={summary} />}
       {canReset && (
         <Box>
