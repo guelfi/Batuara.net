@@ -280,7 +280,7 @@ export const bingoApi = {
   async getWaiterStatus(): Promise<WaiterStatus> {
     const r = await apiService.get<WaiterStatus>('/bingo/garcom/me');
     const d: any = r.data ?? {};
-    return { isWaiter: !!d.isWaiter, eventOpen: !!d.eventOpen, eventName: d.eventName ?? null };
+    return { isWaiter: !!d.isWaiter, eventOpen: !!d.eventOpen, eventName: d.eventName ?? null, waiterName: d.waiterName ?? null };
   },
 
   async getWaiterTables(): Promise<number[]> {

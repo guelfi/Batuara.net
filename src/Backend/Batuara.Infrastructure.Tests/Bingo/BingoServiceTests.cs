@@ -763,6 +763,24 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public async Task Reopen_Reuses_Name_And_Phone_And_Only_Needs_Mesa()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var first = await f.NewTabAsync(name: "Maria da Silva");
+            await f.Public.ConfirmPhoneAsync(first.TabId, f.Dispatcher.Sent[0].Code);
+            await f.PayAdminAsync(first.TabId, f.CardId);
+
+            var second = await f.Public.ReopenAsync(first.TabId, 2);
+
+            second.TabId.Should().NotBe(first.TabId);
+            var view = await f.Public.GetTabAsync(second.TabId);
+            view.CustomerName.Should().Be("Maria da Silva");
+            view.Mesa.Should().Be(2);
+            view.PhoneVerified.Should().BeTrue();
+        }
+
+        [Fact]
         public async Task Exit_Check_Requires_Payment_And_Registers_Only_First_Release()
         {
             var f = new Fixture();

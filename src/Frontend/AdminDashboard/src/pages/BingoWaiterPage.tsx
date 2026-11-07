@@ -844,13 +844,11 @@ const BingoWaiterPage: React.FC = () => {
   return (
     <Box sx={{ maxWidth: 600, mx: 'auto' }}>
       <Typography variant="h5" component="h1" sx={{ fontWeight: 700, color: 'primary.main' }}>
-        Bingo (garçom)
+        {status.waiterName || 'Garçom'}
       </Typography>
-      {status.eventName && (
-        <Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.8 }}>
-          {status.eventName}
-        </Typography>
-      )}
+      <Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.8 }}>
+        Garçom{status.eventName ? ` · ${status.eventName}` : ''}
+      </Typography>
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth" sx={{ mb: 2 }}>
         <Tab
           label={

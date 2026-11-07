@@ -226,6 +226,11 @@ namespace Batuara.Application.Bingo.Models
         public List<BingoOrderLineRequest> Items { get; set; } = new();
     }
 
+    public class BingoReopenRequest
+    {
+        public int Mesa { get; set; }
+    }
+
     public class BingoExitCheckDto
     {
         public bool Paid { get; set; }
@@ -245,6 +250,7 @@ namespace Batuara.Application.Bingo.Models
         public bool IsWaiter { get; set; }
         public bool EventOpen { get; set; }
         public string? EventName { get; set; }
+        public string? WaiterName { get; set; }
     }
 
     public class BingoWaiterOrderItemDto

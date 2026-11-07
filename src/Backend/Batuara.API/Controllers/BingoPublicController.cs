@@ -48,6 +48,14 @@ namespace Batuara.API.Controllers
             return Ok(new { success = true });
         }
 
+        [HttpPost("comandas/{tabId:guid}/nova")]
+        [EnableRateLimiting("bingo-write")]
+        public async Task<IActionResult> Reopen(Guid tabId, [FromBody] BingoReopenRequest request, CancellationToken cancellationToken)
+        {
+            var result = await service.ReopenAsync(tabId, request.Mesa, cancellationToken);
+            return Ok(new { success = true, data = result });
+        }
+
         [HttpPost("comandas/{tabId:guid}/reabrir")]
         [EnableRateLimiting("bingo-write")]
         public async Task<IActionResult> CancelClose(Guid tabId, CancellationToken cancellationToken)

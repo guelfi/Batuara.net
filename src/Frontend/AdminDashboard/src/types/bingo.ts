@@ -157,6 +157,7 @@ export interface WaiterStatus {
   isWaiter: boolean;
   eventOpen: boolean;
   eventName: string | null;
+  waiterName?: string | null;
 }
 
 export interface WaiterOrderItem {

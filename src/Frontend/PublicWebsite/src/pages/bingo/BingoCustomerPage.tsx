@@ -422,9 +422,33 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
     }
   };
 
+  const [reopenOpen, setReopenOpen] = useState(false);
+  const [reopenMesas, setReopenMesas] = useState<number[]>([]);
+  const [reopenMesa, setReopenMesa] = useState('');
+
   const newTab = () => {
-    savedTabId.clear();
-    goTo('/bingo');
+    setReopenOpen(true);
+    setReopenMesa(tab ? String(tab.mesa) : '');
+    bingoApi.getInfo().then((i) => setReopenMesas(i.mesas)).catch(() => setReopenMesas([]));
+  };
+
+  const confirmReopen = async () => {
+    if (!reopenMesa) return;
+    setBusy(true);
+    try {
+      const res = await bingoApi.reopenTab(tabId, Number(reopenMesa));
+      savedTabId.set(res.tabId);
+      goTo(`/bingo/comanda/${res.tabId}`);
+    } catch (e) {
+      setReopenOpen(false);
+      setBusy(false);
+      if (httpStatus(e) === 409) {
+        savedTabId.clear();
+        goTo('/bingo');
+      } else {
+        setMessage({ severity: 'error', text: apiErrorMessage(e, 'Não foi possível abrir a nova comanda.') });
+      }
+    }
   };
 
   if (!tab) {
@@ -783,6 +807,22 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
           <Button variant="contained" sx={{ minHeight: 48 }} onClick={() => closeTab(false)}>
             Encerrar conta
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={reopenOpen} onClose={() => setReopenOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Nova comanda</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>Em qual mesa você está?</DialogContentText>
+          <TextField select fullWidth label="Sua mesa" value={reopenMesa} onChange={(e) => setReopenMesa(e.target.value)}>
+            {reopenMesas.map((n) => (
+              <MenuItem key={n} value={String(n)} sx={{ minHeight: 48 }}>Mesa {n}</MenuItem>
+            ))}
+          </TextField>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setReopenOpen(false)} sx={{ minHeight: 48 }}>Voltar</Button>
+          <Button variant="contained" disabled={!reopenMesa || busy} onClick={confirmReopen} sx={{ minHeight: 48 }}>Abrir comanda</Button>
         </DialogActions>
       </Dialog>
 

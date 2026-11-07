@@ -55,15 +55,16 @@ namespace Batuara.Infrastructure.Bingo.Services
 
         public async Task<BingoWaiterMeDto> GetMeAsync(int houseMemberId, CancellationToken cancellationToken = default)
         {
+            var name = await Db.HouseMembers.Where(x => x.Id == houseMemberId).Select(x => x.FullName).FirstOrDefaultAsync(cancellationToken);
             var ev = await FindOpenEventAsync(cancellationToken);
             if (ev == null)
             {
-                return new BingoWaiterMeDto { IsWaiter = false, EventOpen = false, EventName = null };
+                return new BingoWaiterMeDto { IsWaiter = false, EventOpen = false, EventName = null, WaiterName = name };
             }
 
             var isWaiter = await Db.BingoWaiters.AnyAsync(
                 x => x.EventId == ev.Id && x.HouseMemberId == houseMemberId && x.IsActive, cancellationToken);
-            return new BingoWaiterMeDto { IsWaiter = isWaiter, EventOpen = true, EventName = ev.Name };
+            return new BingoWaiterMeDto { IsWaiter = isWaiter, EventOpen = true, EventName = ev.Name, WaiterName = name };
         }
 
         public async Task EnsureAccessAsync(int houseMemberId, CancellationToken cancellationToken = default)

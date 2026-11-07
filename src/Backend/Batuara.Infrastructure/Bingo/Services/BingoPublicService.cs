@@ -225,6 +225,17 @@ namespace Batuara.Infrastructure.Bingo.Services
             await Db.SaveChangesAsync(cancellationToken);
         }
 
+        public async Task<BingoCreateTabResult> ReopenAsync(Guid tabId, int mesa, CancellationToken cancellationToken = default)
+        {
+            var previous = await LoadTabAsync(tabId, cancellationToken);
+            if (string.IsNullOrWhiteSpace(previous.Phone))
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Os dados desta comanda já foram apagados. Abra uma nova comanda.");
+            }
+
+            return await CreateTabAsync(new BingoCreateTabRequest { CustomerName = previous.CustomerName, Phone = previous.Phone, Mesa = mesa }, cancellationToken);
+        }
+
         public async Task CancelCloseAsync(Guid tabId, CancellationToken cancellationToken = default)
         {
             var tab = await LoadTabAsync(tabId, cancellationToken);

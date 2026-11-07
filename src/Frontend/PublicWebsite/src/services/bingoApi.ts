@@ -96,6 +96,12 @@ export const bingoApi = {
     return r.data.data;
   },
 
+  /** Nova comanda a partir de uma anterior: reaproveita nome e celular no servidor; so informa a mesa. */
+  async reopenTab(tabId: string, mesa: number): Promise<CreateBingoTabResponse> {
+    const r = await http.post<ApiResponse<CreateBingoTabResponse>>(`/bingo/public/comandas/${tabId}/nova`, { mesa });
+    return r.data.data;
+  },
+
   async getTab(tabId: string): Promise<BingoTabView> {
     const r = await http.get<ApiResponse<BingoTabView>>(`/bingo/public/comandas/${tabId}`);
     return r.data.data;
