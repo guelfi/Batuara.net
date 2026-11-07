@@ -1365,6 +1365,17 @@ const SummaryTab: React.FC<{
     }
   };
 
+  const sendPhotoLinkWhatsApp = async () => {
+    try {
+      const r = await apiService.get<any>('/comanda-foto/token');
+      const link = `https://www.batuara.org.br/comanda-foto?t=${r.data?.data?.token ?? r.data?.token}`;
+      const message = `*Fechamento de Comanda por Foto*\n\nLink para fechar comandas fotografando:\n${link}\n\nBasta abrir no celular e fotografar cada comanda de papel.`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível gerar o link.'), 'error');
+    }
+  };
+
   const selected = events.find((e) => e.id === eventId);
   const canReset = !!selected && selected.isTest && selected.id === current?.id;
 
@@ -1380,10 +1391,17 @@ const SummaryTab: React.FC<{
           ))}
         </Select>
       </FormControl>
-      <Box>
-        <Button variant="outlined" onClick={showPhotoLink}>Link do fechamento por foto</Button>
-        {photoLink && <Typography variant="body2" sx={{ mt: 1, wordBreak: 'break-all' }}>{photoLink}</Typography>}
-      </Box>
+      <Stack direction="row" spacing={2}>
+        <Button variant="outlined" onClick={showPhotoLink}>Copiar link</Button>
+        <Button variant="contained" color="success" onClick={sendPhotoLinkWhatsApp}>
+          Enviar por WhatsApp
+        </Button>
+      </Stack>
+      {photoLink && (
+        <Alert severity="info" sx={{ mt: 1 }}>
+          <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>{photoLink}</Typography>
+        </Alert>
+      )}
       {loading && <CircularProgress size={24} />}
       {summary && (
         <Box>
@@ -1884,6 +1902,18 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
     }
   };
 
+  const sendPhotoLinkWhatsApp = async () => {
+    try {
+      const r = await apiService.get<any>('/comanda-foto/token');
+      const link = `https://www.batuara.org.br/comanda-foto?t=${r.data?.data?.token ?? r.data?.token}`;
+      const message = `*Fechamento de Comanda por Foto*\n\nLink para fechar comandas fotografando:\n${link}\n\nBasta abrir no celular e fotografar cada comanda de papel.`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+      notify('Abrindo WhatsApp...', 'success');
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível gerar o link.'), 'error');
+    }
+  };
+
   if (!current) {
     return <Alert severity="info">Não há evento atual. Abra um evento na aba Eventos.</Alert>;
   }
@@ -1905,9 +1935,14 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
   return (
     <Stack spacing={3}>
       <Paper sx={{ p: 2 }}>
-        <Typography variant="h6" fontWeight={700} gutterBottom>
-          Comandas Fotografadas — {report.eventName}
-        </Typography>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+          <Typography variant="h6" fontWeight={700}>
+            Comandas Fotografadas — {report.eventName}
+          </Typography>
+          <Button variant="contained" color="success" onClick={sendPhotoLinkWhatsApp}>
+            Enviar link por WhatsApp
+          </Button>
+        </Stack>
         <Stack direction="row" spacing={2} alignItems="baseline">
           <Typography variant="body1">
             <strong>{report.count}</strong> comandas
