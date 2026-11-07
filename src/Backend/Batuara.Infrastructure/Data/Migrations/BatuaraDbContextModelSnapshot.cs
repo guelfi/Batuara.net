@@ -65,6 +65,1264 @@ namespace Batuara.Infrastructure.Data.Migrations
                     b.ToTable("AdminDigestStates", "batuara");
                 });
 
+            modelBuilder.Entity("Batuara.Domain.Entities.BingoEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("CloseAllRequested")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<DateTime>("EventDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsTest")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTime?>("OpenedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BingoEvents_SingleOpen")
+                        .HasFilter("\"Status\" = 'Open'");
+
+                    b.ToTable("BingoEvents", "batuara");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CloseAllRequested = false,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventDate = new DateTime(2026, 11, 7, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsTest = false,
+                            Name = "Bingo 07/11/2026",
+                            Status = "Draft",
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CloseAllRequested = false,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventDate = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsTest = true,
+                            Name = "Teste",
+                            Status = "Draft",
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
+                });
+
+            modelBuilder.Entity("Batuara.Domain.Entities.BingoMenuItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId", "SortOrder");
+
+                    b.ToTable("BingoMenuItems", "batuara");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Água",
+                            SortOrder = 1,
+                            UnitPrice = 5m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Cachorro-quente",
+                            SortOrder = 2,
+                            UnitPrice = 10m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Cartela avulsa",
+                            SortOrder = 3,
+                            UnitPrice = 7m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Cartelas para todas rodadas - qtd. 10",
+                            SortOrder = 4,
+                            UnitPrice = 50m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Cerveja Heineken",
+                            SortOrder = 5,
+                            UnitPrice = 7m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Cervejas diversas",
+                            SortOrder = 6,
+                            UnitPrice = 5m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 7,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Churrasco de carne",
+                            SortOrder = 7,
+                            UnitPrice = 12m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 8,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Churrasco de frango",
+                            SortOrder = 8,
+                            UnitPrice = 10m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 9,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Churrasco de linguiça",
+                            SortOrder = 9,
+                            UnitPrice = 10m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 10,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Fatia de bolo",
+                            SortOrder = 10,
+                            UnitPrice = 5m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 11,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Fatia de cuscuz paulista",
+                            SortOrder = 11,
+                            UnitPrice = 5m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 12,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Mousse de chocolate",
+                            SortOrder = 12,
+                            UnitPrice = 5m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 13,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Porção de batata frita",
+                            SortOrder = 13,
+                            UnitPrice = 15m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 14,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Porção de calabresa acebolada",
+                            SortOrder = 14,
+                            UnitPrice = 15m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 15,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Refrigerante",
+                            SortOrder = 15,
+                            UnitPrice = 8m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 16,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Salada",
+                            SortOrder = 16,
+                            UnitPrice = 7m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 17,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Água",
+                            SortOrder = 1,
+                            UnitPrice = 5m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 18,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Cachorro-quente",
+                            SortOrder = 2,
+                            UnitPrice = 10m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 19,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Cartela avulsa",
+                            SortOrder = 3,
+                            UnitPrice = 7m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 20,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Cartelas para todas rodadas - qtd. 10",
+                            SortOrder = 4,
+                            UnitPrice = 50m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 21,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Cerveja Heineken",
+                            SortOrder = 5,
+                            UnitPrice = 7m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 22,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Cervejas diversas",
+                            SortOrder = 6,
+                            UnitPrice = 5m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 23,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Churrasco de carne",
+                            SortOrder = 7,
+                            UnitPrice = 12m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 24,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Churrasco de frango",
+                            SortOrder = 8,
+                            UnitPrice = 10m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 25,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Churrasco de linguiça",
+                            SortOrder = 9,
+                            UnitPrice = 10m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 26,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Fatia de bolo",
+                            SortOrder = 10,
+                            UnitPrice = 5m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 27,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Fatia de cuscuz paulista",
+                            SortOrder = 11,
+                            UnitPrice = 5m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 28,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Mousse de chocolate",
+                            SortOrder = 12,
+                            UnitPrice = 5m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 29,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Porção de batata frita",
+                            SortOrder = 13,
+                            UnitPrice = 15m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 30,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Porção de calabresa acebolada",
+                            SortOrder = 14,
+                            UnitPrice = 15m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 31,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Refrigerante",
+                            SortOrder = 15,
+                            UnitPrice = 8m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 32,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            IsAvailable = true,
+                            Name = "Salada",
+                            SortOrder = 16,
+                            UnitPrice = 7m,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
+                });
+
+            modelBuilder.Entity("Batuara.Domain.Entities.BingoOrderItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<DateTime?>("DeliveredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DeliveredByHouseMemberId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("ItemName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<int>("MenuItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("TabId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MenuItemId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("TabId");
+
+                    b.ToTable("BingoOrderItems", "batuara");
+                });
+
+            modelBuilder.Entity("Batuara.Domain.Entities.BingoTab", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("LinkLastAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LinkSentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("PaidByHouseMemberId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("TableNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Phone");
+
+                    b.HasIndex("EventId", "Status");
+
+                    b.ToTable("BingoTabs", "batuara");
+                });
+
+            modelBuilder.Entity("Batuara.Domain.Entities.BingoTable", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("Number")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId", "Number")
+                        .IsUnique();
+
+                    b.ToTable("BingoTables", "batuara");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 1,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 2,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 3,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 4,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 5,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 6,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 7,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 7,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 8,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 8,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 9,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 9,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 10,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 10,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 11,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 11,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 12,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 12,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 13,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 13,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 14,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 14,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 15,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 15,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 16,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 16,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 17,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 17,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 18,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 18,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 19,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 19,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 20,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 20,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 21,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 21,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 22,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 22,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 23,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 23,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 24,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 24,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 25,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 25,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 26,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 26,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 27,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 27,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 28,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 28,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 29,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 29,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 30,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 1,
+                            IsActive = true,
+                            Number = 30,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 31,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 1,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 32,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 2,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 33,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 3,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 34,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 4,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 35,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 5,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 36,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 6,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 37,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 7,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 38,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 8,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 39,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 9,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 40,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 10,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 41,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 11,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 42,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 12,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 43,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 13,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 44,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 14,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 45,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 15,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 46,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 16,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 47,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 17,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 48,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 18,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 49,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 19,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 50,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 20,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 51,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 21,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 52,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 22,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 53,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 23,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 54,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 24,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 55,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 25,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 56,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 26,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 57,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 27,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 58,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 28,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 59,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 29,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 60,
+                            CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EventId = 2,
+                            IsActive = true,
+                            Number = 30,
+                            UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
+                });
+
+            modelBuilder.Entity("Batuara.Domain.Entities.BingoWaiter", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("HouseMemberId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HouseMemberId");
+
+                    b.HasIndex("EventId", "HouseMemberId")
+                        .IsUnique();
+
+                    b.ToTable("BingoWaiters", "batuara");
+                });
+
             modelBuilder.Entity("Batuara.Domain.Entities.CalendarAttendance", b =>
                 {
                     b.Property<int>("Id")
@@ -1189,6 +2447,67 @@ namespace Batuara.Infrastructure.Data.Migrations
                     b.ToTable("WhatsAppMessages", "batuara");
                 });
 
+            modelBuilder.Entity("Batuara.Domain.Entities.BingoMenuItem", b =>
+                {
+                    b.HasOne("Batuara.Domain.Entities.BingoEvent", null)
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Batuara.Domain.Entities.BingoOrderItem", b =>
+                {
+                    b.HasOne("Batuara.Domain.Entities.BingoMenuItem", null)
+                        .WithMany()
+                        .HasForeignKey("MenuItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Batuara.Domain.Entities.BingoTab", "Tab")
+                        .WithMany("Items")
+                        .HasForeignKey("TabId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tab");
+                });
+
+            modelBuilder.Entity("Batuara.Domain.Entities.BingoTab", b =>
+                {
+                    b.HasOne("Batuara.Domain.Entities.BingoEvent", null)
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Batuara.Domain.Entities.BingoTable", b =>
+                {
+                    b.HasOne("Batuara.Domain.Entities.BingoEvent", null)
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Batuara.Domain.Entities.BingoWaiter", b =>
+                {
+                    b.HasOne("Batuara.Domain.Entities.BingoEvent", null)
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Batuara.Domain.Entities.HouseMember", "HouseMember")
+                        .WithMany()
+                        .HasForeignKey("HouseMemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("HouseMember");
+                });
+
             modelBuilder.Entity("Batuara.Domain.Entities.CalendarAttendance", b =>
                 {
                     b.OwnsOne("Batuara.Domain.ValueObjects.EventDate", "AttendanceDate", b1 =>
@@ -1340,6 +2659,11 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .HasForeignKey("ContactMessageId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Batuara.Domain.Entities.BingoTab", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Batuara.Domain.Entities.ContactMessage", b =>

@@ -7,6 +7,7 @@ namespace Batuara.Application.Auth.Services
     {
         string GenerateJwtToken(User user);
         string GenerateMemberJwtToken(int houseMemberId, string fullName, string? mobilePhone);
+        string GenerateMemberJwtToken(int houseMemberId, string fullName, string? mobilePhone, TimeSpan lifetime);
         string GenerateRefreshToken();
         ClaimsPrincipal? GetPrincipalFromToken(string token);
         DateTime GetTokenExpirationTime(string token);

@@ -59,11 +59,30 @@ namespace Batuara.Infrastructure.MemberAuth.Services
             await _whatsAppService.SendAuthCodeAsync(normalizedPhone, code, cancellationToken);
         }
 
-        public async Task<MemberLoginResponse> VerifyCodeAsync(MemberVerifyCodeRequest request, CancellationToken cancellationToken = default)
+        public Task<MemberLoginResponse> VerifyCodeAsync(MemberVerifyCodeRequest request, CancellationToken cancellationToken = default)
+        {
+            return VerifyCodeCoreAsync(request, null, null, cancellationToken);
+        }
+
+        public Task<MemberLoginResponse> VerifyCodeAsync(MemberVerifyCodeRequest request, TimeSpan tokenLifetime, Func<int, CancellationToken, Task> precondition, CancellationToken cancellationToken = default)
+        {
+            return VerifyCodeCoreAsync(request, tokenLifetime, precondition, cancellationToken);
+        }
+
+        private async Task<MemberLoginResponse> VerifyCodeCoreAsync(
+            MemberVerifyCodeRequest request,
+            TimeSpan? tokenLifetime,
+            Func<int, CancellationToken, Task>? precondition,
+            CancellationToken cancellationToken)
         {
             var normalizedPhone = PhoneNumberNormalizer.NormalizeBrazilMobile(request.MobilePhone);
             var member = await FindActiveMemberByPhoneAsync(normalizedPhone, cancellationToken)
                 ?? throw new UnauthorizedAccessException("Código inválido ou expirado.");
+
+            if (precondition != null)
+            {
+                await precondition(member.Id, cancellationToken);
+            }
 
             var utcNow = DateTime.UtcNow;
             var loginCode = await _db.MemberLoginCodes
@@ -87,7 +106,9 @@ namespace Batuara.Infrastructure.MemberAuth.Services
             loginCode.Consume(utcNow);
             await _db.SaveChangesAsync(cancellationToken);
 
-            var token = _jwtService.GenerateMemberJwtToken(member.Id, member.FullName, member.MobilePhone);
+            var token = tokenLifetime.HasValue
+                ? _jwtService.GenerateMemberJwtToken(member.Id, member.FullName, member.MobilePhone, tokenLifetime.Value)
+                : _jwtService.GenerateMemberJwtToken(member.Id, member.FullName, member.MobilePhone);
             return new MemberLoginResponse
             {
                 Token = token,
