@@ -9,12 +9,19 @@ namespace Batuara.Application.Bingo.Services
         Task<BingoPublicTabDto> GetTabAsync(Guid tabId, CancellationToken cancellationToken = default);
         Task AddItemsAsync(Guid tabId, BingoAddItemsRequest request, CancellationToken cancellationToken = default);
         Task RequestCloseAsync(Guid tabId, CancellationToken cancellationToken = default);
-        Task ResendLinkAsync(Guid tabId, CancellationToken cancellationToken = default);
+        Task<BingoConfirmPhoneResult> ConfirmPhoneAsync(Guid tabId, string code, CancellationToken cancellationToken = default);
+        Task ResendCodeAsync(Guid tabId, CancellationToken cancellationToken = default);
     }
 
-    public interface IBingoLinkDispatcher
+    public interface IBingoCodeDispatcher
     {
-        void Dispatch(Guid tabId, string phone, string customerName, string message);
+        void Dispatch(Guid tabId, string phone, string code);
+    }
+
+    public interface IBingoReminderService
+    {
+        Task<BingoReminderPreviewDto> PreviewAsync(int eventId, CancellationToken cancellationToken = default);
+        Task<BingoReminderResultDto> SendAsync(int eventId, bool confirmed, CancellationToken cancellationToken = default);
     }
 
     public interface IBingoWaiterService

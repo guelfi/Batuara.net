@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using Batuara.Application.Auth.Services;
 using Batuara.Application.Bingo.Models;
 using Batuara.Application.Bingo.Services;
 using Batuara.Application.Common.PhoneNumbers;
@@ -11,14 +13,20 @@ namespace Batuara.Infrastructure.Bingo.Services
 {
     public class BingoPublicService : BingoServiceBase, IBingoPublicService
     {
-        public static readonly TimeSpan LinkCooldown = TimeSpan.FromMinutes(3);
+        public static readonly TimeSpan CodeValidity = TimeSpan.FromMinutes(30);
+        public static readonly TimeSpan ResendInterval = TimeSpan.FromSeconds(60);
+        public static readonly TimeSpan HourlyWindow = TimeSpan.FromHours(1);
+        public const int MaxVerificationAttempts = 5;
+        public const int MaxCodesPerHour = 3;
 
-        private readonly IBingoLinkDispatcher _linkDispatcher;
+        private readonly IBingoCodeDispatcher _codeDispatcher;
+        private readonly IPasswordService _passwordService;
         private readonly BingoOptions _options;
 
-        public BingoPublicService(BatuaraDbContext db, IBingoLinkDispatcher linkDispatcher, IOptions<BingoOptions> options) : base(db)
+        public BingoPublicService(BatuaraDbContext db, IBingoCodeDispatcher codeDispatcher, IPasswordService passwordService, IOptions<BingoOptions> options) : base(db)
         {
-            _linkDispatcher = linkDispatcher;
+            _codeDispatcher = codeDispatcher;
+            _passwordService = passwordService;
             _options = options.Value;
         }
 
@@ -64,7 +72,11 @@ namespace Batuara.Infrastructure.Bingo.Services
                 Db.BingoTabs.Add(tab);
             }
 
-            await QueueLinkAsync(tab, phone, cancellationToken);
+            if (!reused)
+            {
+                await IssueAndDispatchCodeAsync(tab, phone, cancellationToken);
+            }
+
             return new BingoCreateTabResult { TabId = tab.Id, Reused = reused };
         }
 
@@ -82,6 +94,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 Total = tab.Total,
                 CloseAllRequested = ev.CloseAllRequested,
                 IsOpen = ev.IsOpen,
+                PhoneVerified = tab.IsPhoneVerified,
                 Menu = await GetMenuAsync(ev.Id, cancellationToken),
                 Items = ToItemDtos(tab.Items)
             };
@@ -137,11 +150,50 @@ namespace Batuara.Infrastructure.Bingo.Services
                 throw new BingoException(BingoErrorKind.Conflict, "Esta comanda já foi paga.");
             }
 
+            if (_options.RequirePhoneVerificationToClose && !tab.IsPhoneVerified)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Confirme seu celular para encerrar a conta");
+            }
+
             tab.RequestClose();
             await Db.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task ResendLinkAsync(Guid tabId, CancellationToken cancellationToken = default)
+        public async Task<BingoConfirmPhoneResult> ConfirmPhoneAsync(Guid tabId, string code, CancellationToken cancellationToken = default)
+        {
+            var tab = await LoadTabAsync(tabId, cancellationToken);
+            if (tab.IsPhoneVerified)
+            {
+                return new BingoConfirmPhoneResult { Verified = true };
+            }
+
+            if (tab.VerificationAttempts >= MaxVerificationAttempts)
+            {
+                throw new BingoException(BingoErrorKind.TooManyRequests, "Muitas tentativas. Peça um novo código.");
+            }
+
+            var now = DateTime.UtcNow;
+            if (string.IsNullOrEmpty(tab.VerificationCodeHash)
+                || tab.VerificationCodeExpiresAt == null
+                || tab.VerificationCodeExpiresAt <= now
+                || string.IsNullOrWhiteSpace(code))
+            {
+                throw new BingoException(BingoErrorKind.Validation, "Código inválido ou expirado.");
+            }
+
+            tab.RegisterVerificationAttempt();
+            if (!_passwordService.VerifyPassword(code.Trim(), tab.VerificationCodeHash))
+            {
+                await Db.SaveChangesAsync(cancellationToken);
+                throw new BingoException(BingoErrorKind.Validation, "Código inválido ou expirado.");
+            }
+
+            tab.ConfirmPhone(now);
+            await Db.SaveChangesAsync(cancellationToken);
+            return new BingoConfirmPhoneResult { Verified = true };
+        }
+
+        public async Task ResendCodeAsync(Guid tabId, CancellationToken cancellationToken = default)
         {
             var tab = await LoadTabAsync(tabId, cancellationToken);
             if (string.IsNullOrEmpty(tab.Phone))
@@ -149,30 +201,36 @@ namespace Batuara.Infrastructure.Bingo.Services
                 throw new BingoException(BingoErrorKind.Conflict, "Não há celular registrado para esta comanda.");
             }
 
-            if (!await QueueLinkAsync(tab, tab.Phone, cancellationToken))
+            if (tab.IsPhoneVerified)
             {
-                throw new BingoException(BingoErrorKind.TooManyRequests, "Aguarde alguns minutos para reenviar o link.");
+                throw new BingoException(BingoErrorKind.Conflict, "O celular desta comanda já foi confirmado.");
             }
+
+            var now = DateTime.UtcNow;
+            if (tab.CodeLastSentAt != null && now - tab.CodeLastSentAt.Value < ResendInterval)
+            {
+                throw new BingoException(BingoErrorKind.TooManyRequests, "Aguarde um minuto para pedir um novo código.");
+            }
+
+            var windowStart = now - HourlyWindow;
+            var phone = tab.Phone;
+            var sentLastHour = await Db.BingoTabs
+                .Where(x => x.Phone == phone && x.CodeWindowStartedAt != null && x.CodeWindowStartedAt > windowStart)
+                .SumAsync(x => x.CodeSendCount, cancellationToken);
+            if (sentLastHour >= MaxCodesPerHour)
+            {
+                throw new BingoException(BingoErrorKind.TooManyRequests, "Limite de códigos por hora atingido. Tente mais tarde.");
+            }
+
+            await IssueAndDispatchCodeAsync(tab, phone, cancellationToken);
         }
 
-        private async Task<bool> QueueLinkAsync(BingoTab tab, string phone, CancellationToken cancellationToken)
+        private async Task IssueAndDispatchCodeAsync(BingoTab tab, string phone, CancellationToken cancellationToken)
         {
-            var now = DateTime.UtcNow;
-            var since = now - LinkCooldown;
-            var recent = await Db.BingoTabs.AnyAsync(x => x.Phone == phone && x.LinkLastAttemptAt > since, cancellationToken);
-            if (recent)
-            {
-                await Db.SaveChangesAsync(cancellationToken);
-                return false;
-            }
-
-            tab.RegisterLinkAttempt(now);
+            var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+            tab.IssueVerificationCode(_passwordService.HashPassword(code), DateTime.UtcNow, CodeValidity);
             await Db.SaveChangesAsync(cancellationToken);
-
-            var baseUrl = string.IsNullOrWhiteSpace(_options.PublicBaseUrl) ? "https://www.batuara.org.br" : _options.PublicBaseUrl.TrimEnd('/');
-            var message = $"Sua comanda do bingo está aberta. Acesse: {baseUrl}/bingo/comanda/{tab.Id}";
-            _linkDispatcher.Dispatch(tab.Id, phone, tab.CustomerName, message);
-            return true;
+            _codeDispatcher.Dispatch(tab.Id, phone, code);
         }
 
         private async Task<BingoTab> LoadTabAsync(Guid tabId, CancellationToken cancellationToken)

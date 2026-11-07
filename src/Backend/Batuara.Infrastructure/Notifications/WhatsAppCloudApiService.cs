@@ -23,7 +23,7 @@ namespace Batuara.Infrastructure.Notifications
             _logger = logger;
         }
 
-        public async Task SendAuthCodeAsync(string phoneE164, string code, CancellationToken cancellationToken = default)
+        public async Task<string> SendAuthCodeAsync(string phoneE164, string code, CancellationToken cancellationToken = default)
         {
             var components = new List<object>
             {
@@ -35,7 +35,7 @@ namespace Batuara.Infrastructure.Notifications
                 components.Add(new { type = "button", sub_type = "url", index = "0", parameters = new[] { TextParam(code) } });
             }
 
-            await SendTemplateAsync(phoneE164, _options.AuthTemplateName, components, cancellationToken);
+            return await SendTemplateAsync(phoneE164, _options.AuthTemplateName, components, cancellationToken);
         }
 
         public async Task SendContributionReminderAsync(string phoneE164, string memberName, DateTime dueDate, decimal amount, CancellationToken cancellationToken = default)
@@ -91,13 +91,13 @@ namespace Batuara.Infrastructure.Notifications
             await SendTemplateAsync(phoneE164, _options.EventInviteTemplateName, components, cancellationToken);
         }
 
-        public async Task SendMemberNoticeAsync(string phoneE164, string memberName, string noticeText, CancellationToken cancellationToken = default)
+        public async Task<string> SendMemberNoticeAsync(string phoneE164, string memberName, string noticeText, CancellationToken cancellationToken = default)
         {
             var components = new List<object>
             {
                 new { type = "body", parameters = new[] { TextParam(FirstName(memberName)), TextParam(SanitizeTemplateText(noticeText)) } }
             };
-            await SendTemplateAsync(phoneE164, _options.MemberNoticeTemplateName, components, cancellationToken);
+            return await SendTemplateAsync(phoneE164, _options.MemberNoticeTemplateName, components, cancellationToken);
         }
 
         public async Task SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default)

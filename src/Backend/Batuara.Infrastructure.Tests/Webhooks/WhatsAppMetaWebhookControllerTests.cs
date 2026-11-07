@@ -98,5 +98,73 @@ namespace Batuara.Infrastructure.Tests.Webhooks
 
             (await db.ContactMessages.CountAsync()).Should().Be(0);
         }
+
+        private const string StatusPayload = @"{""object"":""whatsapp_business_account"",""entry"":[{""id"":""1"",""changes"":[{""field"":""messages"",""value"":{""messaging_product"":""whatsapp"",""statuses"":[
+            {""id"":""wamid.CODE"",""status"":""delivered"",""timestamp"":""1"",""recipient_id"":""5511999990001""},
+            {""id"":""wamid.REM"",""status"":""failed"",""timestamp"":""2"",""recipient_id"":""5511999990001"",""errors"":[{""code"":131026,""title"":""Message undeliverable""}]}
+        ]}}]}]}";
+
+        private static async Task<Guid> SeedTabAsync(BatuaraDbContext db)
+        {
+            var tab = new BingoTab(1, "Maria", "5511999990001", 1);
+            tab.RegisterCodeSent("wamid.CODE");
+            tab.RegisterReminderSent("wamid.REM", DateTime.UtcNow);
+            db.BingoTabs.Add(tab);
+            await db.SaveChangesAsync();
+            return tab.Id;
+        }
+
+        [Fact]
+        public async Task Status_DeliveredEFailed_AtualizamComandaPorMessageId()
+        {
+            using var db = CreateContext();
+            var id = await SeedTabAsync(db);
+            var payload = System.Text.Json.JsonSerializer.Deserialize<MetaWebhookPayload>(StatusPayload)!;
+            var controller = CreateController(db);
+
+            foreach (var status in payload.Entry![0].Changes![0].Value!.Statuses!)
+            {
+                await controller.ProcessStatusAsync(status);
+            }
+
+            var tab = await db.BingoTabs.SingleAsync(x => x.Id == id);
+            tab.CodeDeliveryStatus.Should().Be("Delivered");
+            tab.CodeDeliveryError.Should().BeNull();
+            tab.ReminderDeliveryStatus.Should().Be("Failed");
+            tab.ReminderDeliveryError.Should().Be("131026 - Message undeliverable");
+        }
+
+        [Fact]
+        public async Task Status_ForaDeOrdem_NaoRebaixaReadParaDelivered_MasFailedSempreAplica()
+        {
+            using var db = CreateContext();
+            var id = await SeedTabAsync(db);
+            var controller = CreateController(db);
+
+            await controller.ProcessStatusAsync(new MetaWebhookStatus { Id = "wamid.CODE", Status = "read" });
+            await controller.ProcessStatusAsync(new MetaWebhookStatus { Id = "wamid.CODE", Status = "delivered" });
+            (await db.BingoTabs.SingleAsync(x => x.Id == id)).CodeDeliveryStatus.Should().Be("Read");
+
+            await controller.ProcessStatusAsync(new MetaWebhookStatus
+            {
+                Id = "wamid.CODE",
+                Status = "failed",
+                Errors = new() { new MetaWebhookError { Code = 131047, Title = "Re-engagement" } }
+            });
+            var tab = await db.BingoTabs.SingleAsync(x => x.Id == id);
+            tab.CodeDeliveryStatus.Should().Be("Failed");
+            tab.CodeDeliveryError.Should().Be("131047 - Re-engagement");
+        }
+
+        [Fact]
+        public async Task Status_DeIdDesconhecido_EIgnorado()
+        {
+            using var db = CreateContext();
+            var id = await SeedTabAsync(db);
+
+            await CreateController(db).ProcessStatusAsync(new MetaWebhookStatus { Id = "wamid.OUTRO", Status = "failed" });
+
+            (await db.BingoTabs.SingleAsync(x => x.Id == id)).CodeDeliveryStatus.Should().Be("Sent");
+        }
     }
 }

@@ -82,6 +82,14 @@ namespace Batuara.API.Controllers
 
                 foreach (var change in entry.Changes)
                 {
+                    if (change.Value?.Statuses != null)
+                    {
+                        foreach (var status in change.Value.Statuses)
+                        {
+                            await ProcessStatusAsync(status);
+                        }
+                    }
+
                     var messages = change.Value?.Messages;
                     if (messages == null)
                     {
@@ -112,6 +120,75 @@ namespace Batuara.API.Controllers
             var expected = "sha256=" + Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(rawBody))).ToLowerInvariant();
             return CryptographicOperations.FixedTimeEquals(
                 Encoding.UTF8.GetBytes(expected), Encoding.UTF8.GetBytes(header));
+        }
+
+        private static readonly Dictionary<string, int> StatusRank = new()
+        {
+            ["Sent"] = 1, ["Delivered"] = 2, ["Read"] = 3
+        };
+
+        internal async Task ProcessStatusAsync(MetaWebhookStatus status)
+        {
+            if (string.IsNullOrWhiteSpace(status.Id) || string.IsNullOrWhiteSpace(status.Status))
+            {
+                return;
+            }
+
+            var mapped = status.Status.ToLowerInvariant() switch
+            {
+                "sent" => "Sent",
+                "delivered" => "Delivered",
+                "read" => "Read",
+                "failed" => "Failed",
+                _ => null
+            };
+            if (mapped == null)
+            {
+                return;
+            }
+
+            var error = status.Errors?.FirstOrDefault();
+            var errorCode = error?.Code?.ToString();
+            string? errorText = null;
+            if (mapped == "Failed")
+            {
+                errorText = string.Join(" - ", new[] { errorCode, error?.Title }.Where(x => !string.IsNullOrWhiteSpace(x)));
+                if (errorText.Length == 0)
+                {
+                    errorText = "Falha na entrega";
+                }
+            }
+
+            var tab = await _db.BingoTabs.FirstOrDefaultAsync(x => x.CodeMessageId == status.Id || x.ReminderMessageId == status.Id);
+            if (tab == null)
+            {
+                return;
+            }
+
+            _logger.LogInformation("Bingo message status {Status} code {ErrorCode}", mapped, errorCode ?? "-");
+
+            if (tab.CodeMessageId == status.Id && ShouldApply(tab.CodeDeliveryStatus, mapped))
+            {
+                tab.UpdateCodeDelivery(mapped, errorText);
+            }
+
+            if (tab.ReminderMessageId == status.Id && ShouldApply(tab.ReminderDeliveryStatus, mapped))
+            {
+                tab.UpdateReminderDelivery(mapped, errorText);
+            }
+
+            await _db.SaveChangesAsync();
+        }
+
+        // Webhooks podem chegar fora de ordem: nao rebaixa Read/Delivered para estados anteriores.
+        private static bool ShouldApply(string? current, string incoming)
+        {
+            if (incoming == "Failed" || current == null || !StatusRank.TryGetValue(current, out var currentRank))
+            {
+                return true;
+            }
+
+            return !StatusRank.TryGetValue(incoming, out var incomingRank) || incomingRank >= currentRank;
         }
 
         internal async Task ProcessInboundMessageAsync(MetaWebhookMessage message, string? profileName = null)
@@ -202,6 +279,30 @@ namespace Batuara.API.Controllers
 
         [JsonPropertyName("messages")]
         public List<MetaWebhookMessage>? Messages { get; set; }
+
+        [JsonPropertyName("statuses")]
+        public List<MetaWebhookStatus>? Statuses { get; set; }
+    }
+
+    public class MetaWebhookStatus
+    {
+        [JsonPropertyName("id")]
+        public string? Id { get; set; }
+
+        [JsonPropertyName("status")]
+        public string? Status { get; set; }
+
+        [JsonPropertyName("errors")]
+        public List<MetaWebhookError>? Errors { get; set; }
+    }
+
+    public class MetaWebhookError
+    {
+        [JsonPropertyName("code")]
+        public int? Code { get; set; }
+
+        [JsonPropertyName("title")]
+        public string? Title { get; set; }
     }
 
     public class MetaWebhookContact

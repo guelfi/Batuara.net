@@ -5,8 +5,10 @@ namespace Batuara.Application.Bingo.Models
     public class BingoOptions
     {
         public const string SectionName = "Bingo";
-        public string PublicBaseUrl { get; set; } = "https://www.batuara.org.br";
         public double WaiterSessionHours { get; set; } = 10;
+        public bool RequirePhoneVerificationToClose { get; set; }
+        public int PaidRetentionDays { get; set; } = 30;
+        public int UnpaidRetentionDays { get; set; } = 90;
     }
 
     public enum BingoErrorKind
@@ -63,6 +65,44 @@ namespace Batuara.Application.Bingo.Models
         public bool Reused { get; set; }
     }
 
+    public class BingoConfirmPhoneRequest
+    {
+        public string Code { get; set; } = string.Empty;
+    }
+
+    public class BingoConfirmPhoneResult
+    {
+        public bool Verified { get; set; }
+    }
+
+    public class BingoConfirmReminderRequest
+    {
+        public bool Confirmar { get; set; }
+    }
+
+    public class BingoReminderItemDto
+    {
+        public Guid TabId { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
+        public int Mesa { get; set; }
+        public decimal Total { get; set; }
+        public DateTime? ReminderSentAt { get; set; }
+    }
+
+    public class BingoReminderPreviewDto
+    {
+        public int Count { get; set; }
+        public decimal TotalOwed { get; set; }
+        public List<BingoReminderItemDto> Items { get; set; } = new();
+    }
+
+    public class BingoReminderResultDto
+    {
+        public int Sent { get; set; }
+        public int Skipped { get; set; }
+        public int Failed { get; set; }
+    }
+
     public class BingoTabItemDto
     {
         public int Id { get; set; }
@@ -82,6 +122,7 @@ namespace Batuara.Application.Bingo.Models
         public decimal Total { get; set; }
         public bool CloseAllRequested { get; set; }
         public bool IsOpen { get; set; }
+        public bool PhoneVerified { get; set; }
         public List<BingoMenuItemDto> Menu { get; set; } = new();
         public List<BingoTabItemDto> Items { get; set; } = new();
     }
@@ -215,6 +256,9 @@ namespace Batuara.Application.Bingo.Models
         public BingoTabStatus Status { get; set; }
         public decimal Total { get; set; }
         public DateTime CreatedAt { get; set; }
+        public bool PhoneVerified { get; set; }
+        public string? CodeDeliveryStatus { get; set; }
+        public string? CodeDeliveryError { get; set; }
         public List<BingoTabItemDto> Items { get; set; } = new();
     }
 
@@ -237,6 +281,9 @@ namespace Batuara.Application.Bingo.Models
         public int Paid { get; set; }
         public int PendingItems { get; set; }
         public int RetrievedItems { get; set; }
+        public int PhoneVerified { get; set; }
+        public int PhoneNotVerified { get; set; }
+        public int CodeDeliveryFailed { get; set; }
     }
 
     public class BingoPanelAccountsDto
@@ -313,5 +360,7 @@ namespace Batuara.Application.Bingo.Models
     {
         public BingoPaymentMethod? PaymentMethod { get; set; }
         public DateTime? PaidAt { get; set; }
+        public DateTime? ReminderSentAt { get; set; }
+        public string? ReminderDeliveryStatus { get; set; }
     }
 }

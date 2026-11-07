@@ -22,13 +22,13 @@ namespace Batuara.Infrastructure.Notifications
             _logger = logger;
         }
 
-        public async Task SendAuthCodeAsync(string phoneE164, string code, CancellationToken cancellationToken = default)
+        public async Task<string> SendAuthCodeAsync(string phoneE164, string code, CancellationToken cancellationToken = default)
         {
             // Enviamos duas mensagens consecutivas:
             // 1. Cabeçalho instrutivo explicando a origem.
             // 2. Apenas o código puro para permitir cópia fácil (um clique/pressionamento).
             await SendTextAsync(phoneE164, "🔐 *Casa de Caridade Batuara*\nCódigo de acesso solicitado:", cancellationToken);
-            await SendTextAsync(phoneE164, code, cancellationToken);
+            return await SendTextAsync(phoneE164, code, cancellationToken);
         }
 
         public async Task SendContributionReminderAsync(string phoneE164, string memberName, DateTime dueDate, decimal amount, CancellationToken cancellationToken = default)
@@ -59,9 +59,9 @@ namespace Batuara.Infrastructure.Notifications
             await SendTextAsync(phoneE164, $"Casa Batuara: Olá, {FirstName(memberName)}! Você está convidado(a) para {eventName.Trim()}, no dia {eventDate.Trim()}, na Casa de Caridade Caboclo Batuara.", cancellationToken);
         }
 
-        public async Task SendMemberNoticeAsync(string phoneE164, string memberName, string noticeText, CancellationToken cancellationToken = default)
+        public async Task<string> SendMemberNoticeAsync(string phoneE164, string memberName, string noticeText, CancellationToken cancellationToken = default)
         {
-            await SendTextAsync(phoneE164, $"Casa Batuara: Olá, {FirstName(memberName)}. Aviso da direção: {noticeText.Trim()}", cancellationToken);
+            return await SendTextAsync(phoneE164, $"Casa Batuara: Olá, {FirstName(memberName)}. Aviso da direção: {noticeText.Trim()}", cancellationToken);
         }
 
         public async Task SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default)

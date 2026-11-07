@@ -48,11 +48,18 @@ namespace Batuara.API.Controllers
             return Ok(new { success = true });
         }
 
-        [HttpPost("comandas/{tabId:guid}/reenviar-link")]
+        [HttpPost("comandas/{tabId:guid}/confirmar-celular")]
         [EnableRateLimiting("bingo-write")]
-        public async Task<IActionResult> ResendLink(Guid tabId, CancellationToken cancellationToken)
+        public async Task<IActionResult> ConfirmPhone(Guid tabId, [FromBody] BingoConfirmPhoneRequest request, CancellationToken cancellationToken)
         {
-            await service.ResendLinkAsync(tabId, cancellationToken);
+            return Ok(new { success = true, data = await service.ConfirmPhoneAsync(tabId, request?.Code ?? string.Empty, cancellationToken) });
+        }
+
+        [HttpPost("comandas/{tabId:guid}/reenviar-codigo")]
+        [EnableRateLimiting("bingo-write")]
+        public async Task<IActionResult> ResendCode(Guid tabId, CancellationToken cancellationToken)
+        {
+            await service.ResendCodeAsync(tabId, cancellationToken);
             return Ok(new { success = true });
         }
     }

@@ -197,6 +197,16 @@ namespace Batuara.Infrastructure.Data.Configurations
                     value => value.HasValue ? value.Value.ToString() : null,
                     value => value == null ? null : Enum.Parse<BingoPaymentMethod>(value))
                 .HasMaxLength(20);
+            builder.Property(x => x.VerificationCodeHash).HasMaxLength(200);
+            builder.Property(x => x.VerificationAttempts).HasDefaultValue(0);
+            builder.Property(x => x.CodeMessageId).HasMaxLength(200);
+            builder.Property(x => x.CodeDeliveryStatus).HasMaxLength(20);
+            builder.Property(x => x.CodeDeliveryError).HasMaxLength(200);
+            builder.Property(x => x.CodeSendCount).HasDefaultValue(0);
+            builder.Property(x => x.ReminderMessageId).HasMaxLength(200);
+            builder.Property(x => x.ReminderDeliveryStatus).HasMaxLength(20);
+            builder.Property(x => x.ReminderDeliveryError).HasMaxLength(200);
+            builder.Ignore(x => x.IsPhoneVerified);
             builder.Property(x => x.CreatedAt).IsRequired();
             builder.Property(x => x.UpdatedAt).IsRequired();
 
@@ -208,6 +218,8 @@ namespace Batuara.Infrastructure.Data.Configurations
 
             builder.HasIndex(x => new { x.EventId, x.Status });
             builder.HasIndex(x => x.Phone);
+            builder.HasIndex(x => x.CodeMessageId);
+            builder.HasIndex(x => x.ReminderMessageId);
         }
     }
 
