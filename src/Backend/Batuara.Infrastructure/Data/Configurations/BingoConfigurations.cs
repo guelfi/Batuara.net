@@ -277,4 +277,24 @@ namespace Batuara.Infrastructure.Data.Configurations
             // Unicidade case-insensitive: indice unico em lower("Name") criado por SQL na migration (e conferido no servico).
         }
     }
+
+    public class BingoPhotoTabConfiguration : IEntityTypeConfiguration<BingoPhotoTab>
+    {
+        public void Configure(EntityTypeBuilder<BingoPhotoTab> builder)
+        {
+            builder.ToTable("BingoPhotoTabs");
+            builder.HasKey(x => x.Id);
+            builder.Property(x => x.Id).ValueGeneratedOnAdd();
+            builder.Property(x => x.Label).IsRequired().HasMaxLength(60);
+            builder.Property(x => x.ItemsJson).IsRequired();
+            builder.Property(x => x.Total).HasPrecision(10, 2).IsRequired();
+            builder.Property(x => x.Photo).IsRequired();
+            builder.Property(x => x.CreatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
+            builder.Property(x => x.UpdatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
+            builder.Property(x => x.IsActive).IsRequired().HasDefaultValue(true);
+
+            builder.HasOne<BingoEvent>().WithMany().HasForeignKey(x => x.EventId).OnDelete(DeleteBehavior.Restrict);
+            builder.HasIndex(x => x.EventId);
+        }
+    }
 }

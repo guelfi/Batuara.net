@@ -27,6 +27,19 @@ namespace Batuara.Infrastructure.Tests.Bingo
 {
     public class BingoServiceTests
     {
+        private class FakeConfig : Microsoft.Extensions.Configuration.IConfiguration
+        {
+            public string? this[string key]
+            {
+                get => key == "JwtSettings:Secret" ? "test-secret-key-with-at-least-32-characters-long" : null;
+                set { }
+            }
+
+            public IEnumerable<Microsoft.Extensions.Configuration.IConfigurationSection> GetChildren() => Array.Empty<Microsoft.Extensions.Configuration.IConfigurationSection>();
+            public Microsoft.Extensions.Primitives.IChangeToken GetReloadToken() => throw new NotSupportedException();
+            public Microsoft.Extensions.Configuration.IConfigurationSection GetSection(string key) => throw new NotSupportedException();
+        }
+
         private class FakeWhatsApp : IWhatsAppService
         {
             public bool Fail { get; set; }
@@ -1883,6 +1896,43 @@ namespace Batuara.Infrastructure.Tests.Bingo
 
             f.WhatsApp.Notices.Should().Contain(n => n.Text.Contains("R$ 5,00"));
             f.WhatsApp.Notices.Should().Contain(n => n.Text.Contains("R$ 16,00"));
+        }
+            [Fact]
+        public async Task ComandaFoto_Should_Save_Sum_And_Report_All_Photographed_Tabs()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var config = new FakeConfig();
+            var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), config, Options.Create(new ComandaFotoOptions()));
+            var photo = Convert.ToBase64String(new byte[] { 1, 2, 3 });
+
+            svc.IsTokenValid(svc.GetAccessToken()).Should().BeTrue();
+            svc.IsTokenValid("errado").Should().BeFalse();
+
+            var first = await svc.SaveAsync(new ComandaFotoSaveRequest
+            {
+                Label = "Mesa 3",
+                ImageBase64 = photo,
+                Items = new() { new() { Name = "Água", Quantity = 2, UnitPrice = 5 }, new() { Name = "Salada", Quantity = 1, UnitPrice = 7 } }
+            }, CancellationToken.None);
+            first.Total.Should().Be(17m);
+
+            await svc.SaveAsync(new ComandaFotoSaveRequest
+            {
+                ImageBase64 = photo,
+                Items = new() { new() { Name = "água", Quantity = 1, UnitPrice = 5 } }
+            }, CancellationToken.None);
+
+            var report = await svc.GetReportAsync(CancellationToken.None);
+            report.Count.Should().Be(2);
+            report.GrandTotal.Should().Be(22m);
+            report.ItemTotals.Single(i => i.Name.ToLower() == "água").Quantity.Should().Be(3);
+
+            await svc.DiscardAsync(first.Id, CancellationToken.None);
+            (await svc.GetReportAsync(CancellationToken.None)).GrandTotal.Should().Be(5m);
+
+            var act = () => svc.ExtractAsync(new ComandaFotoExtractRequest { ImageBase64 = photo }, CancellationToken.None);
+            await act.Should().ThrowAsync<BingoException>();
         }
     }
 }

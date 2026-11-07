@@ -1353,6 +1353,18 @@ const SummaryTab: React.FC<{
   }, [eventId, notify]);
   useEffect(() => { load(); }, [load]);
 
+  const [photoLink, setPhotoLink] = useState('');
+  const showPhotoLink = async () => {
+    try {
+      const r = await apiService.get<any>('/comanda-foto/token');
+      const link = `https://www.batuara.org.br/comanda-foto?t=${r.data?.data?.token ?? r.data?.token}`;
+      setPhotoLink(link);
+      try { await navigator.clipboard.writeText(link); notify('Link copiado.', 'success'); } catch { /* mostra na tela */ }
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível gerar o link.'), 'error');
+    }
+  };
+
   const selected = events.find((e) => e.id === eventId);
   const canReset = !!selected && selected.isTest && selected.id === current?.id;
 
@@ -1368,6 +1380,10 @@ const SummaryTab: React.FC<{
           ))}
         </Select>
       </FormControl>
+      <Box>
+        <Button variant="outlined" onClick={showPhotoLink}>Link do fechamento por foto</Button>
+        {photoLink && <Typography variant="body2" sx={{ mt: 1, wordBreak: 'break-all' }}>{photoLink}</Typography>}
+      </Box>
       {loading && <CircularProgress size={24} />}
       {summary && (
         <Box>

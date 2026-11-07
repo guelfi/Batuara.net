@@ -717,6 +717,56 @@ namespace Batuara.Infrastructure.Data.Migrations
                     b.ToTable("BingoPaymentMethods", "batuara");
                 });
 
+            modelBuilder.Entity("Batuara.Domain.Entities.BingoPhotoTab", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("ItemsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<byte[]>("Photo")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<decimal>("Total")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.ToTable("BingoPhotoTabs", "batuara");
+                });
+
             modelBuilder.Entity("Batuara.Domain.Entities.BingoTab", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2625,6 +2675,15 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Tab");
+                });
+
+            modelBuilder.Entity("Batuara.Domain.Entities.BingoPhotoTab", b =>
+                {
+                    b.HasOne("Batuara.Domain.Entities.BingoEvent", null)
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Batuara.Domain.Entities.BingoTab", b =>

@@ -19,6 +19,7 @@ import LoadingProvider from './components/common/LoadingProvider';
 import CookieConsentBanner from './components/common/CookieConsentBanner';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import BingoCustomerPage from './pages/bingo/BingoCustomerPage';
+import ComandaFotoPage from './pages/comandaFoto/ComandaFotoPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { publicApi } from './services/api';
 import { asVisibility, canShowSpiritual } from './utils/contentVisibility';
@@ -76,6 +77,8 @@ function App() {
   // '/bingo/garcom' não existe mais no site (o garçom usa o AdminDashboard): cai na página inicial.
   const isBingo = (path === '/bingo' || path.startsWith('/bingo/')) && !path.startsWith('/bingo/garcom');
 
+  const isComandaFoto = path === '/comanda-foto';
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -83,7 +86,9 @@ function App() {
           <CssBaseline />
           <AuthProvider>
             <LoadingProvider>
-              {isBingo ? (
+              {isComandaFoto ? (
+                <ComandaFotoPage />
+              ) : isBingo ? (
                 <BingoCustomerPage />
               ) : isPrivacyPage ? (
                 <Layout>
@@ -92,7 +97,7 @@ function App() {
               ) : (
                 <MainSections />
               )}
-              {!isBingo && <CookieConsentBanner />}
+              {!isBingo && !isComandaFoto && <CookieConsentBanner />}
             </LoadingProvider>
           </AuthProvider>
         </ThemeProvider>

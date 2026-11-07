@@ -85,6 +85,7 @@ services:
       - WhatsApp__InstanceName=${WHATSAPP_INSTANCE_NAME:-batuara-casa}
       - WhatsApp__AllowedRecipients=${WHATSAPP_ALLOWED_RECIPIENTS:-}
       - WhatsApp__AccessToken=${WHATSAPP_ACCESS_TOKEN:-}
+      - Anthropic__ApiKey=${ANTHROPIC_API_KEY:-}
       - WhatsApp__PhoneNumberId=${WHATSAPP_PHONE_NUMBER_ID:-}
       - WhatsApp__WebhookVerifyToken=${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-}
       - WhatsApp__AppSecret=${WHATSAPP_APP_SECRET:-}

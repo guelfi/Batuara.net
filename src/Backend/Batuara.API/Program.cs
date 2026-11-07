@@ -291,6 +291,8 @@ builder.Services.AddScoped<IBingoPublicService, BingoPublicService>();
 builder.Services.AddScoped<IBingoWaiterService, BingoWaiterService>();
 builder.Services.AddScoped<IBingoAdminService, BingoAdminService>();
 builder.Services.AddScoped<IBingoPrivacyService, BingoPrivacyService>();
+builder.Services.Configure<ComandaFotoOptions>(builder.Configuration.GetSection(ComandaFotoOptions.SectionName));
+builder.Services.AddHttpClient<IComandaFotoService, ComandaFotoService>(client => client.Timeout = TimeSpan.FromSeconds(60));
 builder.Services.AddScoped<IBingoReminderService, BingoReminderService>();
 builder.Services.AddScoped<BingoWaiterAccessFilter>();
 builder.Services.AddScoped<ContributionReminderProcessor>();

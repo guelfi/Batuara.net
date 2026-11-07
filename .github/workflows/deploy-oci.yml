@@ -82,6 +82,7 @@ jobs:
           OCI_USER: ${{ secrets.OCI_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           DEPLOY_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
           SCP_CMD="scp -o StrictHostKeyChecking=no"
@@ -95,6 +96,7 @@ jobs:
           TMPENV=$(mktemp)
           printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD" > "$TMPENV"
           printf 'JWT_SECRET=%s\n' "$JWT_SECRET" >> "$TMPENV"
+          printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_API_KEY" >> "$TMPENV"
           printf 'GITHUB_SHA=%s\n' "$DEPLOY_SHA" >> "$TMPENV"
           $SCP_CMD "$TMPENV" ${OCI_USER}@${OCI_HOST}:/tmp/deploy-env
           rm -f "$TMPENV"
