@@ -36,6 +36,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { DataGrid, GridColDef, GridRenderEditCellParams, useGridApiContext } from '@mui/x-data-grid';
 import {
   Add as AddIcon,
   Close as CloseIcon,
@@ -51,7 +52,9 @@ import {
   BingoEvent,
   BingoMenuItem,
   BingoPanel,
-  BingoPaymentMethod,
+  BingoOrderItem,
+  BingoPayMethod,
+  BingoPendingTab,
   BingoReminderPreview,
   BingoReminderResult,
   BingoSummary,
@@ -80,6 +83,20 @@ const formatDate = (iso: string) => {
   if (!iso) return '-';
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+};
+
+const timeHm = (iso?: string | null) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+};
+
+const ITEM_CHIP: Record<BingoOrderItem['status'], { label: string; color: 'default' | 'warning' | 'info' | 'success' | 'error' }> = {
+  Pending: { label: 'Pendente', color: 'warning' },
+  Retrieved: { label: 'A caminho', color: 'info' },
+  Delivered: { label: 'Entregue', color: 'success' },
+  Contested: { label: 'Em contestação', color: 'error' },
+  Cancelled: { label: 'Cancelado', color: 'default' },
 };
 
 type Notify = (message: string, severity?: 'success' | 'error') => void;
@@ -152,6 +169,278 @@ const PhoneBadge: React.FC<{ tab: BingoTab }> = ({ tab }) => (
   </Stack>
 );
 
+/* ---------- Fechamento no caixa ---------- */
+const OPEN_STATUSES: BingoOrderItem['status'][] = ['Pending', 'Retrieved', 'Contested'];
+
+const CashierDialog: React.FC<{
+  tab: BingoTab;
+  notify: Notify;
+  onClose: () => void;
+  onChanged: () => void;
+}> = ({ tab, notify, onClose, onChanged }) => {
+  const [tabs, setTabs] = useState<BingoTab[]>([tab]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<string[]>([tab.tabId]);
+  const [methods, setMethods] = useState<BingoPayMethod[]>([]);
+  const [methodId, setMethodId] = useState<number | ''>('');
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
+  const [cancelItem, setCancelItem] = useState<BingoOrderItem | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [resolveItem, setResolveItem] = useState<BingoOrderItem | null>(null);
+  const [resolveNote, setResolveNote] = useState('');
+
+  const loadTabs = useCallback(async () => {
+    try {
+      const list = await bingoApi.getTableTabs(tab.mesa);
+      setTabs(list);
+      setSelected((prev) => prev.filter((id) => list.some((t) => t.tabId === id)));
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível carregar as comandas da mesa.'), 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [tab.mesa, notify]);
+
+  useEffect(() => { loadTabs(); }, [loadTabs]);
+  useEffect(() => {
+    bingoApi.getPaymentMethods()
+      .then((list) => setMethods(list.filter((m) => m.isActive)))
+      .catch((e) => notify(apiError(e, 'Não foi possível carregar as formas de pagamento.'), 'error'));
+  }, [notify]);
+
+  const toggle = (id: string) =>
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const chosen = tabs.filter((t) => selected.includes(t.tabId));
+  const totalDue = chosen.reduce((s, t) => s + t.amountDue, 0);
+  const undelivered = chosen.reduce((s, t) => s + t.items.filter((i) => i.status === 'Pending' || i.status === 'Retrieved').length, 0);
+  const contested = chosen.reduce((s, t) => s + t.items.filter((i) => i.status === 'Contested').length, 0);
+  let blockReason = '';
+  if (chosen.length === 0) blockReason = 'Marque ao menos uma comanda.';
+  else if (undelivered + contested > 0) {
+    const parts: string[] = [];
+    if (undelivered) parts.push(`${undelivered} ${undelivered === 1 ? 'item não entregue' : 'itens não entregues'}`);
+    if (contested) parts.push(`${contested} ${contested === 1 ? 'item em contestação' : 'itens em contestação'}`);
+    blockReason = `Resolva antes de cobrar: ${parts.join(' e ')}.`;
+  } else if (methodId === '') blockReason = 'Escolha a forma de pagamento.';
+
+  const act = async (fn: () => Promise<any>, ok: string) => {
+    setBusy(true);
+    try {
+      await fn();
+      notify(ok, 'success');
+      setPayError(null);
+      await loadTabs();
+      onChanged();
+    } catch (e: any) {
+      notify(apiError(e, 'Operação não concluída.'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmCancel = async () => {
+    const item = cancelItem;
+    if (!item) return;
+    const reason = cancelReason.trim();
+    if (reason.length < 3 || reason.length > 200) {
+      notify('Informe o motivo (3 a 200 caracteres).', 'error');
+      return;
+    }
+    setCancelItem(null);
+    await act(() => bingoApi.cancelItem(item.id, reason), 'Item cancelado.');
+  };
+
+  const confirmResolve = async (action: 'ConfirmDelivered' | 'Cancel') => {
+    const item = resolveItem;
+    if (!item) return;
+    const n = resolveNote.trim();
+    setResolveItem(null);
+    await act(() => bingoApi.resolveContest(item.id, action, n || undefined),
+      action === 'Cancel' ? 'Item cancelado.' : 'Entrega confirmada.');
+  };
+
+  const pay = async () => {
+    if (methodId === '') return;
+    setBusy(true);
+    setPayError(null);
+    try {
+      const r = await bingoApi.payTabsAdmin(selected, methodId, note.trim() || undefined);
+      notify(`${r.paidCount} ${r.paidCount === 1 ? 'conta paga' : 'contas pagas'}: ${money(r.total)}.`, 'success');
+      onChanged();
+      onClose();
+    } catch (e: any) {
+      if (e?.response?.status === 409) {
+        const list: BingoPendingTab[] = Array.isArray(e.response.data?.data?.tabs) ? e.response.data.data.tabs : [];
+        const detail = list
+          .map((t) => `${t.customerName} (${t.undeliveredCount} não entregue(s), ${t.contestedCount} em contestação)`)
+          .join('; ');
+        setPayError(`${apiError(e, 'Há itens pendentes.')}${detail ? ` ${detail}` : ''}`);
+        await loadTabs();
+      } else {
+        notify(apiError(e, 'Não foi possível registrar o pagamento.'), 'error');
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const itemBg = (st: BingoOrderItem['status']) =>
+    st === 'Contested' ? 'rgba(211,47,47,0.14)' : st === 'Pending' || st === 'Retrieved' ? 'rgba(237,108,2,0.14)' : undefined;
+
+  const itemNote = (i: BingoOrderItem) => {
+    if (i.status === 'Delivered' && (i.deliveredByName || i.deliveredAt))
+      return `entregue${i.deliveredByName ? ` por ${i.deliveredByName}` : ''}${i.deliveredAt ? ` às ${timeHm(i.deliveredAt)}` : ''}`;
+    if (i.status === 'Cancelled')
+      return `cancelado${i.cancelledByName ? ` por ${i.cancelledByName}` : ''}${i.cancelReason ? `: ${i.cancelReason}` : ''}`;
+    if (i.status === 'Contested')
+      return `contestado${i.contestedAt ? ` às ${timeHm(i.contestedAt)}` : ''}${i.contestNote ? `: ${i.contestNote}` : ''}`;
+    return '';
+  };
+
+  return (
+    <Dialog open onClose={busy ? undefined : onClose} fullWidth maxWidth="lg">
+      <DialogTitle>Fechar conta: mesa {tab.mesa}</DialogTitle>
+      <DialogContent dividers>
+        {loading && <CircularProgress size={24} />}
+        <Stack spacing={2}>
+          {tabs.length === 0 && !loading && <Alert severity="info">Nenhuma comanda não paga nesta mesa.</Alert>}
+          {tabs.map((t) => {
+            const checked = selected.includes(t.tabId);
+            return (
+              <Paper key={t.tabId} variant="outlined" sx={{ p: 1.5, borderColor: checked ? 'primary.main' : 'divider' }}>
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
+                  <FormControlLabel
+                    control={<Checkbox checked={checked} onChange={() => toggle(t.tabId)} />}
+                    label={<Typography sx={{ fontWeight: 600 }}>{t.customerName || 'Sem nome'}</Typography>}
+                  />
+                  <PhoneBadge tab={t} />
+                  <Box sx={{ flex: 1 }} />
+                  <Typography variant="body2" color="text.secondary">Consumo {money(t.total)}</Typography>
+                  <Typography sx={{ fontWeight: 700 }}>A cobrar {money(t.amountDue)}</Typography>
+                </Stack>
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Item</TableCell>
+                        <TableCell align="right">Valor</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Detalhe</TableCell>
+                        <TableCell align="right">Ações</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {t.items.map((i) => (
+                        <TableRow key={i.id} sx={{ bgcolor: itemBg(i.status) }}>
+                          <TableCell sx={i.status === 'Cancelled' ? { textDecoration: 'line-through' } : undefined}>
+                            {i.quantity}x {i.name}
+                          </TableCell>
+                          <TableCell align="right">{money(i.unitPrice * i.quantity)}</TableCell>
+                          <TableCell>
+                            <Chip size="small" color={ITEM_CHIP[i.status].color} label={ITEM_CHIP[i.status].label} />
+                          </TableCell>
+                          <TableCell sx={{ color: i.status === 'Contested' ? 'error.main' : 'text.secondary' }}>
+                            {itemNote(i)}
+                          </TableCell>
+                          <TableCell align="right">
+                            <Stack direction="row" spacing={0.5} justifyContent="flex-end" flexWrap="wrap" useFlexGap>
+                              {(i.status === 'Pending' || i.status === 'Retrieved') && (
+                                <Button size="small" disabled={busy}
+                                  onClick={() => act(() => bingoApi.deliverItemAdmin(i.id), 'Item marcado como entregue.')}>
+                                  Marcar entregue
+                                </Button>
+                              )}
+                              {i.status === 'Contested' && (
+                                <Button size="small" color="error" disabled={busy}
+                                  onClick={() => { setResolveNote(''); setResolveItem(i); }}>
+                                  Resolver contestação
+                                </Button>
+                              )}
+                              {i.status !== 'Cancelled' && (
+                                <Button size="small" color="error" variant="outlined" disabled={busy}
+                                  onClick={() => { setCancelReason(''); setCancelItem(i); }}>
+                                  Cancelar
+                                </Button>
+                              )}
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {t.items.length === 0 && <TableRow><TableCell colSpan={5}>Sem itens.</TableCell></TableRow>}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Paper>
+            );
+          })}
+          {payError && <Alert severity="error">{payError}</Alert>}
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ flexWrap: 'wrap', gap: 1, p: 2, alignItems: 'center' }}>
+        <Typography variant="h6" sx={{ mr: 'auto' }}>Total a cobrar: {money(totalDue)}</Typography>
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel id="caixa-forma">Forma de pagamento</InputLabel>
+          <Select labelId="caixa-forma" label="Forma de pagamento" value={methodId}
+            onChange={(e) => setMethodId(e.target.value === ('' as any) ? '' : Number(e.target.value))}>
+            {methods.map((m) => <MenuItem key={m.id} value={m.id}>{m.name}</MenuItem>)}
+          </Select>
+        </FormControl>
+        <TextField size="small" label="Observação (opcional)" value={note} onChange={(e) => setNote(e.target.value)}
+          inputProps={{ maxLength: 200 }} sx={{ minWidth: 220 }} />
+        <Tooltip title={blockReason}>
+          <span>
+            <Button variant="contained" color="success" disabled={busy || !!blockReason} onClick={pay}>
+              Registrar pagamento
+            </Button>
+          </span>
+        </Tooltip>
+        <Button onClick={onClose} disabled={busy}>Fechar</Button>
+        {blockReason && (
+          <Typography variant="body2" color="error" sx={{ width: '100%', textAlign: 'right' }}>{blockReason}</Typography>
+        )}
+      </DialogActions>
+
+      <Dialog open={!!cancelItem} onClose={() => setCancelItem(null)} fullWidth maxWidth="xs">
+        <DialogTitle>Cancelar item</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            {cancelItem?.quantity}x {cancelItem?.name}. O item sai da conta.
+          </DialogContentText>
+          <TextField autoFocus fullWidth required label="Motivo do cancelamento" value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)} inputProps={{ maxLength: 200 }}
+            helperText="De 3 a 200 caracteres" />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCancelItem(null)}>Voltar</Button>
+          <Button color="error" variant="contained" disabled={cancelReason.trim().length < 3} onClick={confirmCancel}>
+            Cancelar item
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={!!resolveItem} onClose={() => setResolveItem(null)} fullWidth maxWidth="xs">
+        <DialogTitle>Resolver contestação</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            {resolveItem?.quantity}x {resolveItem?.name}
+            {resolveItem?.contestNote ? `. Cliente: "${resolveItem.contestNote}"` : ''}
+          </DialogContentText>
+          <TextField fullWidth label="Observação (opcional)" value={resolveNote}
+            onChange={(e) => setResolveNote(e.target.value)} inputProps={{ maxLength: 200 }} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResolveItem(null)}>Voltar</Button>
+          <Button color="error" onClick={() => confirmResolve('Cancel')}>Cancelar item</Button>
+          <Button variant="contained" onClick={() => confirmResolve('ConfirmDelivered')}>Confirmar entrega</Button>
+        </DialogActions>
+      </Dialog>
+    </Dialog>
+  );
+};
+
 const LivePanel: React.FC<{
   event: BingoEvent | null;
   notify: Notify;
@@ -160,8 +449,7 @@ const LivePanel: React.FC<{
 }> = ({ event, notify, confirm, onEventChanged }) => {
   const [panel, setPanel] = useState<BingoPanel | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [payTarget, setPayTarget] = useState<BingoTab | null>(null);
-  const [method, setMethod] = useState<BingoPaymentMethod>('Pix');
+  const [closeTarget, setCloseTarget] = useState<BingoTab | null>(null);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -198,15 +486,17 @@ const LivePanel: React.FC<{
     .filter((t) => t.status !== 'Paid')
     .map((t) => ({
       tab: t,
-      toDeliver: t.items.filter((i) => i.status !== 'Delivered'),
+      toDeliver: t.items.filter((i) => i.status === 'Pending' || i.status === 'Retrieved'),
       delivered: t.items.filter((i) => i.status === 'Delivered'),
+      contested: t.items.filter((i) => i.status === 'Contested'),
     }))
-    .filter((x) => x.toDeliver.length + x.delivered.length > 0)
+    .filter((x) => x.toDeliver.length + x.delivered.length + x.contested.length > 0)
     .sort((a, b) => String(a.tab.mesa).localeCompare(String(b.tab.mesa), 'pt-BR', { numeric: true }));
-  const countItems = (status: 'Pending' | 'Retrieved') =>
+  const countItems = (status: 'Pending' | 'Retrieved' | 'Contested') =>
     tabs.reduce((sum, t) => sum + t.items.filter((i) => i.status === status).reduce((q, i) => q + i.quantity, 0), 0);
   const retrievedCount = panel?.retrievedItems ?? countItems('Retrieved');
   const pendingCount = countItems('Pending');
+  const contestedCount = panel?.contestedItems ?? countItems('Contested');
   const totalSold = panel?.totalSold ?? paid.reduce((s, t) => s + t.total, 0);
   const closeAll = panel?.closeAllRequested ?? event?.closeAllRequested ?? false;
 
@@ -238,6 +528,7 @@ const LivePanel: React.FC<{
             <Chip color="success" label={`Pagas: ${paid.length}`} />
             <Chip color="info" label={`Itens pendentes: ${pendingCount}`} />
             <Chip color="secondary" label={`Itens retirados: ${retrievedCount}`} />
+            {contestedCount > 0 && <Chip color="error" label={`Em contestação: ${contestedCount}`} />}
             <Chip color="primary" label={`Total vendido: ${money(totalSold)}`} />
             {panel?.phoneVerifiedCount !== undefined && (
               <Chip color="success" variant="outlined" label={`Celular confirmado: ${panel.phoneVerifiedCount}`} />
@@ -305,18 +596,24 @@ const LivePanel: React.FC<{
               </TableRow>
             </TableHead>
             <TableBody>
-              {mesaRows.map(({ tab, toDeliver, delivered }) => (
+              {mesaRows.map(({ tab, toDeliver, delivered, contested }) => (
                 <React.Fragment key={tab.tabId}>
                   <TableRow sx={{ '& td': { borderBottom: 0 } }}>
-                    <TableCell rowSpan={2} sx={{ fontWeight: 700, verticalAlign: 'top', borderBottom: 1, borderColor: 'divider' }}>{tab.mesa}</TableCell>
-                    <TableCell rowSpan={2} sx={{ verticalAlign: 'top', borderBottom: 1, borderColor: 'divider' }}>{tab.customerName}</TableCell>
+                    <TableCell rowSpan={contested.length ? 3 : 2} sx={{ fontWeight: 700, verticalAlign: 'top', borderBottom: 1, borderColor: 'divider' }}>{tab.mesa}</TableCell>
+                    <TableCell rowSpan={contested.length ? 3 : 2} sx={{ verticalAlign: 'top', borderBottom: 1, borderColor: 'divider' }}>{tab.customerName}</TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap', color: 'warning.dark', fontWeight: 600 }}>A entregar</TableCell>
                     <TableCell>{toDeliver.length ? itemsText(toDeliver) : '—'}</TableCell>
                   </TableRow>
-                  <TableRow>
+                  <TableRow sx={contested.length ? { '& td': { borderBottom: 0 } } : undefined}>
                     <TableCell sx={{ whiteSpace: 'nowrap', color: 'success.dark', fontWeight: 600 }}>Entregues</TableCell>
                     <TableCell>{delivered.length ? itemsText(delivered) : '—'}</TableCell>
                   </TableRow>
+                  {contested.length > 0 && (
+                    <TableRow>
+                      <TableCell sx={{ whiteSpace: 'nowrap', color: 'error.main', fontWeight: 600 }}>Em contestação</TableCell>
+                      <TableCell sx={{ color: 'error.main' }}>{itemsText(contested)}</TableCell>
+                    </TableRow>
+                  )}
                 </React.Fragment>
               ))}
             </TableBody>
@@ -343,15 +640,22 @@ const LivePanel: React.FC<{
                 <TableCell>{t.mesa}</TableCell>
                 <TableCell>{t.customerName}</TableCell>
                 <TableCell>
-                  {t.status === 'Paid' ? `Paga (${payLabel(t.paymentMethod)})`
+                  {t.status === 'Paid' ? `Paga (${payLabel(t.paymentMethod)}${t.paidByName ? `, ${t.paidByName}` : ''})`
                     : t.status === 'CloseRequested' ? 'Pediu para encerrar' : 'Aberta'}
                 </TableCell>
                 <TableCell><PhoneBadge tab={t} /></TableCell>
-                <TableCell align="right">{money(t.total)}</TableCell>
+                <TableCell align="right">
+                  {money(t.total)}
+                  {t.status !== 'Paid' && t.amountDue !== t.total && (
+                    <Typography variant="caption" display="block" color="text.secondary">
+                      a cobrar {money(t.amountDue)}
+                    </Typography>
+                  )}
+                </TableCell>
                 <TableCell align="right">
                   {t.status !== 'Paid' && (
-                    <Button size="small" variant="contained" onClick={() => { setMethod('Pix'); setPayTarget(t); }}>
-                      Marcar paga
+                    <Button size="small" variant="contained" onClick={() => setCloseTarget(t)}>
+                      Fechar conta
                     </Button>
                   )}
                 </TableCell>
@@ -359,49 +663,51 @@ const LivePanel: React.FC<{
             ))}
             {tabs.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5}>Nenhuma comanda ainda.</TableCell>
+                <TableCell colSpan={6}>Nenhuma comanda ainda.</TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
 
-      <Dialog open={!!payTarget} onClose={() => setPayTarget(null)} fullWidth maxWidth="xs">
-        <DialogTitle>Marcar comanda como paga</DialogTitle>
-        <DialogContent>
-          <Typography sx={{ mb: 2 }}>
-            Mesa {payTarget?.mesa} - {payTarget?.customerName} - {money(payTarget?.total ?? 0)}
-          </Typography>
-          <FormControl fullWidth>
-            <InputLabel id="pay-method">Forma de pagamento</InputLabel>
-            <Select labelId="pay-method" label="Forma de pagamento" value={method}
-              onChange={(e) => setMethod(e.target.value as BingoPaymentMethod)}>
-              <MenuItem value="Card">Cartão</MenuItem>
-              <MenuItem value="Pix">Pix</MenuItem>
-              <MenuItem value="Cash">Dinheiro</MenuItem>
-            </Select>
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPayTarget(null)}>Cancelar</Button>
-          <Button variant="contained" disabled={busy} onClick={async () => {
-            const t = payTarget;
-            setPayTarget(null);
-            if (t) await run(() => bingoApi.payTab(t.tabId, method), 'Comanda marcada como paga.');
-          }}>
-            Confirmar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {closeTarget && (
+        <CashierDialog
+          tab={closeTarget}
+          notify={notify}
+          onClose={() => setCloseTarget(null)}
+          onChanged={() => { load(); onEventChanged(); }}
+        />
+      )}
     </Stack>
   );
 };
 
+/* ---------- Edição de preço em célula do grid ---------- */
+const CurrencyEditCell: React.FC<GridRenderEditCellParams> = ({ id, field, value }) => {
+  const apiRef = useGridApiContext();
+  return (
+    <CurrencyField
+      autoFocus
+      fullWidth
+      size="small"
+      variant="standard"
+      value={Number(value) || 0}
+      onValueChange={(v) => apiRef.current.setEditCellValue({ id, field, value: v })}
+      sx={{ px: 1 }}
+    />
+  );
+};
+
 /* ---------- Cardápio ---------- */
-const MenuTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void }> = ({ notify, confirm }) => {
+const MenuTab: React.FC<{
+  notify: Notify;
+  confirm: (s: ConfirmState) => void;
+  addOpen: boolean;
+  onAddClose: () => void;
+}> = ({ notify, confirm, addOpen, onAddClose }) => {
   const [items, setItems] = useState<BingoMenuItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newItem, setNewItem] = useState({ name: '', price: 0 });
+  const [form, setForm] = useState({ name: '', price: 0, isAvailable: true });
 
   const load = useCallback(async () => {
     try {
@@ -413,121 +719,222 @@ const MenuTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void }> 
     }
   }, [notify]);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (addOpen) setForm({ name: '', price: 0, isAvailable: true }); }, [addOpen]);
 
-  const patchLocal = (id: string, patch: Partial<BingoMenuItem>) =>
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
-
-  const save = async (item: BingoMenuItem) => {
-    try {
-      await bingoApi.updateMenuItem(item.id, {
-        name: item.name, unitPrice: item.unitPrice, isAvailable: item.isAvailable, sortOrder: item.sortOrder,
-      });
-      notify('Item salvo.', 'success');
-    } catch (e: any) {
-      notify(apiError(e, 'Não foi possível salvar o item.'), 'error');
-      load();
-    }
+  const processRowUpdate = async (row: BingoMenuItem, old: BingoMenuItem) => {
+    const next: BingoMenuItem = { ...row, name: String(row.name ?? '').trim(), unitPrice: Number(row.unitPrice), sortOrder: Number(row.sortOrder) };
+    if (next.name === old.name && next.unitPrice === old.unitPrice && next.sortOrder === old.sortOrder) return old;
+    if (!next.name) throw new Error('Informe o nome do item.');
+    if (!Number.isFinite(next.unitPrice) || next.unitPrice <= 0) throw new Error('Informe um preço válido.');
+    if (!Number.isInteger(next.sortOrder)) throw new Error('A ordem deve ser um número inteiro.');
+    await bingoApi.updateMenuItem(next.id, {
+      name: next.name, unitPrice: next.unitPrice, isAvailable: next.isAvailable, sortOrder: next.sortOrder,
+    });
+    notify('Item salvo.', 'success');
+    setItems((prev) => prev.map((i) => (i.id === next.id ? next : i)));
+    return next;
   };
 
   const toggle = async (item: BingoMenuItem, value: boolean) => {
-    patchLocal(item.id, { isAvailable: value });
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, isAvailable: value } : i)));
     try {
       await bingoApi.setAvailability(item.id, value);
     } catch (e: any) {
-      patchLocal(item.id, { isAvailable: !value });
+      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, isAvailable: !value } : i)));
       notify(apiError(e, 'Não foi possível alterar a disponibilidade.'), 'error');
     }
   };
 
   const add = async () => {
-    const price = newItem.price;
-    if (!newItem.name.trim() || !Number.isFinite(price) || price <= 0) {
+    if (!form.name.trim() || !Number.isFinite(form.price) || form.price <= 0) {
       notify('Informe nome e preço válidos.', 'error');
       return;
     }
     try {
       const nextOrder = items.reduce((m, i) => Math.max(m, i.sortOrder), 0) + 1;
-      await bingoApi.createMenuItem({ name: newItem.name.trim(), unitPrice: price, isAvailable: true, sortOrder: nextOrder });
-      setNewItem({ name: '', price: 0 });
+      await bingoApi.createMenuItem({
+        name: form.name.trim(), unitPrice: form.price, isAvailable: form.isAvailable, sortOrder: nextOrder,
+      });
       notify('Item adicionado.', 'success');
+      onAddClose();
       load();
     } catch (e: any) {
       notify(apiError(e, 'Não foi possível adicionar o item.'), 'error');
     }
   };
 
+  const columns: GridColDef<BingoMenuItem>[] = [
+    { field: 'sortOrder', headerName: 'Ordem', type: 'number', width: 90, editable: true, align: 'center', headerAlign: 'center' },
+    { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180, editable: true },
+    {
+      field: 'unitPrice', headerName: 'Preço', type: 'number', width: 150, editable: true,
+      valueFormatter: (v: number) => money(v),
+      renderEditCell: (params) => <CurrencyEditCell {...params} />,
+    },
+    {
+      field: 'isAvailable', headerName: 'Disponível', width: 130, sortable: false,
+      renderCell: (params) => (
+        <Switch checked={params.row.isAvailable} onChange={(e) => toggle(params.row, e.target.checked)}
+          inputProps={{ 'aria-label': 'Disponível' }} />
+      ),
+    },
+    {
+      field: 'actions', headerName: 'Ações', width: 90, sortable: false, filterable: false, align: 'center', headerAlign: 'center',
+      renderCell: (params) => (
+        <Tooltip title="Excluir item">
+          <IconButton color="error" size="small" aria-label="Excluir item" onClick={() => confirm({
+            title: 'Excluir item',
+            text: `Excluir "${params.row.name}" do cardápio?`,
+            confirmLabel: 'Excluir',
+            onConfirm: async () => {
+              try {
+                await bingoApi.deleteMenuItem(params.row.id);
+                notify('Item removido.', 'success');
+                await load();
+              } catch (e: any) {
+                notify(apiError(e, 'Não foi possível remover o item.'), 'error');
+              }
+            },
+          })}>
+            <DeleteIcon />
+          </IconButton>
+        </Tooltip>
+      ),
+    },
+  ];
+
   if (loading) return <CircularProgress />;
   return (
-    <Stack spacing={2}>
-      <TableContainer component={Paper}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell width={80}>Ordem</TableCell>
-              <TableCell>Nome</TableCell>
-              <TableCell width={150}>Preço</TableCell>
-              <TableCell>Disponibilidade</TableCell>
-              <TableCell />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {items.map((i) => (
-              <TableRow key={i.id}>
-                <TableCell>
-                  <TextField size="small" type="number" value={i.sortOrder}
-                    onChange={(e) => patchLocal(i.id, { sortOrder: Number(e.target.value) })}
-                    onBlur={() => save(i)} />
-                </TableCell>
-                <TableCell>
-                  <TextField size="small" fullWidth value={i.name}
-                    onChange={(e) => patchLocal(i.id, { name: e.target.value })} onBlur={() => save(i)} />
-                </TableCell>
-                <TableCell>
-                  <CurrencyField size="small" value={i.unitPrice}
-                    onValueChange={(v) => patchLocal(i.id, { unitPrice: v })} onBlur={() => save(i)} />
-                </TableCell>
-                <TableCell>
-                  <Stack direction="row" alignItems="center">
-                    <Switch checked={i.isAvailable} onChange={(e) => toggle(i, e.target.checked)} />
-                    <Typography variant="body2" color={i.isAvailable ? 'success.main' : 'error.main'}>
-                      {i.isAvailable ? 'Disponível' : 'Esgotado'}
-                    </Typography>
-                  </Stack>
-                </TableCell>
-                <TableCell align="right">
-                  <Tooltip title="Remover item">
-                    <IconButton color="error" onClick={() => confirm({
-                      title: 'Remover item',
-                      text: `Remover "${i.name}" do cardápio?`,
-                      confirmLabel: 'Remover',
-                      onConfirm: async () => {
-                        try {
-                          await bingoApi.deleteMenuItem(i.id);
-                          notify('Item removido.', 'success');
-                          await load();
-                        } catch (e: any) {
-                          notify(apiError(e, 'Não foi possível remover o item.'), 'error');
-                        }
-                      },
-                    })}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <Paper sx={{ p: 2 }}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <TextField label="Novo item" value={newItem.name} fullWidth
-            onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} />
-          <CurrencyField label="Preço" value={newItem.price} sx={{ minWidth: 140 }}
-            onValueChange={(v) => setNewItem({ ...newItem, price: v })} />
-          <Button variant="contained" startIcon={<AddIcon />} onClick={add}>Adicionar</Button>
-        </Stack>
+    <Stack spacing={1}>
+      <Typography variant="body2" color="text.secondary">Dê dois cliques em uma célula para editar; Enter salva.</Typography>
+      <Paper>
+        <DataGrid
+          rows={items}
+          columns={columns}
+          autoHeight
+          disableRowSelectionOnClick
+          hideFooter
+          processRowUpdate={processRowUpdate}
+          onProcessRowUpdateError={(e) => notify(e?.message || 'Não foi possível salvar o item.', 'error')}
+          localeText={{ noRowsLabel: 'Nenhum item no cardápio.' }}
+        />
       </Paper>
+      <Dialog open={addOpen} onClose={onAddClose} fullWidth maxWidth="xs">
+        <DialogTitle>Adicionar item</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField autoFocus label="Nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <CurrencyField label="Preço" value={form.price} onValueChange={(v) => setForm({ ...form, price: v })} />
+            <FormControlLabel
+              control={<Switch checked={form.isAvailable} onChange={(e) => setForm({ ...form, isAvailable: e.target.checked })} />}
+              label="Disponível"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onAddClose}>Cancelar</Button>
+          <Button variant="contained" onClick={add}>Adicionar</Button>
+        </DialogActions>
+      </Dialog>
+    </Stack>
+  );
+};
+
+/* ---------- Formas de pagamento ---------- */
+const PaymentMethodsTab: React.FC<{ notify: Notify; addOpen: boolean; onAddClose: () => void }> = ({ notify, addOpen, onAddClose }) => {
+  const [methods, setMethods] = useState<BingoPayMethod[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [name, setName] = useState('');
+
+  const load = useCallback(async () => {
+    try {
+      setMethods(await bingoApi.getPaymentMethods());
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível carregar as formas de pagamento.'), 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [notify]);
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (addOpen) setName(''); }, [addOpen]);
+
+  const input = (m: BingoPayMethod) => ({ name: m.name, isActive: m.isActive, sortOrder: m.sortOrder });
+
+  const processRowUpdate = async (row: BingoPayMethod, old: BingoPayMethod) => {
+    const next: BingoPayMethod = { ...row, name: String(row.name ?? '').trim(), sortOrder: Number(row.sortOrder) };
+    if (next.name === old.name && next.sortOrder === old.sortOrder) return old;
+    if (!next.name) throw new Error('Informe o nome da forma de pagamento.');
+    if (!Number.isInteger(next.sortOrder)) throw new Error('A ordem deve ser um número inteiro.');
+    await bingoApi.updatePaymentMethod(next.id, input(next));
+    notify('Forma de pagamento salva.', 'success');
+    setMethods((prev) => prev.map((m) => (m.id === next.id ? next : m)));
+    return next;
+  };
+
+  const toggle = async (m: BingoPayMethod, value: boolean) => {
+    setMethods((prev) => prev.map((x) => (x.id === m.id ? { ...x, isActive: value } : x)));
+    try {
+      await bingoApi.updatePaymentMethod(m.id, { ...input(m), isActive: value });
+    } catch (e: any) {
+      setMethods((prev) => prev.map((x) => (x.id === m.id ? { ...x, isActive: !value } : x)));
+      notify(apiError(e, 'Não foi possível alterar a forma de pagamento.'), 'error');
+    }
+  };
+
+  const add = async () => {
+    if (!name.trim()) {
+      notify('Informe o nome da forma de pagamento.', 'error');
+      return;
+    }
+    try {
+      const nextOrder = methods.reduce((m, i) => Math.max(m, i.sortOrder), 0) + 1;
+      await bingoApi.createPaymentMethod({ name: name.trim(), isActive: true, sortOrder: nextOrder });
+      notify('Forma de pagamento adicionada.', 'success');
+      onAddClose();
+      load();
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível adicionar a forma de pagamento.'), 'error');
+    }
+  };
+
+  const columns: GridColDef<BingoPayMethod>[] = [
+    { field: 'sortOrder', headerName: 'Ordem', type: 'number', width: 90, editable: true, align: 'center', headerAlign: 'center' },
+    { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180, editable: true },
+    {
+      field: 'isActive', headerName: 'Ativa', width: 120, sortable: false,
+      renderCell: (params) => (
+        <Switch checked={params.row.isActive} onChange={(e) => toggle(params.row, e.target.checked)}
+          inputProps={{ 'aria-label': 'Ativa' }} />
+      ),
+    },
+  ];
+
+  if (loading) return <CircularProgress />;
+  return (
+    <Stack spacing={1}>
+      <Alert severity="info">As formas ativas aparecem para o garçom escolher ao cobrar.</Alert>
+      <Paper>
+        <DataGrid
+          rows={methods}
+          columns={columns}
+          autoHeight
+          disableRowSelectionOnClick
+          hideFooter
+          processRowUpdate={processRowUpdate}
+          onProcessRowUpdateError={(e) => notify(e?.message || 'Não foi possível salvar.', 'error')}
+          localeText={{ noRowsLabel: 'Nenhuma forma de pagamento.' }}
+        />
+      </Paper>
+      <Dialog open={addOpen} onClose={onAddClose} fullWidth maxWidth="xs">
+        <DialogTitle>Adicionar forma de pagamento</DialogTitle>
+        <DialogContent>
+          <TextField autoFocus fullWidth label="Nome" value={name} sx={{ mt: 1 }} onChange={(e) => setName(e.target.value)} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onAddClose}>Cancelar</Button>
+          <Button variant="contained" onClick={add}>Adicionar</Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 };
@@ -776,6 +1183,11 @@ const WaitersTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void 
 /* ---------- Resumo (conteúdo reutilizado no histórico) ---------- */
 const SummaryView: React.FC<{ summary: BingoSummary }> = ({ summary }) => (
   <Stack spacing={2}>
+    {summary.contestedOpen > 0 && (
+      <Alert severity="warning">
+        Há {summary.contestedOpen} {summary.contestedOpen === 1 ? 'item em contestação' : 'itens em contestação'} sem resolução.
+      </Alert>
+    )}
     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
       <Card sx={{ flex: 1 }}><CardContent>
         <Typography color="text.secondary">Total vendido (pago)</Typography>
@@ -785,16 +1197,30 @@ const SummaryView: React.FC<{ summary: BingoSummary }> = ({ summary }) => (
         <Typography color="text.secondary">Em aberto</Typography>
         <Typography variant="h4">{money(summary.totalOpen)}</Typography>
       </CardContent></Card>
+      <Card sx={{ flex: 1 }}><CardContent>
+        <Typography color="text.secondary">Cancelados</Typography>
+        <Typography variant="h4">{money(summary.cancelledTotal)}</Typography>
+      </CardContent></Card>
+      <Card sx={{ flex: 1 }}><CardContent>
+        <Typography color="text.secondary">Em contestação</Typography>
+        <Typography variant="h4" color={summary.contestedOpen > 0 ? 'error.main' : undefined}>{summary.contestedOpen}</Typography>
+      </CardContent></Card>
     </Stack>
     <Typography variant="h6">Por forma de pagamento</Typography>
     <TableContainer component={Paper}>
       <Table size="small">
-        <TableHead><TableRow><TableCell>Forma</TableCell><TableCell align="right">Total</TableCell></TableRow></TableHead>
+        <TableHead>
+          <TableRow><TableCell>Forma</TableCell><TableCell align="right">Contas</TableCell><TableCell align="right">Total</TableCell></TableRow>
+        </TableHead>
         <TableBody>
           {summary.byPayment.map((l) => (
-            <TableRow key={l.label}><TableCell>{payLabel(l.label)}</TableCell><TableCell align="right">{money(l.total)}</TableCell></TableRow>
+            <TableRow key={l.label}>
+              <TableCell>{payLabel(l.label)}</TableCell>
+              <TableCell align="right">{l.count ?? '-'}</TableCell>
+              <TableCell align="right">{money(l.total)}</TableCell>
+            </TableRow>
           ))}
-          {summary.byPayment.length === 0 && <TableRow><TableCell colSpan={2}>Sem pagamentos.</TableCell></TableRow>}
+          {summary.byPayment.length === 0 && <TableRow><TableCell colSpan={3}>Sem pagamentos.</TableCell></TableRow>}
         </TableBody>
       </Table>
     </TableContainer>
@@ -811,6 +1237,30 @@ const SummaryView: React.FC<{ summary: BingoSummary }> = ({ summary }) => (
             </TableRow>
           ))}
           {summary.byItem.length === 0 && <TableRow><TableCell colSpan={3}>Sem itens.</TableCell></TableRow>}
+        </TableBody>
+      </Table>
+    </TableContainer>
+    <Typography variant="h6">Conferência de caixa por garçom</Typography>
+    <TableContainer component={Paper}>
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>Garçom</TableCell>
+            <TableCell align="right">Contas</TableCell>
+            <TableCell align="right">Total</TableCell>
+            <TableCell>Por forma de pagamento</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {summary.byWaiter.map((w) => (
+            <TableRow key={w.name}>
+              <TableCell>{w.name}</TableCell>
+              <TableCell align="right">{w.count}</TableCell>
+              <TableCell align="right">{money(w.total)}</TableCell>
+              <TableCell>{w.byMethod.map((m) => `${payLabel(m.method)}: ${money(m.total)}`).join(' · ') || '-'}</TableCell>
+            </TableRow>
+          ))}
+          {summary.byWaiter.length === 0 && <TableRow><TableCell colSpan={4}>Sem recebimentos.</TableCell></TableRow>}
         </TableBody>
       </Table>
     </TableContainer>
@@ -1152,7 +1602,9 @@ const EventsTab: React.FC<{
                           <TableCell>{t.mesa}</TableCell>
                           <TableCell>{t.customerName}</TableCell>
                           <TableCell>{t.items.map((i) => `${i.quantity}x ${i.name}`).join(', ')}</TableCell>
-                          <TableCell>{t.status === 'Paid' ? `Paga (${payLabel(t.paymentMethod)})` : 'Não paga'}</TableCell>
+                          <TableCell>{t.status === 'Paid'
+                            ? `Paga (${payLabel(t.paymentMethod)}${t.paidByName ? `, por ${t.paidByName}` : ''})`
+                            : 'Não paga'}</TableCell>
                           <TableCell>
                             <PhoneBadge tab={t} />
                             {t.reminderDeliveryStatus && (
@@ -1162,7 +1614,9 @@ const EventsTab: React.FC<{
                               <Typography variant="caption" display="block">Lembrete enviado</Typography>
                             )}
                           </TableCell>
-                          <TableCell align="right">{money(t.total)}</TableCell>
+                          <TableCell align="right">
+                            {money(t.status === 'Paid' ? t.total : t.amountDue)}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -1181,6 +1635,8 @@ const EventsTab: React.FC<{
 /* ---------- Página ---------- */
 const BingoPage: React.FC = () => {
   const [tab, setTab] = useState(0);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [addPayOpen, setAddPayOpen] = useState(false);
   const [events, setEvents] = useState<BingoEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [snack, setSnack] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -1231,14 +1687,24 @@ const BingoPage: React.FC = () => {
         )}
       </Stack>
 
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 2 }}>
-        <Tab label="Eventos" />
-        <Tab label="Painel ao vivo" />
-        <Tab label="Cardápio" />
-        <Tab label="Mesas" />
-        <Tab label="Garçons" />
-        <Tab label="Resumo" />
-      </Tabs>
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ minWidth: 0, flex: '0 1 auto' }}>
+          <Tab label="Eventos" />
+          <Tab label="Painel ao vivo" />
+          <Tab label="Cardápio" />
+          <Tab label="Mesas" />
+          <Tab label="Garçons" />
+          <Tab label="Formas de pagamento" />
+          <Tab label="Resumo" />
+        </Tabs>
+        <Box sx={{ flex: 1 }} />
+        {tab === 2 && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddMenuOpen(true)}>Adicionar item</Button>
+        )}
+        {tab === 5 && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddPayOpen(true)}>Adicionar forma</Button>
+        )}
+      </Stack>
 
       {eventsLoading ? (
         <CircularProgress />
@@ -1248,10 +1714,15 @@ const BingoPage: React.FC = () => {
         <>
           {tab === 0 && <EventsTab events={events} notify={notify} confirm={setConfirmState} onChanged={loadEvents} />}
           {tab === 1 && <LivePanel event={current} notify={notify} confirm={setConfirmState} onEventChanged={loadEvents} />}
-          {tab === 2 && <MenuTab notify={notify} confirm={setConfirmState} />}
+          {tab === 2 && (
+            <MenuTab notify={notify} confirm={setConfirmState} addOpen={addMenuOpen} onAddClose={() => setAddMenuOpen(false)} />
+          )}
           {tab === 3 && <TablesTab notify={notify} />}
           {tab === 4 && <WaitersTab notify={notify} confirm={setConfirmState} />}
           {tab === 5 && (
+            <PaymentMethodsTab notify={notify} addOpen={addPayOpen} onAddClose={() => setAddPayOpen(false)} />
+          )}
+          {tab === 6 && (
             <SummaryTab events={events} current={current} notify={notify} confirm={setConfirmState} onEventChanged={loadEvents} />
           )}
         </>

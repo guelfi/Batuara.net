@@ -2,7 +2,7 @@
 
 export type BingoPaymentMethod = 'Card' | 'Pix' | 'Cash';
 export type BingoTabStatus = 'Open' | 'CloseRequested' | 'Paid';
-export type BingoItemStatus = 'Pending' | 'Retrieved' | 'Delivered';
+export type BingoItemStatus = 'Pending' | 'Retrieved' | 'Delivered' | 'Contested' | 'Cancelled';
 
 export type BingoEventStatus = 'Draft' | 'Open' | 'Closed';
 
@@ -38,6 +38,34 @@ export interface BingoOrderItem {
   quantity: number;
   status: BingoItemStatus;
   createdAt?: string;
+  menuItemId?: string | null;
+  deliveredAt?: string | null;
+  deliveredByName?: string | null;
+  contestedAt?: string | null;
+  contestNote?: string | null;
+  cancelledAt?: string | null;
+  cancelledByName?: string | null;
+  cancelReason?: string | null;
+}
+
+export interface BingoPayMethod {
+  id: number;
+  name: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface BingoPayMethodInput {
+  name: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface BingoPendingTab {
+  tabId: string;
+  customerName: string;
+  undeliveredCount: number;
+  contestedCount: number;
 }
 
 export interface BingoTab {
@@ -46,7 +74,12 @@ export interface BingoTab {
   customerName: string;
   status: BingoTabStatus;
   total: number;
-  paymentMethod?: BingoPaymentMethod | null;
+  amountDue: number;
+  undeliveredCount: number;
+  contestedCount: number;
+  paymentMethod?: string | null;
+  paidByName?: string | null;
+  paidAt?: string | null;
   items: BingoOrderItem[];
   phoneVerified?: boolean;
   codeDeliveryStatus?: 'Sent' | 'Delivered' | 'Read' | 'Failed' | null;
@@ -82,6 +115,8 @@ export interface BingoPanel {
   closeAllRequested?: boolean;
   totalSold?: number;
   retrievedItems?: number;
+  contestedItems?: number;
+  cancelledItems?: number;
   tabs: BingoTab[];
 }
 
@@ -95,6 +130,7 @@ export interface BingoWaiter {
 export interface BingoSummaryLine {
   label: string;
   quantity?: number;
+  count?: number;
   total: number;
 }
 
@@ -103,6 +139,16 @@ export interface BingoSummary {
   totalOpen: number;
   byPayment: BingoSummaryLine[];
   byItem: BingoSummaryLine[];
+  cancelledTotal: number;
+  contestedOpen: number;
+  byWaiter: BingoWaiterSummary[];
+}
+
+export interface BingoWaiterSummary {
+  name: string;
+  count: number;
+  total: number;
+  byMethod: { method: string; total: number }[];
 }
 
 // ---- Garçom (sessão normal de filho da Casa) ----
