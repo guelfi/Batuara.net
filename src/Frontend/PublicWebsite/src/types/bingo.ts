@@ -27,7 +27,7 @@ export interface CreateBingoTabResponse {
 }
 
 export type BingoTabStatus = 'Open' | 'CloseRequested' | 'Paid';
-export type BingoItemStatus = 'Pending' | 'Retrieved' | 'Delivered';
+export type BingoItemStatus = 'Pending' | 'Retrieved' | 'Delivered' | 'Contested' | 'Cancelled';
 export type BingoPaymentMethod = 'Card' | 'Pix' | 'Cash';
 
 export interface BingoTabItem {
@@ -35,6 +35,20 @@ export interface BingoTabItem {
   menuItemId: string;
   name: string;
   unitPrice: number;
+  quantity: number;
+  status: BingoItemStatus;
+  deliveredAt?: string | null;
+  deliveredByName?: string | null;
+  contestedAt?: string | null;
+  contestNote?: string | null;
+  cancelledAt?: string | null;
+  cancelledByName?: string | null;
+  cancelReason?: string | null;
+}
+
+export interface BingoUndeliveredItem {
+  id: string;
+  name: string;
   quantity: number;
   status: BingoItemStatus;
 }
@@ -45,6 +59,9 @@ export interface BingoTabView {
   mesa: number;
   status: BingoTabStatus;
   total: number;
+  amountDue?: number;
+  undeliveredCount?: number;
+  contestedCount?: number;
   closeAllRequested: boolean;
   isOpen: boolean;
   phoneVerified?: boolean;
