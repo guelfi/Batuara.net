@@ -73,6 +73,21 @@ namespace Batuara.Infrastructure.Tests.Webhooks
         }
 
         [Fact]
+        public async Task ReplicaEmThreadLida_MarcaComoNaoLida()
+        {
+            using var db = CreateContext();
+            var controller = CreateController(db);
+            await controller.ProcessInboundMessageAsync(Message("wamid.1", "5511999998888", "Oi"), "Maria");
+            var thread = await db.ContactMessages.SingleAsync();
+            thread.MarkAsRead();
+            await db.SaveChangesAsync();
+
+            await controller.ProcessInboundMessageAsync(Message("wamid.2", "5511999998888", "Ainda aí?"), "Maria");
+
+            (await db.ContactMessages.SingleAsync()).IsRead.Should().BeFalse();
+        }
+
+        [Fact]
         public async Task TextoVazioOuMidia_EhIgnorado()
         {
             using var db = CreateContext();

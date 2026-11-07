@@ -18,10 +18,52 @@ namespace Batuara.Infrastructure.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("batuara")
-                .HasAnnotation("ProductVersion", "9.0.14")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Batuara.Domain.Entities.AdminDigestState", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("LastSentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("LastSentCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("AdminDigestStates", "batuara");
+                });
 
             modelBuilder.Entity("Batuara.Domain.Entities.CalendarAttendance", b =>
                 {
@@ -1240,14 +1282,6 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Batuara.Domain.Entities.User", b =>
-                {
-                    b.HasOne("Batuara.Domain.Entities.HouseMember", null)
-                        .WithMany()
-                        .HasForeignKey("HouseMemberId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
             modelBuilder.Entity("Batuara.Domain.Entities.SiteSettings", b =>
                 {
                     b.OwnsOne("Batuara.Domain.ValueObjects.ContactInfo", "ContactInfo", b1 =>
@@ -1289,6 +1323,14 @@ namespace Batuara.Infrastructure.Data.Migrations
 
                     b.Navigation("ContactInfo")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Batuara.Domain.Entities.User", b =>
+                {
+                    b.HasOne("Batuara.Domain.Entities.HouseMember", null)
+                        .WithMany()
+                        .HasForeignKey("HouseMemberId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Batuara.Domain.Entities.WhatsAppMessage", b =>
