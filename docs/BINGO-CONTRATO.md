@@ -1,0 +1,58 @@
+# Bingo (comandas pelo celular) — contrato de API e escopo
+
+Evento: sábado 07/11/2026, 16h–0h (pode passar da meia-noite). Código final publicado até 13h; correções críticas até as 15h; depois do início nada é publicado. Plano B: comanda de papel (`docs/comanda.jpeg`).
+
+## Regras de negócio
+
+- **QR único.** Um só QR para todos: `https://www.batuara.org.br/bingo`. Ele serve apenas para o cliente chegar ao site sem digitar o endereço; não guarda comanda, mesa nem cliente. Também aceita `?mesa=7` (garçom mostra o QR já com a mesa preenchida).
+- **Cliente informa nome, celular e mesa** (todos obrigatórios; celular validado como celular brasileiro com `PhoneNumberNormalizer`). Cria uma comanda (`BingoTab`, id Guid). **Uma comanda aberta por celular**: voltar com o mesmo celular reabre a mesma comanda. O celular lembra o `tabId` (localStorage). Link da comanda: `/bingo/comanda/{tabId}`.
+- **WhatsApp fora do caminho crítico.** Depois de criar a comanda, o servidor tenta enviar o link por `IWhatsAppService.SendMemberNoticeAsync` (template aprovado `casa_aviso_filho`; {{2}} sem quebra de linha, ex.: "Sua comanda do bingo está aberta. Acesse: {url}"). Em segundo plano; falha só é logada e nunca bloqueia a resposta. Botão "Reenviar link" na tela do cliente. Limite: 1 envio por número a cada 3 minutos e limite por IP. Em produção não há allowlist de destinatários.
+- **Privacidade (LGPD):** aviso na tela do cliente ("usamos nome e celular apenas para a comanda do bingo; apagados em 30 dias"); acrescentar parágrafo na página `/politica-de-privacidade` do PublicWebsite.
+- **Cardápio** com preço e `IsAvailable` (esgotado não pode ser pedido). Preço copiado para o item do pedido (snapshot). Seed com os 16 itens de `docs/comanda.jpeg`: Água 5; Cachorro-quente 10; Cartela avulsa 7; Cartelas para todas rodadas - qtd. 10: 50; Cerveja Heineken 7; Cervejas diversas 5; Churrasco de carne 12; Churrasco de frango 10; Churrasco de linguiça 10; Fatia de bolo 5; Fatia de cuscuz paulista 5; Mousse de chocolate 5; Porção de batata frita 15; Porção de calabresa acebolada 15; Refrigerante 8; Salada 7. Douglas ajusta pelo Admin.
+- **Mesas:** lista editável a qualquer hora pelo Admin; seed 1..30; cliente escolhe numa lista. Garçom pode **corrigir a mesa** de uma comanda.
+- **Pedido vai direto aos garçons.** Item: `Pending` → `Delivered` (garçom dá baixa; guarda quem e quando).
+- **Encerrar conta:** cliente toca "Encerrar a conta" → `CloseRequested`. Garçom cobra na maquininha e marca paga (`Card`, `Pix`, `Cash`) → `Paid`; **pode pagar várias comandas da mesma mesa de uma vez**. Douglas também marca paga.
+- **Fechamento geral** (Douglas): `CloseAllRequested`; clientes veem aviso "Por favor, encerre sua conta"; garçons veem todas as contas não pagas (nome, mesa, total).
+- **Garçons** = filhos (HouseMember ativo com celular) escalados pelo Douglas. Login: `POST /api/member-auth/request-code` (existente, template `casa_login_code`) + `POST /api/bingo/garcom/verify-code` (novo, token de **10 h**). Todo request de garçom valida no servidor: filho escalado e ativo + evento aberto. "Encerrar sessões dos garçons" desativa a escala (próximo request = 401); remover um garçom idem.
+- **Evento** (`BingoSettings`, 1 linha): `IsOpen` (pedidos e acessos), `CloseAllRequested`. "Encerrar evento" trava novos pedidos. **"Zerar dados do evento"** (Admin, com confirmação) apaga comandas e itens (mantém cardápio, mesas e escala) — usado após os testes.
+- Polling (3–5 s) nas telas; sem SignalR. Páginas do bingo com `noindex`. Retenção: job/limpeza não é necessário agora; o botão de zerar basta.
+
+## Modelo (schema `batuara`; uma migration + `apply_migration` em `scripts/ci/deploy-rolling.sh`, SQL idempotente, antes da guarda de drift)
+
+`BingoSettings`(IsOpen, CloseAllRequested) · `BingoMenuItems`(Name, UnitPrice, IsAvailable, SortOrder) · `BingoTables`(Number único) · `BingoWaiters`(HouseMemberId único, IsActive, LastSeenAt) · `BingoTabs`(Guid Id, TableNumber, CustomerName, Phone normalizado, Status Open/CloseRequested/Paid, PaymentMethod?, PaidAt?, PaidByHouseMemberId?, LinkSentAt?, LinkLastAttemptAt?) · `BingoOrderItems`(TabId, MenuItemId, ItemName, UnitPrice, Quantity, Status Pending/Delivered, DeliveredByHouseMemberId?, DeliveredAt?, CreatedAt). Seed (menu, mesas 1..30, settings com `IsOpen=false`) dentro da migration e do SQL do deploy. Entidades herdam `BaseEntity` quando fizer sentido, como o restante.
+
+## Endpoints
+
+Respostas `{ success, data | errors }` como o restante da API. Datas em UTC. `{tabId}` é Guid.
+
+### Público (anônimo, com rate limit)
+- `GET  /api/bingo/public/info` → `{ isOpen, closeAllRequested, mesas:[numero], menu:[{id,name,unitPrice,isAvailable}] }`
+- `POST /api/bingo/public/comandas` `{ customerName, phone, mesa }` → `{ tabId, reused }` (reabre a aberta do mesmo celular; recusa se evento fechado; dispara envio do link em segundo plano)
+- `GET  /api/bingo/public/comandas/{tabId}` → `{ id, customerName, mesa, status, total, closeAllRequested, isOpen, menu:[...], items:[{id,name,unitPrice,quantity,status}] }`
+- `POST /api/bingo/public/comandas/{tabId}/itens` `{ items:[{menuItemId, quantity}] }` (recusa item esgotado, quantidade 1–20, comanda `Paid`, evento fechado)
+- `POST /api/bingo/public/comandas/{tabId}/encerrar`
+- `POST /api/bingo/public/comandas/{tabId}/reenviar-link` (respeita o limite; 429 quando excedido)
+
+### Garçom (`Authorize` Member + escalado + evento aberto, exceto verify-code)
+- `POST /api/bingo/garcom/verify-code` `{ phone, code }` → `{ token, expiresAt, name }` (403 se não escalado)
+- `GET  /api/bingo/garcom/pedidos` → `[{ mesa, tabId, customerName, items:[{id,name,quantity,createdAt}] }]` só itens `Pending`, mais antigos primeiro
+- `POST /api/bingo/garcom/itens/{itemId}/entregar`
+- `POST /api/bingo/garcom/comandas/{tabId}/mesa` `{ mesa }`
+- `GET  /api/bingo/garcom/contas` → comandas `CloseRequested` (e todas as não pagas se `CloseAllRequested`): `[{ tabId, mesa, customerName, total, status }]`
+- `POST /api/bingo/garcom/comandas/pagar` `{ tabIds:[guid], method }`
+
+### Admin (`Authorize(Roles="Admin")`)
+- `GET/PUT /api/bingo/admin/settings` (`isOpen`, `closeAllRequested`)
+- `GET/POST/PUT/DELETE /api/bingo/admin/menu`; `PATCH /api/bingo/admin/menu/{id}/disponibilidade` `{ isAvailable }`
+- `GET /api/bingo/admin/mesas`; `PUT /api/bingo/admin/mesas` `{ quantidade }` (ajusta lista 1..N, recusa remover mesa com comanda aberta)
+- `GET /api/bingo/admin/garcons` (escalados + `lastSeenAt` + qtd entregas + nome); `POST /api/bingo/admin/garcons` `{ houseMemberId }`; `DELETE /api/bingo/admin/garcons/{houseMemberId}`; `POST /api/bingo/admin/garcons/encerrar-sessoes`
+- `GET /api/bingo/admin/painel` → comandas com itens, pendências por mesa, contas `CloseRequested`/abertas, contagens
+- `GET /api/bingo/admin/resumo` → total vendido (Paid), total em aberto, por forma de pagamento, por item (qtd e valor)
+- `POST /api/bingo/admin/comandas/{tabId}/pagar` `{ method }`
+- `POST /api/bingo/admin/zerar-evento` `{ confirmar: true }`
+
+## Telas
+
+- **Cliente** (PublicWebsite, `/bingo` e `/bingo/comanda/:tabId`; aceita `?mesa=`): formulário nome/celular/mesa com aviso LGPD → cardápio (esgotado em cinza) → carrinho → "meus pedidos" e total → "Encerrar a conta" → "Reenviar link"; banner de fechamento geral e de evento fechado. Mobile first, botões grandes, polling 4 s, `noindex`. O PublicWebsite hoje não usa router (a política de privacidade é detectada por `window.location.pathname` em `App.tsx`): seguir o mesmo padrão; garantir que o nginx de produção sirva o index do PublicWebsite para `/bingo*` (conferir `nginx/` e os Dockerfiles).
+- **Garçom** (PublicWebsite, `/bingo/garcom`): login por celular + código; fila de pedidos por mesa/nome com "Entregue"; aba "Contas" (selecionar várias comandas da mesma mesa e marcar paga com forma de pagamento); corrigir mesa; botão **"Mostrar QR para o cliente"** (tela cheia, QR de `https://www.batuara.org.br/bingo?mesa=N`, endereço escrito embaixo, escolher mesa antes). Polling 4 s. Token guardado em localStorage; ao receber 401, volta ao login.
+- **Admin** (AdminDashboard, item de menu "Bingo", `adminOnly`, rota `/bingo`): abas **Painel ao vivo** (pedidos, contas, "Pedir fechamento geral", abrir/encerrar evento, total vendido), **Cardápio** (preço + interruptor disponível), **Mesas** (quantidade; folha imprimível do QR único e botão "Projetar QR" em tela cheia), **Garçons** (escalar filhos, status conectado/não entrou, entregas, remover, encerrar sessões) e **Resumo** (com "Zerar dados do evento").
