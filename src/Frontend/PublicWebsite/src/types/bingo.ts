@@ -55,31 +55,3 @@ export interface BingoOrderLine {
   menuItemId: string;
   quantity: number;
 }
-
-export interface WaiterLoginResponse {
-  token: string;
-  expiresAt: string;
-  name: string;
-}
-
-export interface WaiterOrderItem {
-  id: string;
-  name: string;
-  quantity: number;
-  createdAt: string;
-}
-
-export interface WaiterOrderGroup {
-  mesa: number;
-  tabId: string;
-  customerName: string;
-  items: WaiterOrderItem[];
-}
-
-export interface WaiterAccount {
-  tabId: string;
-  mesa: number;
-  customerName: string;
-  total: number;
-  status: BingoTabStatus;
-}

@@ -9,6 +9,9 @@ import {
   BingoSummaryLine,
   BingoTab,
   BingoWaiter,
+  WaiterAccount,
+  WaiterOrderGroup,
+  WaiterStatus,
 } from '../types/bingo';
 
 /**
@@ -187,6 +190,36 @@ export const bingoApi = {
   addWaiter: (houseMemberId: string | number) => apiService.post<any>(`${BASE}/garcons`, { houseMemberId }),
   removeWaiter: (houseMemberId: string | number) => apiService.delete<any>(`${BASE}/garcons/${houseMemberId}`),
   endWaiterSessions: () => apiService.post<any>(`${BASE}/garcons/encerrar-sessoes`),
+
+  // ---- Garçom (autenticado pelo cookie da sessão do filho) ----
+  async getWaiterStatus(): Promise<WaiterStatus> {
+    const r = await apiService.get<WaiterStatus>('/bingo/garcom/me');
+    const d: any = r.data ?? {};
+    return { isWaiter: !!d.isWaiter, eventOpen: !!d.eventOpen, eventName: d.eventName ?? null };
+  },
+
+  async getWaiterTables(): Promise<number[]> {
+    const r = await apiService.get<any>('/bingo/public/info');
+    return asArray(r.data?.mesas).map((n: any) => num(n)).filter((n: number) => n > 0);
+  },
+
+  async getWaiterOrders(): Promise<WaiterOrderGroup[]> {
+    const r = await apiService.get<WaiterOrderGroup[]>('/bingo/garcom/pedidos');
+    return asArray(r.data);
+  },
+
+  deliverItem: (itemId: string) => apiService.post<any>(`/bingo/garcom/itens/${itemId}/entregar`),
+
+  changeTabTable: (tabId: string, mesa: number) =>
+    apiService.post<any>(`/bingo/garcom/comandas/${tabId}/mesa`, { mesa }),
+
+  async getWaiterAccounts(): Promise<WaiterAccount[]> {
+    const r = await apiService.get<WaiterAccount[]>('/bingo/garcom/contas');
+    return asArray(r.data);
+  },
+
+  payTabs: (tabIds: string[], method: BingoPaymentMethod) =>
+    apiService.post<any>('/bingo/garcom/comandas/pagar', { tabIds, method }),
 
   async getSummary(eventoId?: string): Promise<BingoSummary> {
     const r = await apiService.get<any>(`${BASE}/resumo`, eventoId ? { eventoId } : undefined);
