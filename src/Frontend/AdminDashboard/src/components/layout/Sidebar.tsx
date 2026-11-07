@@ -24,6 +24,7 @@ import {
   VolunteerActivism as DonationIcon,
   Email as MessagesIcon,
   ManageAccounts as UsersIcon,
+  Casino as BingoIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -48,6 +49,7 @@ const menuItems = [
   { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members', adminOnly: true },
   { text: 'Doações e Contato', icon: <DonationIcon />, path: '/donations-contact', adminOnly: true },
   { text: 'Contato e Mensagens', icon: <MessagesIcon />, path: '/contact-messages', adminOnly: true },
+  { text: 'Bingo', icon: <BingoIcon />, path: '/bingo', adminOnly: true },
   { text: 'Localização', icon: <LocationIcon />, path: '/location' },
 ];
 

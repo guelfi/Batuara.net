@@ -6,6 +6,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Batuara.Application.Auth.Models;
 using Batuara.Application.Auth.Services;
+using Batuara.Application.Bingo.Models;
+using Batuara.Application.Bingo.Services;
+using Batuara.API.Filters;
 using Batuara.Application.Calendar.Services;
 using Batuara.Application.ContactMessages.Services;
 using Batuara.Application.Events.Services;
@@ -22,6 +25,7 @@ using Batuara.API.Services;
 using Batuara.Domain.Repositories;
 using Batuara.Domain.Services;
 using Batuara.Infrastructure.Auth.Services;
+using Batuara.Infrastructure.Bingo.Services;
 using Batuara.Infrastructure.Calendar.Services;
 using Batuara.Infrastructure.ContactMessages.Services;
 using Batuara.Infrastructure.Data;
@@ -271,6 +275,7 @@ builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
 builder.Services.AddScoped<IGuideService, GuideService>();
 builder.Services.AddScoped<IHouseMemberService, HouseMemberService>();
 builder.Services.AddScoped<IContactMessageService, ContactMessageService>();
+builder.Services.AddScoped<IPendingDigestService, PendingContactDigestService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IEventDomainService, EventDomainService>();
 builder.Services.AddScoped<IOrixaService, OrixaService>();
@@ -280,6 +285,13 @@ builder.Services.AddScoped<IUmbandaLineService, UmbandaLineService>();
 builder.Services.AddScoped<ISpiritualContentService, SpiritualContentService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IMemberAuthService, MemberAuthService>();
+builder.Services.Configure<BingoOptions>(builder.Configuration.GetSection(BingoOptions.SectionName));
+builder.Services.AddSingleton<IBingoLinkDispatcher, BingoLinkDispatcher>();
+builder.Services.AddScoped<IBingoPublicService, BingoPublicService>();
+builder.Services.AddScoped<IBingoWaiterService, BingoWaiterService>();
+builder.Services.AddScoped<IBingoAdminService, BingoAdminService>();
+builder.Services.AddScoped<IBingoPrivacyService, BingoPrivacyService>();
+builder.Services.AddScoped<BingoWaiterAccessFilter>();
 builder.Services.AddScoped<ContributionReminderProcessor>();
 var whatsappProvider = builder.Configuration.GetValue<string>("WhatsApp:Provider") ?? "EvolutionApi";
 if (string.Equals(whatsappProvider, "MetaCloud", StringComparison.OrdinalIgnoreCase))
@@ -305,6 +317,7 @@ else
 }
 builder.Services.AddHostedService<ContributionReminderHostedService>();
 builder.Services.AddHostedService<PendingContactMessagesHostedService>();
+builder.Services.AddHostedService<BingoPrivacyHostedService>();
 
 // Configure Rate Limiting
 builder.Services.AddRateLimiter(options =>
@@ -384,6 +397,30 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0
             });
     });
+
+    // Bingo: o evento pode ter muitos clientes atras do mesmo IP (Wi-Fi/CGNAT), com polling a cada poucos segundos
+    void AddBingoPolicy(string name, int productionLimit, int developmentLimit)
+    {
+        options.AddPolicy(name, context =>
+        {
+            var key = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            return RateLimitPartition.GetFixedWindowLimiter(
+                key,
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = isDevelopment ? developmentLimit : productionLimit,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                });
+        });
+    }
+
+    AddBingoPolicy("bingo-read", 3000, 6000);
+    AddBingoPolicy("bingo-write", 150, 1000);
+    AddBingoPolicy("bingo-garcom", 600, 2000);
+    AddBingoPolicy("bingo-garcom-login", 20, 200);
+    AddBingoPolicy("bingo-admin", 300, 2000);
 
     options.AddPolicy("authenticated", context =>
     {

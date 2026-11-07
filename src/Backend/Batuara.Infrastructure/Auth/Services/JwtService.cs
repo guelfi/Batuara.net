@@ -65,6 +65,11 @@ namespace Batuara.Infrastructure.Auth.Services
 
         public string GenerateMemberJwtToken(int houseMemberId, string fullName, string? mobilePhone)
         {
+            return GenerateMemberJwtToken(houseMemberId, fullName, mobilePhone, TimeSpan.FromMinutes(_jwtSettings.AccessTokenExpirationMinutes));
+        }
+
+        public string GenerateMemberJwtToken(int houseMemberId, string fullName, string? mobilePhone, TimeSpan lifetime)
+        {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_jwtSettings.Secret);
 
@@ -85,7 +90,7 @@ namespace Batuara.Infrastructure.Auth.Services
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpirationMinutes),
+                Expires = DateTime.UtcNow.Add(lifetime),
                 Issuer = _jwtSettings.Issuer,
                 Audience = _jwtSettings.Audience,
                 SigningCredentials = new SigningCredentials(

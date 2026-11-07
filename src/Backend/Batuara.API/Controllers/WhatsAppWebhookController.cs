@@ -78,7 +78,8 @@ namespace Batuara.API.Controllers
             if (contactMessage != null)
             {
                 contactMessage.AddWhatsAppMessage(messageId, phone, "sistema", body, false, DateTime.UtcNow);
-                
+                contactMessage.MarkAsUnread();
+
                 // Se a mensagem estava "Resolvida", reabrir para "Em atendimento" (InProgress)
                 // para sinalizar que o visitante enviou uma resposta pendente.
                 if (contactMessage.Status == Batuara.Domain.Enums.ContactMessageStatus.Resolved)
