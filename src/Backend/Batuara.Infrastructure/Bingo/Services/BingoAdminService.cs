@@ -203,7 +203,8 @@ namespace Batuara.Infrastructure.Bingo.Services
                     Open = tabs.Count(x => x.Status == BingoTabStatus.Open),
                     CloseRequested = tabs.Count(x => x.Status == BingoTabStatus.CloseRequested),
                     Paid = tabs.Count(x => x.IsPaid),
-                    PendingItems = tabs.Sum(x => x.Items.Count(i => i.Status == BingoOrderItemStatus.Pending))
+                    PendingItems = tabs.Sum(x => x.Items.Count(i => i.Status == BingoOrderItemStatus.Pending)),
+                    RetrievedItems = tabs.Sum(x => x.Items.Count(i => i.Status == BingoOrderItemStatus.Retrieved))
                 },
                 Tabs = tabs.Select(ToPanelTab).ToList(),
                 PendingByTable = tabs
@@ -214,6 +215,16 @@ namespace Batuara.Infrastructure.Bingo.Services
                         PendingItems = g.Sum(t => t.Items.Where(i => i.Status == BingoOrderItemStatus.Pending).Sum(i => i.Quantity))
                     })
                     .Where(x => x.PendingItems > 0)
+                    .OrderBy(x => x.Mesa)
+                    .ToList(),
+                RetrievedByTable = tabs
+                    .GroupBy(x => x.TableNumber)
+                    .Select(g => new BingoRetrievedByTableDto
+                    {
+                        Mesa = g.Key,
+                        RetrievedItems = g.Sum(t => t.Items.Where(i => i.Status == BingoOrderItemStatus.Retrieved).Sum(i => i.Quantity))
+                    })
+                    .Where(x => x.RetrievedItems > 0)
                     .OrderBy(x => x.Mesa)
                     .ToList(),
                 Accounts = new BingoPanelAccountsDto

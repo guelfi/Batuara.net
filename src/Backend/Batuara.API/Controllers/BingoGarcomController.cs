@@ -25,7 +25,21 @@ namespace Batuara.API.Controllers
         [HttpGet("pedidos")]
         public async Task<IActionResult> GetOrders(CancellationToken cancellationToken)
         {
-            return Ok(new { success = true, data = await service.GetOrdersAsync(cancellationToken) });
+            return Ok(new { success = true, data = await service.GetOrdersAsync(GetHouseMemberId(), cancellationToken) });
+        }
+
+        [HttpPost("itens/{itemId:int}/retirar")]
+        public async Task<IActionResult> Retrieve(int itemId, CancellationToken cancellationToken)
+        {
+            await service.RetrieveAsync(GetHouseMemberId(), itemId, cancellationToken);
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("itens/{itemId:int}/devolver")]
+        public async Task<IActionResult> Return(int itemId, CancellationToken cancellationToken)
+        {
+            await service.ReturnAsync(itemId, cancellationToken);
+            return Ok(new { success = true });
         }
 
         [HttpPost("itens/{itemId:int}/entregar")]

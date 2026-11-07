@@ -110,6 +110,9 @@ namespace Batuara.Application.Bingo.Models
         public string Name { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public DateTime CreatedAt { get; set; }
+        public BingoOrderItemStatus Status { get; set; }
+        public string? RetrievedByName { get; set; }
+        public bool RetrievedByMe { get; set; }
     }
 
     public class BingoWaiterOrderDto
@@ -221,12 +224,19 @@ namespace Batuara.Application.Bingo.Models
         public int PendingItems { get; set; }
     }
 
+    public class BingoRetrievedByTableDto
+    {
+        public int Mesa { get; set; }
+        public int RetrievedItems { get; set; }
+    }
+
     public class BingoPanelCountsDto
     {
         public int Open { get; set; }
         public int CloseRequested { get; set; }
         public int Paid { get; set; }
         public int PendingItems { get; set; }
+        public int RetrievedItems { get; set; }
     }
 
     public class BingoPanelAccountsDto
@@ -245,6 +255,7 @@ namespace Batuara.Application.Bingo.Models
         public BingoPanelCountsDto Counts { get; set; } = new();
         public List<BingoPanelTabDto> Tabs { get; set; } = new();
         public List<BingoPendingByTableDto> PendingByTable { get; set; } = new();
+        public List<BingoRetrievedByTableDto> RetrievedByTable { get; set; } = new();
         public BingoPanelAccountsDto Accounts { get; set; } = new();
     }
 

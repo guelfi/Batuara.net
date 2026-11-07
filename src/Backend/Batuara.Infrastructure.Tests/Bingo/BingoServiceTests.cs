@@ -293,6 +293,77 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public async Task Waiter_Should_Retrieve_Return_And_Deliver_From_Any_State()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var ana = await f.ScheduleWaiterAsync("11911112222");
+            var bia = await f.CreateMemberAsync("11933334444", "Bia Garcom");
+            await f.Admin.AddWaiterAsync(null, bia);
+            var tab = await f.NewTabAsync(mesa: 5);
+            await f.OrderAsync(tab.TabId, "Água", 2);
+            await f.OrderAsync(tab.TabId, "Salada", 1);
+            await f.OrderAsync(tab.TabId, "Refrigerante", 1);
+            var ids = (await f.Waiter.GetOrdersAsync(ana))[0].Items.Select(i => i.Id).ToList();
+
+            await f.Waiter.RetrieveAsync(ana, ids[0]);
+            await ShouldThrowAsync(() => f.Waiter.RetrieveAsync(bia, ids[0]), BingoErrorKind.Conflict);
+            var ex = await Assert.ThrowsAsync<BingoException>(() => f.Waiter.RetrieveAsync(bia, ids[0]));
+            ex.Message.Should().Contain("já retirado por Filho Garcom");
+            await ShouldThrowAsync(() => f.Waiter.RetrieveAsync(ana, 9999), BingoErrorKind.NotFound);
+
+            var mine = (await f.Waiter.GetOrdersAsync(ana))[0].Items;
+            mine.Should().HaveCount(3);
+            mine.Single(i => i.Id == ids[0]).Status.Should().Be(BingoOrderItemStatus.Retrieved);
+            mine.Single(i => i.Id == ids[0]).RetrievedByMe.Should().BeTrue();
+            mine.Single(i => i.Id == ids[0]).RetrievedByName.Should().Be("Filho Garcom");
+            mine.Single(i => i.Id == ids[1]).Status.Should().Be(BingoOrderItemStatus.Pending);
+            mine.Single(i => i.Id == ids[1]).RetrievedByName.Should().BeNull();
+            var theirs = (await f.Waiter.GetOrdersAsync(bia))[0].Items.Single(i => i.Id == ids[0]);
+            theirs.RetrievedByMe.Should().BeFalse();
+            theirs.RetrievedByName.Should().Be("Filho Garcom");
+
+            var panel = await f.Admin.GetPanelAsync(null);
+            panel.Counts.RetrievedItems.Should().Be(1);
+            panel.Counts.PendingItems.Should().Be(2);
+            panel.RetrievedByTable.Should().ContainSingle().Which.Should().BeEquivalentTo(new BingoRetrievedByTableDto { Mesa = 5, RetrievedItems = 2 });
+            panel.PendingByTable.Single().PendingItems.Should().Be(2);
+            panel.Tabs.Single().Items.Select(i => i.Status).Should().Contain(BingoOrderItemStatus.Retrieved);
+            (await f.Public.GetTabAsync(tab.TabId)).Items.Count(i => i.Status == BingoOrderItemStatus.Retrieved).Should().Be(1);
+
+            // outro garcom devolve; volta a Pending e limpa a retirada
+            await f.Waiter.ReturnAsync(ids[0]);
+            var back = await f.Db.BingoOrderItems.AsNoTracking().FirstAsync(x => x.Id == ids[0]);
+            back.Status.Should().Be(BingoOrderItemStatus.Pending);
+            back.RetrievedByHouseMemberId.Should().BeNull();
+            back.RetrievedAt.Should().BeNull();
+
+            // entregar a partir de Retrieved e de Pending, por garcom diferente de quem retirou
+            await f.Waiter.RetrieveAsync(ana, ids[1]);
+            await f.Waiter.DeliverAsync(bia, ids[1]);
+            await f.Waiter.DeliverAsync(bia, ids[2]);
+            var d = await f.Db.BingoOrderItems.AsNoTracking().FirstAsync(x => x.Id == ids[1]);
+            d.Status.Should().Be(BingoOrderItemStatus.Delivered);
+            d.DeliveredByHouseMemberId.Should().Be(bia);
+
+            // entregue nao volta nem e retirado de novo; entregar de novo e idempotente
+            await ShouldThrowAsync(() => f.Waiter.ReturnAsync(ids[1]), BingoErrorKind.Conflict);
+            await ShouldThrowAsync(() => f.Waiter.RetrieveAsync(ana, ids[1]), BingoErrorKind.Conflict);
+            await f.Waiter.DeliverAsync(ana, ids[1]);
+            (await f.Db.BingoOrderItems.AsNoTracking().FirstAsync(x => x.Id == ids[1])).DeliveredByHouseMemberId.Should().Be(bia);
+            (await f.Waiter.GetOrdersAsync(ana))[0].Items.Should().ContainSingle().Which.Id.Should().Be(ids[0]);
+        }
+
+        [Fact]
+        public async Task Waiter_Not_Scheduled_Should_Be_Blocked()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var outsider = await f.CreateMemberAsync("11955556666", "Fora da escala");
+            await ShouldThrowAsync(() => f.Waiter.EnsureAccessAsync(outsider), BingoErrorKind.Unauthorized);
+        }
+
+        [Fact]
         public async Task Waiter_Should_Deliver_Item_And_Record_Who_And_When()
         {
             var f = new Fixture();
@@ -302,7 +373,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await f.OrderAsync(tab.TabId, "Água", 2);
             await f.OrderAsync(tab.TabId, "Salada", 1);
 
-            var orders = await f.Waiter.GetOrdersAsync();
+            var orders = await f.Waiter.GetOrdersAsync(waiterId);
             orders.Should().ContainSingle();
             orders[0].Mesa.Should().Be(4);
             orders[0].Items.Should().HaveCount(2);
@@ -313,7 +384,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
             delivered.Status.Should().Be(BingoOrderItemStatus.Delivered);
             delivered.DeliveredByHouseMemberId.Should().Be(waiterId);
             delivered.DeliveredAt.Should().NotBeNull();
-            (await f.Waiter.GetOrdersAsync())[0].Items.Should().ContainSingle();
+            (await f.Waiter.GetOrdersAsync(waiterId))[0].Items.Should().ContainSingle();
             (await f.Admin.GetWaitersAsync(null)).Single().Deliveries.Should().Be(1);
             await ShouldThrowAsync(() => f.Waiter.DeliverAsync(waiterId, 9999), BingoErrorKind.NotFound);
         }

@@ -24,6 +24,7 @@ namespace Batuara.Domain.Enums
     public enum BingoOrderItemStatus
     {
         Pending,
+        Retrieved,
         Delivered
     }
 }

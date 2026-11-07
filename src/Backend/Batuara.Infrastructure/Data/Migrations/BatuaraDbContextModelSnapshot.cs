@@ -618,6 +618,12 @@ namespace Batuara.Infrastructure.Data.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("RetrievedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("RetrievedByHouseMemberId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)

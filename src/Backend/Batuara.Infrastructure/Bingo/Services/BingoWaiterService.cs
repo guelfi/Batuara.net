@@ -41,13 +41,17 @@ namespace Batuara.Infrastructure.Bingo.Services
             await Db.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<List<BingoWaiterOrderDto>> GetOrdersAsync(CancellationToken cancellationToken = default)
+        public async Task<List<BingoWaiterOrderDto>> GetOrdersAsync(int houseMemberId, CancellationToken cancellationToken = default)
         {
             var ev = await RequireOpenEventAsync(cancellationToken);
             var pending = await Db.BingoOrderItems
                 .Include(x => x.Tab)
-                .Where(x => x.Status == BingoOrderItemStatus.Pending && x.Tab.EventId == ev.Id)
+                .Where(x => x.Status != BingoOrderItemStatus.Delivered && x.Tab.EventId == ev.Id)
                 .ToListAsync(cancellationToken);
+
+            var retrieverIds = pending.Where(x => x.RetrievedByHouseMemberId != null).Select(x => x.RetrievedByHouseMemberId!.Value).Distinct().ToList();
+            var names = await Db.HouseMembers.Where(x => retrieverIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id, x => x.FullName, cancellationToken);
 
             return pending
                 .GroupBy(x => x.TabId)
@@ -57,11 +61,63 @@ namespace Batuara.Infrastructure.Bingo.Services
                     TabId = g.Key,
                     CustomerName = g.First().Tab.CustomerName,
                     Items = g.OrderBy(i => i.CreatedAt).ThenBy(i => i.Id)
-                        .Select(i => new BingoWaiterOrderItemDto { Id = i.Id, Name = i.ItemName, Quantity = i.Quantity, CreatedAt = i.CreatedAt })
+                        .Select(i => new BingoWaiterOrderItemDto { Id = i.Id, Name = i.ItemName, Quantity = i.Quantity, CreatedAt = i.CreatedAt,
+                            Status = i.Status,
+                            RetrievedByName = i.RetrievedByHouseMemberId != null && names.TryGetValue(i.RetrievedByHouseMemberId.Value, out var n) ? n : null,
+                            RetrievedByMe = i.RetrievedByHouseMemberId == houseMemberId
+                        })
                         .ToList()
                 })
                 .OrderBy(x => x.Items[0].CreatedAt)
                 .ToList();
+        }
+
+        public async Task RetrieveAsync(int houseMemberId, int itemId, CancellationToken cancellationToken = default)
+        {
+            var item = await FindItemAsync(itemId, cancellationToken);
+            if (item.Status == BingoOrderItemStatus.Retrieved)
+            {
+                if (item.RetrievedByHouseMemberId == houseMemberId)
+                {
+                    return;
+                }
+
+                var name = item.RetrievedByHouseMemberId == null ? null : await Db.HouseMembers
+                    .Where(x => x.Id == item.RetrievedByHouseMemberId).Select(x => x.FullName).FirstOrDefaultAsync(cancellationToken);
+                throw new BingoException(BingoErrorKind.Conflict, $"Item já retirado por {name ?? "outro garçom"}");
+            }
+
+            if (item.Status == BingoOrderItemStatus.Delivered)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Item já entregue.");
+            }
+
+            item.Retrieve(houseMemberId, DateTime.UtcNow);
+            await Db.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task ReturnAsync(int itemId, CancellationToken cancellationToken = default)
+        {
+            var item = await FindItemAsync(itemId, cancellationToken);
+            if (item.Status == BingoOrderItemStatus.Delivered)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Item já entregue.");
+            }
+
+            if (item.Status == BingoOrderItemStatus.Retrieved)
+            {
+                item.Return();
+                await Db.SaveChangesAsync(cancellationToken);
+            }
+        }
+
+        private async Task<Domain.Entities.BingoOrderItem> FindItemAsync(int itemId, CancellationToken cancellationToken)
+        {
+            var ev = await RequireOpenEventAsync(cancellationToken);
+            return await Db.BingoOrderItems
+                .Include(x => x.Tab)
+                .FirstOrDefaultAsync(x => x.Id == itemId && x.Tab.EventId == ev.Id, cancellationToken)
+                ?? throw new BingoException(BingoErrorKind.NotFound, "Item não encontrado.");
         }
 
         public async Task DeliverAsync(int houseMemberId, int itemId, CancellationToken cancellationToken = default)
@@ -72,7 +128,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 .FirstOrDefaultAsync(x => x.Id == itemId && x.Tab.EventId == ev.Id, cancellationToken)
                 ?? throw new BingoException(BingoErrorKind.NotFound, "Item não encontrado.");
 
-            if (item.Status == BingoOrderItemStatus.Pending)
+            if (item.Status != BingoOrderItemStatus.Delivered)
             {
                 item.Deliver(houseMemberId, DateTime.UtcNow);
                 await Db.SaveChangesAsync(cancellationToken);

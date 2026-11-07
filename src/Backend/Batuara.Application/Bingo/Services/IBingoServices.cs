@@ -21,7 +21,9 @@ namespace Batuara.Application.Bingo.Services
     {
         Task<BingoWaiterMeDto> GetMeAsync(int houseMemberId, CancellationToken cancellationToken = default);
         Task EnsureAccessAsync(int houseMemberId, CancellationToken cancellationToken = default);
-        Task<List<BingoWaiterOrderDto>> GetOrdersAsync(CancellationToken cancellationToken = default);
+        Task<List<BingoWaiterOrderDto>> GetOrdersAsync(int houseMemberId, CancellationToken cancellationToken = default);
+        Task RetrieveAsync(int houseMemberId, int itemId, CancellationToken cancellationToken = default);
+        Task ReturnAsync(int itemId, CancellationToken cancellationToken = default);
         Task DeliverAsync(int houseMemberId, int itemId, CancellationToken cancellationToken = default);
         Task ChangeTableAsync(Guid tabId, int mesa, CancellationToken cancellationToken = default);
         Task<List<BingoAccountDto>> GetAccountsAsync(CancellationToken cancellationToken = default);
