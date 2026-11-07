@@ -1381,35 +1381,33 @@ const SummaryTab: React.FC<{
 
   return (
     <Stack spacing={2}>
-      <FormControl sx={{ maxWidth: 420 }}>
-        <InputLabel id="sum-ev">Evento</InputLabel>
-        <Select labelId="sum-ev" label="Evento" value={eventId} onChange={(e) => setEventId(e.target.value)}>
-          {events.map((e) => (
-            <MenuItem key={e.id} value={e.id}>
-              {e.name} - {formatDate(e.eventDate)} ({EVENT_STATUS[e.status].label})
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      <Stack direction="row" spacing={2}>
+      <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+        <FormControl sx={{ minWidth: 300 }}>
+          <InputLabel id="sum-ev">Evento</InputLabel>
+          <Select labelId="sum-ev" label="Evento" value={eventId} onChange={(e) => setEventId(e.target.value)}>
+            {events.map((e) => (
+              <MenuItem key={e.id} value={e.id}>
+                {e.name} - {formatDate(e.eventDate)} ({EVENT_STATUS[e.status].label})
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <Button variant="outlined" onClick={showPhotoLink}>Copiar link</Button>
         <Button variant="contained" color="success" onClick={sendPhotoLinkWhatsApp}>
           Enviar por WhatsApp
         </Button>
+        {summary && (
+          <Button variant="contained" color="secondary" startIcon={<PrintIcon />} onClick={printClosing} disabled={preparing || loading}>
+            Imprimir fechamento
+          </Button>
+        )}
       </Stack>
       {photoLink && (
-        <Alert severity="info" sx={{ mt: 1 }}>
+        <Alert severity="info">
           <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>{photoLink}</Typography>
         </Alert>
       )}
       {loading && <CircularProgress size={24} />}
-      {summary && (
-        <Box>
-          <Button variant="contained" color="secondary" startIcon={<PrintIcon />} onClick={printClosing} disabled={preparing || loading}>
-            Imprimir fechamento
-          </Button>
-        </Box>
-      )}
       {summary && selected && report && (
         <ClosingReport event={selected} summary={summary} tabs={report} onDone={endReport} />
       )}
