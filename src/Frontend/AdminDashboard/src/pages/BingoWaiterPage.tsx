@@ -398,7 +398,7 @@ const QrTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
 
   return (
     <Stack spacing={2}>
-      <TextField select fullWidth label="Mesa do cliente" value={mesa} onChange={(e) => setMesa(e.target.value)}>
+      <TextField select fullWidth label="Selecionar mesa" value={mesa} onChange={(e) => setMesa(e.target.value)}>
         {mesas.map((n) => (
           <MenuItem key={n} value={String(n)} sx={{ minHeight: 48 }}>
             Mesa {n}
