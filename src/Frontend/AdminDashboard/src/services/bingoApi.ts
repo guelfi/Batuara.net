@@ -13,6 +13,8 @@ import {
   WaiterAccount,
   WaiterOrderGroup,
   WaiterStatus,
+  BingoReminderPreview,
+  BingoReminderResult,
 } from '../types/bingo';
 
 /**
@@ -59,6 +61,11 @@ const normalizeTab = (t: any): BingoTab => {
     total: total !== undefined ? num(total) : items.reduce((s, i) => s + i.unitPrice * i.quantity, 0),
     paymentMethod: t.paymentMethod ?? null,
     items,
+    phoneVerified: t.phoneVerified === undefined || t.phoneVerified === null ? undefined : !!t.phoneVerified,
+    codeDeliveryStatus: t.codeDeliveryStatus ?? null,
+    codeDeliveryError: t.codeDeliveryError ?? null,
+    reminderSentAt: t.reminderSentAt ?? null,
+    reminderDeliveryStatus: t.reminderDeliveryStatus ?? null,
   };
 };
 
@@ -125,6 +132,28 @@ export const bingoApi = {
     return asArray(Array.isArray(r.data) ? r.data : pick(r.data, 'comandas', 'tabs')).map(normalizeTab);
   },
 
+  async getReminderPreview(id: string): Promise<BingoReminderPreview> {
+    const r = await apiService.get<any>(`${BASE}/eventos/${id}/lembretes/previa`);
+    const d = r.data ?? {};
+    return {
+      count: num(d.count),
+      totalOwed: num(d.totalOwed),
+      items: asArray(d.items).map((i: any) => ({
+        tabId: String(i.tabId),
+        customerName: i.customerName ?? '',
+        mesa: i.mesa ?? '-',
+        total: num(i.total),
+        reminderSentAt: i.reminderSentAt ?? null,
+      })),
+    };
+  },
+
+  async sendReminders(id: string): Promise<BingoReminderResult> {
+    const r = await apiService.post<any>(`${BASE}/eventos/${id}/lembretes/enviar`, { confirmar: true });
+    const d = r.data ?? {};
+    return { sent: num(d.sent), skipped: num(d.skipped), failed: num(d.failed) };
+  },
+
   async getEventSummary(id: string): Promise<BingoSummary> {
     const r = await apiService.get<any>(`${BASE}/eventos/${id}/resumo`);
     return normalizeSummary(r.data);
@@ -141,6 +170,9 @@ export const bingoApi = {
     const retrieved = d.counts?.retrievedItems;
     return {
       retrievedItems: retrieved !== undefined && retrieved !== null ? num(retrieved) : undefined,
+      phoneVerifiedCount: d.counts?.phoneVerified !== undefined ? num(d.counts.phoneVerified) : undefined,
+      phoneNotVerifiedCount: d.counts?.phoneNotVerified !== undefined ? num(d.counts.phoneNotVerified) : undefined,
+      codeDeliveryFailedCount: d.counts?.codeDeliveryFailed !== undefined ? num(d.counts.codeDeliveryFailed) : undefined,
       closeAllRequested: pick(d, 'closeAllRequested'),
       totalSold: sold !== undefined ? num(sold) : undefined,
       tabs,

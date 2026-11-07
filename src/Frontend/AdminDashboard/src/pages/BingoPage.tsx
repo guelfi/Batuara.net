@@ -7,6 +7,7 @@ import {
   Card,
   CardContent,
   Chip,
+  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -14,6 +15,7 @@ import {
   DialogContentText,
   DialogTitle,
   FormControl,
+  FormControlLabel,
   IconButton,
   InputLabel,
   MenuItem,
@@ -50,6 +52,8 @@ import {
   BingoMenuItem,
   BingoPanel,
   BingoPaymentMethod,
+  BingoReminderPreview,
+  BingoReminderResult,
   BingoSummary,
   BingoTab,
   BingoWaiter,
@@ -134,6 +138,20 @@ const ConfirmDialog: React.FC<{ state: ConfirmState | null; onClose: () => void 
 };
 
 /* ---------- Painel ao vivo ---------- */
+const PhoneBadge: React.FC<{ tab: BingoTab }> = ({ tab }) => (
+  <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+    {tab.phoneVerified !== undefined && (
+      <Chip size="small" variant="outlined" color={tab.phoneVerified ? 'success' : 'default'}
+        label={tab.phoneVerified ? '✓ confirmado' : 'não confirmado'} />
+    )}
+    {tab.codeDeliveryStatus === 'Failed' && (
+      <Tooltip title={tab.codeDeliveryError || 'Falha ao entregar o código'}>
+        <Chip size="small" color="error" label="falha de entrega" />
+      </Tooltip>
+    )}
+  </Stack>
+);
+
 const LivePanel: React.FC<{
   event: BingoEvent | null;
   notify: Notify;
@@ -217,6 +235,15 @@ const LivePanel: React.FC<{
             <Chip color="info" label={`Itens pendentes: ${pendingCount}`} />
             <Chip color="secondary" label={`Itens retirados: ${retrievedCount}`} />
             <Chip color="primary" label={`Total vendido: ${money(totalSold)}`} />
+            {panel?.phoneVerifiedCount !== undefined && (
+              <Chip color="success" variant="outlined" label={`Celular confirmado: ${panel.phoneVerifiedCount}`} />
+            )}
+            {panel?.phoneNotVerifiedCount !== undefined && (
+              <Chip variant="outlined" label={`Não confirmado: ${panel.phoneNotVerifiedCount}`} />
+            )}
+            {!!panel?.codeDeliveryFailedCount && (
+              <Chip color="error" variant="outlined" label={`Falha de entrega: ${panel.codeDeliveryFailedCount}`} />
+            )}
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
             <Stack direction="row" alignItems="center">
@@ -319,6 +346,7 @@ const LivePanel: React.FC<{
               <TableCell>Mesa</TableCell>
               <TableCell>Cliente</TableCell>
               <TableCell>Situação</TableCell>
+              <TableCell>Celular</TableCell>
               <TableCell align="right">Total</TableCell>
               <TableCell />
             </TableRow>
@@ -332,6 +360,7 @@ const LivePanel: React.FC<{
                   {t.status === 'Paid' ? `Paga (${payLabel(t.paymentMethod)})`
                     : t.status === 'CloseRequested' ? 'Pediu para encerrar' : 'Aberta'}
                 </TableCell>
+                <TableCell><PhoneBadge tab={t} /></TableCell>
                 <TableCell align="right">{money(t.total)}</TableCell>
                 <TableCell align="right">
                   {t.status !== 'Paid' && (
@@ -886,6 +915,46 @@ const EventsTab: React.FC<{
   const [histSummary, setHistSummary] = useState<BingoSummary | null>(null);
   const [histTabs, setHistTabs] = useState<BingoTab[]>([]);
   const [histLoading, setHistLoading] = useState(false);
+  const [remEvent, setRemEvent] = useState<BingoEvent | null>(null);
+  const [remPreview, setRemPreview] = useState<BingoReminderPreview | null>(null);
+  const [remLoading, setRemLoading] = useState(false);
+  const [remConfirmed, setRemConfirmed] = useState(false);
+  const [remSending, setRemSending] = useState(false);
+  const [remResult, setRemResult] = useState<BingoReminderResult | null>(null);
+
+  const closeReminders = () => {
+    if (remSending) return;
+    setRemEvent(null);
+  };
+
+  const openReminders = async (ev: BingoEvent) => {
+    setRemEvent(ev);
+    setRemPreview(null);
+    setRemResult(null);
+    setRemConfirmed(false);
+    setRemLoading(true);
+    try {
+      setRemPreview(await bingoApi.getReminderPreview(ev.id));
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível carregar a prévia dos lembretes.'), 'error');
+      setRemEvent(null);
+    } finally {
+      setRemLoading(false);
+    }
+  };
+
+  const sendReminders = async () => {
+    if (!remEvent) return;
+    setRemSending(true);
+    try {
+      setRemResult(await bingoApi.sendReminders(remEvent.id));
+      setRemPreview(null);
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível enviar os lembretes.'), 'error');
+    } finally {
+      setRemSending(false);
+    }
+  };
 
   const create = async () => {
     if (!form.name.trim() || !form.eventDate) {
@@ -980,7 +1049,10 @@ const EventsTab: React.FC<{
                       })}>Encerrar</Button>
                     )}
                     {ev.status === 'Closed' && (
-                      <Button size="small" onClick={() => showHistory(ev)}>Ver histórico</Button>
+                      <>
+                        <Button size="small" onClick={() => openReminders(ev)}>Lembretes de contas em aberto</Button>
+                        <Button size="small" onClick={() => showHistory(ev)}>Ver histórico</Button>
+                      </>
                     )}
                   </Stack>
                 </TableCell>
@@ -1016,6 +1088,61 @@ const EventsTab: React.FC<{
         </DialogActions>
       </Dialog>
 
+      <Dialog open={!!remEvent} onClose={closeReminders} fullWidth maxWidth="sm">
+        <DialogTitle>Lembretes de contas em aberto: {remEvent?.name}</DialogTitle>
+        <DialogContent>
+          {remLoading && <CircularProgress />}
+          {remResult && (
+            <Alert severity={remResult.failed > 0 ? 'warning' : 'success'}>
+              Enviados: {remResult.sent} · Ignorados: {remResult.skipped} · Falhas: {remResult.failed}
+            </Alert>
+          )}
+          {remPreview && (
+            <Stack spacing={1.5}>
+              <Typography>
+                {remPreview.count} {remPreview.count === 1 ? 'comanda' : 'comandas'} em aberto · Total devido: {money(remPreview.totalOwed)}
+              </Typography>
+              <Alert severity="info">Cada comanda recebe no máximo um lembrete.</Alert>
+              {remPreview.items.length > 0 && (
+                <TableContainer component={Paper} sx={{ maxHeight: 280 }}>
+                  <Table size="small" stickyHeader>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Nome</TableCell><TableCell>Mesa</TableCell>
+                        <TableCell align="right">Valor</TableCell><TableCell />
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {remPreview.items.map((i) => (
+                        <TableRow key={i.tabId}>
+                          <TableCell>{i.customerName}</TableCell>
+                          <TableCell>{i.mesa}</TableCell>
+                          <TableCell align="right">{money(i.total)}</TableCell>
+                          <TableCell>{i.reminderSentAt ? 'já enviado' : ''}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+              {remPreview.count > 0 && (
+                <FormControlLabel
+                  control={<Checkbox checked={remConfirmed} onChange={(e) => setRemConfirmed(e.target.checked)} />}
+                  label={`Confirmo o envio de ${remPreview.count} mensagens de WhatsApp`}
+                />
+              )}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeReminders} disabled={remSending}>Fechar</Button>
+          <Button variant="contained" onClick={sendReminders}
+            disabled={remSending || !remPreview || remPreview.count <= 0 || !remConfirmed}>
+            {remSending ? 'Enviando...' : 'Enviar lembretes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog open={!!history} onClose={() => setHistory(null)} fullWidth maxWidth="md">
         <DialogTitle>Histórico: {history?.name} ({formatDate(history?.eventDate ?? '')})</DialogTitle>
         <DialogContent>
@@ -1030,7 +1157,7 @@ const EventsTab: React.FC<{
                     <TableHead>
                       <TableRow>
                         <TableCell>Mesa</TableCell><TableCell>Cliente</TableCell>
-                        <TableCell>Itens</TableCell><TableCell>Situação</TableCell><TableCell align="right">Total</TableCell>
+                        <TableCell>Itens</TableCell><TableCell>Situação</TableCell><TableCell>Celular / lembrete</TableCell><TableCell align="right">Total</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -1040,6 +1167,15 @@ const EventsTab: React.FC<{
                           <TableCell>{t.customerName}</TableCell>
                           <TableCell>{t.items.map((i) => `${i.quantity}x ${i.name}`).join(', ')}</TableCell>
                           <TableCell>{t.status === 'Paid' ? `Paga (${payLabel(t.paymentMethod)})` : 'Não paga'}</TableCell>
+                          <TableCell>
+                            <PhoneBadge tab={t} />
+                            {t.reminderDeliveryStatus && (
+                              <Typography variant="caption" display="block">Lembrete: {t.reminderDeliveryStatus}</Typography>
+                            )}
+                            {t.reminderSentAt && !t.reminderDeliveryStatus && (
+                              <Typography variant="caption" display="block">Lembrete enviado</Typography>
+                            )}
+                          </TableCell>
                           <TableCell align="right">{money(t.total)}</TableCell>
                         </TableRow>
                       ))}

@@ -48,9 +48,37 @@ export interface BingoTab {
   total: number;
   paymentMethod?: BingoPaymentMethod | null;
   items: BingoOrderItem[];
+  phoneVerified?: boolean;
+  codeDeliveryStatus?: 'Sent' | 'Delivered' | 'Read' | 'Failed' | null;
+  codeDeliveryError?: string | null;
+  reminderSentAt?: string | null;
+  reminderDeliveryStatus?: string | null;
+}
+
+export interface BingoReminderPreviewItem {
+  tabId: string;
+  customerName: string;
+  mesa: number | string;
+  total: number;
+  reminderSentAt: string | null;
+}
+
+export interface BingoReminderPreview {
+  count: number;
+  totalOwed: number;
+  items: BingoReminderPreviewItem[];
+}
+
+export interface BingoReminderResult {
+  sent: number;
+  skipped: number;
+  failed: number;
 }
 
 export interface BingoPanel {
+  phoneVerifiedCount?: number;
+  phoneNotVerifiedCount?: number;
+  codeDeliveryFailedCount?: number;
   closeAllRequested?: boolean;
   totalSold?: number;
   retrievedItems?: number;
