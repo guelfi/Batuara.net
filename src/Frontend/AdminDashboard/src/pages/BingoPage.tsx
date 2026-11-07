@@ -1002,6 +1002,16 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
           <Button variant="outlined" startIcon={<ProjectIcon />} onClick={() => setProjecting(true)} disabled={!qr}>
             Projetar QR
           </Button>
+          <Box
+            className="bingo-print-sheet"
+            sx={{ ml: { sm: 'auto' }, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}
+          >
+            <Typography className="sheet-title" variant="h5" sx={{ fontWeight: 700, display: 'none' }}>
+              Aponte a câmera para pedir
+            </Typography>
+            {qr && <QrBlock size={150} dataUrl={qr} />}
+            <Typography className="sheet-url" variant="h6" sx={{ display: 'none', wordBreak: 'break-all' }}>{BINGO_URL}</Typography>
+          </Box>
         </Stack>
         {locked && (
           <Alert severity="info" sx={{ mt: 2 }} className="bingo-no-print">
@@ -1009,27 +1019,6 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
             Para mudar, crie um novo evento.
           </Alert>
         )}
-      </Paper>
-
-      <Paper sx={{ p: 2 }}>
-        <Box
-          className="bingo-print-sheet"
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            textAlign: 'center',
-            p: 1.5,
-            border: '1px dashed',
-            borderColor: 'divider',
-          }}
-        >
-          <Typography className="sheet-title" variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
-            Aponte a câmera para pedir
-          </Typography>
-          {qr && <QrBlock size={300} dataUrl={qr} />}
-          <Typography className="sheet-url" variant="h6" sx={{ mt: 1, wordBreak: 'break-all' }}>{BINGO_URL}</Typography>
-        </Box>
       </Paper>
 
       <Dialog fullScreen open={projecting} onClose={() => setProjecting(false)}>
@@ -1049,13 +1038,14 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
           body * { visibility: hidden !important; }
           .bingo-print-sheet, .bingo-print-sheet * { visibility: visible !important; }
           .bingo-print-sheet {
+            margin: 0 !important;
             position: fixed; left: 0; top: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             border: none !important; background: #fff; color: #000;
           }
           .bingo-print-sheet img { width: 16cm !important; }
-          .bingo-print-sheet .sheet-title { font-size: 40pt !important; margin-bottom: 24pt !important; }
-          .bingo-print-sheet .sheet-url { font-size: 22pt !important; margin-top: 24pt !important; }
+          .bingo-print-sheet .sheet-title { display: block !important; font-size: 40pt !important; margin-bottom: 24pt !important; }
+          .bingo-print-sheet .sheet-url { display: block !important; font-size: 22pt !important; margin-top: 24pt !important; }
           @page { size: A4 portrait; margin: 1.5cm; }
         }
       `}</style>
