@@ -32,7 +32,7 @@ const tabView = {
     { id: 'm1', name: 'Água', unitPrice: 5, isAvailable: true },
     { id: 'm2', name: 'Salada', unitPrice: 7, isAvailable: false },
   ],
-  items: [{ id: 'i1', name: 'Água', unitPrice: 5, quantity: 2, status: 'Pending' as const }],
+  items: [{ id: 'i1', menuItemId: 'm1', name: 'Água', unitPrice: 5, quantity: 2, status: 'Pending' as const }],
 };
 
 beforeEach(() => {
@@ -51,14 +51,19 @@ test('comanda: esgotado sem botão, pedido enviado e pendente exibido', async ()
   api.addItems.mockResolvedValue();
   render(<BingoCustomerPage />);
 
-  await screen.findByText('Maria');
+  await screen.findByText(/Maria/);
   expect(screen.getByText(/Esgotado/)).toBeInTheDocument();
   expect(screen.queryByLabelText('Adicionar Salada')).toBeNull();
-  expect(screen.getByText('Pendente')).toBeInTheDocument();
+  expect(screen.getByText('COMANDA DO BINGO')).toBeInTheDocument();
+  expect(screen.getByTestId('ordered-m1')).toHaveTextContent('(2)');
+  expect(screen.queryByTestId('ordered-m2')).toBeNull();
 
   fireEvent.click(screen.getByLabelText('Adicionar Água'));
   fireEvent.click(screen.getByRole('button', { name: 'Fazer pedido' }));
   await waitFor(() => expect(api.addItems).toHaveBeenCalledWith(tabView.id, [{ menuItemId: 'm1', quantity: 1 }]));
+  expect(await screen.findByText('Pedido enviado! Um garçom levará à sua mesa.')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: /Pedido/ }));
+  expect(await screen.findByText('Pendente')).toBeInTheDocument();
 });
 
 test('sem evento aberto mostra aviso amigável no formulário', async () => {

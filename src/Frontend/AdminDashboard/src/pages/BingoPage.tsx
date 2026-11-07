@@ -43,6 +43,7 @@ import {
 } from '@mui/icons-material';
 import QRCode from 'qrcode';
 import apiService from '../services/api';
+import CurrencyField from '../components/common/CurrencyField';
 import bingoApi from '../services/bingoApi';
 import {
   BingoEvent,
@@ -352,7 +353,7 @@ const LivePanel: React.FC<{
 const MenuTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void }> = ({ notify, confirm }) => {
   const [items, setItems] = useState<BingoMenuItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newItem, setNewItem] = useState({ name: '', price: '' });
+  const [newItem, setNewItem] = useState({ name: '', price: 0 });
 
   const load = useCallback(async () => {
     try {
@@ -391,15 +392,15 @@ const MenuTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void }> 
   };
 
   const add = async () => {
-    const price = Number(newItem.price.replace(',', '.'));
-    if (!newItem.name.trim() || !Number.isFinite(price) || price < 0) {
+    const price = newItem.price;
+    if (!newItem.name.trim() || !Number.isFinite(price) || price <= 0) {
       notify('Informe nome e preço válidos.', 'error');
       return;
     }
     try {
       const nextOrder = items.reduce((m, i) => Math.max(m, i.sortOrder), 0) + 1;
       await bingoApi.createMenuItem({ name: newItem.name.trim(), unitPrice: price, isAvailable: true, sortOrder: nextOrder });
-      setNewItem({ name: '', price: '' });
+      setNewItem({ name: '', price: 0 });
       notify('Item adicionado.', 'success');
       load();
     } catch (e: any) {
@@ -416,7 +417,7 @@ const MenuTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void }> 
             <TableRow>
               <TableCell width={80}>Ordem</TableCell>
               <TableCell>Nome</TableCell>
-              <TableCell width={130}>Preço (R$)</TableCell>
+              <TableCell width={150}>Preço</TableCell>
               <TableCell>Disponibilidade</TableCell>
               <TableCell />
             </TableRow>
@@ -434,8 +435,8 @@ const MenuTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void }> 
                     onChange={(e) => patchLocal(i.id, { name: e.target.value })} onBlur={() => save(i)} />
                 </TableCell>
                 <TableCell>
-                  <TextField size="small" type="number" inputProps={{ step: '0.5', min: 0 }} value={i.unitPrice}
-                    onChange={(e) => patchLocal(i.id, { unitPrice: Number(e.target.value) })} onBlur={() => save(i)} />
+                  <CurrencyField size="small" value={i.unitPrice}
+                    onValueChange={(v) => patchLocal(i.id, { unitPrice: v })} onBlur={() => save(i)} />
                 </TableCell>
                 <TableCell>
                   <Stack direction="row" alignItems="center">
@@ -474,8 +475,8 @@ const MenuTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void }> 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <TextField label="Novo item" value={newItem.name} fullWidth
             onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} />
-          <TextField label="Preço (R$)" value={newItem.price} sx={{ minWidth: 140 }}
-            onChange={(e) => setNewItem({ ...newItem, price: e.target.value })} />
+          <CurrencyField label="Preço" value={newItem.price} sx={{ minWidth: 140 }}
+            onValueChange={(v) => setNewItem({ ...newItem, price: v })} />
           <Button variant="contained" startIcon={<AddIcon />} onClick={add}>Adicionar</Button>
         </Stack>
       </Paper>

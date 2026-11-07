@@ -51,6 +51,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 .Select(x => new BingoTabItemDto
                 {
                     Id = x.Id,
+                    MenuItemId = x.MenuItemId,
                     Name = x.ItemName,
                     UnitPrice = x.UnitPrice,
                     Quantity = x.Quantity,

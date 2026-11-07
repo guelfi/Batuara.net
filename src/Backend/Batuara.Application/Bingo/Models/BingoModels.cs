@@ -66,6 +66,7 @@ namespace Batuara.Application.Bingo.Models
     public class BingoTabItemDto
     {
         public int Id { get; set; }
+        public int MenuItemId { get; set; }
         public string Name { get; set; } = string.Empty;
         public decimal UnitPrice { get; set; }
         public int Quantity { get; set; }

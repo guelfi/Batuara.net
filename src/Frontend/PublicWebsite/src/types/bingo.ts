@@ -32,6 +32,7 @@ export type BingoPaymentMethod = 'Card' | 'Pix' | 'Cash';
 
 export interface BingoTabItem {
   id: string;
+  menuItemId: string;
   name: string;
   unitPrice: number;
   quantity: number;
