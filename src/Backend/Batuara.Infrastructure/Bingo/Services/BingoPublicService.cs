@@ -92,11 +92,14 @@ namespace Batuara.Infrastructure.Bingo.Services
                 Mesa = tab.TableNumber,
                 Status = tab.Status,
                 Total = tab.Total,
+                AmountDue = tab.AmountDue,
+                UndeliveredCount = tab.UndeliveredCount,
+                ContestedCount = tab.ContestedCount,
                 CloseAllRequested = ev.CloseAllRequested,
                 IsOpen = ev.IsOpen,
                 PhoneVerified = tab.IsPhoneVerified,
                 Menu = await GetMenuAsync(ev.Id, cancellationToken),
-                Items = ToItemDtos(tab.Items)
+                Items = ToItemDtos(tab.Items, firstNameOnly: true)
             };
         }
 
@@ -142,7 +145,32 @@ namespace Batuara.Infrastructure.Bingo.Services
             await Db.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task RequestCloseAsync(Guid tabId, CancellationToken cancellationToken = default)
+        public async Task ContestItemAsync(Guid tabId, int itemId, string? note, CancellationToken cancellationToken = default)
+        {
+            var tab = await LoadTabAsync(tabId, cancellationToken);
+            var text = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+            if (text != null && text.Length > 200)
+            {
+                throw new BingoException(BingoErrorKind.Validation, "A observação deve ter até 200 caracteres.");
+            }
+
+            var item = tab.Items.FirstOrDefault(x => x.Id == itemId)
+                ?? throw new BingoException(BingoErrorKind.NotFound, "Item não encontrado.");
+            if (tab.IsPaid)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Esta comanda já foi paga.");
+            }
+
+            if (item.Status != BingoOrderItemStatus.Delivered)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Só é possível contestar um item já entregue.");
+            }
+
+            item.Contest(text, DateTime.UtcNow);
+            await Db.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task RequestCloseAsync(Guid tabId, bool cancelUndelivered = false, CancellationToken cancellationToken = default)
         {
             var tab = await LoadTabAsync(tabId, cancellationToken);
             if (tab.IsPaid)
@@ -152,7 +180,32 @@ namespace Batuara.Infrastructure.Bingo.Services
 
             if (_options.RequirePhoneVerificationToClose && !tab.IsPhoneVerified)
             {
-                throw new BingoException(BingoErrorKind.Conflict, "Confirme seu celular para encerrar a conta");
+                throw new BingoException(BingoErrorKind.Conflict, "Confirme seu celular para encerrar a conta", "PHONE_NOT_VERIFIED");
+            }
+
+            var undelivered = tab.Items
+                .Where(x => x.Status == BingoOrderItemStatus.Pending || x.Status == BingoOrderItemStatus.Retrieved)
+                .OrderBy(x => x.CreatedAt).ThenBy(x => x.Id)
+                .ToList();
+            if (undelivered.Count > 0)
+            {
+                if (!cancelUndelivered)
+                {
+                    throw new BingoException(
+                        BingoErrorKind.Conflict,
+                        "Há itens ainda não entregues.",
+                        "UNDELIVERED_ITEMS",
+                        new BingoUndeliveredDataDto
+                        {
+                            Items = undelivered.Select(x => new BingoUndeliveredItemDto { Id = x.Id, Name = x.ItemName, Quantity = x.Quantity, Status = x.Status }).ToList()
+                        });
+                }
+
+                var now = DateTime.UtcNow;
+                foreach (var item in undelivered)
+                {
+                    item.Cancel("Cancelado pelo cliente ao encerrar", tab.CustomerName, now);
+                }
             }
 
             tab.RequestClose();

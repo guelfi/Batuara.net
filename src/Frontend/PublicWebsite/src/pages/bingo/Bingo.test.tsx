@@ -15,6 +15,7 @@ jest.mock('../../services/bingoApi', () => {
       closeTab: jest.fn(),
       confirmPhone: jest.fn(),
       resendCode: jest.fn(),
+      contestItem: jest.fn(),
     },
   };
 });
@@ -123,4 +124,85 @@ test('código inválido mostra a mensagem do servidor', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
   expect(await screen.findByText('Código inválido ou expirado.')).toBeInTheDocument();
   expect(screen.getByText(/Confirme seu celular/)).toBeInTheDocument();
+});
+
+const orders = () => {
+  fireEvent.click(screen.getByRole('tab', { name: /Pedido/ }));
+};
+
+test('itens entregues, contestados e cancelados aparecem com status e valores', async () => {
+  window.history.pushState({}, '', `/bingo/comanda/${tabView.id}`);
+  const base = tabView.items[0];
+  api.getTab.mockResolvedValue({
+    ...tabView,
+    total: 20,
+    amountDue: 5,
+    contestedCount: 1,
+    items: [
+      { ...base, id: 'd1', quantity: 1, status: 'Delivered' as const, deliveredAt: '2026-01-01T20:30:00', deliveredByName: 'Ana' },
+      { ...base, id: 'c1', name: 'Suco', status: 'Contested' as const },
+      { ...base, id: 'x1', name: 'Bolo', status: 'Cancelled' as const },
+    ],
+  });
+  render(<BingoCustomerPage />);
+  await screen.findByText(/Maria/);
+  orders();
+  expect(await screen.findByText('Em contestação')).toBeInTheDocument();
+  expect(screen.getByText('Cancelado')).toBeInTheDocument();
+  expect(screen.getByText(/Entregue às .* por Ana/)).toBeInTheDocument();
+  expect(screen.getByTestId('amount-due')).toHaveTextContent(/A pagar \(itens entregues\):.*5,00/);
+  expect(screen.getByText(/Itens em contestação não entram/)).toBeInTheDocument();
+});
+
+test('Não recebi chama contestar e confirma', async () => {
+  window.history.pushState({}, '', `/bingo/comanda/${tabView.id}`);
+  api.getTab.mockResolvedValue({ ...tabView, items: [{ ...tabView.items[0], status: 'Delivered' as const }] });
+  api.contestItem.mockResolvedValue();
+  render(<BingoCustomerPage />);
+  await screen.findByText(/Maria/);
+  orders();
+  fireEvent.click(await screen.findByRole('button', { name: 'Não recebi' }));
+  fireEvent.change(screen.getByLabelText('Observação (opcional)'), { target: { value: 'nada na mesa' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
+  await waitFor(() => expect(api.contestItem).toHaveBeenCalledWith(tabView.id, 'i1', 'nada na mesa'));
+  expect(await screen.findByText('Contestação enviada. Um garçom vai conferir.')).toBeInTheDocument();
+});
+
+test('encerrar com 409 de itens não entregues oferece aguardar ou cancelar e encerrar', async () => {
+  window.history.pushState({}, '', `/bingo/comanda/${tabView.id}`);
+  api.getTab.mockResolvedValue(tabView);
+  const err = {
+    response: { status: 409, data: { success: false, code: 'UNDELIVERED_ITEMS', message: 'x', data: { items: [{ id: 'i1', name: 'Água', quantity: 2, status: 'Pending' }] } } },
+  };
+  api.closeTab.mockRejectedValueOnce(err);
+  render(<BingoCustomerPage />);
+  await screen.findByText(/Maria/);
+  orders();
+  fireEvent.click(await screen.findByRole('button', { name: 'Encerrar a conta' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Encerrar conta' }));
+  expect(await screen.findByText('Itens ainda não entregues')).toBeInTheDocument();
+  expect(screen.getAllByText('2x Água').length).toBeGreaterThan(1);
+  expect(api.closeTab).toHaveBeenLastCalledWith(tabView.id, false);
+  fireEvent.click(screen.getByRole('button', { name: 'Aguardar a entrega' }));
+  await waitFor(() => expect(screen.queryByText('Itens ainda não entregues')).toBeNull());
+  expect(api.closeTab).toHaveBeenCalledTimes(1);
+
+  api.closeTab.mockRejectedValueOnce(err);
+  fireEvent.click(screen.getByRole('button', { name: 'Encerrar a conta' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Encerrar conta' }));
+  api.closeTab.mockResolvedValueOnce();
+  fireEvent.click(await screen.findByRole('button', { name: 'Cancelar esses itens e encerrar' }));
+  await waitFor(() => expect(api.closeTab).toHaveBeenLastCalledWith(tabView.id, true));
+});
+
+test('encerrar com PHONE_NOT_VERIFIED mostra a mensagem', async () => {
+  window.history.pushState({}, '', `/bingo/comanda/${tabView.id}`);
+  api.getTab.mockResolvedValue(tabView);
+  api.closeTab.mockRejectedValue({ response: { status: 409, data: { code: 'PHONE_NOT_VERIFIED', message: 'Confirme seu celular antes de encerrar.' } } });
+  render(<BingoCustomerPage />);
+  await screen.findByText(/Maria/);
+  orders();
+  fireEvent.click(await screen.findByRole('button', { name: 'Encerrar a conta' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Encerrar conta' }));
+  expect(await screen.findByText('Confirme seu celular antes de encerrar.')).toBeInTheDocument();
 });

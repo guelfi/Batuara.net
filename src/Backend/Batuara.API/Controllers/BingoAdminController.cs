@@ -83,11 +83,60 @@ namespace Batuara.API.Controllers
         public async Task<IActionResult> GetSummary([FromQuery] int? eventoId, CancellationToken ct)
             => Ok(new { success = true, data = await service.GetSummaryAsync(eventoId, ct) });
 
-        [HttpPost("comandas/{tabId:guid}/pagar")]
-        public async Task<IActionResult> PayTab(Guid tabId, [FromBody] BingoPayOneRequest request, CancellationToken ct)
+        [HttpPost("comandas/pagar")]
+        public async Task<IActionResult> PayTabs([FromBody] BingoAdminPayRequest request, CancellationToken ct)
+            => Ok(new { success = true, data = await service.PayTabsAsync(ActorName(), request, ct) });
+
+        [HttpGet("mesas/{mesa:int}/comandas")]
+        public async Task<IActionResult> GetTableTabs(int mesa, [FromQuery] int? eventoId, CancellationToken ct)
+            => Ok(new { success = true, data = await service.GetTableTabsAsync(eventoId, mesa, ct) });
+
+        [HttpPost("itens/{itemId:int}/cancelar")]
+        public async Task<IActionResult> CancelItem(int itemId, [FromBody] BingoCancelItemRequest request, CancellationToken ct)
         {
-            await service.PayTabAsync(tabId, request, ct);
+            await service.CancelItemAsync(ActorName(), itemId, request.Reason, ct);
             return Ok(new { success = true });
+        }
+
+        [HttpPost("itens/{itemId:int}/resolver-contestacao")]
+        public async Task<IActionResult> ResolveContestation(int itemId, [FromBody] BingoResolveContestRequest request, CancellationToken ct)
+        {
+            await service.ResolveContestationAsync(ActorName(), itemId, request, ct);
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("itens/{itemId:int}/entregar")]
+        public async Task<IActionResult> DeliverItem(int itemId, CancellationToken ct)
+        {
+            await service.DeliverItemAsync(ActorName(), itemId, ct);
+            return Ok(new { success = true });
+        }
+
+        [HttpGet("formas-pagamento")]
+        public async Task<IActionResult> GetPaymentMethods(CancellationToken ct)
+            => Ok(new { success = true, data = await service.GetPaymentMethodsAsync(ct) });
+
+        [HttpPost("formas-pagamento")]
+        public async Task<IActionResult> CreatePaymentMethod([FromBody] BingoPaymentMethodRequest request, CancellationToken ct)
+            => Ok(new { success = true, data = await service.CreatePaymentMethodAsync(request, ct) });
+
+        [HttpPut("formas-pagamento/{id:int}")]
+        public async Task<IActionResult> UpdatePaymentMethod(int id, [FromBody] BingoPaymentMethodRequest request, CancellationToken ct)
+            => Ok(new { success = true, data = await service.UpdatePaymentMethodAsync(id, request, ct) });
+
+        [HttpDelete("formas-pagamento/{id:int}")]
+        public async Task<IActionResult> DeletePaymentMethod(int id, CancellationToken ct)
+        {
+            await service.DeletePaymentMethodAsync(id, ct);
+            return Ok(new { success = true });
+        }
+
+        private string ActorName()
+        {
+            var name = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                ?? User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Name)?.Value
+                ?? User.FindFirst("name")?.Value;
+            return string.IsNullOrWhiteSpace(name) ? "Administrador" : name.Trim();
         }
 
         [HttpPost("zerar-evento")]

@@ -13,6 +13,11 @@ namespace Batuara.Domain.Entities
         public string? Phone { get; private set; }
         public BingoTabStatus Status { get; private set; } = BingoTabStatus.Open;
         public BingoPaymentMethod? PaymentMethod { get; private set; }
+        public int? PaymentMethodId { get; private set; }
+        public string? PaymentMethodName { get; private set; }
+        public string? PaidByName { get; private set; }
+        public string? PaidNote { get; private set; }
+        public decimal? AmountPaid { get; private set; }
         public DateTime? PaidAt { get; private set; }
         public int? PaidByHouseMemberId { get; private set; }
         public DateTime? LinkSentAt { get; private set; }
@@ -38,7 +43,25 @@ namespace Batuara.Domain.Entities
 
         public bool IsPaid => Status == BingoTabStatus.Paid;
 
-        public decimal Total => _items.Sum(x => x.UnitPrice * x.Quantity);
+        private static decimal Line(BingoOrderItem x) => x.UnitPrice * x.Quantity;
+
+        public decimal Total => _items.Where(x => x.Status != BingoOrderItemStatus.Cancelled).Sum(Line);
+
+        public decimal AmountDue => _items.Where(x => x.Status == BingoOrderItemStatus.Delivered).Sum(Line);
+
+        public int UndeliveredCount => _items.Count(x => x.Status == BingoOrderItemStatus.Pending || x.Status == BingoOrderItemStatus.Retrieved);
+
+        public int ContestedCount => _items.Count(x => x.Status == BingoOrderItemStatus.Contested);
+
+        public decimal PaidAmount => AmountPaid ?? Total;
+
+        public string? PaymentLabel => PaymentMethodName ?? PaymentMethod switch
+        {
+            BingoPaymentMethod.Card => "Cartão",
+            BingoPaymentMethod.Pix => "Pix",
+            BingoPaymentMethod.Cash => "Dinheiro",
+            _ => null
+        };
 
         private BingoTab()
         {
@@ -67,10 +90,14 @@ namespace Batuara.Domain.Entities
             }
         }
 
-        public void MarkPaid(BingoPaymentMethod method, int? paidByHouseMemberId, DateTime utcNow)
+        public void MarkPaid(int paymentMethodId, string paymentMethodName, string paidByName, int? paidByHouseMemberId, string? note, DateTime utcNow)
         {
             Status = BingoTabStatus.Paid;
-            PaymentMethod = method;
+            PaymentMethodId = paymentMethodId;
+            PaymentMethodName = paymentMethodName;
+            PaidByName = paidByName;
+            PaidNote = note;
+            AmountPaid = AmountDue;
             PaidAt = utcNow;
             PaidByHouseMemberId = paidByHouseMemberId;
             Touch();

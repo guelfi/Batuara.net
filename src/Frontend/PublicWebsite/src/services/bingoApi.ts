@@ -5,6 +5,7 @@ import {
   BingoOrderLine,
   BingoPublicInfo,
   BingoTabView,
+  BingoUndeliveredItem,
   CreateBingoTabRequest,
   CreateBingoTabResponse,
 } from '../types/bingo';
@@ -57,6 +58,13 @@ export const apiErrorMessage = (error: any, fallback = 'Não foi possível concl
   return fallback;
 };
 
+/** Itens ainda nao entregues quando o encerramento e recusado (409 UNDELIVERED_ITEMS). */
+export const undeliveredFromError = (error: any): BingoUndeliveredItem[] | null => {
+  if (error?.response?.status !== 409 || error?.response?.data?.code !== 'UNDELIVERED_ITEMS') return null;
+  const items = error.response.data?.data?.items;
+  return Array.isArray(items) ? items : [];
+};
+
 export const httpStatus = (error: any): number | undefined => error?.response?.status;
 
 export const bingoApi = {
@@ -79,8 +87,12 @@ export const bingoApi = {
     await http.post(`/bingo/public/comandas/${tabId}/itens`, { items });
   },
 
-  async closeTab(tabId: string): Promise<void> {
-    await http.post(`/bingo/public/comandas/${tabId}/encerrar`);
+  async closeTab(tabId: string, cancelUndelivered = false): Promise<void> {
+    await http.post(`/bingo/public/comandas/${tabId}/encerrar`, cancelUndelivered ? { cancelUndelivered: true } : {});
+  },
+
+  async contestItem(tabId: string, itemId: string, note?: string): Promise<void> {
+    await http.post(`/bingo/public/comandas/${tabId}/itens/${itemId}/contestar`, note ? { note } : {});
   },
 
   async confirmPhone(tabId: string, code: string): Promise<void> {

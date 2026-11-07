@@ -49,6 +49,26 @@ namespace Batuara.API.Controllers
             return Ok(new { success = true });
         }
 
+        [HttpPost("itens/{itemId:int}/cancelar")]
+        public async Task<IActionResult> CancelItem(int itemId, [FromBody] BingoCancelItemRequest request, CancellationToken cancellationToken)
+        {
+            await service.CancelItemAsync(GetHouseMemberId(), itemId, request.Reason, cancellationToken);
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("itens/{itemId:int}/resolver-contestacao")]
+        public async Task<IActionResult> ResolveContestation(int itemId, [FromBody] BingoResolveContestRequest request, CancellationToken cancellationToken)
+        {
+            await service.ResolveContestationAsync(GetHouseMemberId(), itemId, request, cancellationToken);
+            return Ok(new { success = true });
+        }
+
+        [HttpGet("formas-pagamento")]
+        public async Task<IActionResult> GetPaymentMethods(CancellationToken cancellationToken)
+        {
+            return Ok(new { success = true, data = await service.GetPaymentMethodsAsync(cancellationToken) });
+        }
+
         [HttpPost("comandas/{tabId:guid}/mesa")]
         public async Task<IActionResult> ChangeTable(Guid tabId, [FromBody] BingoChangeTableRequest request, CancellationToken cancellationToken)
         {
@@ -57,9 +77,9 @@ namespace Batuara.API.Controllers
         }
 
         [HttpGet("contas")]
-        public async Task<IActionResult> GetAccounts(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetAccounts([FromQuery] bool todas, CancellationToken cancellationToken)
         {
-            return Ok(new { success = true, data = await service.GetAccountsAsync(cancellationToken) });
+            return Ok(new { success = true, data = await service.GetAccountsAsync(todas, cancellationToken) });
         }
 
         [HttpPost("comandas/pagar")]

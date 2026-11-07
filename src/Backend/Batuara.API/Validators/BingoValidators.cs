@@ -48,15 +48,17 @@ namespace Batuara.API.Validators
         public BingoPayRequestValidator()
         {
             RuleFor(x => x.TabIds).NotEmpty().Must(x => x == null || x.Count <= 50);
-            RuleFor(x => x.Method).IsInEnum();
+            RuleFor(x => x.PaymentMethodId).GreaterThan(0);
         }
     }
 
-    public class BingoPayOneRequestValidator : AbstractValidator<BingoPayOneRequest>
+    public class BingoAdminPayRequestValidator : AbstractValidator<BingoAdminPayRequest>
     {
-        public BingoPayOneRequestValidator()
+        public BingoAdminPayRequestValidator()
         {
-            RuleFor(x => x.Method).IsInEnum();
+            RuleFor(x => x.TabIds).NotEmpty().Must(x => x == null || x.Count <= 50);
+            RuleFor(x => x.PaymentMethodId).GreaterThan(0);
+            RuleFor(x => x.Note).MaximumLength(200);
         }
     }
 

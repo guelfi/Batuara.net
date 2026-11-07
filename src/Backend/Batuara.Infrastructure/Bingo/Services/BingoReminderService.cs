@@ -38,13 +38,14 @@ namespace Batuara.Infrastructure.Bingo.Services
             return new BingoReminderPreviewDto
             {
                 Count = tabs.Count,
-                TotalOwed = tabs.Sum(x => x.Total),
+                TotalOwed = tabs.Sum(x => x.AmountDue),
                 Items = tabs.Select(x => new BingoReminderItemDto
                 {
                     TabId = x.Id,
                     CustomerName = x.CustomerName,
                     Mesa = x.TableNumber,
-                    Total = x.Total,
+                    Total = x.AmountDue,
+                    AmountDue = x.AmountDue,
                     ReminderSentAt = x.ReminderSentAt
                 }).ToList()
             };
@@ -74,7 +75,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 }
 
                 first = false;
-                var text = $"Sua comanda do bingo ficou em aberto no valor de R$ {tab.Total.ToString("N2", PtBr)}. Procure a Casa de Caridade para acertar. Obrigado!";
+                var text = $"Sua comanda do bingo ficou em aberto no valor de R$ {tab.AmountDue.ToString("N2", PtBr)}. Procure a Casa de Caridade para acertar. Obrigado!";
                 try
                 {
                     var messageId = await _whatsApp.SendMemberNoticeAsync(tab.Phone!, tab.CustomerName, text, cancellationToken);
@@ -106,7 +107,7 @@ namespace Batuara.Infrastructure.Bingo.Services
             var tabs = await Db.BingoTabs.Include(x => x.Items)
                 .Where(x => x.EventId == eventId && x.Status != BingoTabStatus.Paid && x.Phone != null)
                 .ToListAsync(cancellationToken);
-            return tabs.Where(x => x.Total > 0).OrderBy(x => x.TableNumber).ThenBy(x => x.CreatedAt).ToList();
+            return tabs.Where(x => x.AmountDue > 0).OrderBy(x => x.TableNumber).ThenBy(x => x.CreatedAt).ToList();
         }
     }
 }

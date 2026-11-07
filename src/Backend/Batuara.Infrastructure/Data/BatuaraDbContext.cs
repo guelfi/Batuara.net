@@ -33,6 +33,7 @@ namespace Batuara.Infrastructure.Data
         public DbSet<BingoWaiter> BingoWaiters { get; set; } = null!;
         public DbSet<BingoTab> BingoTabs { get; set; } = null!;
         public DbSet<BingoOrderItem> BingoOrderItems { get; set; } = null!;
+        public DbSet<BingoPaymentOption> BingoPaymentOptions { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -60,6 +61,7 @@ namespace Batuara.Infrastructure.Data
             modelBuilder.ApplyConfiguration(new BingoWaiterConfiguration());
             modelBuilder.ApplyConfiguration(new BingoTabConfiguration());
             modelBuilder.ApplyConfiguration(new BingoOrderItemConfiguration());
+            modelBuilder.ApplyConfiguration(new BingoPaymentOptionConfiguration());
 
             // Configure schema - using batuara schema as defined in migrations
             modelBuilder.HasDefaultSchema("batuara");
