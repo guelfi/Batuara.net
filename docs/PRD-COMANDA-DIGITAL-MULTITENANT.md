@@ -171,7 +171,7 @@ Tenant (estabelecimento/organização) · Evento (turno de venda com data, card�
 ## 7. Requisitos não funcionais
 
 - **Desempenho mobile:** primeira tela do cliente interativa em ≤ 3 s em 4G médio e ≤ 6 s em Wi-Fi ruim; operações de pedido ≤ 500 ms no servidor (p95).
-- **Tamanho do download inicial (cliente):** meta ≤ 2 MB comprimido (ver risco R1 sobre Blazor WebAssembly).
+- **Primeira carga (cliente):** com o modo Auto (§8.3) a primeira tela não depende do download do runtime; meta de payload inicial ≤ 500 KB e do WASM em segundo plano ≤ 2 MB comprimido (ver R1).
 - **Resiliência de rede:** fila local de ações (pedir, contestar) com reenvio automático e indicação "sem conexão, tentando novamente"; nada se perde ao recarregar a página (comanda salva no aparelho).
 - **Tempo real:** v1 com polling de 4 s (pausado em segundo plano); v2 com **SignalR** (WebSocket com fallback) para pedidos e avisos.
 - **Disponibilidade:** 99,5% em horário de evento; deploy sem indisponibilidade (rolling) e **migrations idempotentes** com guarda de divergência.
@@ -182,26 +182,80 @@ Tenant (estabelecimento/organização) · Evento (turno de venda com data, card�
 - **Acessibilidade:** WCAG AA nos fluxos do cliente.
 - **Localização:** pt-BR na v1; textos em recursos para traduzir; moeda e fuso por tenant.
 
-## 8. Arquitetura proposta
+## 8. Stack e arquitetura
 
-**Stack:**
-- **Banco:** PostgreSQL.
-- **Backend:** API em **.NET 10** (ASP.NET Core, EF Core + Npgsql), Clean Architecture (Domain, Application, Infrastructure, API).
-- **Frontend:** **Blazor WebAssembly** (PWA) para as três superfícies: cliente, garçom/caixa e administração; componentes de UI compartilhados em uma biblioteca de classes Razor.
-- **Complementos:** SignalR (tempo real), jobs em segundo plano (`BackgroundService`/Quartz) para lembretes, retenção e anonimização, geração de QR no cliente.
+### 8.1 Stack adotada (padrão do autor, definida para o projeto "Meu Financeiro")
 
-**Multi-tenancy (recomendação):** banco único e esquema único com coluna `TenantId` em todas as tabelas de negócio, `ITenantContext` resolvido por requisição, *query filter* global e **RLS no Postgres** (`SET app.tenant_id` por conexão). Tenants grandes/exigentes podem migrar para banco dedicado depois, porque a camada de acesso já isola o contexto.
-*Alternativas descartadas na v1:* esquema por tenant (custo alto de migrations em escala) e banco por tenant (custo operacional).
+Fonte: imagens em `/home/guelfi/Projetos/Stack` (4 arquivos, 1 duplicado). **Observação:** o material recebido tem as seções 1, 3, 4, 5 e 6; **a seção 2 não veio** nas imagens e deve ser incluída aqui quando disponível.
 
-**Superfícies do frontend:**
-1. `cliente` (rota pública `/{slug}/mesa/...`): carga mínima, sem autenticação.
-2. `equipe` (garçom/caixa): autenticada, PWA instalável, notificações sonoras/vibração.
+| Camada | Tecnologia | Finalidade neste produto |
+|---|---|---|
+| Linguagem | **C# 14** | Full-stack em uma só linguagem |
+| Plataforma | **.NET 10 LTS** (suporte previsto até nov/2028) | Base da aplicação |
+| Frontend | **Blazor Web App** | Cliente, equipe e admin |
+| Renderização | **Interactive Server + WebAssembly** (híbrida, modo *Auto*) | Primeira tela rápida e processamento no aparelho depois |
+| Componentes visuais | **MudBlazor** | Painéis, formulários, tabelas, diálogos |
+| Backend | **ASP.NET Core Web API** | Serviços e integrações (WhatsApp, webhooks) |
+| ORM | **Entity Framework Core** | Persistência, filtro global por tenant |
+| Banco de dados | **PostgreSQL** | Dados de todos os tenants (RLS) |
+| Validação | **FluentValidation** | Validação das entradas da API |
+| Autenticação | **ASP.NET Core Identity** | Usuários da equipe e do admin, papéis e permissões por tenant |
+| Testes | **xUnit + Playwright** | Unidade/integração e ponta a ponta (fluxos mobile) |
+| Contêineres | **Docker + Docker Compose** | Desenvolvimento e implantação |
+| Observabilidade | **OpenTelemetry** | Logs, métricas e rastreamento, com `tenant_id` |
+| IA (opcional) | **Microsoft.Extensions.AI** (OpenAI, Claude, Gemini, Ollama/LM Studio; *tool calling*) | Recursos futuros (ver 8.5) |
+
+**Diretrizes herdadas da stack:**
+- **Arquitetura:** **monólito modular**, com separação de responsabilidades e serviços de IA desacoplados, preparado para evoluir conforme a complexidade.
+- **Frontend exclusivamente Blazor, sem React.** (O piloto do Batuara usa React/MUI; o produto novo é uma reescrita na stack acima e reaproveita **as regras e o contrato** do piloto, não o código de tela.)
+- **Mobile:** começa como **web responsiva + PWA**; depois, **.NET MAUI Blazor Hybrid** reaproveitando componentes Razor, com C# como linguagem principal.
+- **Cálculos financeiros determinísticos em C#**: totais, "a pagar", caixa por garçom e fechamento nunca dependem de modelo de linguagem.
+- **IA sem acesso direto ao banco:** só por serviços controlados da aplicação, com validações e confirmação do usuário quando necessário.
+
+### 8.2 Módulos do monólito modular
+
+Cada módulo tem seu contexto (casos de uso, entidades, repositórios) e expõe uma interface pública; comunicação entre módulos por interfaces e eventos de domínio internos, sem acesso cruzado às tabelas.
+
+1. **Plataforma/Tenants:** tenants, planos, limites, uso, suspensão.
+2. **Identidade e acesso:** Identity, papéis (Owner, Admin, Garçom, Caixa), convites, escala por evento.
+3. **Eventos:** ciclo de vida, teste/zerar, copiar evento, fechamento geral.
+4. **Cardápio e mesas:** itens, categorias, mesas, QR.
+5. **Comandas e pedidos:** abertura, itens, retirada/entrega, contestação, fechamento, reabertura.
+6. **Pagamentos e caixa:** formas de pagamento, cobrança, conferência por garçom, saída por QR.
+7. **Relatórios:** painel, resumo, fechamento impresso, exportações.
+8. **Mensageria:** canais (WhatsApp Cloud API atrás de `IMessageChannel`), templates, webhooks de status, cobrança amigável, cotas.
+9. **Privacidade:** retenção, anonimização, atendimento ao titular, auditoria.
+10. **IA (opcional, desacoplado):** ver 8.5.
+
+### 8.3 Renderização híbrida e o uso em celular
+
+- **Cliente (QR):** *Blazor Web App* em modo **Auto**: a primeira visita renderiza e interage via **Interactive Server** (sem baixar o runtime .NET; HTML pronto e SignalR) enquanto o **WebAssembly** é baixado em segundo plano para as visitas seguintes e para processamento no aparelho. Isso resolve o principal risco do WASM puro (download inicial em Wi-Fi ruim) sem abrir mão do WASM.
+- **Equipe e admin:** podem usar WebAssembly (PWA instalável) com cache do runtime, pois são acessos repetidos e autenticados.
+- **Resiliência:** com Interactive Server, a queda do WebSocket exige reconexão elegante (tela "reconectando", reenvio, estado da comanda no servidor e no aparelho); o modo WASM mantém fila local de ações.
+- **Requisitos de capacidade:** circuitos Server consomem memória por cliente conectado; dimensionar para o pico de clientes simultâneos e usar o WASM para aliviar o servidor depois da primeira carga.
+
+### 8.4 Multi-tenancy (recomendação)
+
+Banco único e esquema único com `TenantId` em todas as tabelas de negócio, `ITenantContext` resolvido por requisição, **filtro global no EF Core** e **Row-Level Security no PostgreSQL** (`SET app.tenant_id` por conexão). Tenants grandes podem migrar para banco dedicado depois, pois a camada de acesso já isola o contexto. *Descartadas na v1:* esquema por tenant e banco por tenant (custo operacional e de migrations).
+
+### 8.5 IA (opcional, fase posterior)
+
+Mesmas regras da stack: IA fora do caminho crítico, sem acesso direto ao banco, *tool calling* sobre serviços validados, com confirmação do usuário. Ideias de valor para este produto:
+- Resumo em linguagem natural do evento e sugestões (itens que esgotam cedo, horário de pico).
+- Alerta de anomalias (muitas contestações de um mesmo garçom, divergência de caixa).
+- Montagem do cardápio a partir de foto/planilha (OCR + IA).
+Totais e conferências continuam calculados em C#.
+
+### 8.6 Superfícies do frontend
+
+1. `cliente` (rota pública `/{slug}/mesa/...`): carga mínima, sem autenticação, modo Auto.
+2. `equipe` (garçom/caixa): autenticada, PWA, vibração e som.
 3. `admin` (dono): painel, cardápio, eventos, relatórios.
-Cada uma é um conjunto de rotas lazy-loaded para não pesar o download do cliente.
+Cada uma é um conjunto de rotas/assemblies com carregamento sob demanda; componentes compartilhados em uma biblioteca de classes Razor (RCL) com MudBlazor.
 
-**Integrações:** WhatsApp Cloud API (webhook de status) atrás de `IMessageChannel`; futuro PSP de Pix; armazenamento de imagens (cardápio) em object storage.
+### 8.7 Integrações e implantação
 
-**Implantação:** contêineres (API, front estático servido por CDN/nginx, Postgres gerenciado), CI/CD com testes e verificação de migrations, ambientes `staging` e `produção`, feature flags por tenant.
+WhatsApp Cloud API (webhook de status) atrás de `IMessageChannel`; futuro PSP de Pix; armazenamento de imagens em object storage. **Docker + Compose** (API/Web, Postgres, observabilidade), CI/CD com testes (xUnit, Playwright mobile) e verificação de migrations, ambientes `staging` e `produção`, *feature flags* por tenant, OpenTelemetry exportando para o coletor escolhido.
 
 ## 9. Modelo de dados (resumo)
 
@@ -264,7 +318,7 @@ Regras de UI: mobile-first, alvos de toque ≥ 48 px, sem rolagem desnecessária
 
 | Fase | Entregas |
 |---|---|
-| **0 – Fundação (4–6 sem.)** | Solução .NET 10 + Blazor WASM, multi-tenant (filtro global + RLS), autenticação por tenant, CI/CD, observabilidade, testes de isolamento |
+| **0 – Fundação (4–6 sem.)** | Solução .NET 10 + Blazor Web App (Server + WASM) + MudBlazor, monólito modular, Identity, multi-tenant (filtro global + RLS), autenticação por tenant, CI/CD, observabilidade, testes de isolamento |
 | **1 – Núcleo do evento (6–8 sem.)** | Eventos, cardápio, mesas/QR, comanda do cliente, garçom (pedidos/contas/QR), pagamento, painel, resumo e fechamento impresso, LGPD (retenção) |
 | **2 – Operação confiável (4–6 sem.)** | Fila offline do cliente, SignalR, confirmação por WhatsApp, cobrança amigável, saída por QR, auditoria, copiar evento |
 | **3 – Produto (6–8 sem.)** | Onboarding self-service, planos e cobrança, painel da plataforma, exportações, comparativo entre eventos, categorias/observações no cardápio |
@@ -272,7 +326,7 @@ Regras de UI: mobile-first, alvos de toque ≥ 48 px, sem rolagem desnecessária
 
 ## 14. Riscos e decisões em aberto
 
-- **R1 – Blazor WebAssembly no cliente.** O runtime .NET precisa ser baixado no primeiro acesso (alguns MB), o que pesa em Wi-Fi ruim justamente na tela que o cliente abre pelo QR. WASM também não costuma acelerar telas de formulário/lista; seu ganho está em processamento pesado. *Mitigações:* trimming e compressão Brotli, *lazy loading* por superfície, cache do PWA, pré-carregar enquanto o cliente lê o QR, medir a primeira carga em rede lenta como critério de aceite. Alternativa a avaliar para o cliente: Blazor com renderização estática/SSR na primeira tela e WASM só para a equipe e o admin.
+- **R1 – Download do WebAssembly e conexão do Server no cliente.** O runtime .NET pesa no primeiro acesso em Wi-Fi ruim, e o Interactive Server depende de WebSocket estável. *Mitigação:* modo **Auto** (Server na primeira visita, WASM em segundo plano), trimming e Brotli, cache PWA, reconexão elegante, fila local e medição da primeira carga em rede lenta como critério de aceite. WASM acelera processamento pesado, não telas de formulário; o ganho esperado está na menor carga no servidor e no uso repetido.
 - **R2 – Custo e política de mensageria** (Meta cobra por conversa/mensagem; marketing tem regras de opt-in). Definir quem paga e o limite por plano.
 - **R3 – Vazamento entre tenants.** Exige RLS, testes automatizados e revisão de código focada.
 - **R4 – Dependência de internet do local.** Definir o modo degradado (fila local, plano B em papel).
@@ -301,4 +355,4 @@ Regras de UI: mobile-first, alvos de toque ≥ 48 px, sem rolagem desnecessária
 
 ## 16. Referências do piloto
 
-Contrato técnico detalhado do piloto: `docs/BINGO-CONTRATO.md` · Plano e histórico: `docs/PLANO-MELHORIAS.md` (PM-046 a PM-050) · Modelo de comanda em papel: `docs/comanda.jpeg`.
+Imagens da stack adotada: `/home/guelfi/Projetos/Stack` (seção 2 ausente) · Contrato técnico detalhado do piloto: `docs/BINGO-CONTRATO.md` · Plano e histórico: `docs/PLANO-MELHORIAS.md` (PM-046 a PM-050) · Modelo de comanda em papel: `docs/comanda.jpeg`.
