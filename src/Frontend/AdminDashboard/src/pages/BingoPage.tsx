@@ -192,17 +192,21 @@ const LivePanel: React.FC<{
   const open = tabs.filter((t) => t.status === 'Open');
   const closing = tabs.filter((t) => t.status === 'CloseRequested');
   const paid = tabs.filter((t) => t.status === 'Paid');
-  const pendingByTab = tabs
-    .map((t) => ({ tab: t, items: t.items.filter((i) => i.status === 'Pending') }))
-    .filter((x) => x.items.length > 0)
+  const itemsText = (items: BingoTab['items']) =>
+    items.map((i) => `${i.quantity}x ${i.name}${i.status === 'Retrieved' ? ' (a caminho)' : ''}`).join(', ');
+  const mesaRows = tabs
+    .filter((t) => t.status !== 'Paid')
+    .map((t) => ({
+      tab: t,
+      toDeliver: t.items.filter((i) => i.status !== 'Delivered'),
+      delivered: t.items.filter((i) => i.status === 'Delivered'),
+    }))
+    .filter((x) => x.toDeliver.length + x.delivered.length > 0)
     .sort((a, b) => String(a.tab.mesa).localeCompare(String(b.tab.mesa), 'pt-BR', { numeric: true }));
-  const retrievedByTab = tabs
-    .map((t) => ({ tab: t, items: t.items.filter((i) => i.status === 'Retrieved') }))
-    .filter((x) => x.items.length > 0)
-    .sort((a, b) => String(a.tab.mesa).localeCompare(String(b.tab.mesa), 'pt-BR', { numeric: true }));
-  const retrievedCount =
-    panel?.retrievedItems ?? retrievedByTab.reduce((s, x) => s + x.items.reduce((q, i) => q + i.quantity, 0), 0);
-  const pendingCount = pendingByTab.reduce((s, x) => s + x.items.reduce((q, i) => q + i.quantity, 0), 0);
+  const countItems = (status: 'Pending' | 'Retrieved') =>
+    tabs.reduce((sum, t) => sum + t.items.filter((i) => i.status === status).reduce((q, i) => q + i.quantity, 0), 0);
+  const retrievedCount = panel?.retrievedItems ?? countItems('Retrieved');
+  const pendingCount = countItems('Pending');
   const totalSold = panel?.totalSold ?? paid.reduce((s, t) => s + t.total, 0);
   const closeAll = panel?.closeAllRequested ?? event?.closeAllRequested ?? false;
 
@@ -286,9 +290,9 @@ const LivePanel: React.FC<{
         </Stack>
       </Paper>
 
-      <Typography variant="h6">Pedidos pendentes por mesa</Typography>
-      {pendingByTab.length === 0 ? (
-        <Typography color="text.secondary">Nenhum pedido pendente.</Typography>
+      <Typography variant="h6">Mesas</Typography>
+      {mesaRows.length === 0 ? (
+        <Typography color="text.secondary">Nenhum pedido nas mesas.</Typography>
       ) : (
         <TableContainer component={Paper}>
           <Table size="small">
@@ -296,42 +300,24 @@ const LivePanel: React.FC<{
               <TableRow>
                 <TableCell>Mesa</TableCell>
                 <TableCell>Cliente</TableCell>
+                <TableCell>Situação</TableCell>
                 <TableCell>Itens</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {pendingByTab.map(({ tab, items }) => (
-                <TableRow key={tab.tabId}>
-                  <TableCell>{tab.mesa}</TableCell>
-                  <TableCell>{tab.customerName}</TableCell>
-                  <TableCell>{items.map((i) => `${i.quantity}x ${i.name}`).join(', ')}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
-
-      <Typography variant="h6">Itens retirados (a caminho) por mesa</Typography>
-      {retrievedByTab.length === 0 ? (
-        <Typography color="text.secondary">Nenhum item retirado aguardando entrega.</Typography>
-      ) : (
-        <TableContainer component={Paper}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Mesa</TableCell>
-                <TableCell>Cliente</TableCell>
-                <TableCell>Itens</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {retrievedByTab.map(({ tab, items }) => (
-                <TableRow key={tab.tabId}>
-                  <TableCell>{tab.mesa}</TableCell>
-                  <TableCell>{tab.customerName}</TableCell>
-                  <TableCell>{items.map((i) => `${i.quantity}x ${i.name}`).join(', ')}</TableCell>
-                </TableRow>
+              {mesaRows.map(({ tab, toDeliver, delivered }) => (
+                <React.Fragment key={tab.tabId}>
+                  <TableRow sx={{ '& td': { borderBottom: 0 } }}>
+                    <TableCell rowSpan={2} sx={{ fontWeight: 700, verticalAlign: 'top', borderBottom: 1, borderColor: 'divider' }}>{tab.mesa}</TableCell>
+                    <TableCell rowSpan={2} sx={{ verticalAlign: 'top', borderBottom: 1, borderColor: 'divider' }}>{tab.customerName}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap', color: 'warning.dark', fontWeight: 600 }}>A entregar</TableCell>
+                    <TableCell>{toDeliver.length ? itemsText(toDeliver) : '—'}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell sx={{ whiteSpace: 'nowrap', color: 'success.dark', fontWeight: 600 }}>Entregues</TableCell>
+                    <TableCell>{delivered.length ? itemsText(delivered) : '—'}</TableCell>
+                  </TableRow>
+                </React.Fragment>
               ))}
             </TableBody>
           </Table>

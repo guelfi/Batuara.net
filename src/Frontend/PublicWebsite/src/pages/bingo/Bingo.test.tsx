@@ -101,7 +101,7 @@ test('bloco de confirmação de celular aparece sem phoneVerified e some ao conf
   fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
   await waitFor(() => expect(api.confirmPhone).toHaveBeenCalledWith(tabView.id, '123456'));
   await waitFor(() => expect(screen.queryByText(/Confirme seu celular/)).toBeNull());
-  expect(screen.getByText(/Celular confirmado/)).toBeInTheDocument();
+  expect(screen.getByLabelText('Celular confirmado')).toBeInTheDocument();
 });
 
 test('bloco de confirmação não aparece com phoneVerified true', async () => {
@@ -110,7 +110,7 @@ test('bloco de confirmação não aparece com phoneVerified true', async () => {
   render(<BingoCustomerPage />);
   await screen.findByText(/Maria/);
   expect(screen.queryByText(/Confirme seu celular/)).toBeNull();
-  expect(screen.getByText(/Celular confirmado/)).toBeInTheDocument();
+  expect(screen.getByLabelText('Celular confirmado')).toBeInTheDocument();
 });
 
 test('código inválido mostra a mensagem do servidor', async () => {

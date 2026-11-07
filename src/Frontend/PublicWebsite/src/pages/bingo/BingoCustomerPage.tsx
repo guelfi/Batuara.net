@@ -19,12 +19,21 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  CheckCircle as CheckCircleIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  Remove as RemoveIcon,
+} from '@mui/icons-material';
 import { bingoApi, apiErrorMessage, httpStatus, savedTabId } from '../../services/bingoApi';
 import { BingoPublicInfo, BingoTabView } from '../../types/bingo';
 import { formatBRL, useNoIndex, usePolling } from './bingoHooks';
 
 const BIG_BUTTON = { minHeight: 52, fontSize: '1.05rem', fontWeight: 700 } as const;
+// Cardapio: linhas de altura fixa; quantas cabem por pagina depende da altura livre da tela.
+const ROW_H = 36;
+const PAGER_H = 40;
 const TAB_PATH = /^\/bingo\/comanda\/([^/?#]+)/;
 
 export const getTabIdFromPath = (pathname: string): string | null => {
@@ -196,6 +205,19 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
   const [message, setMessage] = useState<{ severity: 'success' | 'error' | 'info'; text: string } | null>(null);
   const [confirmClose, setConfirmClose] = useState(false);
   const [view, setView] = useState<'menu' | 'orders'>('menu');
+  const [menuEl, setMenuEl] = useState<HTMLDivElement | null>(null);
+  const [menuH, setMenuH] = useState(0);
+  const [menuPage, setMenuPage] = useState(0);
+
+  useEffect(() => {
+    if (!menuEl) return undefined;
+    const measure = () => setMenuH(menuEl.clientHeight);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(menuEl);
+    return () => observer.disconnect();
+  }, [menuEl]);
   const [code, setCode] = useState('');
   const [codeBusy, setCodeBusy] = useState(false);
   const [codeMsg, setCodeMsg] = useState<{ severity: 'error' | 'success'; text: string } | null>(null);
@@ -340,16 +362,24 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
   const canOrder = tab.isOpen && !isPaid && !closeRequested;
 
   const activeView = canOrder ? view : 'orders';
-  const MINI_BTN = { width: 30, height: 30 } as const;
+  const MINI_BTN = { width: 26, height: 26 } as const;
   const orderCount = tab.items.reduce((s, i) => s + i.quantity, 0);
   const cartCount = cartLines.reduce((s, l) => s + l.quantity, 0);
   const notice = (severity: 'success' | 'error' | 'info' | 'warning', text: string, bold = false) => (
-    <Alert severity={severity} sx={{ py: 0, px: 1, mb: 0.75, fontSize: '0.8rem', fontWeight: bold ? 700 : 400, '& .MuiAlert-icon': { py: 0.5, mr: 1 }, '& .MuiAlert-message': { py: 0.5 } }}>
+    <Alert severity={severity} sx={{ flexShrink: 0, py: 0, px: 1, mb: 0.75, fontSize: '0.8rem', fontWeight: bold ? 700 : 400, '& .MuiAlert-icon': { py: 0.5, mr: 1 }, '& .MuiAlert-message': { py: 0.5 } }}>
       {text}
     </Alert>
   );
 
-  const showCartBar = activeView === 'menu' && canOrder && cartCount > 0;
+  const showCartBar = activeView === 'menu' && canOrder;
+
+  // Sem medida (testes/primeira renderizacao) mostra tudo; cabendo tudo, sem paginacao.
+  const menuTotal = tab.menu.length;
+  const fitsAll = menuH === 0 || menuTotal * ROW_H <= menuH;
+  const perPage = fitsAll ? Math.max(1, menuTotal) : Math.max(3, Math.floor((menuH - PAGER_H) / ROW_H));
+  const menuPages = Math.max(1, Math.ceil(menuTotal / perPage));
+  const currentPage = Math.min(menuPage, menuPages - 1);
+  const visibleMenu = tab.menu.slice(currentPage * perPage, currentPage * perPage + perPage);
 
   return (
     <Box
@@ -377,12 +407,10 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
             · Mesa {tab.mesa}
           </Box>
         </Typography>
-        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', opacity: 0.75, lineHeight: 1.3 }}>
+        <Typography sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5, fontSize: '1rem', fontWeight: 600, lineHeight: 1.4 }}>
           {tab.customerName} · Nº {tab.id.slice(0, 8).toUpperCase()}
           {tab.phoneVerified && (
-            <Box component="span" sx={{ ml: 0.75, color: 'success.main', fontWeight: 600 }}>
-              ✓ Celular confirmado
-            </Box>
+            <CheckCircleIcon aria-label="Celular confirmado" titleAccess="Celular confirmado" sx={{ fontSize: 20, color: 'success.main' }} />
           )}
         </Typography>
         <Tabs
@@ -434,7 +462,7 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
         )}
       </Box>
 
-      <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', px: 2, pt: 1, pb: 2 }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', px: 2, pt: 1, pb: 2 }}>
         {error && notice('warning', error)}
         {tab.closeAllRequested && !isPaid && notice('warning', 'Por favor, encerre sua conta.', true)}
         {!tab.isOpen && notice('info', 'Pedidos do bingo fechados no momento.')}
@@ -442,9 +470,9 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
         {closeRequested && notice('info', 'Conta solicitada. Aguarde o garçom para o pagamento.')}
 
         {activeView === 'menu' && canOrder && (
-          <>
-            <Box>
-              {tab.menu.map((m) => {
+          <Box ref={setMenuEl} sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+              {visibleMenu.map((m) => {
                 const qty = cart[m.id] ?? 0;
                 const already = orderedByItem[String(m.id)] ?? 0;
                 return (
@@ -452,17 +480,18 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
                     key={m.id}
                     data-testid={`menu-${m.id}`}
                     sx={{
+                      height: ROW_H,
+                      boxSizing: 'border-box',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 1,
-                      py: 0.5,
+                      gap: 0.75,
                       borderBottom: 1,
                       borderColor: 'divider',
                       opacity: m.isAvailable ? 1 : 0.5,
                       color: m.isAvailable ? 'text.primary' : 'text.disabled',
                     }}
                   >
-                    <Typography noWrap sx={{ flex: 1, minWidth: 0, fontSize: '0.92rem', fontWeight: 600 }}>
+                    <Typography noWrap sx={{ flex: 1, minWidth: 0, fontSize: '0.86rem', fontWeight: 600 }}>
                       {m.name}
                       {already > 0 && (
                         <Box component="span" data-testid={`ordered-${m.id}`} sx={{ fontWeight: 400, ml: 0.5 }}>
@@ -470,7 +499,7 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
                         </Box>
                       )}
                     </Typography>
-                    <Typography variant="body2" sx={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                    <Typography variant="body2" sx={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                       {formatBRL(m.unitPrice)}
                     </Typography>
                     {m.isAvailable ? (
@@ -481,20 +510,20 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
                           disabled={qty === 0}
                           sx={{ ...MINI_BTN, border: 1, borderColor: 'divider' }}
                         >
-                          <RemoveIcon sx={{ fontSize: 18 }} />
+                          <RemoveIcon sx={{ fontSize: 16 }} />
                         </IconButton>
-                        <Typography sx={{ minWidth: 22, textAlign: 'center', fontWeight: 700, fontSize: '0.9rem' }}>{qty}</Typography>
+                        <Typography sx={{ minWidth: 20, textAlign: 'center', fontWeight: 700, fontSize: '0.85rem' }}>{qty}</Typography>
                         <IconButton
                           aria-label={`Adicionar ${m.name}`}
                           onClick={() => change(m.id, 1)}
                           disabled={qty >= 20}
                           sx={{ ...MINI_BTN, bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }}
                         >
-                          <AddIcon sx={{ fontSize: 18 }} />
+                          <AddIcon sx={{ fontSize: 16 }} />
                         </IconButton>
                       </Stack>
                     ) : (
-                      <Typography variant="caption" sx={{ fontWeight: 700, width: 82, textAlign: 'right' }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, width: 78, textAlign: 'right' }}>
                         Esgotado
                       </Typography>
                     )}
@@ -502,8 +531,23 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
                 );
               })}
             </Box>
-
-          </>
+            {menuPages > 1 && (
+              <Box
+                data-testid="menu-pager"
+                sx={{ height: PAGER_H, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}
+              >
+                <IconButton aria-label="Página anterior" size="small" disabled={currentPage === 0} onClick={() => setMenuPage(currentPage - 1)}>
+                  <ChevronLeftIcon />
+                </IconButton>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                  Página {currentPage + 1} de {menuPages}
+                </Typography>
+                <IconButton aria-label="Próxima página" size="small" disabled={currentPage >= menuPages - 1} onClick={() => setMenuPage(currentPage + 1)}>
+                  <ChevronRightIcon />
+                </IconButton>
+              </Box>
+            )}
+          </Box>
         )}
 
         {activeView === 'orders' && (
@@ -576,9 +620,11 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
           }}
         >
           <Typography sx={{ flex: 1, fontWeight: 700, fontSize: '0.92rem' }}>
-            {cartCount} {cartCount === 1 ? 'item' : 'itens'} · {formatBRL(cartTotal)}
+            {cartCount > 0
+              ? `${cartCount} ${cartCount === 1 ? 'item' : 'itens'} · ${formatBRL(cartTotal)}`
+              : 'Nenhum item selecionado'}
           </Typography>
-          <Button variant="contained" sx={{ minHeight: 42, fontWeight: 700 }} disabled={busy} onClick={placeOrder}>
+          <Button variant="contained" sx={{ minHeight: 42, fontWeight: 700 }} disabled={busy || cartCount === 0} onClick={placeOrder}>
             Fazer pedido
           </Button>
         </Box>
