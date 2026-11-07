@@ -35,15 +35,6 @@ namespace Batuara.API.Validators
         }
     }
 
-    public class BingoWaiterVerifyCodeRequestValidator : AbstractValidator<BingoWaiterVerifyCodeRequest>
-    {
-        public BingoWaiterVerifyCodeRequestValidator()
-        {
-            RuleFor(x => x.Phone).NotEmpty().MaximumLength(30);
-            RuleFor(x => x.Code).NotEmpty().MaximumLength(10);
-        }
-    }
-
     public class BingoChangeTableRequestValidator : AbstractValidator<BingoChangeTableRequest>
     {
         public BingoChangeTableRequestValidator()

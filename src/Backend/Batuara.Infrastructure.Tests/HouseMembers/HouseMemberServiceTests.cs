@@ -23,13 +23,13 @@ namespace Batuara.Infrastructure.Tests.HouseMembers
 
             public Task SendEventInviteAsync(string phoneE164, string memberName, string eventName, string eventDate, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-            public Task SendMemberNoticeAsync(string phoneE164, string memberName, string noticeText, CancellationToken cancellationToken = default) => Task.CompletedTask;
+            public Task<string> SendMemberNoticeAsync(string phoneE164, string memberName, string noticeText, CancellationToken cancellationToken = default) => Task.FromResult("fake-notice-id");
 
             public Task SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
             public int ReminderCount { get; private set; }
 
-            public Task SendAuthCodeAsync(string phoneE164, string code, CancellationToken cancellationToken = default) => Task.CompletedTask;
+            public Task<string> SendAuthCodeAsync(string phoneE164, string code, CancellationToken cancellationToken = default) => Task.FromResult("fake-code-id");
 
             public Task SendContributionReminderAsync(string phoneE164, string memberName, DateTime dueDate, decimal amount, CancellationToken cancellationToken = default)
             {

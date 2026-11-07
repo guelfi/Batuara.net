@@ -286,11 +286,12 @@ builder.Services.AddScoped<ISpiritualContentService, SpiritualContentService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IMemberAuthService, MemberAuthService>();
 builder.Services.Configure<BingoOptions>(builder.Configuration.GetSection(BingoOptions.SectionName));
-builder.Services.AddSingleton<IBingoLinkDispatcher, BingoLinkDispatcher>();
+builder.Services.AddSingleton<IBingoCodeDispatcher, BingoCodeDispatcher>();
 builder.Services.AddScoped<IBingoPublicService, BingoPublicService>();
 builder.Services.AddScoped<IBingoWaiterService, BingoWaiterService>();
 builder.Services.AddScoped<IBingoAdminService, BingoAdminService>();
 builder.Services.AddScoped<IBingoPrivacyService, BingoPrivacyService>();
+builder.Services.AddScoped<IBingoReminderService, BingoReminderService>();
 builder.Services.AddScoped<BingoWaiterAccessFilter>();
 builder.Services.AddScoped<ContributionReminderProcessor>();
 var whatsappProvider = builder.Configuration.GetValue<string>("WhatsApp:Provider") ?? "EvolutionApi";
@@ -419,7 +420,6 @@ builder.Services.AddRateLimiter(options =>
     AddBingoPolicy("bingo-read", 3000, 6000);
     AddBingoPolicy("bingo-write", 150, 1000);
     AddBingoPolicy("bingo-garcom", 600, 2000);
-    AddBingoPolicy("bingo-garcom-login", 20, 200);
     AddBingoPolicy("bingo-admin", 300, 2000);
 
     options.AddPolicy("authenticated", context =>

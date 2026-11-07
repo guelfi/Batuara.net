@@ -21,6 +21,7 @@ import ProfilePage from './pages/UnifiedProfilePage';
 import ContactMessagesPage from './pages/ContactMessagesPage';
 import UsersPage from './pages/UsersPage';
 import BingoPage from './pages/BingoPage';
+import BingoWaiterPage from './pages/BingoWaiterPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import NotFoundPage from './pages/NotFoundPage';
 import { UserRole } from './types';
@@ -80,6 +81,7 @@ function App() {
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/users" element={<ProtectedRoute requiredRole={UserRole.Admin}><UsersPage /></ProtectedRoute>} />
                         <Route path="/bingo" element={<ProtectedRoute requiredRole={UserRole.Admin}><BingoPage /></ProtectedRoute>} />
+                        <Route path="/bingo-garcom" element={<ProtectedRoute requiredRole={UserRole.Member}><BingoWaiterPage /></ProtectedRoute>} />
                         <Route path="/member-profile" element={<Navigate to="/profile" replace />} />
                         <Route path="*" element={<NotFoundPage />} />
                       </Routes>

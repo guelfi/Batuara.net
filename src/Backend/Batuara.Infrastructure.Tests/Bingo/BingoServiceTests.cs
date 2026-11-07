@@ -31,23 +31,31 @@ namespace Batuara.Infrastructure.Tests.Bingo
         {
             public bool Fail { get; set; }
             public string? LastCode { get; private set; }
+            public List<string> Codes { get; } = new();
+            public HashSet<string> FailNoticePhones { get; } = new();
             public List<(string Phone, string Name, string Text)> Notices { get; } = new();
 
-            public Task SendAuthCodeAsync(string phoneE164, string code, CancellationToken cancellationToken = default)
+            public Task<string> SendAuthCodeAsync(string phoneE164, string code, CancellationToken cancellationToken = default)
             {
                 LastCode = code;
-                return Task.CompletedTask;
-            }
-
-            public Task SendMemberNoticeAsync(string phoneE164, string memberName, string noticeText, CancellationToken cancellationToken = default)
-            {
-                Notices.Add((phoneE164, memberName, noticeText));
+                Codes.Add(code);
                 if (Fail)
                 {
                     throw new InvalidOperationException("WhatsApp fora do ar");
                 }
 
-                return Task.CompletedTask;
+                return Task.FromResult("code-msg-id");
+            }
+
+            public Task<string> SendMemberNoticeAsync(string phoneE164, string memberName, string noticeText, CancellationToken cancellationToken = default)
+            {
+                Notices.Add((phoneE164, memberName, noticeText));
+                if (Fail || FailNoticePhones.Contains(phoneE164))
+                {
+                    throw new InvalidOperationException("WhatsApp fora do ar");
+                }
+
+                return Task.FromResult("notice-msg-id");
             }
 
             public Task SendContributionReminderAsync(string phoneE164, string memberName, DateTime dueDate, decimal amount, CancellationToken cancellationToken = default) => Task.CompletedTask;
@@ -58,13 +66,13 @@ namespace Batuara.Infrastructure.Tests.Bingo
             public Task SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default) => Task.CompletedTask;
         }
 
-        private class RecordingDispatcher : IBingoLinkDispatcher
+        private class RecordingDispatcher : IBingoCodeDispatcher
         {
-            public List<(Guid TabId, string Phone, string Message)> Sent { get; } = new();
+            public List<(Guid TabId, string Phone, string Code)> Sent { get; } = new();
 
-            public void Dispatch(Guid tabId, string phone, string customerName, string message)
+            public void Dispatch(Guid tabId, string phone, string code)
             {
-                Sent.Add((tabId, phone, message));
+                Sent.Add((tabId, phone, code));
             }
         }
 
@@ -94,9 +102,9 @@ namespace Batuara.Infrastructure.Tests.Bingo
                     NullLogger<JwtService>.Instance);
                 var memberAuth = new MemberAuthService(Db, Passwords, jwt, WhatsApp, NullLogger<MemberAuthService>.Instance);
 
-                Public = new BingoPublicService(Db, Dispatcher, Options.Create(new BingoOptions { PublicBaseUrl = "https://exemplo.test/" }));
+                Public = new BingoPublicService(Db, Dispatcher, Passwords, Options.Create(new BingoOptions()));
                 Admin = new BingoAdminService(Db);
-                Waiter = new BingoWaiterService(Db, memberAuth);
+                Waiter = new BingoWaiterService(Db);
             }
 
             public static BatuaraDbContext CreateDb(string name)
@@ -293,6 +301,77 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public async Task Waiter_Should_Retrieve_Return_And_Deliver_From_Any_State()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var ana = await f.ScheduleWaiterAsync("11911112222");
+            var bia = await f.CreateMemberAsync("11933334444", "Bia Garcom");
+            await f.Admin.AddWaiterAsync(null, bia);
+            var tab = await f.NewTabAsync(mesa: 5);
+            await f.OrderAsync(tab.TabId, "Água", 2);
+            await f.OrderAsync(tab.TabId, "Salada", 1);
+            await f.OrderAsync(tab.TabId, "Refrigerante", 1);
+            var ids = (await f.Waiter.GetOrdersAsync(ana))[0].Items.Select(i => i.Id).ToList();
+
+            await f.Waiter.RetrieveAsync(ana, ids[0]);
+            await ShouldThrowAsync(() => f.Waiter.RetrieveAsync(bia, ids[0]), BingoErrorKind.Conflict);
+            var ex = await Assert.ThrowsAsync<BingoException>(() => f.Waiter.RetrieveAsync(bia, ids[0]));
+            ex.Message.Should().Contain("já retirado por Filho Garcom");
+            await ShouldThrowAsync(() => f.Waiter.RetrieveAsync(ana, 9999), BingoErrorKind.NotFound);
+
+            var mine = (await f.Waiter.GetOrdersAsync(ana))[0].Items;
+            mine.Should().HaveCount(3);
+            mine.Single(i => i.Id == ids[0]).Status.Should().Be(BingoOrderItemStatus.Retrieved);
+            mine.Single(i => i.Id == ids[0]).RetrievedByMe.Should().BeTrue();
+            mine.Single(i => i.Id == ids[0]).RetrievedByName.Should().Be("Filho Garcom");
+            mine.Single(i => i.Id == ids[1]).Status.Should().Be(BingoOrderItemStatus.Pending);
+            mine.Single(i => i.Id == ids[1]).RetrievedByName.Should().BeNull();
+            var theirs = (await f.Waiter.GetOrdersAsync(bia))[0].Items.Single(i => i.Id == ids[0]);
+            theirs.RetrievedByMe.Should().BeFalse();
+            theirs.RetrievedByName.Should().Be("Filho Garcom");
+
+            var panel = await f.Admin.GetPanelAsync(null);
+            panel.Counts.RetrievedItems.Should().Be(1);
+            panel.Counts.PendingItems.Should().Be(2);
+            panel.RetrievedByTable.Should().ContainSingle().Which.Should().BeEquivalentTo(new BingoRetrievedByTableDto { Mesa = 5, RetrievedItems = 2 });
+            panel.PendingByTable.Single().PendingItems.Should().Be(2);
+            panel.Tabs.Single().Items.Select(i => i.Status).Should().Contain(BingoOrderItemStatus.Retrieved);
+            (await f.Public.GetTabAsync(tab.TabId)).Items.Count(i => i.Status == BingoOrderItemStatus.Retrieved).Should().Be(1);
+
+            // outro garcom devolve; volta a Pending e limpa a retirada
+            await f.Waiter.ReturnAsync(ids[0]);
+            var back = await f.Db.BingoOrderItems.AsNoTracking().FirstAsync(x => x.Id == ids[0]);
+            back.Status.Should().Be(BingoOrderItemStatus.Pending);
+            back.RetrievedByHouseMemberId.Should().BeNull();
+            back.RetrievedAt.Should().BeNull();
+
+            // entregar a partir de Retrieved e de Pending, por garcom diferente de quem retirou
+            await f.Waiter.RetrieveAsync(ana, ids[1]);
+            await f.Waiter.DeliverAsync(bia, ids[1]);
+            await f.Waiter.DeliverAsync(bia, ids[2]);
+            var d = await f.Db.BingoOrderItems.AsNoTracking().FirstAsync(x => x.Id == ids[1]);
+            d.Status.Should().Be(BingoOrderItemStatus.Delivered);
+            d.DeliveredByHouseMemberId.Should().Be(bia);
+
+            // entregue nao volta nem e retirado de novo; entregar de novo e idempotente
+            await ShouldThrowAsync(() => f.Waiter.ReturnAsync(ids[1]), BingoErrorKind.Conflict);
+            await ShouldThrowAsync(() => f.Waiter.RetrieveAsync(ana, ids[1]), BingoErrorKind.Conflict);
+            await f.Waiter.DeliverAsync(ana, ids[1]);
+            (await f.Db.BingoOrderItems.AsNoTracking().FirstAsync(x => x.Id == ids[1])).DeliveredByHouseMemberId.Should().Be(bia);
+            (await f.Waiter.GetOrdersAsync(ana))[0].Items.Should().ContainSingle().Which.Id.Should().Be(ids[0]);
+        }
+
+        [Fact]
+        public async Task Waiter_Not_Scheduled_Should_Be_Blocked()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var outsider = await f.CreateMemberAsync("11955556666", "Fora da escala");
+            await ShouldThrowAsync(() => f.Waiter.EnsureAccessAsync(outsider), BingoErrorKind.Unauthorized);
+        }
+
+        [Fact]
         public async Task Waiter_Should_Deliver_Item_And_Record_Who_And_When()
         {
             var f = new Fixture();
@@ -302,7 +381,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await f.OrderAsync(tab.TabId, "Água", 2);
             await f.OrderAsync(tab.TabId, "Salada", 1);
 
-            var orders = await f.Waiter.GetOrdersAsync();
+            var orders = await f.Waiter.GetOrdersAsync(waiterId);
             orders.Should().ContainSingle();
             orders[0].Mesa.Should().Be(4);
             orders[0].Items.Should().HaveCount(2);
@@ -313,7 +392,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
             delivered.Status.Should().Be(BingoOrderItemStatus.Delivered);
             delivered.DeliveredByHouseMemberId.Should().Be(waiterId);
             delivered.DeliveredAt.Should().NotBeNull();
-            (await f.Waiter.GetOrdersAsync())[0].Items.Should().ContainSingle();
+            (await f.Waiter.GetOrdersAsync(waiterId))[0].Items.Should().ContainSingle();
             (await f.Admin.GetWaitersAsync(null)).Single().Deliveries.Should().Be(1);
             await ShouldThrowAsync(() => f.Waiter.DeliverAsync(waiterId, 9999), BingoErrorKind.NotFound);
         }
@@ -443,14 +522,9 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await ShouldThrowAsync(() => f.Waiter.EnsureAccessAsync(waiterId), BingoErrorKind.Unauthorized);
         }
 
-        [Fact]
-        public async Task Waiter_VerifyCode_Should_Issue_Ten_Hour_Token_Only_For_Scheduled_Members()
+        private static MemberAuthService CreateMemberAuth(Fixture f, BingoOptions? options = null)
         {
-            var f = new Fixture();
-            await f.OpenEventAsync();
-            var waiterId = await f.ScheduleWaiterAsync("11911112222");
-            await f.CreateMemberAsync("11922223333", "Nao Escalado");
-            var memberAuth = new MemberAuthService(f.Db, f.Passwords, new JwtService(
+            var jwt = new JwtService(
                 Options.Create(new JwtSettings
                 {
                     Secret = "test-secret-key-with-at-least-32-characters-long",
@@ -458,34 +532,88 @@ namespace Batuara.Infrastructure.Tests.Bingo
                     Audience = "batuara-tests",
                     AccessTokenExpirationMinutes = 60,
                     RefreshTokenExpirationDays = 7
-                }), NullLogger<JwtService>.Instance), f.WhatsApp, NullLogger<MemberAuthService>.Instance);
+                }), NullLogger<JwtService>.Instance);
+            return new MemberAuthService(f.Db, f.Passwords, jwt, f.WhatsApp, NullLogger<MemberAuthService>.Instance, Options.Create(options ?? new BingoOptions()));
+        }
 
-            await memberAuth.RequestCodeAsync(new MemberRequestCodeRequest { MobilePhone = "11922223333" }, null);
-            await ShouldThrowAsync(
-                () => f.Waiter.VerifyCodeAsync(new BingoWaiterVerifyCodeRequest { Phone = "11922223333", Code = f.WhatsApp.LastCode! }),
-                BingoErrorKind.Forbidden);
+        private static async Task<MemberLoginResponse> LoginAsync(Fixture f, MemberAuthService auth, string phone)
+        {
+            await auth.RequestCodeAsync(new MemberRequestCodeRequest { MobilePhone = phone }, null);
+            return await auth.VerifyCodeAsync(new MemberVerifyCodeRequest { MobilePhone = phone, Code = f.WhatsApp.LastCode! });
+        }
 
-            await memberAuth.RequestCodeAsync(new MemberRequestCodeRequest { MobilePhone = "11911112222" }, null);
-            var login = await f.Waiter.VerifyCodeAsync(new BingoWaiterVerifyCodeRequest { Phone = "11911112222", Code = f.WhatsApp.LastCode! });
+        [Fact]
+        public async Task Normal_Login_Should_Issue_Ten_Hour_Token_Only_For_Scheduled_Waiters()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiterId = await f.ScheduleWaiterAsync("11911112222");
+            await f.CreateMemberAsync("11922223333", "Nao Escalado");
+            var auth = CreateMemberAuth(f);
 
-            login.Name.Should().Be("Filho Garcom");
+            var other = await LoginAsync(f, auth, "11922223333");
+            (other.ExpiresAt - DateTime.UtcNow).Should().BeCloseTo(TimeSpan.FromMinutes(60), TimeSpan.FromMinutes(1));
+
+            var login = await LoginAsync(f, auth, "11911112222");
+            login.User.Name.Should().Be("Filho Garcom");
             var jwt = new JwtSecurityTokenHandler().ReadJwtToken(login.Token);
             jwt.Claims.Should().Contain(c => c.Type == "houseMemberId" && c.Value == waiterId.ToString());
             (login.ExpiresAt - DateTime.UtcNow).Should().BeCloseTo(TimeSpan.FromHours(10), TimeSpan.FromMinutes(1));
         }
 
         [Fact]
-        public async Task Waiter_VerifyCode_Should_Fail_When_Event_Is_Closed()
+        public async Task Normal_Login_Should_Honor_Configured_Waiter_Hours_And_Ignore_Closed_Events()
         {
             var f = new Fixture();
+            await f.OpenEventAsync();
+            await f.ScheduleWaiterAsync("11911112222");
 
-            await ShouldThrowAsync(
-                () => f.Waiter.VerifyCodeAsync(new BingoWaiterVerifyCodeRequest { Phone = "11911112222", Code = "123456" }),
-                BingoErrorKind.Forbidden);
+            var login = await LoginAsync(f, CreateMemberAuth(f, new BingoOptions { WaiterSessionHours = 4 }), "11911112222");
+            (login.ExpiresAt - DateTime.UtcNow).Should().BeCloseTo(TimeSpan.FromHours(4), TimeSpan.FromMinutes(1));
+
+            await f.Admin.CloseEventAsync(1);
+            var after = await LoginAsync(f, CreateMemberAuth(f), "11911112222");
+            (after.ExpiresAt - DateTime.UtcNow).Should().BeCloseTo(TimeSpan.FromMinutes(60), TimeSpan.FromMinutes(1));
         }
 
         [Fact]
-        public async Task CreateTab_Should_Dispatch_Link_And_Respect_Three_Minute_Limit_Per_Phone()
+        public async Task Me_Should_Report_Scheduled_Not_Scheduled_And_No_Open_Event()
+        {
+            var f = new Fixture();
+
+            var none = await f.Waiter.GetMeAsync(1);
+            none.IsWaiter.Should().BeFalse();
+            none.EventOpen.Should().BeFalse();
+            none.EventName.Should().BeNull();
+
+            await f.OpenEventAsync();
+            var waiterId = await f.ScheduleWaiterAsync("11911112222");
+            var outsider = await f.CreateMemberAsync("11922223333", "Nao Escalado");
+
+            var yes = await f.Waiter.GetMeAsync(waiterId);
+            yes.IsWaiter.Should().BeTrue();
+            yes.EventOpen.Should().BeTrue();
+            yes.EventName.Should().NotBeNullOrEmpty();
+
+            var no = await f.Waiter.GetMeAsync(outsider);
+            no.IsWaiter.Should().BeFalse();
+            no.EventOpen.Should().BeTrue();
+
+            await f.Admin.RemoveWaiterAsync(null, waiterId);
+            (await f.Waiter.GetMeAsync(waiterId)).IsWaiter.Should().BeFalse();
+        }
+
+        private static BingoPublicService PublicWith(Fixture f, BingoOptions options)
+            => new(f.Db, f.Dispatcher, f.Passwords, Options.Create(options));
+
+        private async Task<BingoTab> StoredTabAsync(Fixture f)
+        {
+            f.Db.ChangeTracker.Clear();
+            return await f.Db.BingoTabs.FirstAsync();
+        }
+
+        [Fact]
+        public async Task CreateTab_Should_Dispatch_Code_And_Not_Resend_On_Reopen()
         {
             var f = new Fixture();
             await f.OpenEventAsync();
@@ -493,38 +621,25 @@ namespace Batuara.Infrastructure.Tests.Bingo
             var tab = await f.NewTabAsync("(11) 99999-0001");
 
             f.Dispatcher.Sent.Should().ContainSingle();
-            f.Dispatcher.Sent[0].Phone.Should().Be("5511999990001");
-            f.Dispatcher.Sent[0].Message.Should().Be($"Sua comanda do bingo está aberta. Acesse: https://exemplo.test/bingo/comanda/{tab.TabId}");
-            f.Dispatcher.Sent[0].Message.Should().NotContain("\n");
+            var sent = f.Dispatcher.Sent[0];
+            sent.TabId.Should().Be(tab.TabId);
+            sent.Phone.Should().Be("5511999990001");
+            sent.Code.Should().MatchRegex("^[0-9]{6}$");
 
-            await ShouldThrowAsync(() => f.Public.ResendLinkAsync(tab.TabId), BingoErrorKind.TooManyRequests);
-            f.Dispatcher.Sent.Should().ContainSingle();
+            var stored = await StoredTabAsync(f);
+            stored.VerificationCodeHash.Should().NotBeNullOrEmpty().And.NotContain(sent.Code);
+            f.Passwords.VerifyPassword(sent.Code, stored.VerificationCodeHash!).Should().BeTrue();
+            stored.VerificationCodeExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddMinutes(30), TimeSpan.FromMinutes(1));
+            stored.IsPhoneVerified.Should().BeFalse();
+            (await f.Public.GetTabAsync(tab.TabId)).PhoneVerified.Should().BeFalse();
 
-            var stored = await f.Db.BingoTabs.FirstAsync();
-            stored.RegisterLinkAttempt(DateTime.UtcNow.AddMinutes(-4));
-            await f.Db.SaveChangesAsync();
-
-            await f.Public.ResendLinkAsync(tab.TabId);
-            f.Dispatcher.Sent.Should().HaveCount(2);
-            await ShouldThrowAsync(() => f.Public.ResendLinkAsync(tab.TabId), BingoErrorKind.TooManyRequests);
-        }
-
-        [Fact]
-        public async Task Link_Limit_Should_Apply_Per_Phone_Across_Tabs()
-        {
-            var f = new Fixture();
-            await f.OpenEventAsync();
-            var first = await f.NewTabAsync("11999990001");
-            await f.Admin.PayTabAsync(first.TabId, new BingoPayOneRequest { Method = BingoPaymentMethod.Pix });
-
-            var second = await f.NewTabAsync("11999990001");
-
-            second.Reused.Should().BeFalse();
+            var again = await f.NewTabAsync("11999990001");
+            again.Reused.Should().BeTrue();
             f.Dispatcher.Sent.Should().ContainSingle();
         }
 
         [Fact]
-        public async Task WhatsApp_Failure_Should_Not_Break_Tab_Creation()
+        public async Task Code_Dispatcher_Should_Record_MessageId_And_Never_Break_Creation_On_Failure()
         {
             var dbName = Guid.NewGuid().ToString();
             var whatsApp = new FakeWhatsApp { Fail = true };
@@ -532,44 +647,333 @@ namespace Batuara.Infrastructure.Tests.Bingo
             services.AddLogging();
             services.AddDbContext<BatuaraDbContext>(o => o.UseInMemoryDatabase(dbName));
             services.AddSingleton<IWhatsAppService>(whatsApp);
-            var provider = services.BuildServiceProvider();
-            var dispatcher = new BingoLinkDispatcher(provider.GetRequiredService<IServiceScopeFactory>(), NullLogger<BingoLinkDispatcher>.Instance);
+            var dispatcher = new BingoCodeDispatcher(services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>(), NullLogger<BingoCodeDispatcher>.Instance);
 
             var db = Fixture.CreateDb(dbName);
             await new BingoAdminService(db).OpenEventAsync(1);
-            var service = new BingoPublicService(db, dispatcher, Options.Create(new BingoOptions()));
+            var passwords = new PasswordService(Options.Create(new PasswordRequirements()));
+            var service = new BingoPublicService(db, dispatcher, passwords, Options.Create(new BingoOptions()));
 
             var tab = await service.CreateTabAsync(new BingoCreateTabRequest { CustomerName = "Maria", Phone = "11999990001", Mesa = 1 });
 
             tab.TabId.Should().NotBeEmpty();
-            for (var i = 0; i < 50 && whatsApp.Notices.Count == 0; i++)
+            for (var i = 0; i < 100 && whatsApp.Codes.Count == 0; i++)
             {
                 await Task.Delay(50);
             }
 
-            whatsApp.Notices.Should().ContainSingle();
-            whatsApp.Notices[0].Text.Should().Contain("https://www.batuara.org.br/bingo/comanda/");
-            await dispatcher.SendAsync(tab.TabId, "5511999990001", "Maria", "x");
-            (await db.BingoTabs.FirstAsync()).LinkSentAt.Should().BeNull();
+            whatsApp.Codes.Should().ContainSingle();
+            for (var i = 0; i < 100; i++)
+            {
+                if ((await Fixture.CreateDb(dbName).BingoTabs.FirstAsync()).CodeDeliveryStatus != null)
+                {
+                    break;
+                }
+
+                await Task.Delay(50);
+            }
+
+            var failed = await Fixture.CreateDb(dbName).BingoTabs.FirstAsync();
+            failed.CodeDeliveryStatus.Should().Be("Failed");
+            failed.CodeMessageId.Should().BeNull();
+
+            whatsApp.Fail = false;
+            await dispatcher.SendAsync(tab.TabId, "5511999990001", "123456");
+            var ok = await Fixture.CreateDb(dbName).BingoTabs.FirstAsync();
+            ok.CodeDeliveryStatus.Should().Be("Sent");
+            ok.CodeMessageId.Should().Be("code-msg-id");
         }
 
         [Fact]
-        public async Task Link_Dispatcher_Should_Mark_LinkSentAt_On_Success()
+        public async Task ConfirmPhone_Should_Accept_Right_Code()
         {
-            var dbName = Guid.NewGuid().ToString();
-            var services = new ServiceCollection();
-            services.AddLogging();
-            services.AddDbContext<BatuaraDbContext>(o => o.UseInMemoryDatabase(dbName));
-            services.AddSingleton<IWhatsAppService>(new FakeWhatsApp());
-            var dispatcher = new BingoLinkDispatcher(services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>(), NullLogger<BingoLinkDispatcher>.Instance);
-            var db = Fixture.CreateDb(dbName);
-            var tab = new BingoTab(1, "Maria", "5511999990001", 1);
-            db.BingoTabs.Add(tab);
-            await db.SaveChangesAsync();
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var tab = await f.NewTabAsync();
 
-            await dispatcher.SendAsync(tab.Id, "5511999990001", "Maria", "msg");
+            var result = await f.Public.ConfirmPhoneAsync(tab.TabId, f.Dispatcher.Sent[0].Code);
 
-            (await Fixture.CreateDb(dbName).BingoTabs.FirstAsync()).LinkSentAt.Should().NotBeNull();
+            result.Verified.Should().BeTrue();
+            (await f.Public.GetTabAsync(tab.TabId)).PhoneVerified.Should().BeTrue();
+            var stored = await StoredTabAsync(f);
+            stored.PhoneVerifiedAt.Should().NotBeNull();
+            stored.VerificationCodeHash.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task ConfirmPhone_Should_Reject_Wrong_Or_Expired_Code()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var tab = await f.NewTabAsync();
+            var code = f.Dispatcher.Sent[0].Code;
+            var wrong = code == "000000" ? "111111" : "000000";
+
+            await ShouldThrowAsync(() => f.Public.ConfirmPhoneAsync(tab.TabId, wrong), BingoErrorKind.Validation);
+            (await StoredTabAsync(f)).VerificationAttempts.Should().Be(1);
+
+            var stored = await f.Db.BingoTabs.FirstAsync();
+            stored.IssueVerificationCode(f.Passwords.HashPassword(code), DateTime.UtcNow.AddHours(-1), TimeSpan.FromMinutes(30));
+            await f.Db.SaveChangesAsync();
+
+            await ShouldThrowAsync(() => f.Public.ConfirmPhoneAsync(tab.TabId, code), BingoErrorKind.Validation);
+            (await f.Public.GetTabAsync(tab.TabId)).PhoneVerified.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task ConfirmPhone_Should_Block_After_Five_Wrong_Attempts()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var tab = await f.NewTabAsync();
+            var code = f.Dispatcher.Sent[0].Code;
+            var wrong = code == "000000" ? "111111" : "000000";
+
+            for (var i = 0; i < 5; i++)
+            {
+                await ShouldThrowAsync(() => f.Public.ConfirmPhoneAsync(tab.TabId, wrong), BingoErrorKind.Validation);
+            }
+
+            await ShouldThrowAsync(() => f.Public.ConfirmPhoneAsync(tab.TabId, code), BingoErrorKind.TooManyRequests);
+            (await StoredTabAsync(f)).VerificationAttempts.Should().Be(5);
+        }
+
+        [Fact]
+        public async Task ResendCode_Should_Respect_Sixty_Second_Interval_And_Reset_Attempts()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var tab = await f.NewTabAsync();
+            var firstCode = f.Dispatcher.Sent[0].Code;
+
+            await ShouldThrowAsync(() => f.Public.ResendCodeAsync(tab.TabId), BingoErrorKind.TooManyRequests);
+            f.Dispatcher.Sent.Should().ContainSingle();
+
+            var stored = await f.Db.BingoTabs.FirstAsync();
+            stored.RegisterVerificationAttempt();
+            stored.IssueVerificationCode(f.Passwords.HashPassword(firstCode), DateTime.UtcNow.AddSeconds(-90), TimeSpan.FromMinutes(30));
+            stored.RegisterVerificationAttempt();
+            await f.Db.SaveChangesAsync();
+
+            await f.Public.ResendCodeAsync(tab.TabId);
+
+            f.Dispatcher.Sent.Should().HaveCount(2);
+            var refreshed = await StoredTabAsync(f);
+            refreshed.VerificationAttempts.Should().Be(0);
+            f.Passwords.VerifyPassword(f.Dispatcher.Sent[1].Code, refreshed.VerificationCodeHash!).Should().BeTrue();
+            await ShouldThrowAsync(() => f.Public.ResendCodeAsync(tab.TabId), BingoErrorKind.TooManyRequests);
+        }
+
+        [Fact]
+        public async Task ResendCode_Should_Limit_Three_Per_Hour_Per_Phone()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var tab = await f.NewTabAsync();
+
+            var stored = await f.Db.BingoTabs.FirstAsync();
+            stored.IssueVerificationCode("h", DateTime.UtcNow.AddMinutes(-10), TimeSpan.FromMinutes(30));
+            stored.IssueVerificationCode("h", DateTime.UtcNow.AddMinutes(-5), TimeSpan.FromMinutes(30));
+            await f.Db.SaveChangesAsync();
+            (await StoredTabAsync(f)).CodeSendCount.Should().Be(3);
+
+            await ShouldThrowAsync(() => f.Public.ResendCodeAsync(tab.TabId), BingoErrorKind.TooManyRequests);
+            f.Dispatcher.Sent.Should().ContainSingle();
+        }
+
+        [Fact]
+        public async Task Close_Should_Require_Verified_Phone_Only_When_Configured()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var tab = await f.NewTabAsync();
+            var strict = PublicWith(f, new BingoOptions { RequirePhoneVerificationToClose = true });
+
+            var ex = await FluentActions.Awaiting(() => strict.RequestCloseAsync(tab.TabId)).Should().ThrowAsync<BingoException>();
+            ex.Which.Kind.Should().Be(BingoErrorKind.Conflict);
+            ex.Which.Message.Should().Be("Confirme seu celular para encerrar a conta");
+
+            await strict.ConfirmPhoneAsync(tab.TabId, f.Dispatcher.Sent[0].Code);
+            await strict.RequestCloseAsync(tab.TabId);
+            (await f.Public.GetTabAsync(tab.TabId)).Status.Should().Be(BingoTabStatus.CloseRequested);
+
+            var other = await f.NewTabAsync("11999990002", 2);
+            await f.Public.RequestCloseAsync(other.TabId);
+            (await f.Public.GetTabAsync(other.TabId)).Status.Should().Be(BingoTabStatus.CloseRequested);
+        }
+
+        [Fact]
+        public async Task Panel_And_History_Should_Expose_Verification_And_Delivery()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var a = await f.NewTabAsync("11999990001", 1);
+            await f.NewTabAsync("11999990002", 2);
+            await f.NewTabAsync("11999990003", 3);
+            await f.Public.ConfirmPhoneAsync(a.TabId, f.Dispatcher.Sent[0].Code);
+            var tabs = await f.Db.BingoTabs.OrderBy(x => x.CreatedAt).ToListAsync();
+            tabs[1].RegisterCodeSent("wamid.b");
+            tabs[2].RegisterCodeSendFailure("131026 - Message undeliverable");
+            await f.Db.SaveChangesAsync();
+
+            var panel = await f.Admin.GetPanelAsync(null);
+
+            panel.Counts.PhoneVerified.Should().Be(1);
+            panel.Counts.PhoneNotVerified.Should().Be(2);
+            panel.Counts.CodeDeliveryFailed.Should().Be(1);
+            panel.Tabs.Single(x => x.Id == a.TabId).PhoneVerified.Should().BeTrue();
+            panel.Tabs.Should().ContainSingle(x => x.CodeDeliveryStatus == "Failed" && x.CodeDeliveryError == "131026 - Message undeliverable");
+
+            var history = await f.Admin.GetEventTabsAsync(1);
+            history.Should().HaveCount(3);
+            history.Should().OnlyContain(x => x.ReminderSentAt == null && x.ReminderDeliveryStatus == null);
+        }
+
+        private static BingoReminderService NewReminders(Fixture f)
+            => new(f.Db, f.WhatsApp, NullLogger<BingoReminderService>.Instance, TimeSpan.Zero);
+
+        private static async Task<(Guid A, Guid B, Guid C, Guid D)> SeedDebtsAsync(Fixture f)
+        {
+            await f.OpenEventAsync();
+            var a = await f.NewTabAsync("11999990001", 1, "Ana Lima");
+            var b = await f.NewTabAsync("11999990002", 2, "Bia Souza");
+            var c = await f.NewTabAsync("11999990003", 3, "Carla Dias");
+            var d = await f.NewTabAsync("11999990004", 4, "Duda Reis");
+            await f.OrderAsync(a.TabId, "Refrigerante", 2);
+            await f.OrderAsync(a.TabId, "Água", 1);
+            await f.OrderAsync(b.TabId, "Salada", 1);
+            await f.OrderAsync(d.TabId, "Cachorro-quente", 1);
+            await f.Admin.PayTabAsync(b.TabId, new BingoPayOneRequest { Method = BingoPaymentMethod.Pix });
+            return (a.TabId, b.TabId, c.TabId, d.TabId);
+        }
+
+        [Fact]
+        public async Task Reminders_Should_Only_Work_For_Closed_Events()
+        {
+            var f = new Fixture();
+            await SeedDebtsAsync(f);
+            var reminders = NewReminders(f);
+
+            await ShouldThrowAsync(() => reminders.PreviewAsync(1), BingoErrorKind.Conflict);
+            await ShouldThrowAsync(() => reminders.SendAsync(1, true), BingoErrorKind.Conflict);
+            f.WhatsApp.Notices.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task Reminders_Preview_Should_List_Unpaid_With_Phone_And_Total()
+        {
+            var f = new Fixture();
+            var (a, _, _, d) = await SeedDebtsAsync(f);
+            await f.Admin.CloseEventAsync(1);
+
+            var preview = await NewReminders(f).PreviewAsync(1);
+
+            preview.Count.Should().Be(2);
+            preview.TotalOwed.Should().Be(31m);
+            preview.Items.Select(x => x.TabId).Should().BeEquivalentTo(new[] { a, d });
+            preview.Items.Single(x => x.TabId == a).Total.Should().Be(21m);
+            preview.Items.Single(x => x.TabId == a).Mesa.Should().Be(1);
+            preview.Items.Single(x => x.TabId == a).CustomerName.Should().Be("Ana Lima");
+            preview.Items.Should().OnlyContain(x => x.ReminderSentAt == null);
+        }
+
+        [Fact]
+        public async Task Reminders_Send_Should_Require_Confirmation()
+        {
+            var f = new Fixture();
+            await SeedDebtsAsync(f);
+            await f.Admin.CloseEventAsync(1);
+
+            await ShouldThrowAsync(() => NewReminders(f).SendAsync(1, false), BingoErrorKind.Validation);
+            f.WhatsApp.Notices.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task Reminders_Send_Should_Send_One_Per_Tab_With_Template_Text()
+        {
+            var f = new Fixture();
+            var (a, _, _, _) = await SeedDebtsAsync(f);
+            await f.Admin.CloseEventAsync(1);
+            var reminders = NewReminders(f);
+
+            var result = await reminders.SendAsync(1, true);
+
+            result.Should().BeEquivalentTo(new BingoReminderResultDto { Sent = 2, Skipped = 0, Failed = 0 });
+            f.WhatsApp.Notices.Should().HaveCount(2);
+            f.WhatsApp.Notices.Should().Contain(n => n.Text == "Sua comanda do bingo ficou em aberto no valor de R$ 21,00. Procure a Casa de Caridade para acertar. Obrigado!");
+            f.WhatsApp.Notices.Should().OnlyContain(n => !n.Text.Contains("\n"));
+            var stored = await f.Db.BingoTabs.FirstAsync(x => x.Id == a);
+            stored.ReminderSentAt.Should().NotBeNull();
+            stored.ReminderMessageId.Should().Be("notice-msg-id");
+            stored.ReminderDeliveryStatus.Should().Be("Sent");
+
+            var second = await reminders.SendAsync(1, true);
+
+            second.Should().BeEquivalentTo(new BingoReminderResultDto { Sent = 0, Skipped = 2, Failed = 0 });
+            f.WhatsApp.Notices.Should().HaveCount(2);
+            (await reminders.PreviewAsync(1)).Items.Should().OnlyContain(x => x.ReminderSentAt != null);
+            (await f.Admin.GetEventTabsAsync(1)).Count(x => x.ReminderSentAt != null).Should().Be(2);
+        }
+
+        [Fact]
+        public async Task Reminders_Partial_Failure_Should_Not_Stop_Others_And_Can_Be_Retried()
+        {
+            var f = new Fixture();
+            var (a, _, _, d) = await SeedDebtsAsync(f);
+            await f.Admin.CloseEventAsync(1);
+            f.WhatsApp.FailNoticePhones.Add("5511999990001");
+            var reminders = NewReminders(f);
+
+            var result = await reminders.SendAsync(1, true);
+
+            result.Should().BeEquivalentTo(new BingoReminderResultDto { Sent = 1, Skipped = 0, Failed = 1 });
+            var failed = await f.Db.BingoTabs.FirstAsync(x => x.Id == a);
+            failed.ReminderSentAt.Should().BeNull();
+            failed.ReminderDeliveryStatus.Should().Be("Failed");
+            (await f.Db.BingoTabs.FirstAsync(x => x.Id == d)).ReminderSentAt.Should().NotBeNull();
+
+            f.WhatsApp.FailNoticePhones.Clear();
+            var retry = await reminders.SendAsync(1, true);
+            retry.Should().BeEquivalentTo(new BingoReminderResultDto { Sent = 1, Skipped = 1, Failed = 0 });
+        }
+
+        [Fact]
+        public async Task Privacy_Should_Keep_Unpaid_Tabs_For_Ninety_Days_And_Paid_For_Thirty()
+        {
+            var f = new Fixture();
+            var (a, b, _, _) = await SeedDebtsAsync(f);
+            await f.Admin.CloseEventAsync(1);
+            var privacy = new BingoPrivacyService(f.Db);
+
+            (await privacy.AnonymizeClosedEventsAsync(DateTime.UtcNow.AddDays(10))).Should().Be(0);
+
+            // 31 dias: so a comanda paga (b) perde o telefone; as nao pagas (a, c, d) seguem cobraveis
+            (await privacy.AnonymizeClosedEventsAsync(DateTime.UtcNow.AddDays(31))).Should().Be(1);
+            (await f.Db.BingoTabs.FirstAsync(x => x.Id == b)).Phone.Should().BeNull();
+            (await f.Db.BingoTabs.FirstAsync(x => x.Id == a)).Phone.Should().NotBeNull();
+            (await f.Db.BingoTabs.CountAsync(x => x.Phone != null)).Should().Be(3);
+
+            (await privacy.AnonymizeClosedEventsAsync(DateTime.UtcNow.AddDays(89))).Should().Be(0);
+
+            (await privacy.AnonymizeClosedEventsAsync(DateTime.UtcNow.AddDays(91))).Should().Be(3);
+            var anonymized = await f.Db.BingoTabs.FirstAsync(x => x.Id == a);
+            anonymized.Phone.Should().BeNull();
+            anonymized.CustomerName.Should().Be("A. L.");
+            (await f.Db.BingoTabs.CountAsync(x => x.Phone != null)).Should().Be(0);
+        }
+
+        [Fact]
+        public async Task Privacy_Retention_Should_Be_Configurable()
+        {
+            var f = new Fixture();
+            var (a, b, _, _) = await SeedDebtsAsync(f);
+            await f.Admin.CloseEventAsync(1);
+            var privacy = new BingoPrivacyService(f.Db, Options.Create(new BingoOptions { PaidRetentionDays = 5, UnpaidRetentionDays = 20 }));
+
+            (await privacy.AnonymizeClosedEventsAsync(DateTime.UtcNow.AddDays(6))).Should().Be(1);
+            (await f.Db.BingoTabs.FirstAsync(x => x.Id == a)).Phone.Should().NotBeNull();
+            (await privacy.AnonymizeClosedEventsAsync(DateTime.UtcNow.AddDays(21))).Should().Be(3);
+            (await f.Db.BingoTabs.FirstAsync(x => x.Id == b)).Phone.Should().BeNull();
         }
 
         [Fact]
@@ -785,7 +1189,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
             stored.Items.Should().ContainSingle();
             (await f.Admin.GetEventSummaryAsync(1)).TotalSold.Should().Be(20m);
             (await privacy.AnonymizeClosedEventsAsync(DateTime.UtcNow.AddDays(60))).Should().Be(0);
-            await ShouldThrowAsync(() => f.Public.ResendLinkAsync(tab.TabId), BingoErrorKind.Conflict);
+            await ShouldThrowAsync(() => f.Public.ResendCodeAsync(tab.TabId), BingoErrorKind.Conflict);
         }
 
         [Fact]

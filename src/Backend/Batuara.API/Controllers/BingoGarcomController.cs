@@ -15,18 +15,31 @@ namespace Batuara.API.Controllers
     [Route("api/bingo/garcom")]
     public class BingoGarcomController(IBingoWaiterService service) : ControllerBase
     {
-        [HttpPost("verify-code")]
-        [AllowAnonymous]
-        [EnableRateLimiting("bingo-garcom-login")]
-        public async Task<IActionResult> VerifyCode([FromBody] BingoWaiterVerifyCodeRequest request, CancellationToken cancellationToken)
+        [HttpGet("me")]
+        [BingoSkipWaiterAccess]
+        public async Task<IActionResult> Me(CancellationToken cancellationToken)
         {
-            return Ok(new { success = true, data = await service.VerifyCodeAsync(request, cancellationToken) });
+            return Ok(new { success = true, data = await service.GetMeAsync(GetHouseMemberId(), cancellationToken) });
         }
 
         [HttpGet("pedidos")]
         public async Task<IActionResult> GetOrders(CancellationToken cancellationToken)
         {
-            return Ok(new { success = true, data = await service.GetOrdersAsync(cancellationToken) });
+            return Ok(new { success = true, data = await service.GetOrdersAsync(GetHouseMemberId(), cancellationToken) });
+        }
+
+        [HttpPost("itens/{itemId:int}/retirar")]
+        public async Task<IActionResult> Retrieve(int itemId, CancellationToken cancellationToken)
+        {
+            await service.RetrieveAsync(GetHouseMemberId(), itemId, cancellationToken);
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("itens/{itemId:int}/devolver")]
+        public async Task<IActionResult> Return(int itemId, CancellationToken cancellationToken)
+        {
+            await service.ReturnAsync(itemId, cancellationToken);
+            return Ok(new { success = true });
         }
 
         [HttpPost("itens/{itemId:int}/entregar")]

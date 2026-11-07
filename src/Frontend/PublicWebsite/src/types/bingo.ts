@@ -27,11 +27,12 @@ export interface CreateBingoTabResponse {
 }
 
 export type BingoTabStatus = 'Open' | 'CloseRequested' | 'Paid';
-export type BingoItemStatus = 'Pending' | 'Delivered';
+export type BingoItemStatus = 'Pending' | 'Retrieved' | 'Delivered';
 export type BingoPaymentMethod = 'Card' | 'Pix' | 'Cash';
 
 export interface BingoTabItem {
   id: string;
+  menuItemId: string;
   name: string;
   unitPrice: number;
   quantity: number;
@@ -46,6 +47,7 @@ export interface BingoTabView {
   total: number;
   closeAllRequested: boolean;
   isOpen: boolean;
+  phoneVerified?: boolean;
   eventName?: string;
   menu: BingoMenuItem[];
   items: BingoTabItem[];
@@ -54,32 +56,4 @@ export interface BingoTabView {
 export interface BingoOrderLine {
   menuItemId: string;
   quantity: number;
-}
-
-export interface WaiterLoginResponse {
-  token: string;
-  expiresAt: string;
-  name: string;
-}
-
-export interface WaiterOrderItem {
-  id: string;
-  name: string;
-  quantity: number;
-  createdAt: string;
-}
-
-export interface WaiterOrderGroup {
-  mesa: number;
-  tabId: string;
-  customerName: string;
-  items: WaiterOrderItem[];
-}
-
-export interface WaiterAccount {
-  tabId: string;
-  mesa: number;
-  customerName: string;
-  total: number;
-  status: BingoTabStatus;
 }

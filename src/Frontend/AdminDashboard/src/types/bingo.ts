@@ -2,7 +2,7 @@
 
 export type BingoPaymentMethod = 'Card' | 'Pix' | 'Cash';
 export type BingoTabStatus = 'Open' | 'CloseRequested' | 'Paid';
-export type BingoItemStatus = 'Pending' | 'Delivered';
+export type BingoItemStatus = 'Pending' | 'Retrieved' | 'Delivered';
 
 export type BingoEventStatus = 'Draft' | 'Open' | 'Closed';
 
@@ -48,11 +48,40 @@ export interface BingoTab {
   total: number;
   paymentMethod?: BingoPaymentMethod | null;
   items: BingoOrderItem[];
+  phoneVerified?: boolean;
+  codeDeliveryStatus?: 'Sent' | 'Delivered' | 'Read' | 'Failed' | null;
+  codeDeliveryError?: string | null;
+  reminderSentAt?: string | null;
+  reminderDeliveryStatus?: string | null;
+}
+
+export interface BingoReminderPreviewItem {
+  tabId: string;
+  customerName: string;
+  mesa: number | string;
+  total: number;
+  reminderSentAt: string | null;
+}
+
+export interface BingoReminderPreview {
+  count: number;
+  totalOwed: number;
+  items: BingoReminderPreviewItem[];
+}
+
+export interface BingoReminderResult {
+  sent: number;
+  skipped: number;
+  failed: number;
 }
 
 export interface BingoPanel {
+  phoneVerifiedCount?: number;
+  phoneNotVerifiedCount?: number;
+  codeDeliveryFailedCount?: number;
   closeAllRequested?: boolean;
   totalSold?: number;
+  retrievedItems?: number;
   tabs: BingoTab[];
 }
 
@@ -74,4 +103,36 @@ export interface BingoSummary {
   totalOpen: number;
   byPayment: BingoSummaryLine[];
   byItem: BingoSummaryLine[];
+}
+
+// ---- Garçom (sessão normal de filho da Casa) ----
+export interface WaiterStatus {
+  isWaiter: boolean;
+  eventOpen: boolean;
+  eventName: string | null;
+}
+
+export interface WaiterOrderItem {
+  id: string;
+  name: string;
+  quantity: number;
+  createdAt: string;
+  status: 'Pending' | 'Retrieved';
+  retrievedByName: string | null;
+  retrievedByMe: boolean;
+}
+
+export interface WaiterOrderGroup {
+  mesa: number;
+  tabId: string;
+  customerName: string;
+  items: WaiterOrderItem[];
+}
+
+export interface WaiterAccount {
+  tabId: string;
+  mesa: number;
+  customerName: string;
+  total: number;
+  status: BingoTabStatus;
 }

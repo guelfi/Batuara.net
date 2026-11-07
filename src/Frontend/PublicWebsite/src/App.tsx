@@ -19,7 +19,6 @@ import LoadingProvider from './components/common/LoadingProvider';
 import CookieConsentBanner from './components/common/CookieConsentBanner';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import BingoCustomerPage from './pages/bingo/BingoCustomerPage';
-import BingoWaiterPage from './pages/bingo/BingoWaiterPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { publicApi } from './services/api';
 import { asVisibility, canShowSpiritual } from './utils/contentVisibility';
@@ -74,8 +73,8 @@ const MainSections: React.FC = () => {
 function App() {
   const path = window.location.pathname;
   const isPrivacyPage = path.startsWith('/politica-de-privacidade');
-  const isBingoWaiter = path === '/bingo/garcom' || path.startsWith('/bingo/garcom/');
-  const isBingo = path === '/bingo' || path.startsWith('/bingo/');
+  // '/bingo/garcom' não existe mais no site (o garçom usa o AdminDashboard): cai na página inicial.
+  const isBingo = (path === '/bingo' || path.startsWith('/bingo/')) && !path.startsWith('/bingo/garcom');
 
   return (
     <ErrorBoundary>
@@ -84,9 +83,7 @@ function App() {
           <CssBaseline />
           <AuthProvider>
             <LoadingProvider>
-              {isBingoWaiter ? (
-                <BingoWaiterPage />
-              ) : isBingo ? (
+              {isBingo ? (
                 <BingoCustomerPage />
               ) : isPrivacyPage ? (
                 <Layout>

@@ -27,6 +27,7 @@ import {
   AccountCircle as ProfileIcon,
   LocationOn as LocationIcon,
   Casino as BingoIcon,
+  DeliveryDining as WaiterIcon,
   Favorite as FavoriteIcon,
   MenuBook as HistoryIcon,
   Groups as GuidesIcon,
@@ -47,6 +48,7 @@ import {
   useContentVisibility,
 } from '../../hooks/useContentVisibility';
 import apiService from '../../services/api';
+import bingoApi from '../../services/bingoApi';
 import {
   ContentVisibility,
   ContentVisibilityModule,
@@ -69,6 +71,7 @@ interface NavigationItem {
   externalHref?: string;
   requiredRole?: UserRole;
   memberOnly?: boolean;
+  waiterOnly?: boolean;
   alwaysVisible?: boolean;
   divider?: boolean;
   visibilityModule?: ContentVisibilityModule;
@@ -144,6 +147,7 @@ const navigationItems: NavigationItem[] = [
     alwaysVisible: true,
   },
   { text: 'Meu Cadastro', icon: <PeopleIcon />, path: '/profile', memberOnly: true },
+  { text: 'Bingo (garçom)', icon: <WaiterIcon />, path: '/bingo-garcom', memberOnly: true, waiterOnly: true },
 ];
 
 const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
@@ -163,8 +167,10 @@ const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(true);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [isBingoWaiter, setIsBingoWaiter] = useState(false);
   const visibleNavigationItems = navigationItems.filter((item) => {
     if (item.alwaysVisible) return true;
+    if (item.waiterOnly) return isMember(user?.role) && isBingoWaiter;
     if (item.memberOnly) return isMember(user?.role);
     if (isMember(user?.role)) return false;
     if (item.requiredRole === UserRole.Admin) return isAdmin(user?.role);
@@ -200,6 +206,31 @@ const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
       window.removeEventListener('unread-count-changed', fetchUnreadCount);
     };
   }, [fetchUnreadCount]);
+
+  // Filho escalado como garçom em evento aberto vê o item "Bingo (garçom)".
+  useEffect(() => {
+    if (!isMember(user?.role)) {
+      setIsBingoWaiter(false);
+      return undefined;
+    }
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const status = await bingoApi.getWaiterStatus();
+        if (!cancelled) setIsBingoWaiter(status.isWaiter && status.eventOpen);
+      } catch (_) {
+        /* erro silencioso: mantém o estado atual */
+      }
+    };
+    void check();
+    const interval = setInterval(check, 60000);
+    window.addEventListener('focus', check);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      window.removeEventListener('focus', check);
+    };
+  }, [user?.role]);
 
   const handleLogout = async () => {
     await logout();

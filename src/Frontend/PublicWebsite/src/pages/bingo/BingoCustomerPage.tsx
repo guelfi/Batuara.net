@@ -14,6 +14,8 @@ import {
   MenuItem,
   Paper,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   Typography,
 } from '@mui/material';
@@ -149,7 +151,11 @@ const CustomerForm: React.FC = () => {
           required
           fullWidth
           error={phone.length > 0 && !phoneOk}
-          helperText={phone.length > 0 && !phoneOk ? 'Informe um celular com DDD' : ' '}
+          helperText={
+            phone.length > 0 && !phoneOk
+              ? 'Informe um celular com DDD'
+              : 'Já tem comanda? Informe o mesmo celular para voltar a ela.'
+          }
           slotProps={{ htmlInput: { inputMode: 'tel', style: { minHeight: 28 } } }}
         />
         <TextField
@@ -169,7 +175,7 @@ const CustomerForm: React.FC = () => {
         </TextField>
 
         <Alert severity="info" icon={false} sx={{ fontSize: '0.85rem' }}>
-          Usamos seu nome e celular apenas para a comanda do bingo. Eles são apagados em até 30 dias.
+          Usamos seu nome e celular apenas para a comanda do bingo. Eles são apagados em até 30 dias depois do evento se a conta estiver paga. Se a conta ficar em aberto, o celular pode ser usado para um lembrete de pagamento por WhatsApp e é guardado por até 90 dias.
         </Alert>
 
         <Button type="submit" variant="contained" size="large" disabled={!canSubmit} sx={BIG_BUTTON}>
@@ -189,6 +195,16 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ severity: 'success' | 'error' | 'info'; text: string } | null>(null);
   const [confirmClose, setConfirmClose] = useState(false);
+  const [view, setView] = useState<'menu' | 'orders'>('menu');
+  const [code, setCode] = useState('');
+  const [codeBusy, setCodeBusy] = useState(false);
+  const [codeMsg, setCodeMsg] = useState<{ severity: 'error' | 'success'; text: string } | null>(null);
+
+  useEffect(() => {
+    if (!message || message.severity === 'error') return undefined;
+    const timer = window.setTimeout(() => setMessage(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [message]);
 
   const load = useCallback(async () => {
     try {
@@ -216,6 +232,15 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
         .map((m) => ({ item: m, quantity: cart[m.id] })),
     [tab, cart]
   );
+  // Quantidade ja pedida de cada item nesta comanda (pendentes + entregues), pelo id do item do cardapio.
+  const orderedByItem = useMemo(() => {
+    const totals: Record<string, number> = {};
+    (tab?.items ?? []).forEach((i) => {
+      const key = String(i.menuItemId);
+      totals[key] = (totals[key] ?? 0) + i.quantity;
+    });
+    return totals;
+  }, [tab]);
   const cartTotal = cartLines.reduce((s, l) => s + l.item.unitPrice * l.quantity, 0);
 
   const change = (id: string, delta: number) =>
@@ -237,7 +262,7 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
         cartLines.map((l) => ({ menuItemId: l.item.id, quantity: l.quantity }))
       );
       setCart({});
-      setMessage({ severity: 'success', text: 'Pedido enviado! Um garçom vai levar até a sua mesa.' });
+      setMessage({ severity: 'success', text: 'Pedido enviado! Um garçom levará à sua mesa.' });
       await load();
     } catch (e) {
       setMessage({ severity: 'error', text: apiErrorMessage(e, 'Não foi possível enviar o pedido.') });
@@ -262,23 +287,31 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
     }
   };
 
-  const resend = async () => {
-    setBusy(true);
-    setMessage(null);
+  const confirmPhone = async () => {
+    if (code.length !== 6) return;
+    setCodeBusy(true);
+    setCodeMsg(null);
     try {
-      await bingoApi.resendLink(tabId);
-      setMessage({ severity: 'success', text: 'Link reenviado para o seu WhatsApp.' });
+      await bingoApi.confirmPhone(tabId, code);
+      setCode('');
+      setTab((t) => (t ? { ...t, phoneVerified: true } : t));
     } catch (e) {
-      if (httpStatus(e) === 429) {
-        setMessage({
-          severity: 'info',
-          text: 'O link já foi enviado há pouco. Aguarde alguns minutos para pedir de novo.',
-        });
-      } else {
-        setMessage({ severity: 'error', text: apiErrorMessage(e, 'Não foi possível reenviar o link agora.') });
-      }
+      setCodeMsg({ severity: 'error', text: apiErrorMessage(e, 'Código inválido ou expirado.') });
     } finally {
-      setBusy(false);
+      setCodeBusy(false);
+    }
+  };
+
+  const resendCode = async () => {
+    setCodeBusy(true);
+    setCodeMsg(null);
+    try {
+      await bingoApi.resendCode(tabId);
+      setCodeMsg({ severity: 'success', text: 'Código reenviado no WhatsApp.' });
+    } catch (e) {
+      setCodeMsg({ severity: 'error', text: apiErrorMessage(e, 'Não foi possível reenviar o código.') });
+    } finally {
+      setCodeBusy(false);
     }
   };
 
@@ -306,194 +339,250 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
   const closeRequested = tab.status === 'CloseRequested';
   const canOrder = tab.isOpen && !isPaid && !closeRequested;
 
+  const activeView = canOrder ? view : 'orders';
+  const MINI_BTN = { width: 30, height: 30 } as const;
+  const orderCount = tab.items.reduce((s, i) => s + i.quantity, 0);
+  const cartCount = cartLines.reduce((s, l) => s + l.quantity, 0);
+  const notice = (severity: 'success' | 'error' | 'info' | 'warning', text: string, bold = false) => (
+    <Alert severity={severity} sx={{ py: 0, px: 1, mb: 0.75, fontSize: '0.8rem', fontWeight: bold ? 700 : 400, '& .MuiAlert-icon': { py: 0.5, mr: 1 }, '& .MuiAlert-message': { py: 0.5 } }}>
+      {text}
+    </Alert>
+  );
+
+  const showCartBar = activeView === 'menu' && canOrder && cartCount > 0;
+
   return (
-    <Box>
-      <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-        <Typography variant="overline" sx={{ opacity: 0.7 }}>
-          {tab.eventName ? `Bingo - ${tab.eventName}` : 'Comanda do bingo'}
+    <Box
+      sx={{
+        height: '100vh',
+        '@supports (height: 100dvh)': { height: '100dvh' },
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      <Box
+        sx={{
+          flexShrink: 0,
+          bgcolor: 'background.paper',
+          borderBottom: 1,
+          borderColor: 'divider',
+          px: 2,
+          pt: 1,
+        }}
+      >
+        <Typography component="h1" sx={{ fontWeight: 800, textAlign: 'center', fontSize: '1.05rem', lineHeight: 1.2 }}>
+          COMANDA DO BINGO
+          <Box component="span" sx={{ color: 'primary.main', ml: 1 }}>
+            · Mesa {tab.mesa}
+          </Box>
         </Typography>
-        <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
-          {tab.customerName}
+        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', opacity: 0.75, lineHeight: 1.3 }}>
+          {tab.customerName} · Nº {tab.id.slice(0, 8).toUpperCase()}
+          {tab.phoneVerified && (
+            <Box component="span" sx={{ ml: 0.75, color: 'success.main', fontWeight: 600 }}>
+              ✓ Celular confirmado
+            </Box>
+          )}
         </Typography>
-        <Typography variant="h6" color="primary">
-          Mesa {tab.mesa}
-        </Typography>
-        <Typography variant="caption" sx={{ opacity: 0.6 }}>
-          Nº {tab.id.slice(0, 8).toUpperCase()}
-        </Typography>
-      </Paper>
-
-      {error && <Alert severity="warning" sx={{ mb: 2 }}>{error}</Alert>}
-      {tab.closeAllRequested && !isPaid && (
-        <Alert severity="warning" sx={{ mb: 2, fontWeight: 700 }}>
-          Por favor, encerre sua conta.
-        </Alert>
-      )}
-      {!tab.isOpen && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Os pedidos do bingo não estão abertos. Novos pedidos não são aceitos no momento.
-        </Alert>
-      )}
-      {isPaid && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          Conta paga. Obrigado por participar!
-        </Alert>
-      )}
-      {closeRequested && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Conta solicitada. Aguarde o garçom para o pagamento.
-        </Alert>
-      )}
-      {message && (
-        <Alert severity={message.severity} sx={{ mb: 2 }} onClose={() => setMessage(null)}>
-          {message.text}
-        </Alert>
-      )}
-
-      {canOrder && (
-        <>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-            Cardápio
-          </Typography>
-          <Stack spacing={1} sx={{ mb: 2 }}>
-            {tab.menu.map((m) => {
-              const qty = cart[m.id] ?? 0;
-              return (
-                <Paper
-                  key={m.id}
-                  variant="outlined"
-                  data-testid={`menu-${m.id}`}
-                  sx={{
-                    p: 1.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    opacity: m.isAvailable ? 1 : 0.5,
-                    bgcolor: m.isAvailable ? 'background.paper' : 'action.disabledBackground',
-                    color: m.isAvailable ? 'text.primary' : 'text.disabled',
-                  }}
-                >
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography sx={{ fontWeight: 600 }}>{m.name}</Typography>
-                    <Typography variant="body2">
-                      {m.isAvailable ? formatBRL(m.unitPrice) : `${formatBRL(m.unitPrice)} - Esgotado`}
-                    </Typography>
-                  </Box>
-                  {m.isAvailable && (
-                    <Stack direction="row" alignItems="center" spacing={0.5}>
-                      <IconButton
-                        aria-label={`Remover ${m.name}`}
-                        onClick={() => change(m.id, -1)}
-                        disabled={qty === 0}
-                        sx={{ width: 48, height: 48, border: 1, borderColor: 'divider' }}
-                      >
-                        <RemoveIcon />
-                      </IconButton>
-                      <Typography sx={{ minWidth: 28, textAlign: 'center', fontWeight: 700 }}>{qty}</Typography>
-                      <IconButton
-                        aria-label={`Adicionar ${m.name}`}
-                        onClick={() => change(m.id, 1)}
-                        disabled={qty >= 20}
-                        sx={{ width: 48, height: 48, bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }}
-                      >
-                        <AddIcon />
-                      </IconButton>
-                    </Stack>
-                  )}
-                </Paper>
-              );
-            })}
-          </Stack>
-
-          <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-              Carrinho
+        <Tabs
+          value={activeView}
+          onChange={(_, v) => setView(v)}
+          variant="fullWidth"
+          sx={{ minHeight: 38, '& .MuiTab-root': { minHeight: 38, py: 0.5, fontWeight: 700 } }}
+        >
+          <Tab value="menu" label="Cardápio" disabled={!canOrder} />
+          <Tab value="orders" label={orderCount > 0 ? `Pedido (${orderCount})` : 'Pedido'} />
+        </Tabs>
+        {!tab.phoneVerified && (
+          <Box data-testid="phone-confirm" sx={{ py: 0.5 }}>
+            <Typography sx={{ fontSize: '0.78rem', fontWeight: 600, lineHeight: 1.2, mb: 0.5 }}>
+              Confirme seu celular: digite o código que chegou no WhatsApp
             </Typography>
-            {cartLines.length === 0 ? (
-              <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                Nenhum item selecionado.
+            <Stack direction="row" spacing={1} alignItems="center">
+              <TextField
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="000000"
+                size="small"
+                slotProps={{
+                  htmlInput: { inputMode: 'numeric', maxLength: 6, 'aria-label': 'Código de confirmação', style: { padding: '6px 8px', width: 84, letterSpacing: 2 } },
+                }}
+              />
+              <Button size="small" variant="contained" disabled={codeBusy || code.length !== 6} onClick={confirmPhone}>
+                Confirmar
+              </Button>
+              <Button size="small" variant="text" disabled={codeBusy} onClick={resendCode} sx={{ textTransform: 'none', fontSize: '0.75rem', minWidth: 0 }}>
+                Reenviar código
+              </Button>
+            </Stack>
+            {codeMsg && (
+              <Typography role={codeMsg.severity === 'error' ? 'alert' : 'status'} variant="caption" sx={{ display: 'block', color: codeMsg.severity === 'error' ? 'error.main' : 'success.main' }}>
+                {codeMsg.text}
+              </Typography>
+            )}
+          </Box>
+        )}
+        {message && (
+          <Alert
+            severity={message.severity}
+            onClose={() => setMessage(null)}
+            sx={{ py: 0, px: 1, my: 0.5, fontSize: '0.78rem', '& .MuiAlert-icon': { py: 0.5, mr: 1 }, '& .MuiAlert-message': { py: 0.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, '& .MuiAlert-action': { py: 0, pl: 0.5 } }}
+          >
+            {message.text}
+          </Alert>
+        )}
+      </Box>
+
+      <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', px: 2, pt: 1, pb: 2 }}>
+        {error && notice('warning', error)}
+        {tab.closeAllRequested && !isPaid && notice('warning', 'Por favor, encerre sua conta.', true)}
+        {!tab.isOpen && notice('info', 'Pedidos do bingo fechados no momento.')}
+        {isPaid && notice('success', 'Conta paga. Obrigado por participar!')}
+        {closeRequested && notice('info', 'Conta solicitada. Aguarde o garçom para o pagamento.')}
+
+        {activeView === 'menu' && canOrder && (
+          <>
+            <Box>
+              {tab.menu.map((m) => {
+                const qty = cart[m.id] ?? 0;
+                const already = orderedByItem[String(m.id)] ?? 0;
+                return (
+                  <Box
+                    key={m.id}
+                    data-testid={`menu-${m.id}`}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      py: 0.5,
+                      borderBottom: 1,
+                      borderColor: 'divider',
+                      opacity: m.isAvailable ? 1 : 0.5,
+                      color: m.isAvailable ? 'text.primary' : 'text.disabled',
+                    }}
+                  >
+                    <Typography noWrap sx={{ flex: 1, minWidth: 0, fontSize: '0.92rem', fontWeight: 600 }}>
+                      {m.name}
+                      {already > 0 && (
+                        <Box component="span" data-testid={`ordered-${m.id}`} sx={{ fontWeight: 400, ml: 0.5 }}>
+                          ({already})
+                        </Box>
+                      )}
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                      {formatBRL(m.unitPrice)}
+                    </Typography>
+                    {m.isAvailable ? (
+                      <Stack direction="row" alignItems="center" spacing={0.25} sx={{ flexShrink: 0 }}>
+                        <IconButton
+                          aria-label={`Remover ${m.name}`}
+                          onClick={() => change(m.id, -1)}
+                          disabled={qty === 0}
+                          sx={{ ...MINI_BTN, border: 1, borderColor: 'divider' }}
+                        >
+                          <RemoveIcon sx={{ fontSize: 18 }} />
+                        </IconButton>
+                        <Typography sx={{ minWidth: 22, textAlign: 'center', fontWeight: 700, fontSize: '0.9rem' }}>{qty}</Typography>
+                        <IconButton
+                          aria-label={`Adicionar ${m.name}`}
+                          onClick={() => change(m.id, 1)}
+                          disabled={qty >= 20}
+                          sx={{ ...MINI_BTN, bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }}
+                        >
+                          <AddIcon sx={{ fontSize: 18 }} />
+                        </IconButton>
+                      </Stack>
+                    ) : (
+                      <Typography variant="caption" sx={{ fontWeight: 700, width: 82, textAlign: 'right' }}>
+                        Esgotado
+                      </Typography>
+                    )}
+                  </Box>
+                );
+              })}
+            </Box>
+
+          </>
+        )}
+
+        {activeView === 'orders' && (
+          <>
+            {tab.items.length === 0 ? (
+              <Typography variant="body2" sx={{ opacity: 0.7, py: 1 }}>
+                Você ainda não fez pedidos.
               </Typography>
             ) : (
-              <Stack spacing={0.5} sx={{ mb: 1 }}>
-                {cartLines.map((l) => (
-                  <Box key={l.item.id} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>
-                      {l.quantity}x {l.item.name}
-                    </span>
-                    <span>{formatBRL(l.item.unitPrice * l.quantity)}</span>
+              <Box>
+                {tab.items.map((i) => (
+                  <Box
+                    key={i.id}
+                    sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.75, borderBottom: 1, borderColor: 'divider' }}
+                  >
+                    <Typography noWrap sx={{ flex: 1, minWidth: 0, fontSize: '0.92rem', fontWeight: 600 }}>
+                      {i.quantity}x {i.name}
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                      {formatBRL(i.unitPrice * i.quantity)}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 700,
+                        px: 0.9,
+                        py: 0.2,
+                        borderRadius: 1,
+                        bgcolor:
+                          i.status === 'Delivered' ? 'success.light' : i.status === 'Retrieved' ? 'info.light' : 'warning.light',
+                        color: 'common.black',
+                      }}
+                    >
+                      {i.status === 'Delivered' ? 'Entregue' : i.status === 'Retrieved' ? 'A caminho' : 'Pendente'}
+                    </Typography>
                   </Box>
                 ))}
-              </Stack>
-            )}
-            <Typography sx={{ fontWeight: 700, mb: 1.5 }}>Total do pedido: {formatBRL(cartTotal)}</Typography>
-            <Button
-              fullWidth
-              variant="contained"
-              sx={BIG_BUTTON}
-              disabled={cartLines.length === 0 || busy}
-              onClick={placeOrder}
-            >
-              Fazer pedido
-            </Button>
-          </Paper>
-        </>
-      )}
-
-      <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-        Meus pedidos
-      </Typography>
-      {tab.items.length === 0 ? (
-        <Typography variant="body2" sx={{ opacity: 0.7, mb: 2 }}>
-          Você ainda não fez pedidos.
-        </Typography>
-      ) : (
-        <Stack spacing={1} sx={{ mb: 2 }}>
-          {tab.items.map((i) => (
-            <Paper key={i.id} variant="outlined" sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ flex: 1 }}>
-                <Typography sx={{ fontWeight: 600 }}>
-                  {i.quantity}x {i.name}
-                </Typography>
-                <Typography variant="body2">{formatBRL(i.unitPrice * i.quantity)}</Typography>
               </Box>
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: 700,
-                  px: 1.2,
-                  py: 0.4,
-                  borderRadius: 1,
-                  bgcolor: i.status === 'Delivered' ? 'success.light' : 'warning.light',
-                  color: 'common.black',
-                }}
-              >
-                {i.status === 'Delivered' ? 'Entregue' : 'Pendente'}
-              </Typography>
-            </Paper>
-          ))}
-        </Stack>
-      )}
-      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-        Total consumido: {formatBRL(tab.total)}
-      </Typography>
+            )}
+            <Typography sx={{ fontWeight: 700, my: 1.5 }}>Total consumido: {formatBRL(tab.total)}</Typography>
 
-      <Stack spacing={1.5} sx={{ mb: 4 }}>
-        {!isPaid && !closeRequested && (
-          <Button variant="outlined" color="warning" sx={BIG_BUTTON} disabled={busy} onClick={() => setConfirmClose(true)}>
-            Encerrar a conta
-          </Button>
+            <Stack spacing={1} sx={{ mb: 2 }}>
+              {!isPaid && !closeRequested && (
+                <Button variant="outlined" color="warning" sx={{ minHeight: 46, fontWeight: 700 }} disabled={busy} onClick={() => setConfirmClose(true)}>
+                  Encerrar a conta
+                </Button>
+              )}
+              {isPaid && (
+                <Button variant="contained" sx={{ minHeight: 46, fontWeight: 700 }} onClick={newTab}>
+                  Abrir nova comanda
+                </Button>
+              )}
+            </Stack>
+          </>
         )}
-        {!isPaid && (
-          <Button variant="outlined" sx={BIG_BUTTON} disabled={busy} onClick={resend}>
-            Reenviar link no WhatsApp
+      </Box>
+
+      {showCartBar && (
+        <Box
+          sx={{
+            flexShrink: 0,
+            px: 2,
+            py: 1,
+            bgcolor: 'background.paper',
+            borderTop: 1,
+            borderColor: 'divider',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+          }}
+        >
+          <Typography sx={{ flex: 1, fontWeight: 700, fontSize: '0.92rem' }}>
+            {cartCount} {cartCount === 1 ? 'item' : 'itens'} · {formatBRL(cartTotal)}
+          </Typography>
+          <Button variant="contained" sx={{ minHeight: 42, fontWeight: 700 }} disabled={busy} onClick={placeOrder}>
+            Fazer pedido
           </Button>
-        )}
-        {isPaid && (
-          <Button variant="contained" sx={BIG_BUTTON} onClick={newTab}>
-            Abrir nova comanda
-          </Button>
-        )}
-      </Stack>
+        </Box>
+      )}
 
       <Dialog open={confirmClose} onClose={() => setConfirmClose(false)}>
         <DialogTitle>Encerrar a conta?</DialogTitle>
@@ -522,7 +611,7 @@ const BingoCustomerPage: React.FC = () => {
   useNoIndex();
   const tabId = getTabIdFromPath(window.location.pathname);
   return (
-    <Container maxWidth="sm" sx={{ py: 3, px: 2 }}>
+    <Container maxWidth="sm" sx={tabId ? { p: 0 } : { py: 3, px: 2 }}>
       {tabId ? <TabScreen tabId={tabId} /> : <CustomerForm />}
     </Container>
   );

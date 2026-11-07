@@ -12,7 +12,7 @@ namespace Batuara.API.Controllers
     [Authorize(Roles = "Admin")]
     [EnableRateLimiting("bingo-admin")]
     [Route("api/bingo/admin")]
-    public class BingoAdminController(IBingoAdminService service) : ControllerBase
+    public class BingoAdminController(IBingoAdminService service, IBingoReminderService reminders) : ControllerBase
     {
         [HttpGet("settings")]
         public async Task<IActionResult> GetSettings([FromQuery] int? eventoId, CancellationToken ct)
@@ -120,5 +120,13 @@ namespace Batuara.API.Controllers
         [HttpGet("eventos/{id:int}/comandas")]
         public async Task<IActionResult> GetEventTabs(int id, CancellationToken ct)
             => Ok(new { success = true, data = await service.GetEventTabsAsync(id, ct) });
+
+        [HttpGet("eventos/{id:int}/lembretes/previa")]
+        public async Task<IActionResult> ReminderPreview(int id, CancellationToken ct)
+            => Ok(new { success = true, data = await reminders.PreviewAsync(id, ct) });
+
+        [HttpPost("eventos/{id:int}/lembretes/enviar")]
+        public async Task<IActionResult> SendReminders(int id, [FromBody] BingoConfirmReminderRequest request, CancellationToken ct)
+            => Ok(new { success = true, data = await reminders.SendAsync(id, request?.Confirmar ?? false, ct) });
     }
 }

@@ -9,6 +9,12 @@ import {
   BingoSummaryLine,
   BingoTab,
   BingoWaiter,
+  BingoOrderItem,
+  WaiterAccount,
+  WaiterOrderGroup,
+  WaiterStatus,
+  BingoReminderPreview,
+  BingoReminderResult,
 } from '../types/bingo';
 
 /**
@@ -39,7 +45,8 @@ const normalizeTab = (t: any): BingoTab => {
     name: i.name ?? i.itemName ?? '',
     unitPrice: num(i.unitPrice),
     quantity: num(i.quantity, 1),
-    status: (i.status === 1 || i.status === 'Delivered' ? 'Delivered' : 'Pending') as 'Pending' | 'Delivered',
+    status: (i.status === 2 || i.status === 'Delivered' ? 'Delivered'
+      : i.status === 1 || i.status === 'Retrieved' ? 'Retrieved' : 'Pending') as BingoOrderItem['status'],
     createdAt: i.createdAt,
   }));
   const status: BingoTab['status'] =
@@ -54,6 +61,11 @@ const normalizeTab = (t: any): BingoTab => {
     total: total !== undefined ? num(total) : items.reduce((s, i) => s + i.unitPrice * i.quantity, 0),
     paymentMethod: t.paymentMethod ?? null,
     items,
+    phoneVerified: t.phoneVerified === undefined || t.phoneVerified === null ? undefined : !!t.phoneVerified,
+    codeDeliveryStatus: t.codeDeliveryStatus ?? null,
+    codeDeliveryError: t.codeDeliveryError ?? null,
+    reminderSentAt: t.reminderSentAt ?? null,
+    reminderDeliveryStatus: t.reminderDeliveryStatus ?? null,
   };
 };
 
@@ -120,6 +132,28 @@ export const bingoApi = {
     return asArray(Array.isArray(r.data) ? r.data : pick(r.data, 'comandas', 'tabs')).map(normalizeTab);
   },
 
+  async getReminderPreview(id: string): Promise<BingoReminderPreview> {
+    const r = await apiService.get<any>(`${BASE}/eventos/${id}/lembretes/previa`);
+    const d = r.data ?? {};
+    return {
+      count: num(d.count),
+      totalOwed: num(d.totalOwed),
+      items: asArray(d.items).map((i: any) => ({
+        tabId: String(i.tabId),
+        customerName: i.customerName ?? '',
+        mesa: i.mesa ?? '-',
+        total: num(i.total),
+        reminderSentAt: i.reminderSentAt ?? null,
+      })),
+    };
+  },
+
+  async sendReminders(id: string): Promise<BingoReminderResult> {
+    const r = await apiService.post<any>(`${BASE}/eventos/${id}/lembretes/enviar`, { confirmar: true });
+    const d = r.data ?? {};
+    return { sent: num(d.sent), skipped: num(d.skipped), failed: num(d.failed) };
+  },
+
   async getEventSummary(id: string): Promise<BingoSummary> {
     const r = await apiService.get<any>(`${BASE}/eventos/${id}/resumo`);
     return normalizeSummary(r.data);
@@ -133,7 +167,12 @@ export const bingoApi = {
     const d = r.data ?? {};
     const tabs = asArray(pick(d, 'comandas', 'tabs')).map(normalizeTab);
     const sold = pick(d, 'totalSold', 'totalVendido');
+    const retrieved = d.counts?.retrievedItems;
     return {
+      retrievedItems: retrieved !== undefined && retrieved !== null ? num(retrieved) : undefined,
+      phoneVerifiedCount: d.counts?.phoneVerified !== undefined ? num(d.counts.phoneVerified) : undefined,
+      phoneNotVerifiedCount: d.counts?.phoneNotVerified !== undefined ? num(d.counts.phoneNotVerified) : undefined,
+      codeDeliveryFailedCount: d.counts?.codeDeliveryFailed !== undefined ? num(d.counts.codeDeliveryFailed) : undefined,
       closeAllRequested: pick(d, 'closeAllRequested'),
       totalSold: sold !== undefined ? num(sold) : undefined,
       tabs,
@@ -187,6 +226,48 @@ export const bingoApi = {
   addWaiter: (houseMemberId: string | number) => apiService.post<any>(`${BASE}/garcons`, { houseMemberId }),
   removeWaiter: (houseMemberId: string | number) => apiService.delete<any>(`${BASE}/garcons/${houseMemberId}`),
   endWaiterSessions: () => apiService.post<any>(`${BASE}/garcons/encerrar-sessoes`),
+
+  // ---- Garçom (autenticado pelo cookie da sessão do filho) ----
+  async getWaiterStatus(): Promise<WaiterStatus> {
+    const r = await apiService.get<WaiterStatus>('/bingo/garcom/me');
+    const d: any = r.data ?? {};
+    return { isWaiter: !!d.isWaiter, eventOpen: !!d.eventOpen, eventName: d.eventName ?? null };
+  },
+
+  async getWaiterTables(): Promise<number[]> {
+    const r = await apiService.get<any>('/bingo/public/info');
+    return asArray(r.data?.mesas).map((n: any) => num(n)).filter((n: number) => n > 0);
+  },
+
+  async getWaiterOrders(): Promise<WaiterOrderGroup[]> {
+    const r = await apiService.get<WaiterOrderGroup[]>('/bingo/garcom/pedidos');
+    return asArray(r.data).map((g: any) => ({
+      ...g,
+      items: asArray(g.items).map((i: any) => ({
+        ...i,
+        status: i.status === 'Retrieved' ? 'Retrieved' : 'Pending',
+        retrievedByName: i.retrievedByName ?? null,
+        retrievedByMe: !!i.retrievedByMe,
+      })),
+    }));
+  },
+
+  retrieveItem: (itemId: string) => apiService.post<any>(`/bingo/garcom/itens/${itemId}/retirar`),
+
+  returnItem: (itemId: string) => apiService.post<any>(`/bingo/garcom/itens/${itemId}/devolver`),
+
+  deliverItem: (itemId: string) => apiService.post<any>(`/bingo/garcom/itens/${itemId}/entregar`),
+
+  changeTabTable: (tabId: string, mesa: number) =>
+    apiService.post<any>(`/bingo/garcom/comandas/${tabId}/mesa`, { mesa }),
+
+  async getWaiterAccounts(): Promise<WaiterAccount[]> {
+    const r = await apiService.get<WaiterAccount[]>('/bingo/garcom/contas');
+    return asArray(r.data);
+  },
+
+  payTabs: (tabIds: string[], method: BingoPaymentMethod) =>
+    apiService.post<any>('/bingo/garcom/comandas/pagar', { tabIds, method }),
 
   async getSummary(eventoId?: string): Promise<BingoSummary> {
     const r = await apiService.get<any>(`${BASE}/resumo`, eventoId ? { eventoId } : undefined);

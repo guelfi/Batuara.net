@@ -13,6 +13,8 @@ namespace Batuara.Domain.Entities
         public BingoOrderItemStatus Status { get; private set; } = BingoOrderItemStatus.Pending;
         public int? DeliveredByHouseMemberId { get; private set; }
         public DateTime? DeliveredAt { get; private set; }
+        public int? RetrievedByHouseMemberId { get; private set; }
+        public DateTime? RetrievedAt { get; private set; }
         public BingoTab Tab { get; private set; } = null!;
 
         private BingoOrderItem()
@@ -26,6 +28,22 @@ namespace Batuara.Domain.Entities
             ItemName = menuItem.Name;
             UnitPrice = menuItem.UnitPrice;
             Quantity = quantity;
+        }
+
+        public void Retrieve(int houseMemberId, DateTime utcNow)
+        {
+            Status = BingoOrderItemStatus.Retrieved;
+            RetrievedByHouseMemberId = houseMemberId;
+            RetrievedAt = utcNow;
+            UpdateTimestamp();
+        }
+
+        public void Return()
+        {
+            Status = BingoOrderItemStatus.Pending;
+            RetrievedByHouseMemberId = null;
+            RetrievedAt = null;
+            UpdateTimestamp();
         }
 
         public void Deliver(int houseMemberId, DateTime utcNow)
