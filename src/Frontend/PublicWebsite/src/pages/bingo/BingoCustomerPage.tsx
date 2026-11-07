@@ -26,8 +26,8 @@ import {
   ChevronRight as ChevronRightIcon,
   Remove as RemoveIcon,
 } from '@mui/icons-material';
-import { bingoApi, apiErrorMessage, httpStatus, savedTabId } from '../../services/bingoApi';
-import { BingoPublicInfo, BingoTabView } from '../../types/bingo';
+import { bingoApi, apiErrorMessage, httpStatus, savedTabId, undeliveredFromError } from '../../services/bingoApi';
+import { BingoPublicInfo, BingoTabItem, BingoTabView, BingoUndeliveredItem } from '../../types/bingo';
 import { formatBRL, useNoIndex, usePolling } from './bingoHooks';
 
 const BIG_BUTTON = { minHeight: 52, fontSize: '1.05rem', fontWeight: 700 } as const;
@@ -39,6 +39,20 @@ const TAB_PATH = /^\/bingo\/comanda\/([^/?#]+)/;
 export const getTabIdFromPath = (pathname: string): string | null => {
   const m = TAB_PATH.exec(pathname);
   return m ? decodeURIComponent(m[1]) : null;
+};
+
+const ITEM_STATUS: Record<string, { label: string; bg: string; color: string }> = {
+  Pending: { label: 'Pendente', bg: 'warning.light', color: 'common.black' },
+  Retrieved: { label: 'A caminho', bg: 'info.light', color: 'common.black' },
+  Delivered: { label: 'Entregue', bg: 'success.light', color: 'common.black' },
+  Contested: { label: 'Em contestação', bg: 'error.light', color: 'common.black' },
+  Cancelled: { label: 'Cancelado', bg: 'grey.300', color: 'text.secondary' },
+};
+
+const formatTime = (iso: string): string => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
 const goTo = (path: string) => {
@@ -204,6 +218,9 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ severity: 'success' | 'error' | 'info'; text: string } | null>(null);
   const [confirmClose, setConfirmClose] = useState(false);
+  const [undelivered, setUndelivered] = useState<BingoUndeliveredItem[] | null>(null);
+  const [contestTarget, setContestTarget] = useState<BingoTabItem | null>(null);
+  const [contestNote, setContestNote] = useState('');
   const [view, setView] = useState<'menu' | 'orders'>('menu');
   const [menuEl, setMenuEl] = useState<HTMLDivElement | null>(null);
   const [menuH, setMenuH] = useState(0);
@@ -294,16 +311,41 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
     }
   };
 
-  const closeTab = async () => {
+  const closeTab = async (cancelUndelivered = false) => {
     setConfirmClose(false);
+    setUndelivered(null);
     setBusy(true);
     setMessage(null);
     try {
-      await bingoApi.closeTab(tabId);
+      await bingoApi.closeTab(tabId, cancelUndelivered);
       setMessage({ severity: 'success', text: 'Conta solicitada. Um garçom vai até você para o pagamento.' });
       await load();
     } catch (e) {
-      setMessage({ severity: 'error', text: apiErrorMessage(e, 'Não foi possível encerrar a conta.') });
+      const pending = undeliveredFromError(e);
+      if (pending) {
+        setUndelivered(pending);
+      } else {
+        setMessage({ severity: 'error', text: apiErrorMessage(e, 'Não foi possível encerrar a conta.') });
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const sendContest = async () => {
+    if (!contestTarget) return;
+    const item = contestTarget;
+    setContestTarget(null);
+    setBusy(true);
+    setMessage(null);
+    try {
+      await bingoApi.contestItem(tabId, item.id, contestNote.trim() || undefined);
+      setContestNote('');
+      setMessage({ severity: 'success', text: 'Contestação enviada. Um garçom vai conferir.' });
+      await load();
+    } catch (e) {
+      setMessage({ severity: 'error', text: apiErrorMessage(e, 'Não foi possível enviar a contestação.') });
+      await load();
     } finally {
       setBusy(false);
     }
@@ -357,6 +399,7 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
     );
   }
 
+  const amountDue = tab.amountDue ?? tab.total;
   const isPaid = tab.status === 'Paid';
   const closeRequested = tab.status === 'CloseRequested';
   const canOrder = tab.isOpen && !isPaid && !closeRequested;
@@ -558,36 +601,79 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
               </Typography>
             ) : (
               <Box>
-                {tab.items.map((i) => (
-                  <Box
-                    key={i.id}
-                    sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.75, borderBottom: 1, borderColor: 'divider' }}
-                  >
-                    <Typography noWrap sx={{ flex: 1, minWidth: 0, fontSize: '0.92rem', fontWeight: 600 }}>
-                      {i.quantity}x {i.name}
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
-                      {formatBRL(i.unitPrice * i.quantity)}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontWeight: 700,
-                        px: 0.9,
-                        py: 0.2,
-                        borderRadius: 1,
-                        bgcolor:
-                          i.status === 'Delivered' ? 'success.light' : i.status === 'Retrieved' ? 'info.light' : 'warning.light',
-                        color: 'common.black',
-                      }}
-                    >
-                      {i.status === 'Delivered' ? 'Entregue' : i.status === 'Retrieved' ? 'A caminho' : 'Pendente'}
-                    </Typography>
-                  </Box>
-                ))}
+                {tab.items.map((i) => {
+                  const cancelled = i.status === 'Cancelled';
+                  const st = ITEM_STATUS[i.status] ?? ITEM_STATUS.Pending;
+                  return (
+                    <Box key={i.id} data-testid={`order-${i.id}`} sx={{ py: 0.75, borderBottom: 1, borderColor: 'divider' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography
+                          noWrap
+                          sx={{
+                            flex: 1,
+                            minWidth: 0,
+                            fontSize: '0.92rem',
+                            fontWeight: 600,
+                            textDecoration: cancelled ? 'line-through' : 'none',
+                            color: cancelled ? 'text.disabled' : 'text.primary',
+                          }}
+                        >
+                          {i.quantity}x {i.name}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{ fontSize: '0.85rem', whiteSpace: 'nowrap', textDecoration: cancelled ? 'line-through' : 'none', color: cancelled ? 'text.disabled' : 'text.primary' }}
+                        >
+                          {formatBRL(i.unitPrice * i.quantity)}
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, px: 0.9, py: 0.2, borderRadius: 1, bgcolor: st.bg, color: st.color }}>
+                          {st.label}
+                        </Typography>
+                      </Box>
+                      {i.status === 'Delivered' && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.25 }}>
+                          <Typography variant="caption" sx={{ flex: 1, opacity: 0.75 }}>
+                            {i.deliveredAt ? `Entregue às ${formatTime(i.deliveredAt)}` : 'Entregue'}
+                            {i.deliveredByName ? ` por ${i.deliveredByName}` : ''}
+                          </Typography>
+                          <Button
+                            size="small"
+                            color="warning"
+                            variant="outlined"
+                            disabled={busy}
+                            onClick={() => {
+                              setContestNote('');
+                              setContestTarget(i);
+                            }}
+                            sx={{ minHeight: 26, py: 0, px: 1, fontSize: '0.75rem', textTransform: 'none' }}
+                          >
+                            Não recebi
+                          </Button>
+                        </Box>
+                      )}
+                      {cancelled && i.cancelReason && (
+                        <Typography variant="caption" sx={{ display: 'block', opacity: 0.7 }}>
+                          Motivo: {i.cancelReason}
+                        </Typography>
+                      )}
+                    </Box>
+                  );
+                })}
               </Box>
             )}
-            <Typography sx={{ fontWeight: 700, my: 1.5 }}>Total consumido: {formatBRL(tab.total)}</Typography>
+            <Box sx={{ my: 1.5 }}>
+              <Typography sx={{ fontWeight: 700 }}>Total consumido: {formatBRL(tab.total)}</Typography>
+              {amountDue !== tab.total && (
+                <Typography data-testid="amount-due" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '1.05rem' }}>
+                  A pagar (itens entregues): {formatBRL(amountDue)}
+                </Typography>
+              )}
+              {(tab.contestedCount ?? 0) > 0 && (
+                <Typography variant="caption" sx={{ display: 'block', color: 'warning.dark', fontWeight: 600 }}>
+                  Itens em contestação não entram no valor a pagar até serem conferidos.
+                </Typography>
+              )}
+            </Box>
 
             <Stack spacing={1} sx={{ mb: 2 }}>
               {!isPaid && !closeRequested && (
@@ -634,7 +720,7 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
         <DialogTitle>Encerrar a conta?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Total: {formatBRL(tab.total)}. Depois de encerrar, não será possível fazer novos pedidos e um garçom virá
+            A pagar (itens entregues): {formatBRL(amountDue)}. Depois de encerrar, não será possível fazer novos pedidos e um garçom virá
             cobrar na sua mesa.
           </DialogContentText>
         </DialogContent>
@@ -642,8 +728,55 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
           <Button sx={{ minHeight: 48 }} onClick={() => setConfirmClose(false)}>
             Voltar
           </Button>
-          <Button variant="contained" sx={{ minHeight: 48 }} onClick={closeTab}>
+          <Button variant="contained" sx={{ minHeight: 48 }} onClick={() => closeTab(false)}>
             Encerrar conta
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={undelivered !== null} onClose={() => setUndelivered(null)}>
+        <DialogTitle>Itens ainda não entregues</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 1 }}>Estes itens ainda não chegaram à sua mesa:</DialogContentText>
+          <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+            {(undelivered ?? []).map((u) => (
+              <li key={u.id}>
+                {u.quantity}x {u.name}
+              </li>
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, flexDirection: 'column', alignItems: 'stretch', gap: 1, '& > :not(style) ~ :not(style)': { ml: 0 } }}>
+          <Button variant="contained" sx={BIG_BUTTON} onClick={() => setUndelivered(null)}>
+            Aguardar a entrega
+          </Button>
+          <Button variant="outlined" color="warning" sx={BIG_BUTTON} onClick={() => closeTab(true)}>
+            Cancelar esses itens e encerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={contestTarget !== null} onClose={() => setContestTarget(null)} fullWidth maxWidth="xs">
+        <DialogTitle>Não recebi este item</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 1 }}>
+            {contestTarget ? `${contestTarget.quantity}x ${contestTarget.name}` : ''}
+          </DialogContentText>
+          <TextField
+            label="Observação (opcional)"
+            value={contestNote}
+            onChange={(e) => setContestNote(e.target.value.slice(0, 200))}
+            fullWidth
+            multiline
+            minRows={2}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button sx={{ minHeight: 44 }} onClick={() => setContestTarget(null)}>
+            Voltar
+          </Button>
+          <Button variant="contained" sx={{ minHeight: 44 }} onClick={sendContest}>
+            Confirmar
           </Button>
         </DialogActions>
       </Dialog>

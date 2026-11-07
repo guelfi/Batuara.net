@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -16,13 +17,14 @@ import {
   Tab,
   Tabs,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+import { CheckCircle as CheckCircleIcon, NotificationsActive as NotificationsActiveIcon } from '@mui/icons-material';
 import QRCode from 'qrcode';
 import bingoApi from '../services/bingoApi';
-import { BingoPaymentMethod, WaiterAccount, WaiterOrderGroup, WaiterStatus } from '../types/bingo';
+import bingoWaiterApi from '../services/bingoWaiterApi';
+import { WaiterOrderGroup, WaiterStatus } from '../types/bingo';
+import { ContestAction, WaiterAccountItem, WaiterBill, WaiterPaymentMethod } from '../types/bingoWaiter';
 
 const BIG = { minHeight: 56, fontSize: '1.1rem', fontWeight: 700 } as const;
 const POLL_MS = 4000;
@@ -189,64 +191,140 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ groups, loadError, reload }) => {
 
 // ------------------------------------------------------------------- contas
 
-const METHODS: { value: BingoPaymentMethod; label: string }[] = [
-  { value: 'Card', label: 'Cartão' },
-  { value: 'Pix', label: 'Pix' },
-  { value: 'Cash', label: 'Dinheiro' },
-];
+const ITEM_CHIP: Record<string, { label: string; color: 'default' | 'warning' | 'info' | 'success' | 'error' }> = {
+  Pending: { label: 'Pendente', color: 'warning' },
+  Retrieved: { label: 'A caminho', color: 'info' },
+  Delivered: { label: 'Entregue', color: 'success' },
+  Contested: { label: 'Em contestação', color: 'error' },
+  Cancelled: { label: 'Cancelado', color: 'default' },
+};
+
+const formatTime = (iso: string | null): string => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
+type BillFilter = 'requested' | 'all';
 
 const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
-  const [accounts, setAccounts] = useState<WaiterAccount[] | null>(null);
+  const [accounts, setAccounts] = useState<WaiterBill[] | null>(null);
+  const [filter, setFilter] = useState<BillFilter>('requested');
+  const [expanded, setExpanded] = useState<string[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
-  const [method, setMethod] = useState<BingoPaymentMethod | null>(null);
+  const [methods, setMethods] = useState<WaiterPaymentMethod[]>([]);
+  const [methodId, setMethodId] = useState<number | null>(null);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
-  const [editing, setEditing] = useState<WaiterAccount | null>(null);
+  const [editing, setEditing] = useState<WaiterBill | null>(null);
   const [newMesa, setNewMesa] = useState('');
+  const [cancelTarget, setCancelTarget] = useState<WaiterAccountItem | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [resolveTarget, setResolveTarget] = useState<WaiterAccountItem | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const list = await bingoApi.getWaiterAccounts();
+      const list = await bingoWaiterApi.getBills(filter === 'all');
       setAccounts(list);
       setSelected((sel) => sel.filter((id) => list.some((a) => a.tabId === id)));
       setError('');
     } catch (e) {
       setError('Sem conexão. Tentando novamente...');
     }
-  }, []);
+  }, [filter]);
 
   usePolling(load);
 
-  const selectedMesa = useMemo(
-    () => accounts?.find((a) => a.tabId === selected[0])?.mesa ?? null,
-    [accounts, selected]
-  );
-  const selectedTotal = (accounts ?? [])
-    .filter((a) => selected.includes(a.tabId))
-    .reduce((s, a) => s + a.total, 0);
+  useEffect(() => {
+    setAccounts(null);
+    void load();
+  }, [load]);
 
-  const toggle = (a: WaiterAccount) =>
+  useEffect(() => {
+    bingoWaiterApi
+      .getPaymentMethods()
+      .then(setMethods)
+      .catch(() => setError('Não foi possível carregar as formas de pagamento.'));
+  }, []);
+
+  const requestedCount = (accounts ?? []).filter((a) => a.status === 'CloseRequested').length;
+  const selectedAccounts = (accounts ?? []).filter((a) => selected.includes(a.tabId));
+  const selectedMesa = selectedAccounts[0]?.mesa ?? null;
+  const selectedDue = selectedAccounts.reduce((s, a) => s + a.amountDue, 0);
+  const blockedUndelivered = selectedAccounts.reduce((s, a) => s + a.undeliveredCount, 0);
+  const blockedContested = selectedAccounts.reduce((s, a) => s + a.contestedCount, 0);
+  const blockReason =
+    methodId === null
+      ? 'Escolha a forma de pagamento.'
+      : blockedUndelivered > 0 || blockedContested > 0
+        ? [
+            blockedUndelivered > 0 ? `${blockedUndelivered} item(ns) não entregue(s)` : '',
+            blockedContested > 0 ? `${blockedContested} em contestação` : '',
+          ]
+            .filter(Boolean)
+            .join(' e ') + '. Resolva antes de cobrar.'
+        : '';
+  const methodName = methods.find((m) => m.id === methodId)?.name ?? '';
+
+  const toggle = (a: WaiterBill) =>
     setSelected((sel) => (sel.includes(a.tabId) ? sel.filter((id) => id !== a.tabId) : [...sel, a.tabId]));
+  const toggleExpanded = (id: string) =>
+    setExpanded((ex) => (ex.includes(id) ? ex.filter((x) => x !== id) : [...ex, id]));
 
   const pay = async () => {
-    if (!method || selected.length === 0) return;
+    if (methodId === null || selected.length === 0) return;
     setBusy(true);
     setError('');
     try {
-      await bingoApi.payTabs(selected, method);
-      setOk(`Pagamento registrado (${formatBRL(selectedTotal)}).`);
+      await bingoWaiterApi.payTabs(selected, methodId);
+      setOk(`Pagamento registrado (${formatBRL(selectedDue)}).`);
       setSelected([]);
-      setMethod(null);
+      setMethodId(null);
       setConfirm(false);
       await load();
     } catch (e) {
       setConfirm(false);
       setError(errorMessage(e, 'Não foi possível registrar o pagamento.'));
+      if ((e as any)?.response?.status === 409) await load();
     } finally {
       setBusy(false);
     }
+  };
+
+  const itemAction = async (fn: () => Promise<any>, fallback: string) => {
+    setBusy(true);
+    setError('');
+    try {
+      await fn();
+      await load();
+    } catch (e) {
+      setError(errorMessage(e, fallback));
+      if ((e as any)?.response?.status === 409) await load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmCancel = async () => {
+    if (!cancelTarget || cancelReason.trim().length < 3) return;
+    const item = cancelTarget;
+    const reason = cancelReason.trim();
+    setCancelTarget(null);
+    setCancelReason('');
+    await itemAction(() => bingoWaiterApi.cancelItem(item.id, reason), 'Não foi possível cancelar o item.');
+  };
+
+  const resolve = async (action: ContestAction) => {
+    if (!resolveTarget) return;
+    const item = resolveTarget;
+    setResolveTarget(null);
+    await itemAction(
+      () => bingoWaiterApi.resolveContest(item.id, action),
+      'Não foi possível resolver a contestação.'
+    );
   };
 
   const saveMesa = async () => {
@@ -264,44 +342,172 @@ const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
     }
   };
 
+  const small = { minHeight: 40, fontWeight: 700, px: 1.5 } as const;
+
   return (
-    <Box sx={{ pb: selected.length ? 24 : 2 }}>
+    <Box sx={{ pb: selected.length ? 34 : 2 }}>
+      <Stack direction="row" spacing={1} sx={{ mb: 2 }} role="radiogroup" aria-label="Filtro de contas">
+        <Chip
+          role="radio"
+          aria-checked={filter === 'requested'}
+          label={`Pediram a conta (${requestedCount})`}
+          color={filter === 'requested' ? 'primary' : 'default'}
+          variant={filter === 'requested' ? 'filled' : 'outlined'}
+          onClick={() => setFilter('requested')}
+          sx={{ flex: 1, height: 48, fontSize: '1rem', fontWeight: 700 }}
+        />
+        <Chip
+          role="radio"
+          aria-checked={filter === 'all'}
+          label="Todas abertas"
+          color={filter === 'all' ? 'primary' : 'default'}
+          variant={filter === 'all' ? 'filled' : 'outlined'}
+          onClick={() => setFilter('all')}
+          sx={{ flex: 1, height: 48, fontSize: '1rem', fontWeight: 700 }}
+        />
+      </Stack>
       {error && <Alert severity="warning" sx={{ mb: 2 }}>{error}</Alert>}
       {ok && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setOk('')}>{ok}</Alert>}
       {accounts && accounts.length === 0 && <Typography sx={{ opacity: 0.7 }}>Nenhuma conta para cobrar.</Typography>}
       <Stack spacing={1.5}>
         {(accounts ?? []).map((a) => {
           const disabled = selectedMesa !== null && a.mesa !== selectedMesa;
+          const isOpenList = expanded.includes(a.tabId);
+          const requested = a.status === 'CloseRequested';
           return (
             <Paper
               key={a.tabId}
               variant="outlined"
-              sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 1, opacity: disabled ? 0.5 : 1 }}
+              data-testid={`bill-${a.tabId}`}
+              sx={{
+                p: 1,
+                opacity: disabled ? 0.5 : 1,
+                borderColor: requested ? 'warning.main' : 'divider',
+                borderWidth: requested ? 2 : 1,
+              }}
             >
-              <Checkbox
-                checked={selected.includes(a.tabId)}
-                disabled={disabled}
-                onChange={() => toggle(a)}
-                inputProps={{ 'aria-label': `Selecionar ${a.customerName}` }}
-                sx={{ '& .MuiSvgIcon-root': { fontSize: 32 }, p: 1.5 }}
-              />
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography sx={{ fontWeight: 700 }}>
-                  Mesa {a.mesa} - {a.customerName}
-                </Typography>
-                <Typography variant="body2">
-                  {formatBRL(a.total)} · {a.status === 'CloseRequested' ? 'Pediu a conta' : 'Em aberto'}
-                </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Checkbox
+                  checked={selected.includes(a.tabId)}
+                  disabled={disabled}
+                  onChange={() => toggle(a)}
+                  inputProps={{ 'aria-label': `Selecionar ${a.customerName}` }}
+                  sx={{ '& .MuiSvgIcon-root': { fontSize: 32 }, p: 1.5 }}
+                />
+                <Box sx={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => toggleExpanded(a.tabId)}>
+                  <Typography sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    Mesa {a.mesa} - {a.customerName}
+                    {a.phoneVerified && (
+                      <CheckCircleIcon aria-label="Celular confirmado" titleAccess="Celular confirmado" sx={{ fontSize: 20, color: 'success.main' }} />
+                    )}
+                    {requested && (
+                      <NotificationsActiveIcon aria-label="Pediu a conta" titleAccess="Pediu a conta" sx={{ fontSize: 20, color: 'warning.main' }} />
+                    )}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    A cobrar (entregues): {formatBRL(a.amountDue)}
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'block', opacity: 0.8 }}>
+                    {requested ? 'Pediu a conta' : 'Em aberto'}
+                  </Typography>
+                  {(a.undeliveredCount > 0 || a.contestedCount > 0) && (
+                    <Stack direction="row" spacing={1} sx={{ mt: 0.25 }}>
+                      {a.undeliveredCount > 0 && (
+                        <Typography variant="caption" sx={{ color: 'warning.main', fontWeight: 700 }}>
+                          {a.undeliveredCount} não entregue(s)
+                        </Typography>
+                      )}
+                      {a.contestedCount > 0 && (
+                        <Typography variant="caption" sx={{ color: 'error.main', fontWeight: 700 }}>
+                          {a.contestedCount} em contestação
+                        </Typography>
+                      )}
+                    </Stack>
+                  )}
+                </Box>
+                <Button
+                  sx={{ minHeight: 48 }}
+                  onClick={() => {
+                    setEditing(a);
+                    setNewMesa(String(a.mesa));
+                  }}
+                >
+                  Mesa
+                </Button>
               </Box>
-              <Button
-                sx={{ minHeight: 48 }}
-                onClick={() => {
-                  setEditing(a);
-                  setNewMesa(String(a.mesa));
-                }}
-              >
-                Mesa
+              <Button size="small" sx={{ ml: 1, mt: 0.5, fontWeight: 700 }} onClick={() => toggleExpanded(a.tabId)}>
+                {isOpenList ? 'Ocultar itens' : 'Conferir itens com o cliente'}
               </Button>
+              {isOpenList && (
+                <Box sx={{ mt: 1, px: 1 }}>
+                  {a.items.length === 0 && <Typography variant="body2" sx={{ opacity: 0.7 }}>Sem itens.</Typography>}
+                  {a.items.map((i) => {
+                    const chip = ITEM_CHIP[i.status] ?? ITEM_CHIP.Pending;
+                    const cancelled = i.status === 'Cancelled';
+                    return (
+                      <Box key={i.id} data-testid={`bill-item-${i.id}`} sx={{ py: 1, borderTop: 1, borderColor: 'divider' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography sx={{ flex: 1, fontWeight: 600, textDecoration: cancelled ? 'line-through' : 'none', color: cancelled ? 'text.disabled' : 'text.primary' }}>
+                            {i.quantity}x {i.name}
+                          </Typography>
+                          <Typography variant="body2" sx={{ textDecoration: cancelled ? 'line-through' : 'none' }}>
+                            {formatBRL(i.unitPrice * i.quantity)}
+                          </Typography>
+                          <Chip size="small" label={chip.label} color={chip.color} />
+                        </Box>
+                        {i.status === 'Delivered' && (
+                          <Typography variant="caption" sx={{ display: 'block', opacity: 0.8 }}>
+                            entregue por {i.deliveredByName ?? '-'}
+                            {i.deliveredAt ? ` às ${formatTime(i.deliveredAt)}` : ''}
+                          </Typography>
+                        )}
+                        {i.status === 'Contested' && i.contestNote && (
+                          <Typography variant="caption" sx={{ display: 'block', color: 'error.main' }}>
+                            Cliente: {i.contestNote}
+                          </Typography>
+                        )}
+                        {cancelled && i.cancelReason && (
+                          <Typography variant="caption" sx={{ display: 'block', opacity: 0.8 }}>
+                            Cancelado{i.cancelledByName ? ` por ${i.cancelledByName}` : ''}: {i.cancelReason}
+                          </Typography>
+                        )}
+                        {!cancelled && (
+                          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 0.75 }}>
+                            {(i.status === 'Pending' || i.status === 'Retrieved') && (
+                              <Button
+                                variant="contained"
+                                color="success"
+                                sx={small}
+                                disabled={busy}
+                                onClick={() => itemAction(() => bingoApi.deliverItem(i.id), 'Não foi possível dar baixa no item.')}
+                              >
+                                Entregue na mesa
+                              </Button>
+                            )}
+                            {i.status === 'Contested' && (
+                              <Button variant="contained" color="warning" sx={small} disabled={busy} onClick={() => setResolveTarget(i)}>
+                                Resolver
+                              </Button>
+                            )}
+                            <Button
+                              variant="outlined"
+                              color="error"
+                              sx={small}
+                              disabled={busy}
+                              onClick={() => {
+                                setCancelReason('');
+                                setCancelTarget(i);
+                              }}
+                            >
+                              Cancelar
+                            </Button>
+                          </Stack>
+                        )}
+                      </Box>
+                    );
+                  })}
+                </Box>
+              )}
             </Paper>
           );
         })}
@@ -314,24 +520,37 @@ const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
         >
           <Box sx={{ maxWidth: 600, mx: 'auto' }}>
             <Typography sx={{ fontWeight: 700, mb: 1 }}>
-              Mesa {selectedMesa} · {selected.length} comanda(s) · {formatBRL(selectedTotal)}
+              Mesa {selectedMesa} · {selected.length} comanda(s) · {formatBRL(selectedDue)}
             </Typography>
-            <ToggleButtonGroup exclusive fullWidth value={method} onChange={(_, v) => setMethod(v)} sx={{ mb: 1.5 }}>
-              {METHODS.map((m) => (
-                <ToggleButton key={m.value} value={m.value} sx={{ minHeight: 56, fontWeight: 700 }}>
-                  {m.label}
-                </ToggleButton>
+            <Stack direction="row" useFlexGap flexWrap="wrap" spacing={1} role="radiogroup" aria-label="Forma de pagamento" sx={{ mb: 1 }}>
+              {methods.map((m) => (
+                <Chip
+                  key={m.id}
+                  role="radio"
+                  aria-checked={methodId === m.id}
+                  label={m.name}
+                  color={methodId === m.id ? 'primary' : 'default'}
+                  variant={methodId === m.id ? 'filled' : 'outlined'}
+                  onClick={() => setMethodId(m.id)}
+                  sx={{ height: 48, fontSize: '1rem', fontWeight: 700, px: 1 }}
+                />
               ))}
-            </ToggleButtonGroup>
+              {methods.length === 0 && <Typography variant="body2">Nenhuma forma de pagamento ativa.</Typography>}
+            </Stack>
+            {blockReason && (
+              <Typography role="status" variant="body2" sx={{ color: 'warning.main', fontWeight: 600, mb: 1 }}>
+                {blockReason}
+              </Typography>
+            )}
             <Button
               fullWidth
               variant="contained"
               color="success"
               sx={BIG}
-              disabled={!method || busy}
+              disabled={!!blockReason || busy}
               onClick={() => setConfirm(true)}
             >
-              Confirmar pagamento
+              Cobrar
             </Button>
           </Box>
         </Paper>
@@ -341,7 +560,7 @@ const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
         <DialogTitle>Confirmar pagamento?</DialogTitle>
         <DialogContent>
           <Typography>
-            Mesa {selectedMesa}: {formatBRL(selectedTotal)} em {METHODS.find((m) => m.value === method)?.label}.
+            Mesa {selectedMesa}: {formatBRL(selectedDue)} em {methodName}.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
@@ -349,6 +568,54 @@ const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
           <Button variant="contained" color="success" sx={{ minHeight: 48 }} disabled={busy} onClick={pay}>
             Confirmar
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={!!cancelTarget} onClose={() => setCancelTarget(null)} fullWidth maxWidth="xs">
+        <DialogTitle>Cancelar item</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 1 }}>{cancelTarget ? `${cancelTarget.quantity}x ${cancelTarget.name}` : ''}</Typography>
+          <TextField
+            fullWidth
+            required
+            label="Motivo do cancelamento"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value.slice(0, 200))}
+            helperText="Mínimo de 3 caracteres."
+            multiline
+            minRows={2}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button sx={{ minHeight: 48 }} onClick={() => setCancelTarget(null)}>Voltar</Button>
+          <Button
+            variant="contained"
+            color="error"
+            sx={{ minHeight: 48 }}
+            disabled={busy || cancelReason.trim().length < 3}
+            onClick={confirmCancel}
+          >
+            Cancelar item
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={!!resolveTarget} onClose={() => setResolveTarget(null)} fullWidth maxWidth="xs">
+        <DialogTitle>Resolver contestação</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 1 }}>{resolveTarget ? `${resolveTarget.quantity}x ${resolveTarget.name}` : ''}</Typography>
+          {resolveTarget?.contestNote && (
+            <Typography variant="body2" sx={{ color: 'error.main' }}>Cliente: {resolveTarget.contestNote}</Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, flexDirection: 'column', alignItems: 'stretch', gap: 1, '& > :not(style) ~ :not(style)': { ml: 0 } }}>
+          <Button variant="contained" color="success" sx={BIG} onClick={() => resolve('ConfirmDelivered')}>
+            Confirmar entrega
+          </Button>
+          <Button variant="outlined" color="error" sx={BIG} onClick={() => resolve('Cancel')}>
+            Cancelar item
+          </Button>
+          <Button sx={{ minHeight: 44 }} onClick={() => setResolveTarget(null)}>Voltar</Button>
         </DialogActions>
       </Dialog>
 
