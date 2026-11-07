@@ -304,6 +304,9 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 ### 2026-11-07 (Bingo / comandas digitais)
 
+- **Limpeza de código morto nos frontends (pós-Bingo):** o item "Bingo" não aparecia no menu porque o agente alterou o `Sidebar.tsx`, que **não era usado**; o menu real é a lista `navigationItems` do `AdminLayout.tsx` (corrigido lá). Varredura por grafo de imports a partir de `src/index.tsx` removeu 22 arquivos sem uso (Admin: `Sidebar`, `LoadingCard`, `UserProfile`, `components/content/*` e `DashboardContent` da "Fase 0" com dados mockados, `FilhoCasaForm`, `mockFilhosCasa`, `useResponsiveChips`, `PlaceholderPage`, `PreferencesPage`, `ProfilePage`, `types/FilhoCasa`; Público: `ScrollToTopButton`, `SpiritualDetailModal`, `usePublicAuth`, `reportWebVitals`). Mantidos de propósito: `MemberContributionSection.tsx` (PM-048) e `jest-runtime.d.ts`.
+- **Guarda permanente no CI:** `scripts/ci/find-unused-frontend.js` (job `unused-frontend-files`) falha se surgir arquivo de `src/` não alcançável a partir de `index.tsx`; exceções ficam na `ALLOWLIST` do script, com o motivo.
+
 - **PM-050 (Bingo):** backend multi-evento implementado (entidades, migration `AddBingoEvents` com seed, SQL idempotente no `deploy-rolling.sh`, serviços, controllers público/garçom/admin, rate limit próprio, envio do link da comanda por WhatsApp fora do caminho crítico com limite de 1 envio por número a cada 3 min, anonimização diária de eventos encerrados há mais de 30 dias) e 40 testes unitários novos (suíte: 92 testes).
 
 ### 2026-10-27 (templates aprovados e camada de envio)

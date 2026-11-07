@@ -26,6 +26,7 @@ import {
   People as PeopleIcon,
   AccountCircle as ProfileIcon,
   LocationOn as LocationIcon,
+  Casino as BingoIcon,
   Favorite as FavoriteIcon,
   MenuBook as HistoryIcon,
   Groups as GuidesIcon,
@@ -126,6 +127,7 @@ const navigationItems: NavigationItem[] = [
   { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members', requiredRole: UserRole.Admin },
   { text: 'Doações e Contato', icon: <DonationIcon />, path: '/donations-contact', requiredRole: UserRole.Admin },
   { text: 'Contato e Mensagens', icon: <MessagesIcon />, path: '/contact-messages', requiredRole: UserRole.Admin },
+  { text: 'Bingo', icon: <BingoIcon />, path: '/bingo', requiredRole: UserRole.Admin },
   { text: 'Localização', icon: <LocationIcon />, path: '/location', requiredRole: UserRole.Editor },
   { text: 'Usuários', icon: <UsersIcon />, path: '/users', requiredRole: UserRole.Admin },
   {

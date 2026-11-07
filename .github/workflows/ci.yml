@@ -69,6 +69,15 @@ jobs:
         run: npm audit --audit-level=critical
         working-directory: src/Frontend/AdminDashboard
 
+  unused-frontend-files:
+    name: Check unused frontend files
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Find unused files in src/
+        run: node scripts/ci/find-unused-frontend.js src/Frontend/PublicWebsite src/Frontend/AdminDashboard
+
   build-api:
     name: Build .NET API
     runs-on: ubuntu-24.04
