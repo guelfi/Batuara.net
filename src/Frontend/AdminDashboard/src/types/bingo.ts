@@ -1,0 +1,77 @@
+// Tipos do módulo Bingo (contrato: docs/BINGO-CONTRATO.md)
+
+export type BingoPaymentMethod = 'Card' | 'Pix' | 'Cash';
+export type BingoTabStatus = 'Open' | 'CloseRequested' | 'Paid';
+export type BingoItemStatus = 'Pending' | 'Delivered';
+
+export type BingoEventStatus = 'Draft' | 'Open' | 'Closed';
+
+export interface BingoEvent {
+  id: string;
+  name: string;
+  eventDate: string;
+  status: BingoEventStatus;
+  isTest: boolean;
+  closeAllRequested: boolean;
+  totalSold: number;
+}
+
+export interface BingoMenuItem {
+  id: string;
+  name: string;
+  unitPrice: number;
+  isAvailable: boolean;
+  sortOrder: number;
+}
+
+export interface BingoMenuItemInput {
+  name: string;
+  unitPrice: number;
+  isAvailable: boolean;
+  sortOrder: number;
+}
+
+export interface BingoOrderItem {
+  id: string;
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  status: BingoItemStatus;
+  createdAt?: string;
+}
+
+export interface BingoTab {
+  tabId: string;
+  mesa: number | string;
+  customerName: string;
+  status: BingoTabStatus;
+  total: number;
+  paymentMethod?: BingoPaymentMethod | null;
+  items: BingoOrderItem[];
+}
+
+export interface BingoPanel {
+  closeAllRequested?: boolean;
+  totalSold?: number;
+  tabs: BingoTab[];
+}
+
+export interface BingoWaiter {
+  houseMemberId: string | number;
+  name: string;
+  lastSeenAt?: string | null;
+  deliveries: number;
+}
+
+export interface BingoSummaryLine {
+  label: string;
+  quantity?: number;
+  total: number;
+}
+
+export interface BingoSummary {
+  totalSold: number;
+  totalOpen: number;
+  byPayment: BingoSummaryLine[];
+  byItem: BingoSummaryLine[];
+}
