@@ -43,6 +43,10 @@ namespace Batuara.Infrastructure.Bingo.Services
         {
             ValidateImage(request.ImageBase64);
             var apiKey = options.Value.ApiKey;
+            var model = options.Value.Model;
+            
+            Console.WriteLine($"ComandaFoto: ApiKey presente={!string.IsNullOrWhiteSpace(apiKey)}, Model={model}");
+            
             if (string.IsNullOrWhiteSpace(apiKey))
             {
                 throw new BingoException(BingoErrorKind.Validation,
@@ -96,6 +100,9 @@ namespace Batuara.Infrastructure.Bingo.Services
             var raw = await response.Content.ReadAsStringAsync(ct);
             if (!response.IsSuccessStatusCode)
             {
+                // Log do erro real para diagnóstico
+                var errorMsg = $"Anthropic API error: {response.StatusCode} - {raw}";
+                Console.WriteLine(errorMsg);
                 throw new BingoException(BingoErrorKind.Validation,
                     "Não consegui ler a foto agora. Tente de novo ou digite os itens.", "ocr_failed");
             }
