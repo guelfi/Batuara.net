@@ -178,6 +178,12 @@ const LivePanel: React.FC<{
     .map((t) => ({ tab: t, items: t.items.filter((i) => i.status === 'Pending') }))
     .filter((x) => x.items.length > 0)
     .sort((a, b) => String(a.tab.mesa).localeCompare(String(b.tab.mesa), 'pt-BR', { numeric: true }));
+  const retrievedByTab = tabs
+    .map((t) => ({ tab: t, items: t.items.filter((i) => i.status === 'Retrieved') }))
+    .filter((x) => x.items.length > 0)
+    .sort((a, b) => String(a.tab.mesa).localeCompare(String(b.tab.mesa), 'pt-BR', { numeric: true }));
+  const retrievedCount =
+    panel?.retrievedItems ?? retrievedByTab.reduce((s, x) => s + x.items.reduce((q, i) => q + i.quantity, 0), 0);
   const pendingCount = pendingByTab.reduce((s, x) => s + x.items.reduce((q, i) => q + i.quantity, 0), 0);
   const totalSold = panel?.totalSold ?? paid.reduce((s, t) => s + t.total, 0);
   const closeAll = panel?.closeAllRequested ?? event?.closeAllRequested ?? false;
@@ -209,6 +215,7 @@ const LivePanel: React.FC<{
             <Chip color="warning" label={`Pediram a conta: ${closing.length}`} />
             <Chip color="success" label={`Pagas: ${paid.length}`} />
             <Chip color="info" label={`Itens pendentes: ${pendingCount}`} />
+            <Chip color="secondary" label={`Itens retirados: ${retrievedCount}`} />
             <Chip color="primary" label={`Total vendido: ${money(totalSold)}`} />
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
@@ -267,6 +274,32 @@ const LivePanel: React.FC<{
             </TableHead>
             <TableBody>
               {pendingByTab.map(({ tab, items }) => (
+                <TableRow key={tab.tabId}>
+                  <TableCell>{tab.mesa}</TableCell>
+                  <TableCell>{tab.customerName}</TableCell>
+                  <TableCell>{items.map((i) => `${i.quantity}x ${i.name}`).join(', ')}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
+      <Typography variant="h6">Itens retirados (a caminho) por mesa</Typography>
+      {retrievedByTab.length === 0 ? (
+        <Typography color="text.secondary">Nenhum item retirado aguardando entrega.</Typography>
+      ) : (
+        <TableContainer component={Paper}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Mesa</TableCell>
+                <TableCell>Cliente</TableCell>
+                <TableCell>Itens</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {retrievedByTab.map(({ tab, items }) => (
                 <TableRow key={tab.tabId}>
                   <TableCell>{tab.mesa}</TableCell>
                   <TableCell>{tab.customerName}</TableCell>

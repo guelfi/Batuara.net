@@ -27,7 +27,7 @@ export interface CreateBingoTabResponse {
 }
 
 export type BingoTabStatus = 'Open' | 'CloseRequested' | 'Paid';
-export type BingoItemStatus = 'Pending' | 'Delivered';
+export type BingoItemStatus = 'Pending' | 'Retrieved' | 'Delivered';
 export type BingoPaymentMethod = 'Card' | 'Pix' | 'Cash';
 
 export interface BingoTabItem {
