@@ -411,9 +411,8 @@ const QrTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
 
       {full && (
         <Box
-          role="button"
-          aria-label="Fechar QR"
-          onClick={() => setFull(false)}
+          role="dialog"
+          aria-label="QR code da mesa"
           sx={{
             position: 'fixed',
             inset: 0,
@@ -438,9 +437,15 @@ const QrTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
             />
           )}
           <Typography sx={{ mt: 1, fontSize: '1.1rem', wordBreak: 'break-all' }}>{bingoQrUrl(Number(mesa))}</Typography>
-          <Typography variant="caption" sx={{ mt: 2, opacity: 0.6 }}>
-            Toque para fechar
-          </Typography>
+          <Button
+            variant="contained"
+            color="inherit"
+            size="large"
+            onClick={() => setFull(false)}
+            sx={{ mt: 2, minWidth: 220, minHeight: 52, fontWeight: 700, fontSize: '1.05rem', bgcolor: '#212121', color: '#fff', '&:hover': { bgcolor: '#000' } }}
+          >
+            Fechar
+          </Button>
         </Box>
       )}
     </Stack>
