@@ -750,7 +750,7 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
                             Cancelar item
                           </Button>
                         )}
-                        {i.status === 'Delivered' && (
+                        {i.status === 'Delivered' && !i.contestedAt && (
                           <Button
                             size="small"
                             color="warning"

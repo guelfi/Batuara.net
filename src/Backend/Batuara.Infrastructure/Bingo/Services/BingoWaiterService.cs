@@ -13,6 +13,33 @@ namespace Batuara.Infrastructure.Bingo.Services
         {
         }
 
+        public async Task<List<BingoWaiterContestationDto>> GetContestationsAsync(CancellationToken cancellationToken = default)
+        {
+            var ev = await RequireOpenEventAsync(cancellationToken);
+            var items = await Db.BingoOrderItems
+                .Include(x => x.Tab)
+                .Where(x => x.Status == BingoOrderItemStatus.Contested && x.Tab.EventId == ev.Id && x.Tab.Status != BingoTabStatus.Paid)
+                .ToListAsync(cancellationToken);
+            return items
+                .OrderBy(x => x.ContestedAt)
+                .ThenBy(x => x.Id)
+                .Select(x => new BingoWaiterContestationDto
+                {
+                    ItemId = x.Id,
+                    TabId = x.TabId,
+                    Mesa = x.Tab.TableNumber,
+                    CustomerName = x.Tab.CustomerName,
+                    Name = x.ItemName,
+                    Quantity = x.Quantity,
+                    UnitPrice = x.UnitPrice,
+                    ContestNote = x.ContestNote,
+                    ContestedAt = x.ContestedAt,
+                    DeliveredAt = x.DeliveredAt,
+                    DeliveredByName = x.DeliveredByName
+                })
+                .ToList();
+        }
+
         public async Task<BingoExitCheckDto> GetExitCheckByCodeAsync(string code, CancellationToken cancellationToken = default)
         {
             var clean = new string((code ?? string.Empty).Where(Uri.IsHexDigit).ToArray()).ToLowerInvariant();

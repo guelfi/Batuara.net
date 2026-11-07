@@ -76,6 +76,12 @@ namespace Batuara.API.Controllers
             return Ok(new { success = true });
         }
 
+        [HttpGet("contestacoes")]
+        public async Task<IActionResult> GetContestations(CancellationToken cancellationToken)
+        {
+            return Ok(new { success = true, data = await service.GetContestationsAsync(cancellationToken) });
+        }
+
         [HttpGet("saida/codigo/{code}")]
         public async Task<IActionResult> GetExitByCode(string code, CancellationToken cancellationToken)
         {

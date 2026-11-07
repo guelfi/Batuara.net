@@ -4,6 +4,20 @@ import { ContestAction, WaiterBill, WaiterPaymentMethod } from '../types/bingoWa
 const asArray = (v: any): any[] => (Array.isArray(v) ? v : []);
 const n = (v: any): number => (typeof v === 'number' ? v : Number(v) || 0);
 
+export interface WaiterContestation {
+  itemId: string;
+  tabId: string;
+  mesa: number;
+  customerName: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  contestNote: string | null;
+  contestedAt: string | null;
+  deliveredAt: string | null;
+  deliveredByName: string | null;
+}
+
 export interface ExitCheck {
   tabId: string;
   paid: boolean;
@@ -31,6 +45,23 @@ const toExit = (d: any): ExitCheck => ({
 });
 
 const bingoWaiterApi = {
+  async getContestations(): Promise<WaiterContestation[]> {
+    const r = await apiService.get<any>('/bingo/garcom/contestacoes');
+    return asArray(r.data).map((c: any) => ({
+      itemId: String(c.itemId),
+      tabId: c.tabId,
+      mesa: n(c.mesa),
+      customerName: c.customerName ?? '',
+      name: c.name ?? '',
+      quantity: n(c.quantity),
+      unitPrice: n(c.unitPrice),
+      contestNote: c.contestNote ?? null,
+      contestedAt: c.contestedAt ?? null,
+      deliveredAt: c.deliveredAt ?? null,
+      deliveredByName: c.deliveredByName ?? null,
+    }));
+  },
+
   async getExitByCode(code: string): Promise<ExitCheck> {
     const r = await apiService.get<any>(`/bingo/garcom/saida/codigo/${encodeURIComponent(code)}`);
     return toExit(r.data);

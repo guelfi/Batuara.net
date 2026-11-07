@@ -231,6 +231,21 @@ namespace Batuara.Application.Bingo.Models
         public int Mesa { get; set; }
     }
 
+    public class BingoWaiterContestationDto
+    {
+        public int ItemId { get; set; }
+        public Guid TabId { get; set; }
+        public int Mesa { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+        public string? ContestNote { get; set; }
+        public DateTime? ContestedAt { get; set; }
+        public DateTime? DeliveredAt { get; set; }
+        public string? DeliveredByName { get; set; }
+    }
+
     public class BingoExitCheckDto
     {
         public Guid TabId { get; set; }

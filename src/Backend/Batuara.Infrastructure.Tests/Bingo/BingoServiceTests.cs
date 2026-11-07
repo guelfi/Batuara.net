@@ -812,6 +812,28 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public async Task Contestation_Is_Listed_For_Waiters_And_Allowed_Only_Once_Per_Item()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var tab = await f.NewTabAsync();
+            var waiterId = await f.ScheduleWaiterAsync();
+            await f.OrderAsync(tab.TabId, "Salada", 1);
+            var item = (await f.Public.GetTabAsync(tab.TabId)).Items.Single();
+            await f.Waiter.DeliverAsync(waiterId, item.Id);
+
+            await f.Public.ContestItemAsync(tab.TabId, item.Id, "nao chegou");
+            var list = await f.Waiter.GetContestationsAsync();
+            list.Should().ContainSingle();
+            list[0].ContestNote.Should().Be("nao chegou");
+            list[0].DeliveredByName.Should().NotBeNullOrWhiteSpace();
+
+            await f.Waiter.ResolveContestationAsync(waiterId, item.Id, new BingoResolveContestRequest { Action = BingoContestResolution.ConfirmDelivered });
+            (await f.Waiter.GetContestationsAsync()).Should().BeEmpty();
+            await ShouldThrowAsync(() => f.Public.ContestItemAsync(tab.TabId, item.Id, "de novo"), BingoErrorKind.Conflict);
+        }
+
+        [Fact]
         public async Task Exit_Check_Requires_Payment_And_Registers_Only_First_Release()
         {
             var f = new Fixture();

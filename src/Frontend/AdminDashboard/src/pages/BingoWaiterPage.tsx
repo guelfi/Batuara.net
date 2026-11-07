@@ -24,7 +24,7 @@ import QRCode from 'qrcode';
 import { useLocation, useNavigate } from 'react-router-dom';
 import QrScanner from '../components/bingo/QrScanner';
 import bingoApi from '../services/bingoApi';
-import bingoWaiterApi from '../services/bingoWaiterApi';
+import bingoWaiterApi, { WaiterContestation } from '../services/bingoWaiterApi';
 import { WaiterOrderGroup, WaiterStatus } from '../types/bingo';
 import { ContestAction, WaiterAccountItem, WaiterBill, WaiterPaymentMethod } from '../types/bingoWaiter';
 
@@ -86,12 +86,33 @@ const pendingCount = (groups: WaiterOrderGroup[] | null): number =>
 
 interface OrdersTabProps {
   groups: WaiterOrderGroup[] | null;
+  contestations: WaiterContestation[];
   loadError: string;
   reload: () => Promise<void>;
 }
 
-const OrdersTab: React.FC<OrdersTabProps> = ({ groups, loadError, reload }) => {
+const hhmm = (iso: string | null) => {
+  const d = iso ? new Date(iso) : null;
+  return d && !Number.isNaN(d.getTime()) ? d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+};
+
+const OrdersTab: React.FC<OrdersTabProps> = ({ groups, contestations, loadError, reload }) => {
   const [actionError, setActionError] = useState('');
+  const [resolveTarget, setResolveTarget] = useState<WaiterContestation | null>(null);
+
+  const resolveContest = async (action: ContestAction) => {
+    if (!resolveTarget) return;
+    const item = resolveTarget;
+    setResolveTarget(null);
+    setActionError('');
+    try {
+      await bingoWaiterApi.resolveContest(item.itemId, action);
+    } catch (e: any) {
+      setActionError(errorMessage(e, 'Não foi possível resolver a contestação.'));
+    } finally {
+      await reload();
+    }
+  };
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const act = async (itemId: string, fn: (id: string) => Promise<any>, fallback: string) => {
@@ -121,7 +142,44 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ groups, loadError, reload }) => {
       {(actionError || loadError) && (
         <Alert severity="warning" sx={{ mb: 2 }}>{actionError || loadError}</Alert>
       )}
-      {groups && sorted.length === 0 && <Typography sx={{ opacity: 0.7 }}>Nenhum pedido pendente.</Typography>}
+      {contestations.length > 0 && (
+        <Stack spacing={1} sx={{ mb: 2 }}>
+          <Typography sx={{ fontWeight: 800, color: 'error.main' }}>Contestações ({contestations.length})</Typography>
+          {contestations.map((c) => (
+            <Paper key={c.itemId} variant="outlined" sx={{ p: 1.5, borderColor: 'error.main', borderWidth: 2 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: '1.05rem' }}>Mesa {c.mesa} - {c.customerName}</Typography>
+              <Typography sx={{ fontWeight: 600 }}>{c.quantity}x {c.name}</Typography>
+              <Typography variant="body2">
+                Entregue por <b>{c.deliveredByName || 'não informado'}</b>{c.deliveredAt ? ` às ${hhmm(c.deliveredAt)}` : ''}
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'error.main' }}>
+                Cliente: {c.contestNote || 'disse que não recebeu'}{c.contestedAt ? ` (às ${hhmm(c.contestedAt)})` : ''}
+              </Typography>
+              <Button variant="contained" color="error" sx={{ mt: 1, minHeight: 44, fontWeight: 700 }} fullWidth onClick={() => setResolveTarget(c)}>
+                Resolver contestação
+              </Button>
+            </Paper>
+          ))}
+        </Stack>
+      )}
+      <Dialog open={!!resolveTarget} onClose={() => setResolveTarget(null)} fullWidth maxWidth="xs">
+        <DialogTitle>Resolver contestação</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 1 }}>{resolveTarget ? `${resolveTarget.quantity}x ${resolveTarget.name} - Mesa ${resolveTarget.mesa}` : ''}</Typography>
+          {resolveTarget?.deliveredByName && <Typography variant="body2">Entregue por {resolveTarget.deliveredByName}</Typography>}
+          {resolveTarget?.contestNote && <Typography variant="body2" sx={{ color: 'error.main' }}>Cliente: {resolveTarget.contestNote}</Typography>}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, flexDirection: 'column', alignItems: 'stretch', gap: 1, '& > :not(style) ~ :not(style)': { ml: 0 } }}>
+          <Button variant="contained" color="success" sx={{ minHeight: 52, fontWeight: 700 }} onClick={() => resolveContest('ConfirmDelivered')}>
+            Confirmar entrega
+          </Button>
+          <Button variant="outlined" color="error" sx={{ minHeight: 52, fontWeight: 700 }} onClick={() => resolveContest('Cancel')}>
+            Cancelar item
+          </Button>
+          <Button sx={{ minHeight: 44 }} onClick={() => setResolveTarget(null)}>Voltar</Button>
+        </DialogActions>
+      </Dialog>
+      {groups && sorted.length === 0 && contestations.length === 0 && <Typography sx={{ opacity: 0.7 }}>Nenhum pedido pendente.</Typography>}
       <Stack spacing={2}>
         {sorted.map((g) => (
           <Paper key={g.tabId} variant="outlined" sx={{ p: 1.5 }}>
@@ -811,6 +869,8 @@ const BingoWaiterPage: React.FC = () => {
   const [flash, setFlash] = useState(false);
   const [billFlash, setBillFlash] = useState(false);
   const [billCount, setBillCount] = useState(0);
+  const [contestations, setContestations] = useState<WaiterContestation[]>([]);
+  const lastContest = useRef<number | null>(null);
   const lastPending = useRef<number | null>(null);
   const lastBills = useRef<number | null>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -836,6 +896,27 @@ const BingoWaiterPage: React.FC = () => {
       }
     } catch {
       setOrdersError('Sem conexão. Tentando novamente...');
+    }
+  }, []);
+
+  const loadContestations = useCallback(async () => {
+    try {
+      const list = await bingoWaiterApi.getContestations();
+      setContestations(list);
+      const prev = lastContest.current;
+      lastContest.current = list.length;
+      if (prev !== null && list.length > prev) {
+        try {
+          navigator.vibrate?.([200, 100, 200]);
+        } catch {
+          // vibração indisponível
+        }
+        setFlash(true);
+        if (flashTimer.current) clearTimeout(flashTimer.current);
+        flashTimer.current = setTimeout(() => setFlash(false), 2500);
+      }
+    } catch {
+      // a aba Pedidos mostra o erro de conexão
     }
   }, []);
 
@@ -884,7 +965,7 @@ const BingoWaiterPage: React.FC = () => {
   const activeRef = useRef(active);
   activeRef.current = active;
   usePolling(async () => {
-    if (activeRef.current) await Promise.all([loadOrders(), loadBillRequests()]);
+    if (activeRef.current) await Promise.all([loadOrders(), loadBillRequests(), loadContestations()]);
   });
 
   useEffect(() => {
@@ -920,7 +1001,7 @@ const BingoWaiterPage: React.FC = () => {
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth" sx={{ mb: 2 }}>
         <Tab
           label={
-            <Badge badgeContent={pendingCount(groups)} color="error" max={99} sx={{ '& .MuiBadge-badge': { right: -14 } }}>
+            <Badge badgeContent={pendingCount(groups) + contestations.length} color="error" max={99} sx={{ '& .MuiBadge-badge': { right: -14 } }}>
               <span>Pedidos</span>
             </Badge>
           }
@@ -947,7 +1028,7 @@ const BingoWaiterPage: React.FC = () => {
         <Tab label="QR" sx={{ minHeight: 56, fontWeight: 700 }} />
         <Tab label="Saída" sx={{ minHeight: 56, fontWeight: 700 }} />
       </Tabs>
-      {tab === 0 && <OrdersTab groups={groups} loadError={ordersError} reload={loadOrders} />}
+      {tab === 0 && <OrdersTab groups={groups} contestations={contestations} loadError={ordersError} reload={async () => { await Promise.all([loadOrders(), loadContestations()]); }} />}
       {tab === 1 && <AccountsTab mesas={mesas} />}
       {tab === 2 && <QrTab mesas={mesas} />}
       {tab === 3 && <ExitTab />}

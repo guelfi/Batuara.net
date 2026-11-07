@@ -193,6 +193,11 @@ namespace Batuara.Infrastructure.Bingo.Services
                 throw new BingoException(BingoErrorKind.Conflict, "Esta comanda já foi paga.");
             }
 
+            if (item.ContestedAt != null)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Este item já foi contestado uma vez.");
+            }
+
             if (item.Status != BingoOrderItemStatus.Delivered)
             {
                 throw new BingoException(BingoErrorKind.Conflict, "Só é possível contestar um item já entregue.");
