@@ -233,6 +233,7 @@ namespace Batuara.Application.Bingo.Models
 
     public class BingoExitCheckDto
     {
+        public Guid TabId { get; set; }
         public bool Paid { get; set; }
         public int Mesa { get; set; }
         public string CustomerName { get; set; } = string.Empty;

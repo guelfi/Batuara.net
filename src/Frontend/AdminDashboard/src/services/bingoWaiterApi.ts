@@ -5,6 +5,7 @@ const asArray = (v: any): any[] => (Array.isArray(v) ? v : []);
 const n = (v: any): number => (typeof v === 'number' ? v : Number(v) || 0);
 
 export interface ExitCheck {
+  tabId: string;
   paid: boolean;
   mesa: number;
   customerName: string;
@@ -17,6 +18,7 @@ export interface ExitCheck {
 }
 
 const toExit = (d: any): ExitCheck => ({
+  tabId: d?.tabId ?? '',
   paid: !!d?.paid,
   mesa: n(d?.mesa),
   customerName: d?.customerName ?? '',
@@ -29,6 +31,11 @@ const toExit = (d: any): ExitCheck => ({
 });
 
 const bingoWaiterApi = {
+  async getExitByCode(code: string): Promise<ExitCheck> {
+    const r = await apiService.get<any>(`/bingo/garcom/saida/codigo/${encodeURIComponent(code)}`);
+    return toExit(r.data);
+  },
+
   async getExit(tabId: string): Promise<ExitCheck> {
     const r = await apiService.get<any>(`/bingo/garcom/saida/${tabId}`);
     return toExit(r.data);

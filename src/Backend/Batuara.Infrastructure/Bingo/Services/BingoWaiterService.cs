@@ -13,6 +13,31 @@ namespace Batuara.Infrastructure.Bingo.Services
         {
         }
 
+        public async Task<BingoExitCheckDto> GetExitCheckByCodeAsync(string code, CancellationToken cancellationToken = default)
+        {
+            var clean = new string((code ?? string.Empty).Where(Uri.IsHexDigit).ToArray()).ToLowerInvariant();
+            if (clean.Length != 6)
+            {
+                throw new BingoException(BingoErrorKind.Validation, "Informe o código de 6 caracteres.");
+            }
+
+            var ev = await FindOpenEventAsync(cancellationToken)
+                ?? throw new BingoException(BingoErrorKind.Conflict, "O bingo está encerrado.");
+            var tabs = await Db.BingoTabs.Include(x => x.Items).Where(x => x.EventId == ev.Id).ToListAsync(cancellationToken);
+            var matches = tabs.Where(x => x.Id.ToString("N").StartsWith(clean, StringComparison.Ordinal)).ToList();
+            if (matches.Count == 0)
+            {
+                throw new BingoException(BingoErrorKind.NotFound, "Comanda não encontrada.");
+            }
+
+            if (matches.Count > 1)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Código repetido. Leia o QR da comanda.");
+            }
+
+            return ToExitDto(matches[0]);
+        }
+
         public async Task<BingoExitCheckDto> GetExitCheckAsync(Guid tabId, CancellationToken cancellationToken = default)
         {
             var tab = await Db.BingoTabs.Include(x => x.Items).FirstOrDefaultAsync(x => x.Id == tabId, cancellationToken)
@@ -41,6 +66,7 @@ namespace Batuara.Infrastructure.Bingo.Services
 
         private static BingoExitCheckDto ToExitDto(BingoTab tab) => new()
         {
+            TabId = tab.Id,
             Paid = tab.IsPaid,
             Mesa = tab.TableNumber,
             CustomerName = tab.CustomerName,

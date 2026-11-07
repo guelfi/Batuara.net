@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Box, Button, CircularProgress, Typography } from '@mui/material';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import bingoWaiterApi, { ExitCheck } from '../services/bingoWaiterApi';
 
 const money = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -11,6 +11,7 @@ const hhmm = (iso: string | null) => {
 
 const BingoExitPage: React.FC = () => {
   const { tabId = '' } = useParams();
+  const navigate = useNavigate();
   const [data, setData] = useState<ExitCheck | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -65,6 +66,9 @@ const BingoExitPage: React.FC = () => {
         {!ok && <Typography sx={{ mt: 1 }}>Falta receber {money(data.amountDue)}. Encaminhe ao caixa.</Typography>}
       </Box>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      <Button variant="outlined" size="large" fullWidth onClick={() => navigate('/bingo-garcom', { state: { tab: 3 } })} sx={{ minHeight: 52, fontWeight: 700, mb: 1 }}>
+        Conferir outra comanda
+      </Button>
       {ok && !already && (
         <Button variant="contained" color="success" size="large" fullWidth disabled={busy} onClick={release} sx={{ minHeight: 56, fontWeight: 700 }}>
           Liberar saída

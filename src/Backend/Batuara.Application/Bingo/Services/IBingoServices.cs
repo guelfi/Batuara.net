@@ -40,6 +40,7 @@ namespace Batuara.Application.Bingo.Services
         Task<List<BingoPaymentMethodDto>> GetPaymentMethodsAsync(CancellationToken cancellationToken = default);
         Task ChangeTableAsync(Guid tabId, int mesa, CancellationToken cancellationToken = default);
         Task<List<BingoAccountDto>> GetAccountsAsync(bool all = false, CancellationToken cancellationToken = default);
+        Task<BingoExitCheckDto> GetExitCheckByCodeAsync(string code, CancellationToken cancellationToken = default);
         Task<BingoExitCheckDto> GetExitCheckAsync(Guid tabId, CancellationToken cancellationToken = default);
         Task<BingoExitCheckDto> ReleaseExitAsync(int houseMemberId, Guid tabId, CancellationToken cancellationToken = default);
         Task<BingoPayResult> PayAsync(int houseMemberId, BingoPayRequest request, CancellationToken cancellationToken = default);

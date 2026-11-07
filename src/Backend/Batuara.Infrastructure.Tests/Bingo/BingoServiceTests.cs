@@ -781,6 +781,19 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public async Task Exit_Check_By_Short_Code_Finds_The_Tab()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var tab = await f.NewTabAsync();
+            var code = tab.TabId.ToString("N").Substring(0, 6).ToUpperInvariant();
+
+            var found = await f.Waiter.GetExitCheckByCodeAsync(code.Substring(0, 3) + " " + code.Substring(3));
+            found.TabId.Should().Be(tab.TabId);
+            await ShouldThrowAsync(() => f.Waiter.GetExitCheckByCodeAsync("12"), BingoErrorKind.Validation);
+        }
+
+        [Fact]
         public async Task Exit_Check_Requires_Payment_And_Registers_Only_First_Release()
         {
             var f = new Fixture();

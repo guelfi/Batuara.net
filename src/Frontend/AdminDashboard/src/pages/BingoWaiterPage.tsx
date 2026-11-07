@@ -21,6 +21,8 @@ import {
 } from '@mui/material';
 import { CheckCircle as CheckCircleIcon, NotificationsActive as NotificationsActiveIcon } from '@mui/icons-material';
 import QRCode from 'qrcode';
+import { useLocation, useNavigate } from 'react-router-dom';
+import QrScanner from '../components/bingo/QrScanner';
 import bingoApi from '../services/bingoApi';
 import bingoWaiterApi from '../services/bingoWaiterApi';
 import { WaiterOrderGroup, WaiterStatus } from '../types/bingo';
@@ -731,12 +733,78 @@ const QrTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
   );
 };
 
+// ------------------------------------------------------------------- saída
+
+const EXIT_PATH = /bingo-saida\/([0-9a-fA-F-]{36})/;
+
+const ExitTab: React.FC = () => {
+  const navigate = useNavigate();
+  const [scanning, setScanning] = useState(false);
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const onScan = useCallback(
+    (text: string) => {
+      const m = EXIT_PATH.exec(text);
+      if (m) {
+        navigate(`/bingo-saida/${m[1]}`);
+      } else {
+        setScanning(false);
+        setError('Este QR não é de uma comanda do Bingo.');
+      }
+    },
+    [navigate]
+  );
+
+  const byCode = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const r = await bingoWaiterApi.getExitByCode(code);
+      navigate(`/bingo-saida/${r.tabId}`);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Comanda não encontrada.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Stack spacing={2}>
+      {!scanning ? (
+        <Button variant="contained" sx={BIG} onClick={() => { setError(''); setScanning(true); }}>
+          Ler QR do cliente
+        </Button>
+      ) : (
+        <>
+          <QrScanner onResult={onScan} />
+          <Button variant="outlined" sx={BIG} onClick={() => setScanning(false)}>Cancelar leitura</Button>
+        </>
+      )}
+      {error && <Alert severity="error">{error}</Alert>}
+      <Typography variant="body2" sx={{ opacity: 0.8 }}>Ou digite o código de 6 caracteres que aparece abaixo do QR do cliente:</Typography>
+      <TextField
+        label="Código da comanda"
+        value={code}
+        onChange={(e) => setCode(e.target.value.toUpperCase())}
+        slotProps={{ htmlInput: { maxLength: 7, autoCapitalize: 'characters', style: { fontSize: '1.4rem', letterSpacing: 4, textAlign: 'center' } } }}
+        fullWidth
+      />
+      <Button variant="contained" color="secondary" sx={BIG} disabled={busy || code.replace(/[^0-9a-fA-F]/g, '').length !== 6} onClick={byCode}>
+        Conferir código
+      </Button>
+    </Stack>
+  );
+};
+
 // ------------------------------------------------------------------- página
 
 const BingoWaiterPage: React.FC = () => {
   const [status, setStatus] = useState<WaiterStatus | null>(null);
   const [statusError, setStatusError] = useState(false);
-  const [tab, setTab] = useState(0);
+  const location = useLocation();
+  const [tab, setTab] = useState<number>((location.state as any)?.tab ?? 0);
   const [mesas, setMesas] = useState<number[]>([]);
   const [groups, setGroups] = useState<WaiterOrderGroup[] | null>(null);
   const [ordersError, setOrdersError] = useState('');
@@ -877,10 +945,12 @@ const BingoWaiterPage: React.FC = () => {
           }}
         />
         <Tab label="QR" sx={{ minHeight: 56, fontWeight: 700 }} />
+        <Tab label="Saída" sx={{ minHeight: 56, fontWeight: 700 }} />
       </Tabs>
       {tab === 0 && <OrdersTab groups={groups} loadError={ordersError} reload={loadOrders} />}
       {tab === 1 && <AccountsTab mesas={mesas} />}
       {tab === 2 && <QrTab mesas={mesas} />}
+      {tab === 3 && <ExitTab />}
     </Box>
   );
 };

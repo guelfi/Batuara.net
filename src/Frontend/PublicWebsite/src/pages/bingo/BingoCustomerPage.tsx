@@ -236,6 +236,8 @@ const ExitQr: React.FC<{ tabId: string }> = ({ tabId }) => {
       <Typography sx={{ fontWeight: 700 }}>Pagamento confirmado</Typography>
       <Typography variant="body2" sx={{ mb: 1, opacity: 0.8 }}>Mostre este QR na saída.</Typography>
       <Box component="img" src={dataUrl} alt="QR de saída" sx={{ width: 'min(70vw, 260px)', height: 'min(70vw, 260px)' }} />
+      <Typography sx={{ mt: 0.5, fontWeight: 800, fontSize: '1.6rem', letterSpacing: 4 }}>{tabId.replace(/-/g, '').slice(0, 6).toUpperCase()}</Typography>
+      <Typography variant="caption" sx={{ opacity: 0.7 }}>Se a câmera não ler, informe este código.</Typography>
     </Paper>
   );
 };

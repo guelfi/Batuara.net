@@ -76,6 +76,12 @@ namespace Batuara.API.Controllers
             return Ok(new { success = true });
         }
 
+        [HttpGet("saida/codigo/{code}")]
+        public async Task<IActionResult> GetExitByCode(string code, CancellationToken cancellationToken)
+        {
+            return Ok(new { success = true, data = await service.GetExitCheckByCodeAsync(code, cancellationToken) });
+        }
+
         [HttpGet("saida/{tabId:guid}")]
         public async Task<IActionResult> GetExit(Guid tabId, CancellationToken cancellationToken)
         {
