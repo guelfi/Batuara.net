@@ -86,6 +86,10 @@ namespace Batuara.Infrastructure.Tests.Bingo
             public BingoAdminService Admin { get; }
             public BingoWaiterService Waiter { get; }
             public PasswordService Passwords { get; } = new(Options.Create(new PasswordRequirements()));
+            public int CashId { get; private set; }
+            public int PixId { get; private set; }
+            public int CardId { get; private set; }
+            public int DebitId { get; private set; }
 
             public Fixture()
             {
@@ -105,6 +109,29 @@ namespace Batuara.Infrastructure.Tests.Bingo
                 Public = new BingoPublicService(Db, Dispatcher, Passwords, Options.Create(new BingoOptions()));
                 Admin = new BingoAdminService(Db);
                 Waiter = new BingoWaiterService(Db);
+
+                var cash = new BingoPaymentOption("Dinheiro", true, 1);
+                var pix = new BingoPaymentOption("Pix", true, 2);
+                var card = new BingoPaymentOption("Cartão de crédito", true, 3);
+                var debit = new BingoPaymentOption("Cartão de débito", true, 4);
+                Db.BingoPaymentOptions.AddRange(cash, pix, card, debit);
+                Db.SaveChanges();
+                CashId = cash.Id;
+                PixId = pix.Id;
+                CardId = card.Id;
+                DebitId = debit.Id;
+            }
+
+            public Task PayAdminAsync(Guid tabId, int? methodId = null)
+                => Admin.PayTabsAsync("Admin Teste", new BingoAdminPayRequest { TabIds = new List<Guid> { tabId }, PaymentMethodId = methodId ?? PixId });
+
+            public async Task DeliverAllAsync(Guid tabId)
+            {
+                var ids = await Db.BingoOrderItems.Where(x => x.TabId == tabId && (x.Status == BingoOrderItemStatus.Pending || x.Status == BingoOrderItemStatus.Retrieved)).Select(x => x.Id).ToListAsync();
+                foreach (var id in ids)
+                {
+                    await Admin.DeliverItemAsync("Admin Teste", id);
+                }
             }
 
             public static BatuaraDbContext CreateDb(string name)
@@ -198,7 +225,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
             var f = new Fixture();
             await f.OpenEventAsync();
             var first = await f.NewTabAsync();
-            await f.Admin.PayTabAsync(first.TabId, new BingoPayOneRequest { Method = BingoPaymentMethod.Pix });
+            await f.PayAdminAsync(first.TabId, f.PixId);
 
             var second = await f.NewTabAsync();
 
@@ -260,7 +287,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await f.OpenEventAsync();
             var paid = await f.NewTabAsync("11999990001");
             var open = await f.NewTabAsync("11999990002");
-            await f.Admin.PayTabAsync(paid.TabId, new BingoPayOneRequest { Method = BingoPaymentMethod.Cash });
+            await f.PayAdminAsync(paid.TabId, f.CashId);
 
             await ShouldThrowAsync(() => f.OrderAsync(paid.TabId, "Água", 1), BingoErrorKind.Conflict);
 
@@ -296,7 +323,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await f.Public.RequestCloseAsync(tab.TabId);
             (await f.Public.GetTabAsync(tab.TabId)).Status.Should().Be(BingoTabStatus.CloseRequested);
 
-            await f.Admin.PayTabAsync(tab.TabId, new BingoPayOneRequest { Method = BingoPaymentMethod.Card });
+            await f.PayAdminAsync(tab.TabId, f.CardId);
             await ShouldThrowAsync(() => f.Public.RequestCloseAsync(tab.TabId), BingoErrorKind.Conflict);
         }
 
@@ -421,6 +448,8 @@ namespace Batuara.Infrastructure.Tests.Bingo
             var c = await f.NewTabAsync("11999990003", 7, "Ana");
             await f.OrderAsync(a.TabId, "Refrigerante", 2);
             await f.OrderAsync(b.TabId, "Cerveja Heineken", 1);
+            await f.DeliverAllAsync(a.TabId);
+            await f.DeliverAllAsync(b.TabId);
             await f.Public.RequestCloseAsync(a.TabId);
             await f.Public.RequestCloseAsync(b.TabId);
 
@@ -429,20 +458,20 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await ShouldThrowAsync(() => f.Waiter.PayAsync(waiterId, new BingoPayRequest
             {
                 TabIds = new List<Guid> { a.TabId, c.TabId },
-                Method = BingoPaymentMethod.Pix
+                PaymentMethodId = f.PixId
             }), BingoErrorKind.Validation);
 
             var result = await f.Waiter.PayAsync(waiterId, new BingoPayRequest
             {
                 TabIds = new List<Guid> { a.TabId, b.TabId },
-                Method = BingoPaymentMethod.Card
+                PaymentMethodId = f.CardId
             });
 
             result.PaidCount.Should().Be(2);
             result.Total.Should().Be(23m);
             var tabs = await f.Db.BingoTabs.Where(x => x.Id == a.TabId || x.Id == b.TabId).ToListAsync();
-            tabs.Should().OnlyContain(t => t.Status == BingoTabStatus.Paid && t.PaymentMethod == BingoPaymentMethod.Card && t.PaidByHouseMemberId == waiterId && t.PaidAt != null);
-            await ShouldThrowAsync(() => f.Waiter.PayAsync(waiterId, new BingoPayRequest { TabIds = new List<Guid> { a.TabId }, Method = BingoPaymentMethod.Cash }), BingoErrorKind.Conflict);
+            tabs.Should().OnlyContain(t => t.Status == BingoTabStatus.Paid && t.PaymentMethodName == "Cartão de crédito" && t.AmountPaid > 0 && t.PaidByName == "Filho Garcom" && t.PaidByHouseMemberId == waiterId && t.PaidAt != null);
+            await ShouldThrowAsync(() => f.Waiter.PayAsync(waiterId, new BingoPayRequest { TabIds = new List<Guid> { a.TabId }, PaymentMethodId = f.CashId }), BingoErrorKind.Conflict);
         }
 
         [Fact]
@@ -452,7 +481,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await f.OpenEventAsync();
             var open = await f.NewTabAsync("11999990001", 1);
             var paid = await f.NewTabAsync("11999990002", 2);
-            await f.Admin.PayTabAsync(paid.TabId, new BingoPayOneRequest { Method = BingoPaymentMethod.Cash });
+            await f.PayAdminAsync(paid.TabId, f.CashId);
 
             (await f.Waiter.GetAccountsAsync()).Should().BeEmpty();
             (await f.Public.GetTabAsync(open.TabId)).CloseAllRequested.Should().BeFalse();
@@ -843,7 +872,10 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await f.OrderAsync(a.TabId, "Água", 1);
             await f.OrderAsync(b.TabId, "Salada", 1);
             await f.OrderAsync(d.TabId, "Cachorro-quente", 1);
-            await f.Admin.PayTabAsync(b.TabId, new BingoPayOneRequest { Method = BingoPaymentMethod.Pix });
+            await f.DeliverAllAsync(a.TabId);
+            await f.DeliverAllAsync(b.TabId);
+            await f.DeliverAllAsync(d.TabId);
+            await f.PayAdminAsync(b.TabId, f.PixId);
             return (a.TabId, b.TabId, c.TabId, d.TabId);
         }
 
@@ -988,15 +1020,17 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await f.OrderAsync(a.TabId, "Água", 1);
             await f.OrderAsync(b.TabId, "Refrigerante", 1);
             await f.OrderAsync(c.TabId, "Salada", 3);
-            await f.Admin.PayTabAsync(a.TabId, new BingoPayOneRequest { Method = BingoPaymentMethod.Pix });
-            await f.Admin.PayTabAsync(b.TabId, new BingoPayOneRequest { Method = BingoPaymentMethod.Cash });
+            await f.DeliverAllAsync(a.TabId);
+            await f.DeliverAllAsync(b.TabId);
+            await f.PayAdminAsync(a.TabId, f.PixId);
+            await f.PayAdminAsync(b.TabId, f.CashId);
 
             var summary = await f.Admin.GetSummaryAsync(null);
 
             summary.TotalSold.Should().Be(29m);
             summary.TotalOpen.Should().Be(21m);
-            summary.ByPaymentMethod.Single(x => x.Method == BingoPaymentMethod.Pix).Total.Should().Be(21m);
-            summary.ByPaymentMethod.Single(x => x.Method == BingoPaymentMethod.Cash).Total.Should().Be(8m);
+            summary.ByPaymentMethod.Single(x => x.Method == "Pix").Total.Should().Be(21m);
+            summary.ByPaymentMethod.Single(x => x.Method == "Dinheiro").Total.Should().Be(8m);
             var soda = summary.ByItem.Single(x => x.Name == "Refrigerante");
             soda.Quantity.Should().Be(3);
             soda.Total.Should().Be(24m);
@@ -1006,7 +1040,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
             panel.TotalSold.Should().Be(29m);
             panel.Counts.Paid.Should().Be(2);
             panel.Counts.Open.Should().Be(1);
-            panel.Counts.PendingItems.Should().Be(4);
+            panel.Counts.PendingItems.Should().Be(1);
             panel.PendingByTable.Single(x => x.Mesa == 3).PendingItems.Should().Be(3);
             panel.Accounts.Open.Should().ContainSingle();
         }
@@ -1119,7 +1153,8 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await f.OpenEventAsync(1);
             var tab = await f.NewTabAsync();
             await f.OrderAsync(tab.TabId, "Cachorro-quente", 3);
-            await f.Admin.PayTabAsync(tab.TabId, new BingoPayOneRequest { Method = BingoPaymentMethod.Card });
+            await f.DeliverAllAsync(tab.TabId);
+            await f.PayAdminAsync(tab.TabId, f.CardId);
             await f.Admin.CloseEventAsync(1);
             await f.Admin.OpenEventAsync(2);
 
@@ -1129,7 +1164,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
 
             summary.TotalSold.Should().Be(30m);
             tabs.Should().ContainSingle();
-            tabs[0].PaymentMethod.Should().Be(BingoPaymentMethod.Card);
+            tabs[0].PaymentMethod.Should().Be("Cartão de crédito");
             tabs[0].Items.Should().ContainSingle();
             events.Single(e => e.Id == 1).TotalSold.Should().Be(30m);
             events.Single(e => e.Id == 1).TabsCount.Should().Be(1);
@@ -1173,7 +1208,8 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await f.OpenEventAsync(1);
             var tab = await f.NewTabAsync("11999990001", 1, "Maria da Silva");
             await f.OrderAsync(tab.TabId, "Cachorro-quente", 2);
-            await f.Admin.PayTabAsync(tab.TabId, new BingoPayOneRequest { Method = BingoPaymentMethod.Pix });
+            await f.DeliverAllAsync(tab.TabId);
+            await f.PayAdminAsync(tab.TabId, f.PixId);
             await f.Admin.CloseEventAsync(1);
             var privacy = new BingoPrivacyService(f.Db);
 
@@ -1210,6 +1246,513 @@ namespace Batuara.Infrastructure.Tests.Bingo
         public void ToInitials_Should_Reduce_Name(string name, string expected)
         {
             BingoPrivacyService.ToInitials(name).Should().Be(expected);
+        }
+
+        // ---------- contestacao, cancelamento, valores e formas de pagamento ----------
+
+        private static async Task<List<int>> ItemIdsAsync(Fixture f, Guid tabId)
+            => await f.Db.BingoOrderItems.Where(x => x.TabId == tabId).OrderBy(x => x.Id).Select(x => x.Id).ToListAsync();
+
+        [Fact]
+        public async Task Contest_Should_Only_Work_On_Delivered_Item_Of_Unpaid_Tab()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiter = await f.ScheduleWaiterAsync();
+            var tab = await f.NewTabAsync();
+            await f.OrderAsync(tab.TabId, "Água", 1);
+            await f.OrderAsync(tab.TabId, "Salada", 1);
+            var ids = await ItemIdsAsync(f, tab.TabId);
+
+            await ShouldThrowAsync(() => f.Public.ContestItemAsync(tab.TabId, ids[0], "nao chegou"), BingoErrorKind.Conflict);
+
+            await f.Waiter.DeliverAsync(waiter, ids[0]);
+            await f.Public.ContestItemAsync(tab.TabId, ids[0], "  nao recebi  ");
+
+            var view = await f.Public.GetTabAsync(tab.TabId);
+            var item = view.Items.Single(i => i.Id == ids[0]);
+            item.Status.Should().Be(BingoOrderItemStatus.Contested);
+            item.ContestNote.Should().Be("nao recebi");
+            item.ContestedAt.Should().NotBeNull();
+            view.ContestedCount.Should().Be(1);
+            view.AmountDue.Should().Be(0m);
+            await ShouldThrowAsync(() => f.Public.ContestItemAsync(tab.TabId, ids[0], null), BingoErrorKind.Conflict);
+            await ShouldThrowAsync(() => f.Public.ContestItemAsync(tab.TabId, 9999, null), BingoErrorKind.NotFound);
+            await ShouldThrowAsync(() => f.Public.ContestItemAsync(tab.TabId, ids[1], new string('x', 201)), BingoErrorKind.Validation);
+
+            await f.Waiter.DeliverAsync(waiter, ids[1]);
+            await f.Waiter.ResolveContestationAsync(waiter, ids[0], new BingoResolveContestRequest { Action = BingoContestResolution.ConfirmDelivered });
+            await f.PayAdminAsync(tab.TabId);
+            await ShouldThrowAsync(() => f.Public.ContestItemAsync(tab.TabId, ids[1], null), BingoErrorKind.Conflict);
+        }
+
+        [Fact]
+        public async Task Close_With_Undelivered_Items_Should_Return_409_With_Code_And_Items()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiter = await f.ScheduleWaiterAsync();
+            var tab = await f.NewTabAsync(name: "Maria da Silva");
+            await f.OrderAsync(tab.TabId, "Água", 1);
+            await f.OrderAsync(tab.TabId, "Salada", 2);
+            await f.OrderAsync(tab.TabId, "Refrigerante", 1);
+            var ids = await ItemIdsAsync(f, tab.TabId);
+            await f.Waiter.RetrieveAsync(waiter, ids[1]);
+            await f.Waiter.DeliverAsync(waiter, ids[2]);
+
+            var ex = await Assert.ThrowsAsync<BingoException>(() => f.Public.RequestCloseAsync(tab.TabId));
+            ex.Kind.Should().Be(BingoErrorKind.Conflict);
+            ex.Code.Should().Be("UNDELIVERED_ITEMS");
+            ex.Message.Should().Be("Há itens ainda não entregues.");
+            var data = ex.Data.Should().BeOfType<BingoUndeliveredDataDto>().Subject;
+            data.Items.Select(i => (i.Id, i.Status)).Should().BeEquivalentTo(new[]
+            {
+                (ids[0], BingoOrderItemStatus.Pending), (ids[1], BingoOrderItemStatus.Retrieved)
+            });
+            (await f.Public.GetTabAsync(tab.TabId)).Status.Should().Be(BingoTabStatus.Open);
+
+            await f.Public.RequestCloseAsync(tab.TabId, true);
+
+            var view = await f.Public.GetTabAsync(tab.TabId);
+            view.Status.Should().Be(BingoTabStatus.CloseRequested);
+            view.Items.Where(i => i.Status == BingoOrderItemStatus.Cancelled).Should().HaveCount(2);
+            view.Items.First(i => i.Id == ids[0]).CancelReason.Should().Be("Cancelado pelo cliente ao encerrar");
+            view.Items.First(i => i.Id == ids[0]).CancelledByName.Should().Be("Maria da Silva");
+            view.Items.First(i => i.Id == ids[0]).CancelledAt.Should().NotBeNull();
+            view.Total.Should().Be(8m);
+            view.AmountDue.Should().Be(8m);
+            view.UndeliveredCount.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task Close_Should_Not_Be_Blocked_By_Contested_Items()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiter = await f.ScheduleWaiterAsync();
+            var tab = await f.NewTabAsync();
+            await f.OrderAsync(tab.TabId, "Água", 1);
+            var ids = await ItemIdsAsync(f, tab.TabId);
+            await f.Waiter.DeliverAsync(waiter, ids[0]);
+            await f.Public.ContestItemAsync(tab.TabId, ids[0], null);
+
+            await f.Public.RequestCloseAsync(tab.TabId);
+
+            (await f.Public.GetTabAsync(tab.TabId)).Status.Should().Be(BingoTabStatus.CloseRequested);
+        }
+
+        [Fact]
+        public async Task Close_With_Unverified_Phone_Should_Carry_Code()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var strict = new BingoPublicService(f.Db, f.Dispatcher, f.Passwords, Options.Create(new BingoOptions { RequirePhoneVerificationToClose = true }));
+            var tab = await f.NewTabAsync();
+
+            var ex = await Assert.ThrowsAsync<BingoException>(() => strict.RequestCloseAsync(tab.TabId));
+            ex.Code.Should().Be("PHONE_NOT_VERIFIED");
+        }
+
+        [Fact]
+        public async Task Waiter_Cancel_Item_Should_Require_Reason_And_Record_Audit()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiter = await f.ScheduleWaiterAsync();
+            var tab = await f.NewTabAsync();
+            await f.OrderAsync(tab.TabId, "Água", 1);
+            await f.OrderAsync(tab.TabId, "Salada", 1);
+            var ids = await ItemIdsAsync(f, tab.TabId);
+
+            await ShouldThrowAsync(() => f.Waiter.CancelItemAsync(waiter, ids[0], "  "), BingoErrorKind.Validation);
+            await ShouldThrowAsync(() => f.Waiter.CancelItemAsync(waiter, ids[0], "ab"), BingoErrorKind.Validation);
+            await ShouldThrowAsync(() => f.Waiter.CancelItemAsync(waiter, ids[0], new string('x', 201)), BingoErrorKind.Validation);
+            await ShouldThrowAsync(() => f.Waiter.CancelItemAsync(waiter, 9999, "motivo"), BingoErrorKind.NotFound);
+
+            await f.Waiter.CancelItemAsync(waiter, ids[0], "Acabou a agua");
+
+            var item = (await f.Public.GetTabAsync(tab.TabId)).Items.Single(i => i.Id == ids[0]);
+            item.Status.Should().Be(BingoOrderItemStatus.Cancelled);
+            item.CancelReason.Should().Be("Acabou a agua");
+            item.CancelledByName.Should().Be("Filho Garcom");
+            item.CancelledAt.Should().NotBeNull();
+            await ShouldThrowAsync(() => f.Waiter.CancelItemAsync(waiter, ids[0], "de novo"), BingoErrorKind.Conflict);
+            await ShouldThrowAsync(() => f.Waiter.RetrieveAsync(waiter, ids[0]), BingoErrorKind.Conflict);
+            await ShouldThrowAsync(() => f.Waiter.DeliverAsync(waiter, ids[0]), BingoErrorKind.Conflict);
+            (await f.Waiter.GetOrdersAsync(waiter)).Single().Items.Select(i => i.Id).Should().Equal(ids[1]);
+
+            // cancela mesmo item entregue
+            await f.Waiter.DeliverAsync(waiter, ids[1]);
+            await f.Admin.CancelItemAsync("Douglas Admin", ids[1], "Erro de lancamento");
+            (await f.Db.BingoOrderItems.FindAsync(ids[1]))!.CancelledByName.Should().Be("Douglas Admin");
+
+            await f.PayAdminAsync(tab.TabId);
+            await ShouldThrowAsync(() => f.Waiter.CancelItemAsync(waiter, ids[1], "tarde demais"), BingoErrorKind.Conflict);
+        }
+
+        [Fact]
+        public async Task Resolve_Contestation_Should_Confirm_Or_Cancel()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiter = await f.ScheduleWaiterAsync();
+            var tab = await f.NewTabAsync();
+            await f.OrderAsync(tab.TabId, "Água", 1);
+            await f.OrderAsync(tab.TabId, "Salada", 1);
+            await f.OrderAsync(tab.TabId, "Refrigerante", 1);
+            var ids = await ItemIdsAsync(f, tab.TabId);
+            foreach (var id in ids)
+            {
+                await f.Waiter.DeliverAsync(waiter, id);
+                await f.Public.ContestItemAsync(tab.TabId, id, null);
+            }
+
+            await f.Waiter.ResolveContestationAsync(waiter, ids[0], new BingoResolveContestRequest { Action = BingoContestResolution.ConfirmDelivered });
+            await f.Waiter.ResolveContestationAsync(waiter, ids[1], new BingoResolveContestRequest { Action = BingoContestResolution.Cancel });
+            await f.Admin.ResolveContestationAsync("Douglas Admin", ids[2], new BingoResolveContestRequest { Action = BingoContestResolution.Cancel, Note = "Cliente tem razao" });
+
+            var items = (await f.Public.GetTabAsync(tab.TabId)).Items;
+            items[0].Status.Should().Be(BingoOrderItemStatus.Delivered);
+            items[1].Status.Should().Be(BingoOrderItemStatus.Cancelled);
+            items[1].CancelReason.Should().Be("Contestação aceita");
+            items[2].CancelReason.Should().Be("Cliente tem razao");
+            var stored = await f.Db.BingoOrderItems.OrderBy(x => x.Id).ToListAsync();
+            stored[0].ResolvedAt.Should().NotBeNull();
+            stored[0].ResolvedByName.Should().Be("Filho Garcom");
+            stored[2].ResolvedByName.Should().Be("Douglas Admin");
+            await ShouldThrowAsync(() => f.Waiter.ResolveContestationAsync(waiter, ids[0], new BingoResolveContestRequest { Action = BingoContestResolution.Cancel }), BingoErrorKind.Conflict);
+        }
+
+        [Fact]
+        public async Task Amounts_Should_Reflect_Item_Statuses()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiter = await f.ScheduleWaiterAsync();
+            var tab = await f.NewTabAsync();
+            await f.OrderAsync(tab.TabId, "Água", 2);              // 10 entregue
+            await f.OrderAsync(tab.TabId, "Salada", 1);            // 7 pendente
+            await f.OrderAsync(tab.TabId, "Refrigerante", 1);      // 8 retirado
+            await f.OrderAsync(tab.TabId, "Fatia de bolo", 1);     // 5 contestado
+            await f.OrderAsync(tab.TabId, "Cachorro-quente", 1);   // 10 cancelado
+            var ids = await ItemIdsAsync(f, tab.TabId);
+            await f.Waiter.DeliverAsync(waiter, ids[0]);
+            await f.Waiter.RetrieveAsync(waiter, ids[2]);
+            await f.Waiter.DeliverAsync(waiter, ids[3]);
+            await f.Public.ContestItemAsync(tab.TabId, ids[3], null);
+            await f.Waiter.CancelItemAsync(waiter, ids[4], "Sem estoque");
+
+            var view = await f.Public.GetTabAsync(tab.TabId);
+            view.Total.Should().Be(30m);
+            view.AmountDue.Should().Be(10m);
+            view.UndeliveredCount.Should().Be(2);
+            view.ContestedCount.Should().Be(1);
+
+            var panel = await f.Admin.GetPanelAsync(null);
+            var pt = panel.Tabs.Single();
+            (pt.Total, pt.AmountDue, pt.UndeliveredCount, pt.ContestedCount).Should().Be((30m, 10m, 2, 1));
+            panel.Counts.ContestedItems.Should().Be(1);
+            panel.Counts.CancelledItems.Should().Be(1);
+            panel.Counts.PendingItems.Should().Be(1);
+            panel.Counts.RetrievedItems.Should().Be(1);
+            panel.Accounts.Open.Single().AmountDue.Should().Be(10m);
+
+            var account = (await f.Waiter.GetAccountsAsync(true)).Single();
+            (account.Total, account.AmountDue, account.UndeliveredCount, account.ContestedCount).Should().Be((30m, 10m, 2, 1));
+            account.Items.Should().HaveCount(5);
+            account.PhoneVerified.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task Item_Dto_Should_Show_First_Name_In_Public_And_Full_Name_For_Staff()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiter = await f.ScheduleWaiterAsync();
+            var tab = await f.NewTabAsync();
+            await f.OrderAsync(tab.TabId, "Água", 1);
+            await f.OrderAsync(tab.TabId, "Salada", 1);
+            var ids = await ItemIdsAsync(f, tab.TabId);
+            await f.Waiter.DeliverAsync(waiter, ids[0]);
+            await f.Admin.DeliverItemAsync("Douglas Admin Souza", ids[1]);
+
+            var publicItems = (await f.Public.GetTabAsync(tab.TabId)).Items;
+            publicItems[0].DeliveredByName.Should().Be("Filho");
+            publicItems[0].DeliveredAt.Should().NotBeNull();
+            publicItems[1].DeliveredByName.Should().Be("Douglas");
+            var staff = (await f.Waiter.GetAccountsAsync(true)).Single().Items;
+            staff[0].DeliveredByName.Should().Be("Filho Garcom");
+            var stored = await f.Db.BingoOrderItems.OrderBy(x => x.Id).ToListAsync();
+            stored[0].DeliveredByHouseMemberId.Should().Be(waiter);
+            stored[1].DeliveredByHouseMemberId.Should().BeNull();
+            stored[1].DeliveredByName.Should().Be("Douglas Admin Souza");
+        }
+
+        [Fact]
+        public async Task Pay_Should_Validate_Method_Table_And_Block_Pending_Items()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiter = await f.ScheduleWaiterAsync();
+            var a = await f.NewTabAsync("11999990001", 4, "Ana");
+            var b = await f.NewTabAsync("11999990002", 4, "Bia");
+            var c = await f.NewTabAsync("11999990003", 5, "Cris");
+            await f.OrderAsync(a.TabId, "Água", 2);
+            await f.OrderAsync(b.TabId, "Salada", 1);
+            await f.OrderAsync(b.TabId, "Refrigerante", 1);
+            await f.OrderAsync(c.TabId, "Água", 1);
+            var inactive = await f.Admin.CreatePaymentMethodAsync(new BingoPaymentMethodRequest { Name = "Fiado", IsActive = false });
+            await f.DeliverAllAsync(a.TabId);
+            await f.DeliverAllAsync(c.TabId);
+            var bIds = await ItemIdsAsync(f, b.TabId);
+            await f.Waiter.DeliverAsync(waiter, bIds[0]);
+
+            await ShouldThrowAsync(() => f.Waiter.PayAsync(waiter, new BingoPayRequest { TabIds = new List<Guid> { a.TabId }, PaymentMethodId = inactive.Id }), BingoErrorKind.Validation);
+            await ShouldThrowAsync(() => f.Waiter.PayAsync(waiter, new BingoPayRequest { TabIds = new List<Guid> { a.TabId }, PaymentMethodId = 9999 }), BingoErrorKind.Validation);
+            await ShouldThrowAsync(() => f.Waiter.PayAsync(waiter, new BingoPayRequest { TabIds = new List<Guid>(), PaymentMethodId = f.PixId }), BingoErrorKind.Validation);
+            await ShouldThrowAsync(() => f.Waiter.PayAsync(waiter, new BingoPayRequest { TabIds = new List<Guid> { a.TabId, c.TabId }, PaymentMethodId = f.PixId }), BingoErrorKind.Validation);
+
+            var ex = await Assert.ThrowsAsync<BingoException>(() => f.Waiter.PayAsync(waiter, new BingoPayRequest { TabIds = new List<Guid> { a.TabId, b.TabId }, PaymentMethodId = f.PixId }));
+            ex.Kind.Should().Be(BingoErrorKind.Conflict);
+            ex.Message.Should().Be("Há itens não entregues ou em contestação. Entregue, cancele ou resolva antes de cobrar.");
+            var pending = ex.Data.Should().BeOfType<BingoPendingTabsDataDto>().Subject.Tabs.Should().ContainSingle().Subject;
+            (pending.TabId, pending.CustomerName, pending.UndeliveredCount, pending.ContestedCount).Should().Be((b.TabId, "Bia", 1, 0));
+            (await f.Db.BingoTabs.CountAsync(x => x.Status == BingoTabStatus.Paid)).Should().Be(0);
+
+            // contestacao tambem bloqueia
+            await f.Public.ContestItemAsync(b.TabId, bIds[0], null);
+            await f.Waiter.DeliverAsync(waiter, bIds[1]);
+            var ex2 = await Assert.ThrowsAsync<BingoException>(() => f.Waiter.PayAsync(waiter, new BingoPayRequest { TabIds = new List<Guid> { b.TabId }, PaymentMethodId = f.PixId }));
+            ex2.Data.Should().BeOfType<BingoPendingTabsDataDto>().Which.Tabs.Single().ContestedCount.Should().Be(1);
+            await f.Waiter.CancelItemAsync(waiter, bIds[0], "Cliente tem razao");
+
+            // comanda Open (cliente nao tocou em Encerrar) pode ser paga; cobra so o entregue
+            var result = await f.Waiter.PayAsync(waiter, new BingoPayRequest { TabIds = new List<Guid> { a.TabId, b.TabId }, PaymentMethodId = f.PixId });
+
+            result.PaidCount.Should().Be(2);
+            result.Total.Should().Be(18m);
+            var tabs = await f.Db.BingoTabs.Where(x => x.Id == a.TabId || x.Id == b.TabId).OrderBy(x => x.CustomerName).ToListAsync();
+            tabs.Select(t => t.AmountPaid).Should().Equal(10m, 8m);
+            tabs.Should().OnlyContain(t => t.PaymentMethodId == f.PixId && t.PaymentMethodName == "Pix" && t.PaidByName == "Filho Garcom" && t.PaidByHouseMemberId == waiter);
+        }
+
+        [Fact]
+        public async Task Pay_Tab_With_Zero_Due_Should_Close_As_Zero()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiter = await f.ScheduleWaiterAsync();
+            var empty = await f.NewTabAsync("11999990001", 1);
+            var cancelled = await f.NewTabAsync("11999990002", 1, "Joao");
+            await f.OrderAsync(cancelled.TabId, "Água", 1);
+            await f.Waiter.CancelItemAsync(waiter, (await ItemIdsAsync(f, cancelled.TabId))[0], "Desistiu");
+
+            var result = await f.Admin.PayTabsAsync("Douglas Admin", new BingoAdminPayRequest
+            {
+                TabIds = new List<Guid> { empty.TabId, cancelled.TabId },
+                PaymentMethodId = f.CashId,
+                Note = "  sem consumo  "
+            });
+
+            result.Total.Should().Be(0m);
+            var tabs = await f.Db.BingoTabs.ToListAsync();
+            tabs.Should().OnlyContain(t => t.Status == BingoTabStatus.Paid && t.AmountPaid == 0m && t.PaidNote == "sem consumo" && t.PaidByName == "Douglas Admin" && t.PaidByHouseMemberId == null);
+            await ShouldThrowAsync(() => f.Admin.PayTabsAsync("x", new BingoAdminPayRequest { TabIds = new List<Guid> { empty.TabId }, PaymentMethodId = f.CashId }), BingoErrorKind.Conflict);
+        }
+
+        [Fact]
+        public async Task Payment_Methods_Crud_And_Waiter_Sees_Only_Active_Sorted()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiter = await f.ScheduleWaiterAsync();
+
+            (await f.Waiter.GetPaymentMethodsAsync()).Select(x => x.Name).Should().Equal("Dinheiro", "Pix", "Cartão de crédito", "Cartão de débito");
+
+            var created = await f.Admin.CreatePaymentMethodAsync(new BingoPaymentMethodRequest { Name = "  Vale-refeição ", IsActive = true, SortOrder = 0 });
+            created.Name.Should().Be("Vale-refeição");
+            await ShouldThrowAsync(() => f.Admin.CreatePaymentMethodAsync(new BingoPaymentMethodRequest { Name = "PIX", IsActive = true, SortOrder = 9 }), BingoErrorKind.Conflict);
+            await ShouldThrowAsync(() => f.Admin.CreatePaymentMethodAsync(new BingoPaymentMethodRequest { Name = " ", IsActive = true }), BingoErrorKind.Validation);
+            await ShouldThrowAsync(() => f.Admin.CreatePaymentMethodAsync(new BingoPaymentMethodRequest { Name = new string('a', 61) }), BingoErrorKind.Validation);
+
+            (await f.Waiter.GetPaymentMethodsAsync()).First().Name.Should().Be("Vale-refeição");
+
+            var updated = await f.Admin.UpdatePaymentMethodAsync(f.PixId, new BingoPaymentMethodRequest { Name = "Pix (QR)", IsActive = true, SortOrder = 20 });
+            updated.Name.Should().Be("Pix (QR)");
+            await ShouldThrowAsync(() => f.Admin.UpdatePaymentMethodAsync(f.PixId, new BingoPaymentMethodRequest { Name = "dinheiro", IsActive = true }), BingoErrorKind.Conflict);
+            await ShouldThrowAsync(() => f.Admin.UpdatePaymentMethodAsync(9999, new BingoPaymentMethodRequest { Name = "x" }), BingoErrorKind.NotFound);
+            (await f.Waiter.GetPaymentMethodsAsync()).Last().Name.Should().Be("Pix (QR)");
+
+            await f.Admin.DeletePaymentMethodAsync(f.DebitId);
+
+            var all = await f.Admin.GetPaymentMethodsAsync();
+            all.Should().HaveCount(5);
+            all.Single(x => x.Id == f.DebitId).IsActive.Should().BeFalse();
+            (await f.Waiter.GetPaymentMethodsAsync()).Select(x => x.Id).Should().NotContain(f.DebitId);
+            (await f.Db.BingoPaymentOptions.CountAsync()).Should().Be(5);
+            await ShouldThrowAsync(() => f.Admin.DeletePaymentMethodAsync(9999), BingoErrorKind.NotFound);
+            waiter.Should().BeGreaterThan(0);
+        }
+
+        [Fact]
+        public async Task Summary_Should_Break_Down_By_Waiter_Method_Cancelled_And_Contested()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var ana = await f.ScheduleWaiterAsync("11911112222");
+            var bia = await f.CreateMemberAsync("11933334444", "Bia Garcom");
+            await f.Admin.AddWaiterAsync(null, bia);
+            var a = await f.NewTabAsync("11999990001", 1, "A");
+            var b = await f.NewTabAsync("11999990002", 2, "B");
+            var c = await f.NewTabAsync("11999990003", 3, "C");
+            var d = await f.NewTabAsync("11999990004", 4, "D");
+            await f.OrderAsync(a.TabId, "Refrigerante", 2);   // 16
+            await f.OrderAsync(b.TabId, "Água", 1);            // 5
+            await f.OrderAsync(b.TabId, "Salada", 1);          // 7 cancelado
+            await f.OrderAsync(c.TabId, "Refrigerante", 1);    // 8
+            await f.OrderAsync(d.TabId, "Água", 1);            // 5 contestado (conta aberta)
+            await f.DeliverAllAsync(a.TabId);
+            await f.DeliverAllAsync(c.TabId);
+            var bIds = await ItemIdsAsync(f, b.TabId);
+            await f.Waiter.DeliverAsync(ana, bIds[0]);
+            await f.Waiter.CancelItemAsync(ana, bIds[1], "Sem salada");
+            var dIds = await ItemIdsAsync(f, d.TabId);
+            await f.Waiter.DeliverAsync(ana, dIds[0]);
+            await f.Public.ContestItemAsync(d.TabId, dIds[0], null);
+
+            await f.Waiter.PayAsync(ana, new BingoPayRequest { TabIds = new List<Guid> { a.TabId }, PaymentMethodId = f.PixId });
+            await f.Waiter.PayAsync(ana, new BingoPayRequest { TabIds = new List<Guid> { b.TabId }, PaymentMethodId = f.CashId });
+            await f.Waiter.PayAsync(bia, new BingoPayRequest { TabIds = new List<Guid> { c.TabId }, PaymentMethodId = f.PixId });
+
+            var summary = await f.Admin.GetSummaryAsync(null);
+
+            summary.TotalSold.Should().Be(29m);
+            summary.CancelledTotal.Should().Be(7m);
+            summary.ContestedOpen.Should().Be(1);
+            summary.ByPaymentMethod.Select(x => (x.Method, x.Count, x.Total)).Should().BeEquivalentTo(new[]
+            {
+                ("Pix", 2, 24m), ("Dinheiro", 1, 5m)
+            });
+            summary.ByWaiter.Select(x => (x.Name, x.Count, x.Total)).Should().BeEquivalentTo(new[]
+            {
+                ("Filho Garcom", 2, 21m), ("Bia Garcom", 1, 8m)
+            });
+            summary.ByWaiter.Single(x => x.Name == "Filho Garcom").ByMethod.Select(m => (m.Method, m.Total)).Should().BeEquivalentTo(new[]
+            {
+                ("Pix", 16m), ("Dinheiro", 5m)
+            });
+            summary.ByItem.Select(x => (x.Name, x.Quantity)).Should().BeEquivalentTo(new[]
+            {
+                ("Refrigerante", 3), ("Água", 1)
+            });
+            var panel = await f.Admin.GetPanelAsync(null);
+            panel.TotalSold.Should().Be(29m);
+            panel.Tabs.Single(t => t.Id == a.TabId).PaidByName.Should().Be("Filho Garcom");
+            var history = await f.Admin.GetEventTabsAsync(1);
+            history.Single(t => t.Id == c.TabId).PaymentMethod.Should().Be("Pix");
+            history.Single(t => t.Id == c.TabId).PaidByName.Should().Be("Bia Garcom");
+            history.Single(t => t.Id == c.TabId).AmountDue.Should().Be(8m);
+            history.Single(t => t.Id == c.TabId).PaidAt.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task Legacy_Payment_Method_Should_Produce_Label_When_Name_Is_Null()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var tab = await f.NewTabAsync();
+            await f.OrderAsync(tab.TabId, "Água", 1);
+            await f.DeliverAllAsync(tab.TabId);
+            await f.PayAdminAsync(tab.TabId);
+            var stored = await f.Db.BingoTabs.FirstAsync();
+            typeof(BingoTab).GetProperty("PaymentMethodName")!.SetValue(stored, null);
+            typeof(BingoTab).GetProperty("PaymentMethod")!.SetValue(stored, BingoPaymentMethod.Card);
+            typeof(BingoTab).GetProperty("AmountPaid")!.SetValue(stored, null);
+            await f.Db.SaveChangesAsync();
+
+            var summary = await f.Admin.GetSummaryAsync(null);
+
+            summary.ByPaymentMethod.Single().Method.Should().Be("Cartão");
+            summary.TotalSold.Should().Be(5m);
+        }
+
+        [Fact]
+        public async Task Admin_Table_Tabs_Should_List_Unpaid_Tabs_Of_The_Table()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var a = await f.NewTabAsync("11999990001", 9, "Zeca");
+            var b = await f.NewTabAsync("11999990002", 9, "Ana");
+            var c = await f.NewTabAsync("11999990003", 10, "Outro");
+            var paid = await f.NewTabAsync("11999990004", 9, "Paga");
+            await f.OrderAsync(a.TabId, "Água", 1);
+            await f.PayAdminAsync(paid.TabId);
+            await f.Public.RequestCloseAsync(b.TabId);
+
+            var tabs = await f.Admin.GetTableTabsAsync(null, 9);
+
+            tabs.Select(t => t.CustomerName).Should().Equal("Ana", "Zeca");
+            tabs.Single(t => t.TabId == a.TabId).Items.Should().ContainSingle();
+            tabs.Single(t => t.TabId == a.TabId).Total.Should().Be(5m);
+            tabs.Single(t => t.TabId == a.TabId).UndeliveredCount.Should().Be(1);
+            tabs.Select(t => t.TabId).Should().NotContain(new[] { c.TabId, paid.TabId });
+            (await f.Admin.GetTableTabsAsync(null, 30)).Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task Waiter_Accounts_Todas_Should_List_All_Unpaid_CloseRequested_First()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiter = await f.ScheduleWaiterAsync();
+            var open1 = await f.NewTabAsync("11999990001", 2, "Beto");
+            var open2 = await f.NewTabAsync("11999990002", 1, "Ana");
+            var closing = await f.NewTabAsync("11999990003", 8, "Zeca");
+            var paid = await f.NewTabAsync("11999990004", 1, "Paga");
+            await f.PayAdminAsync(paid.TabId);
+            await f.Public.RequestCloseAsync(closing.TabId);
+
+            (await f.Waiter.GetAccountsAsync()).Select(x => x.TabId).Should().Equal(closing.TabId);
+
+            var all = await f.Waiter.GetAccountsAsync(true);
+
+            all.Select(x => x.TabId).Should().Equal(closing.TabId, open2.TabId, open1.TabId);
+            all.Select(x => x.Status).Should().Equal(BingoTabStatus.CloseRequested, BingoTabStatus.Open, BingoTabStatus.Open);
+
+            // garcom fecha a conta de uma comanda aberta (cliente pediu a conta de viva voz)
+            var result = await f.Waiter.PayAsync(waiter, new BingoPayRequest { TabIds = new List<Guid> { open2.TabId }, PaymentMethodId = f.CashId });
+            result.PaidCount.Should().Be(1);
+            (await f.Waiter.GetAccountsAsync(true)).Should().HaveCount(2);
+        }
+
+        [Fact]
+        public async Task Reminders_Should_Use_Amount_Due_And_Ignore_Zero()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiter = await f.ScheduleWaiterAsync();
+            var delivered = await f.NewTabAsync("11999990001", 1, "Ana Lima");
+            var pending = await f.NewTabAsync("11999990002", 2, "Bia Souza");
+            var mixed = await f.NewTabAsync("11999990003", 3, "Carla Dias");
+            await f.OrderAsync(delivered.TabId, "Refrigerante", 2);
+            await f.OrderAsync(pending.TabId, "Salada", 1);
+            await f.OrderAsync(mixed.TabId, "Água", 1);
+            await f.OrderAsync(mixed.TabId, "Salada", 1);
+            await f.DeliverAllAsync(delivered.TabId);
+            await f.Waiter.DeliverAsync(waiter, (await ItemIdsAsync(f, mixed.TabId))[0]);
+            await f.Admin.CloseEventAsync(1);
+            var reminders = NewReminders(f);
+
+            var preview = await reminders.PreviewAsync(1);
+
+            preview.Items.Select(x => x.TabId).Should().BeEquivalentTo(new[] { delivered.TabId, mixed.TabId });
+            preview.TotalOwed.Should().Be(21m);
+            preview.Items.Single(x => x.TabId == mixed.TabId).AmountDue.Should().Be(5m);
+
+            await reminders.SendAsync(1, true);
+
+            f.WhatsApp.Notices.Should().Contain(n => n.Text.Contains("R$ 5,00"));
+            f.WhatsApp.Notices.Should().Contain(n => n.Text.Contains("R$ 16,00"));
         }
     }
 }

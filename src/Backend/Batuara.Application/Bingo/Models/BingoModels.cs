@@ -24,10 +24,14 @@ namespace Batuara.Application.Bingo.Models
     public class BingoException : Exception
     {
         public BingoErrorKind Kind { get; }
+        public string? Code { get; }
+        public object? Data { get; }
 
-        public BingoException(BingoErrorKind kind, string message) : base(message)
+        public BingoException(BingoErrorKind kind, string message, string? code = null, object? data = null) : base(message)
         {
             Kind = kind;
+            Code = code;
+            Data = data;
         }
     }
 
@@ -86,6 +90,7 @@ namespace Batuara.Application.Bingo.Models
         public string CustomerName { get; set; } = string.Empty;
         public int Mesa { get; set; }
         public decimal Total { get; set; }
+        public decimal AmountDue { get; set; }
         public DateTime? ReminderSentAt { get; set; }
     }
 
@@ -111,6 +116,85 @@ namespace Batuara.Application.Bingo.Models
         public decimal UnitPrice { get; set; }
         public int Quantity { get; set; }
         public BingoOrderItemStatus Status { get; set; }
+        public DateTime? DeliveredAt { get; set; }
+        public string? DeliveredByName { get; set; }
+        public DateTime? ContestedAt { get; set; }
+        public string? ContestNote { get; set; }
+        public DateTime? CancelledAt { get; set; }
+        public string? CancelledByName { get; set; }
+        public string? CancelReason { get; set; }
+    }
+
+    public class BingoCloseRequest
+    {
+        public bool? CancelUndelivered { get; set; }
+    }
+
+    public class BingoContestRequest
+    {
+        public string? Note { get; set; }
+    }
+
+    public class BingoCancelItemRequest
+    {
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    public enum BingoContestResolution
+    {
+        ConfirmDelivered,
+        Cancel
+    }
+
+    public class BingoResolveContestRequest
+    {
+        public BingoContestResolution Action { get; set; }
+        public string? Note { get; set; }
+    }
+
+    public class BingoUndeliveredItemDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public BingoOrderItemStatus Status { get; set; }
+    }
+
+    public class BingoUndeliveredDataDto
+    {
+        public List<BingoUndeliveredItemDto> Items { get; set; } = new();
+    }
+
+    public class BingoPendingTabDto
+    {
+        public Guid TabId { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
+        public int UndeliveredCount { get; set; }
+        public int ContestedCount { get; set; }
+    }
+
+    public class BingoPendingTabsDataDto
+    {
+        public List<BingoPendingTabDto> Tabs { get; set; } = new();
+    }
+
+    public class BingoPaymentMethodDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+
+    public class BingoAdminPaymentMethodDto : BingoPaymentMethodDto
+    {
+        public bool IsActive { get; set; }
+        public int SortOrder { get; set; }
+    }
+
+    public class BingoPaymentMethodRequest
+    {
+        public string Name { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+        public int SortOrder { get; set; }
     }
 
     public class BingoPublicTabDto
@@ -120,6 +204,9 @@ namespace Batuara.Application.Bingo.Models
         public int Mesa { get; set; }
         public BingoTabStatus Status { get; set; }
         public decimal Total { get; set; }
+        public decimal AmountDue { get; set; }
+        public int UndeliveredCount { get; set; }
+        public int ContestedCount { get; set; }
         public bool CloseAllRequested { get; set; }
         public bool IsOpen { get; set; }
         public bool PhoneVerified { get; set; }
@@ -174,19 +261,24 @@ namespace Batuara.Application.Bingo.Models
         public Guid TabId { get; set; }
         public int Mesa { get; set; }
         public string CustomerName { get; set; } = string.Empty;
-        public decimal Total { get; set; }
         public BingoTabStatus Status { get; set; }
+        public bool PhoneVerified { get; set; }
+        public decimal Total { get; set; }
+        public decimal AmountDue { get; set; }
+        public int UndeliveredCount { get; set; }
+        public int ContestedCount { get; set; }
+        public List<BingoTabItemDto> Items { get; set; } = new();
     }
 
     public class BingoPayRequest
     {
         public List<Guid> TabIds { get; set; } = new();
-        public BingoPaymentMethod Method { get; set; }
+        public int PaymentMethodId { get; set; }
     }
 
-    public class BingoPayOneRequest
+    public class BingoAdminPayRequest : BingoPayRequest
     {
-        public BingoPaymentMethod Method { get; set; }
+        public string? Note { get; set; }
     }
 
     public class BingoPayResult
@@ -255,6 +347,12 @@ namespace Batuara.Application.Bingo.Models
         public string CustomerName { get; set; } = string.Empty;
         public BingoTabStatus Status { get; set; }
         public decimal Total { get; set; }
+        public decimal AmountDue { get; set; }
+        public int UndeliveredCount { get; set; }
+        public int ContestedCount { get; set; }
+        public string? PaymentMethod { get; set; }
+        public string? PaidByName { get; set; }
+        public DateTime? PaidAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool PhoneVerified { get; set; }
         public string? CodeDeliveryStatus { get; set; }
@@ -281,6 +379,8 @@ namespace Batuara.Application.Bingo.Models
         public int Paid { get; set; }
         public int PendingItems { get; set; }
         public int RetrievedItems { get; set; }
+        public int ContestedItems { get; set; }
+        public int CancelledItems { get; set; }
         public int PhoneVerified { get; set; }
         public int PhoneNotVerified { get; set; }
         public int CodeDeliveryFailed { get; set; }
@@ -308,9 +408,23 @@ namespace Batuara.Application.Bingo.Models
 
     public class BingoPaymentSummaryDto
     {
-        public BingoPaymentMethod Method { get; set; }
+        public string Method { get; set; } = string.Empty;
         public int Count { get; set; }
         public decimal Total { get; set; }
+    }
+
+    public class BingoMethodTotalDto
+    {
+        public string Method { get; set; } = string.Empty;
+        public decimal Total { get; set; }
+    }
+
+    public class BingoWaiterSummaryDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public int Count { get; set; }
+        public decimal Total { get; set; }
+        public List<BingoMethodTotalDto> ByMethod { get; set; } = new();
     }
 
     public class BingoItemSummaryDto
@@ -326,6 +440,9 @@ namespace Batuara.Application.Bingo.Models
         public string EventName { get; set; } = string.Empty;
         public decimal TotalSold { get; set; }
         public decimal TotalOpen { get; set; }
+        public decimal CancelledTotal { get; set; }
+        public int ContestedOpen { get; set; }
+        public List<BingoWaiterSummaryDto> ByWaiter { get; set; } = new();
         public List<BingoPaymentSummaryDto> ByPaymentMethod { get; set; } = new();
         public List<BingoItemSummaryDto> ByItem { get; set; } = new();
     }
@@ -358,8 +475,6 @@ namespace Batuara.Application.Bingo.Models
 
     public class BingoHistoryTabDto : BingoPanelTabDto
     {
-        public BingoPaymentMethod? PaymentMethod { get; set; }
-        public DateTime? PaidAt { get; set; }
         public DateTime? ReminderSentAt { get; set; }
         public string? ReminderDeliveryStatus { get; set; }
     }

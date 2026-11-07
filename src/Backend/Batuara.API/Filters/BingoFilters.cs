@@ -16,13 +16,17 @@ namespace Batuara.API.Filters
                 UnauthorizedAccessException ex => (StatusCodes.Status401Unauthorized, ex.Message),
                 _ => (0, string.Empty)
             };
+            var bingo = context.Exception as BingoException;
 
             if (status == 0)
             {
                 return;
             }
 
-            context.Result = new ObjectResult(new { success = false, message, errors = new[] { message } })
+            object body = bingo?.Code != null || bingo?.Data != null
+                ? new { success = false, message, errors = new[] { message }, code = bingo.Code, data = bingo.Data }
+                : new { success = false, message, errors = new[] { message }, code = (string?)null, data = (object?)null };
+            context.Result = new ObjectResult(body)
             {
                 StatusCode = status
             };

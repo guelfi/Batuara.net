@@ -197,7 +197,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 EventName = ev.Name,
                 IsOpen = ev.IsOpen,
                 CloseAllRequested = ev.CloseAllRequested,
-                TotalSold = tabs.Where(x => x.IsPaid).Sum(x => x.Total),
+                TotalSold = tabs.Where(x => x.IsPaid).Sum(x => x.PaidAmount),
                 Counts = new BingoPanelCountsDto
                 {
                     Open = tabs.Count(x => x.Status == BingoTabStatus.Open),
@@ -205,6 +205,8 @@ namespace Batuara.Infrastructure.Bingo.Services
                     Paid = tabs.Count(x => x.IsPaid),
                     PendingItems = tabs.Sum(x => x.Items.Count(i => i.Status == BingoOrderItemStatus.Pending)),
                     RetrievedItems = tabs.Sum(x => x.Items.Count(i => i.Status == BingoOrderItemStatus.Retrieved)),
+                    ContestedItems = tabs.Sum(x => x.Items.Count(i => i.Status == BingoOrderItemStatus.Contested)),
+                    CancelledItems = tabs.Sum(x => x.Items.Count(i => i.Status == BingoOrderItemStatus.Cancelled)),
                     PhoneVerified = tabs.Count(x => x.IsPhoneVerified),
                     PhoneNotVerified = tabs.Count(x => !x.IsPhoneVerified),
                     CodeDeliveryFailed = tabs.Count(x => x.CodeDeliveryStatus == "Failed")
@@ -244,18 +246,80 @@ namespace Batuara.Infrastructure.Bingo.Services
             return await BuildSummaryAsync(ev, cancellationToken);
         }
 
-        public async Task PayTabAsync(Guid tabId, BingoPayOneRequest request, CancellationToken cancellationToken = default)
+        public async Task<BingoPayResult> PayTabsAsync(string actorName, BingoAdminPayRequest request, CancellationToken cancellationToken = default)
         {
-            var tab = await Db.BingoTabs.Include(x => x.Items).FirstOrDefaultAsync(x => x.Id == tabId, cancellationToken)
-                ?? throw new BingoException(BingoErrorKind.NotFound, "Comanda não encontrada.");
-            if (tab.IsPaid)
-            {
-                throw new BingoException(BingoErrorKind.Conflict, "Esta comanda já foi paga.");
-            }
+            var ids = (request.TabIds ?? new List<Guid>()).Distinct().ToList();
+            var tabs = await Db.BingoTabs.Include(x => x.Items).Where(x => ids.Contains(x.Id)).ToListAsync(cancellationToken);
+            return await PayCoreAsync(tabs, ids, request.PaymentMethodId, actorName, null, request.Note, cancellationToken);
+        }
 
-            tab.MarkPaid(request.Method, null, DateTime.UtcNow);
+        public Task CancelItemAsync(string actorName, int itemId, string reason, CancellationToken cancellationToken = default)
+            => CancelItemCoreAsync(itemId, null, reason, actorName, cancellationToken);
+
+        public Task ResolveContestationAsync(string actorName, int itemId, BingoResolveContestRequest request, CancellationToken cancellationToken = default)
+            => ResolveContestationCoreAsync(itemId, null, request, actorName, cancellationToken);
+
+        public async Task DeliverItemAsync(string actorName, int itemId, CancellationToken cancellationToken = default)
+        {
+            var item = await LoadItemForChangeAsync(itemId, null, cancellationToken);
+            await DeliverCoreAsync(item, null, actorName, cancellationToken);
+        }
+
+        public async Task<List<BingoAccountDto>> GetTableTabsAsync(int? eventId, int mesa, CancellationToken cancellationToken = default)
+        {
+            var ev = await ResolveAdminEventAsync(eventId, cancellationToken);
+            var tabs = await Db.BingoTabs.Include(x => x.Items)
+                .Where(x => x.EventId == ev.Id && x.TableNumber == mesa && x.Status != BingoTabStatus.Paid)
+                .ToListAsync(cancellationToken);
+            return tabs.OrderBy(x => x.CustomerName).ThenBy(x => x.CreatedAt).Select(ToAccountDto).ToList();
+        }
+
+        public async Task<List<BingoAdminPaymentMethodDto>> GetPaymentMethodsAsync(CancellationToken cancellationToken = default)
+        {
+            var list = await Db.BingoPaymentOptions.ToListAsync(cancellationToken);
+            return list.OrderBy(x => x.SortOrder).ThenBy(x => x.Name).Select(ToPaymentMethodDto).ToList();
+        }
+
+        public async Task<BingoAdminPaymentMethodDto> CreatePaymentMethodAsync(BingoPaymentMethodRequest request, CancellationToken cancellationToken = default)
+        {
+            var name = NormalizeText(request.Name, 1, 60, "Informe o nome da forma de pagamento (até 60 caracteres).");
+            await EnsureUniquePaymentNameAsync(name, null, cancellationToken);
+            var option = new BingoPaymentOption(name, request.IsActive, request.SortOrder);
+            Db.BingoPaymentOptions.Add(option);
+            await Db.SaveChangesAsync(cancellationToken);
+            return ToPaymentMethodDto(option);
+        }
+
+        public async Task<BingoAdminPaymentMethodDto> UpdatePaymentMethodAsync(int id, BingoPaymentMethodRequest request, CancellationToken cancellationToken = default)
+        {
+            var name = NormalizeText(request.Name, 1, 60, "Informe o nome da forma de pagamento (até 60 caracteres).");
+            var option = await Db.BingoPaymentOptions.FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+                ?? throw new BingoException(BingoErrorKind.NotFound, "Forma de pagamento não encontrada.");
+            await EnsureUniquePaymentNameAsync(name, id, cancellationToken);
+            option.Update(name, request.IsActive, request.SortOrder);
+            await Db.SaveChangesAsync(cancellationToken);
+            return ToPaymentMethodDto(option);
+        }
+
+        public async Task DeletePaymentMethodAsync(int id, CancellationToken cancellationToken = default)
+        {
+            var option = await Db.BingoPaymentOptions.FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+                ?? throw new BingoException(BingoErrorKind.NotFound, "Forma de pagamento não encontrada.");
+            option.Deactivate();
             await Db.SaveChangesAsync(cancellationToken);
         }
+
+        private async Task EnsureUniquePaymentNameAsync(string name, int? exceptId, CancellationToken cancellationToken)
+        {
+            var all = await Db.BingoPaymentOptions.Select(x => new { x.Id, x.Name }).ToListAsync(cancellationToken);
+            if (all.Any(x => x.Id != exceptId && string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Já existe uma forma de pagamento com este nome.");
+            }
+        }
+
+        private static BingoAdminPaymentMethodDto ToPaymentMethodDto(BingoPaymentOption x)
+            => new() { Id = x.Id, Name = x.Name, IsActive = x.IsActive, SortOrder = x.SortOrder };
 
         public async Task ResetAsync(int? eventId, bool confirmed, CancellationToken cancellationToken = default)
         {
@@ -363,13 +427,17 @@ namespace Batuara.Infrastructure.Bingo.Services
                 CustomerName = x.CustomerName,
                 Status = x.Status,
                 Total = x.Total,
+                AmountDue = x.IsPaid ? x.PaidAmount : x.AmountDue,
+                UndeliveredCount = x.UndeliveredCount,
+                ContestedCount = x.ContestedCount,
+                PaymentMethod = x.PaymentLabel,
+                PaidByName = x.PaidByName,
+                PaidAt = x.PaidAt,
                 CreatedAt = x.CreatedAt,
                 PhoneVerified = x.IsPhoneVerified,
                 CodeDeliveryStatus = x.CodeDeliveryStatus,
                 CodeDeliveryError = x.CodeDeliveryError,
                 Items = ToItemDtos(x.Items),
-                PaymentMethod = x.PaymentMethod,
-                PaidAt = x.PaidAt,
                 ReminderSentAt = x.ReminderSentAt,
                 ReminderDeliveryStatus = x.ReminderDeliveryStatus
             }).ToList();
@@ -386,20 +454,38 @@ namespace Batuara.Infrastructure.Bingo.Services
             var tabs = await LoadTabsAsync(ev.Id, cancellationToken);
             var paid = tabs.Where(x => x.IsPaid).ToList();
 
+            const string NoName = "Não informado";
+            const string NoMethod = "Não informado";
             return new BingoSummaryDto
             {
                 EventId = ev.Id,
                 EventName = ev.Name,
-                TotalSold = paid.Sum(x => x.Total),
+                TotalSold = paid.Sum(x => x.PaidAmount),
                 TotalOpen = tabs.Where(x => !x.IsPaid).Sum(x => x.Total),
+                CancelledTotal = tabs.SelectMany(x => x.Items).Where(i => i.Status == BingoOrderItemStatus.Cancelled).Sum(i => i.UnitPrice * i.Quantity),
+                ContestedOpen = tabs.Where(x => !x.IsPaid).Sum(x => x.ContestedCount),
                 ByPaymentMethod = paid
-                    .Where(x => x.PaymentMethod.HasValue)
-                    .GroupBy(x => x.PaymentMethod!.Value)
-                    .Select(g => new BingoPaymentSummaryDto { Method = g.Key, Count = g.Count(), Total = g.Sum(t => t.Total) })
+                    .GroupBy(x => x.PaymentLabel ?? NoMethod)
+                    .Select(g => new BingoPaymentSummaryDto { Method = g.Key, Count = g.Count(), Total = g.Sum(t => t.PaidAmount) })
                     .OrderBy(x => x.Method)
+                    .ToList(),
+                ByWaiter = paid
+                    .GroupBy(x => string.IsNullOrWhiteSpace(x.PaidByName) ? NoName : x.PaidByName!)
+                    .Select(g => new BingoWaiterSummaryDto
+                    {
+                        Name = g.Key,
+                        Count = g.Count(),
+                        Total = g.Sum(t => t.PaidAmount),
+                        ByMethod = g.GroupBy(t => t.PaymentLabel ?? NoMethod)
+                            .Select(m => new BingoMethodTotalDto { Method = m.Key, Total = m.Sum(t => t.PaidAmount) })
+                            .OrderBy(m => m.Method)
+                            .ToList()
+                    })
+                    .OrderBy(x => x.Name)
                     .ToList(),
                 ByItem = paid
                     .SelectMany(x => x.Items)
+                    .Where(i => i.Status == BingoOrderItemStatus.Delivered)
                     .GroupBy(x => x.ItemName)
                     .Select(g => new BingoItemSummaryDto { Name = g.Key, Quantity = g.Sum(i => i.Quantity), Total = g.Sum(i => i.UnitPrice * i.Quantity) })
                     .OrderByDescending(x => x.Total)
@@ -453,6 +539,12 @@ namespace Batuara.Infrastructure.Bingo.Services
                 CustomerName = tab.CustomerName,
                 Status = tab.Status,
                 Total = tab.Total,
+                AmountDue = tab.IsPaid ? tab.PaidAmount : tab.AmountDue,
+                UndeliveredCount = tab.UndeliveredCount,
+                ContestedCount = tab.ContestedCount,
+                PaymentMethod = tab.PaymentLabel,
+                PaidByName = tab.PaidByName,
+                PaidAt = tab.PaidAt,
                 CreatedAt = tab.CreatedAt,
                 PhoneVerified = tab.IsPhoneVerified,
                 CodeDeliveryStatus = tab.CodeDeliveryStatus,
@@ -474,7 +566,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 OpenedAt = ev.OpenedAt,
                 ClosedAt = ev.ClosedAt,
                 TabsCount = tabs.Count,
-                TotalSold = tabs.Where(x => x.IsPaid).Sum(x => x.Total)
+                TotalSold = tabs.Where(x => x.IsPaid).Sum(x => x.PaidAmount)
             };
         }
     }
