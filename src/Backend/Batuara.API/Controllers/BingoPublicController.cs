@@ -48,6 +48,14 @@ namespace Batuara.API.Controllers
             return Ok(new { success = true });
         }
 
+        [HttpPost("comandas/{tabId:guid}/reabrir")]
+        [EnableRateLimiting("bingo-write")]
+        public async Task<IActionResult> CancelClose(Guid tabId, CancellationToken cancellationToken)
+        {
+            await service.CancelCloseAsync(tabId, cancellationToken);
+            return Ok(new { success = true });
+        }
+
         [HttpPost("comandas/{tabId:guid}/itens/{itemId:int}/contestar")]
         [EnableRateLimiting("bingo-write")]
         public async Task<IActionResult> ContestItem(Guid tabId, int itemId, [FromBody(EmptyBodyBehavior = Microsoft.AspNetCore.Mvc.ModelBinding.EmptyBodyBehavior.Allow)] BingoContestRequest? request, CancellationToken cancellationToken)

@@ -8,6 +8,7 @@ namespace Batuara.Application.Bingo.Services
         Task<BingoCreateTabResult> CreateTabAsync(BingoCreateTabRequest request, CancellationToken cancellationToken = default);
         Task<BingoPublicTabDto> GetTabAsync(Guid tabId, CancellationToken cancellationToken = default);
         Task AddItemsAsync(Guid tabId, BingoAddItemsRequest request, CancellationToken cancellationToken = default);
+        Task CancelCloseAsync(Guid tabId, CancellationToken cancellationToken = default);
         Task RequestCloseAsync(Guid tabId, bool cancelUndelivered = false, CancellationToken cancellationToken = default);
         Task ContestItemAsync(Guid tabId, int itemId, string? note, CancellationToken cancellationToken = default);
         Task<BingoConfirmPhoneResult> ConfirmPhoneAsync(Guid tabId, string code, CancellationToken cancellationToken = default);

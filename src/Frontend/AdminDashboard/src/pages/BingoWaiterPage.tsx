@@ -729,8 +729,12 @@ const BingoWaiterPage: React.FC = () => {
   const [groups, setGroups] = useState<WaiterOrderGroup[] | null>(null);
   const [ordersError, setOrdersError] = useState('');
   const [flash, setFlash] = useState(false);
+  const [billFlash, setBillFlash] = useState(false);
+  const [billCount, setBillCount] = useState(0);
   const lastPending = useRef<number | null>(null);
+  const lastBills = useRef<number | null>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const billFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadOrders = useCallback(async () => {
     try {
@@ -755,9 +759,32 @@ const BingoWaiterPage: React.FC = () => {
     }
   }, []);
 
+  const loadBillRequests = useCallback(async () => {
+    try {
+      const list = await bingoWaiterApi.getBills(false);
+      const n = list.filter((b) => b.status === 'CloseRequested').length;
+      setBillCount(n);
+      const prev = lastBills.current;
+      lastBills.current = n;
+      if (prev !== null && n > prev) {
+        try {
+          navigator.vibrate?.(200);
+        } catch {
+          // vibração indisponível
+        }
+        setBillFlash(true);
+        if (billFlashTimer.current) clearTimeout(billFlashTimer.current);
+        billFlashTimer.current = setTimeout(() => setBillFlash(false), 2500);
+      }
+    } catch {
+      // a aba Contas mostra o erro de conexão
+    }
+  }, []);
+
   useEffect(
     () => () => {
       if (flashTimer.current) clearTimeout(flashTimer.current);
+      if (billFlashTimer.current) clearTimeout(billFlashTimer.current);
     },
     []
   );
@@ -777,7 +804,7 @@ const BingoWaiterPage: React.FC = () => {
   const activeRef = useRef(active);
   activeRef.current = active;
   usePolling(async () => {
-    if (activeRef.current) await loadOrders();
+    if (activeRef.current) await Promise.all([loadOrders(), loadBillRequests()]);
   });
 
   useEffect(() => {
@@ -826,7 +853,19 @@ const BingoWaiterPage: React.FC = () => {
             transition: 'background-color 0.4s',
           }}
         />
-        <Tab label="Contas" sx={{ minHeight: 56, fontWeight: 700 }} />
+        <Tab
+          label={
+            <Badge badgeContent={billCount} color="error" max={99} sx={{ '& .MuiBadge-badge': { right: -14 } }}>
+              <span>Contas</span>
+            </Badge>
+          }
+          sx={{
+            minHeight: 56,
+            fontWeight: 700,
+            bgcolor: billFlash ? 'warning.light' : undefined,
+            transition: 'background-color 0.4s',
+          }}
+        />
         <Tab label="QR" sx={{ minHeight: 56, fontWeight: 700 }} />
       </Tabs>
       {tab === 0 && <OrdersTab groups={groups} loadError={ordersError} reload={loadOrders} />}

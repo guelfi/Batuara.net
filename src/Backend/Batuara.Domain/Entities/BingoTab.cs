@@ -90,6 +90,15 @@ namespace Batuara.Domain.Entities
             }
         }
 
+        public void CancelClose()
+        {
+            if (Status == BingoTabStatus.CloseRequested)
+            {
+                Status = BingoTabStatus.Open;
+                Touch();
+            }
+        }
+
         public void MarkPaid(int paymentMethodId, string paymentMethodName, string paidByName, int? paidByHouseMemberId, string? note, DateTime utcNow)
         {
             Status = BingoTabStatus.Paid;

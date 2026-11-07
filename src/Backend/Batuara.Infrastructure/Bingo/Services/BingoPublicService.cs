@@ -212,6 +212,18 @@ namespace Batuara.Infrastructure.Bingo.Services
             await Db.SaveChangesAsync(cancellationToken);
         }
 
+        public async Task CancelCloseAsync(Guid tabId, CancellationToken cancellationToken = default)
+        {
+            var tab = await LoadTabAsync(tabId, cancellationToken);
+            if (tab.IsPaid)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Esta comanda já foi paga.");
+            }
+
+            tab.CancelClose();
+            await Db.SaveChangesAsync(cancellationToken);
+        }
+
         public async Task<BingoConfirmPhoneResult> ConfirmPhoneAsync(Guid tabId, string code, CancellationToken cancellationToken = default)
         {
             var tab = await LoadTabAsync(tabId, cancellationToken);

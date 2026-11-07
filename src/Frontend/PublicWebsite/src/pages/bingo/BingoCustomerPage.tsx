@@ -332,6 +332,20 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
     }
   };
 
+  const cancelClose = async () => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      await bingoApi.cancelClose(tabId);
+      setMessage({ severity: 'success', text: 'Pedido de conta cancelado. Pode continuar pedindo.' });
+      await load();
+    } catch (e) {
+      setMessage({ severity: 'error', text: apiErrorMessage(e, 'Não foi possível cancelar o pedido de conta.') });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const sendContest = async () => {
     if (!contestTarget) return;
     const item = contestTarget;
@@ -510,7 +524,15 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
         {tab.closeAllRequested && !isPaid && notice('warning', 'Por favor, encerre sua conta.', true)}
         {!tab.isOpen && notice('info', 'Pedidos do bingo fechados no momento.')}
         {isPaid && notice('success', 'Conta paga. Obrigado por participar!')}
-        {closeRequested && notice('info', 'Conta solicitada. Aguarde o garçom para o pagamento.')}
+        {closeRequested && (
+          <Alert
+            severity="info"
+            action={<Button color="inherit" size="small" disabled={busy} onClick={cancelClose} sx={{ fontWeight: 700 }}>Continuar pedindo</Button>}
+            sx={{ flexShrink: 0, py: 0, px: 1, mb: 0.75, fontSize: '0.8rem', '& .MuiAlert-icon': { py: 0.5, mr: 1 }, '& .MuiAlert-message': { py: 0.5 }, '& .MuiAlert-action': { py: 0.25 } }}
+          >
+            Conta solicitada. Aguarde o garçom.
+          </Alert>
+        )}
 
         {activeView === 'menu' && canOrder && (
           <Box ref={setMenuEl} sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>

@@ -328,6 +328,22 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public async Task CancelClose_Should_Reopen_Tab_And_Refuse_Paid()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var tab = await f.NewTabAsync();
+
+            await f.Public.RequestCloseAsync(tab.TabId);
+            await f.Public.CancelCloseAsync(tab.TabId);
+            (await f.Public.GetTabAsync(tab.TabId)).Status.Should().Be(BingoTabStatus.Open);
+
+            await f.Public.RequestCloseAsync(tab.TabId);
+            await f.PayAdminAsync(tab.TabId, f.CardId);
+            await ShouldThrowAsync(() => f.Public.CancelCloseAsync(tab.TabId), BingoErrorKind.Conflict);
+        }
+
+        [Fact]
         public async Task Waiter_Should_Retrieve_Return_And_Deliver_From_Any_State()
         {
             var f = new Fixture();
