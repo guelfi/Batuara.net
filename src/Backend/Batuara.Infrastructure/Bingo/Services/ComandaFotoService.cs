@@ -71,37 +71,45 @@ namespace Batuara.Infrastructure.Bingo.Services
                 "Se uma linha não corresponder a nada do cardápio, mantenha o texto lido, use o preço escrito (ou 0) e matched=false. " +
                 "Ignore linhas riscadas/canceladas. Em notes, avise se a foto está ilegível ou cortada.";
 
+            // Google Gemini API request format
             var body = new
             {
-                model = options.Value.Model,
-                max_tokens = 1500,
-                messages = new[]
+                contents = new[]
                 {
                     new
                     {
-                        role = "user",
-                        content = new object[]
+                        parts = new object[]
                         {
-                            new { type = "image", source = new { type = "base64", media_type = request.MediaType, data = request.ImageBase64 } },
-                            new { type = "text", text = prompt }
+                            new
+                            {
+                                inline_data = new
+                                {
+                                    mime_type = request.MediaType,
+                                    data = request.ImageBase64
+                                }
+                            },
+                            new { text = prompt }
                         }
                     }
+                },
+                generationConfig = new
+                {
+                    temperature = 0.4,
+                    maxOutputTokens = 2048
                 }
             };
 
-            using var message = new HttpRequestMessage(HttpMethod.Post, "https://api.anthropic.com/v1/messages")
+            var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
+            using var message = new HttpRequestMessage(HttpMethod.Post, url)
             {
                 Content = JsonContent.Create(body)
             };
-            message.Headers.Add("x-api-key", apiKey);
-            message.Headers.Add("anthropic-version", "2023-06-01");
 
             using var response = await http.SendAsync(message, ct);
             var raw = await response.Content.ReadAsStringAsync(ct);
             if (!response.IsSuccessStatusCode)
             {
-                // Log do erro real para diagnóstico
-                var errorMsg = $"Anthropic API error: {response.StatusCode} - {raw}";
+                var errorMsg = $"Google Gemini API error: {response.StatusCode} - {raw}";
                 Console.WriteLine(errorMsg);
                 throw new BingoException(BingoErrorKind.Validation,
                     "Não consegui ler a foto agora. Tente de novo ou digite os itens.", "ocr_failed");
@@ -111,10 +119,15 @@ namespace Batuara.Infrastructure.Bingo.Services
             try
             {
                 using var doc = JsonDocument.Parse(raw);
-                text = doc.RootElement.GetProperty("content")[0].GetProperty("text").GetString() ?? string.Empty;
+                text = doc.RootElement.GetProperty("candidates")[0]
+                    .GetProperty("content")
+                    .GetProperty("parts")[0]
+                    .GetProperty("text")
+                    .GetString() ?? string.Empty;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"Erro ao parsear resposta Gemini: {ex.Message}. Raw: {raw}");
                 throw new BingoException(BingoErrorKind.Validation, "Resposta de leitura inválida.", "ocr_failed");
             }
 

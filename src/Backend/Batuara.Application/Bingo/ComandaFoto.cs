@@ -49,9 +49,9 @@ namespace Batuara.Application.Bingo.Models
 
     public class ComandaFotoOptions
     {
-        public const string SectionName = "Anthropic";
+        public const string SectionName = "GoogleAI";
         public string ApiKey { get; set; } = string.Empty;
-        public string Model { get; set; } = "claude-3-5-sonnet-20241022";
+        public string Model { get; set; } = "gemini-1.5-flash";
     }
 }
 
