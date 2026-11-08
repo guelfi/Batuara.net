@@ -57,22 +57,19 @@ namespace Batuara.Infrastructure.Bingo.Services
                 .Where(x => x.EventId == ev.Id && x.IsActive)
                 .OrderBy(x => x.SortOrder)
                 .ToListAsync(ct);
-            // Cerveja e vendida em PAR (preco do cardapio vale para 2 unidades).
-            var menuText = string.Join("\n", menu.Select(m =>
-                $"- {m.Name} = R$ {m.UnitPrice:0.00}" + (m.Name.StartsWith("Cerveja", StringComparison.OrdinalIgnoreCase) ? " (PAR)" : string.Empty)));
+            var menuText = string.Join("\n", menu.Select(m => $"- {m.Name} = R$ {m.UnitPrice:0.00}"));
 
             var prompt =
                 "Foto de uma comanda de bingo de uma casa de caridade: tabela impressa com os itens do cardápio e marcações feitas à mão. " +
                 "Devolva SOMENTE JSON: {\"customerName\":string,\"comandaNumber\":string,\"items\":[{\"name\":string,\"quantity\":number,\"unitPrice\":number,\"matched\":boolean}],\"notes\":string}.\n" +
                 "customerName = nome escrito à mão no alto da comanda, acima da tabela (canto superior esquerdo); comandaNumber = número da comanda escrito à mão no canto superior direito, acima da coluna TOTAL. Se não houver, use string vazia.\n" +
                 "Cardápio oficial:\n" + menuText + "\n" +
-                "REGRAS: 1) Só entram as linhas com marcação feita à mão: tracinhos, número ou número entre parênteses/círculo, na coluna QUANTIDADE ou escrito ao lado do nome do produto. Linhas sem marcação NÃO entram. " +
-                "2) quantity = número de unidades marcadas (tracinho = 1, '(2)' = 2). " +
-                "3) unitPrice = valor impresso na coluna VALOR UNITÁRIO da própria comanda, na linha do item; só use o cardápio se o valor impresso estiver ilegível. " +
-                "Cerveja Heineken e Cervejas diversas são vendidas em PAR (2 unidades pelo valor impresso): para elas unitPrice = valor impresso dividido por 2 e quantity = número de cervejas marcadas. " +
-                "4) Os demais itens usam o valor impresso sem dividir. 5) name = nome exato do cardápio, matched=true. " +
-                "6) Linha manuscrita fora do cardápio (ex.: 'Batidas'): inclua só se tiver quantidade marcada, com o preço escrito e matched=false; sem quantidade, ignore e avise em notes. " +
-                "7) Ignore linhas riscadas. Em notes, avise se a foto estiver ilegível ou cortada.";
+                "REGRAS: 1) O consumo é marcado SOMENTE na coluna QUANTIDADE (tracinhos, números ou riscos à direita do VALOR UNITÁRIO). Linhas sem marca nessa coluna NÃO entram. " +
+                "2) Números escritos à mão ao lado ou dentro do nome do produto (ex.: '(2)' junto de Cerveja Heineken ou Cervejas diversas) fazem parte do item, indicam o pacote vendido, e NÃO são quantidade consumida: ignore-os. " +
+                "3) quantity = número de marcas na coluna QUANTIDADE (tracinho = 1). unitPrice = valor impresso na coluna VALOR UNITÁRIO da própria linha, sem dividir nem multiplicar; use o cardápio só se o valor impresso estiver ilegível. " +
+                "4) name = nome exato do cardápio, matched=true. " +
+                "5) Linha manuscrita fora do cardápio (ex.: 'Batidas'): inclua só se tiver marca na coluna QUANTIDADE, com o preço escrito e matched=false; sem marca, ignore. " +
+                "6) Ignore linhas riscadas. Em notes, avise se a foto estiver ilegível ou cortada.";
 
             // Google Gemini API request format
             var body = new
