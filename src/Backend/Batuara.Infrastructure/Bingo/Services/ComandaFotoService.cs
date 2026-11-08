@@ -45,8 +45,6 @@ namespace Batuara.Infrastructure.Bingo.Services
             var apiKey = options.Value.ApiKey;
             var model = options.Value.Model;
             
-            Console.WriteLine($"ComandaFoto: ApiKey presente={!string.IsNullOrWhiteSpace(apiKey)}, Model={model}");
-            
             if (string.IsNullOrWhiteSpace(apiKey))
             {
                 throw new BingoException(BingoErrorKind.Validation,
@@ -59,22 +57,20 @@ namespace Batuara.Infrastructure.Bingo.Services
                 .Where(x => x.EventId == ev.Id && x.IsActive)
                 .OrderBy(x => x.SortOrder)
                 .ToListAsync(ct);
-            var menuText = string.Join("\n", menu.Select(m => $"- {m.Name} = R$ {m.UnitPrice:0.00}"));
+            // Cerveja e vendida em PAR (preco do cardapio vale para 2 unidades).
+            var menuText = string.Join("\n", menu.Select(m =>
+                $"- {m.Name} = R$ {m.UnitPrice:0.00}" + (m.Name.StartsWith("Cerveja", StringComparison.OrdinalIgnoreCase) ? " (PAR)" : string.Empty)));
 
             var prompt =
-                "Esta é a foto de uma comanda de bingo escrita à mão (ou impressa) de uma casa de caridade. " +
-                "Leia as linhas de itens consumidos e devolva SOMENTE um JSON, sem texto extra, no formato " +
-                "{\"items\":[{\"name\":string,\"quantity\":number,\"unitPrice\":number,\"matched\":boolean}],\"notes\":string}.\n" +
-                "Cardápio e preços oficiais:\n" + menuText + "\n" +
-                "REGRA FUNDAMENTAL: A comanda é uma tabela com várias linhas de produtos. À DIREITA de cada linha há uma coluna QUANTIDADE. " +
-                "INCLUA NO RESULTADO SOMENTE AS LINHAS QUE TÊM MARCAÇÃO NA COLUNA QUANTIDADE (tracinhos, números, /// ou ||||). " +
-                "IGNORE completamente as linhas sem marcação na coluna quantidade - essas são apenas opções do cardápio não consumidas. " +
-                "PREÇOS ESPECIAIS: 'Cerveja Heineken' e 'Cervejas diversas' são vendidas em PAR por R$ 12,00 (2 unidades = R$ 12). " +
-                "'Batidas' custam R$ 10,00 cada. " +
-                "Para cada item consumido: associe o nome ao item mais parecido do cardápio oficial acima e use seu preço (matched=true). " +
-                "Conte os tracinhos ou leia o número na coluna quantidade. Some linhas repetidas do mesmo item. " +
-                "Se não corresponder ao cardápio, mantenha o nome lido e use preço 0 (matched=false). " +
-                "Ignore linhas riscadas/canceladas. Em notes, avise se a foto está ilegível ou cortada.";
+                "Foto de uma comanda de bingo de uma casa de caridade: tabela impressa com os itens do cardápio e marcações feitas à mão. " +
+                "Devolva SOMENTE JSON: {\"items\":[{\"name\":string,\"quantity\":number,\"unitPrice\":number,\"matched\":boolean}],\"notes\":string}.\n" +
+                "Cardápio oficial:\n" + menuText + "\n" +
+                "REGRAS: 1) Só entram as linhas com marcação feita à mão: tracinhos, número ou número entre parênteses/círculo, na coluna QUANTIDADE ou escrito ao lado do nome do produto. Linhas sem marcação NÃO entram. " +
+                "2) quantity = número de unidades marcadas (tracinho = 1, '(2)' = 2). " +
+                "3) Cerveja Heineken e Cervejas diversas: o preço do cardápio é por PAR (2 unidades); então unitPrice = preço do cardápio dividido por 2 e quantity = número de cervejas marcadas. " +
+                "4) Para os demais itens, unitPrice = preço do cardápio. 5) name = nome exato do cardápio, matched=true. " +
+                "6) Linha manuscrita fora do cardápio (ex.: 'Batidas'): inclua só se tiver quantidade marcada, com o preço escrito e matched=false; sem quantidade, ignore e avise em notes. " +
+                "7) Ignore linhas riscadas. Em notes, avise se a foto estiver ilegível ou cortada.";
 
             // Google Gemini API request format
             var body = new
@@ -99,8 +95,11 @@ namespace Batuara.Infrastructure.Bingo.Services
                 },
                 generationConfig = new
                 {
-                    temperature = 0.4,
-                    maxOutputTokens = 2048
+                    temperature = 0.1,
+                    maxOutputTokens = 1024,
+                    responseMimeType = "application/json",
+                    // Sem "raciocinio" longo: a leitura cai de ~27 s para ~2 s (o proxy corta em 60 s).
+                    thinkingConfig = new { thinkingLevel = "low" }
                 }
             };
 
@@ -112,6 +111,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 Content = JsonContent.Create(body)
             };
 
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             HttpResponseMessage response;
             try
             {
@@ -139,7 +139,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                     "Não consegui ler a foto agora. Tente de novo ou digite os itens.", "ocr_failed");
             }
             
-            Console.WriteLine($"[ComandaFoto] API respondeu com sucesso");
+            Console.WriteLine($"[ComandaFoto] API respondeu com sucesso em {sw.ElapsedMilliseconds} ms");
 
             string text;
             try

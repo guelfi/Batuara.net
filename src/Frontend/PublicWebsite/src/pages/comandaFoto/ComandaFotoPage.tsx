@@ -67,8 +67,14 @@ const ComandaFotoPage: React.FC = () => {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const errMsg = (e: any) =>
-    e?.response?.status === 401 ? 'Link sem permissão. Peça o link correto ao administrador.' : e?.response?.data?.message || 'Falha de conexão.';
+  const errMsg = (e: any) => {
+    const status = e?.response?.status;
+    if (status === 401) return 'Link sem permissão. Peça o link correto ao administrador.';
+    if (e?.response?.data?.message) return e.response.data.message;
+    if (e?.code === 'ECONNABORTED') return 'A leitura demorou demais (limite do aparelho).';
+    if (status) return `O servidor demorou ou falhou ao responder (HTTP ${status}).`;
+    return 'Sem conexão com o servidor. Verifique o sinal do celular.';
+  };
 
   const loadEventName = useCallback(async () => {
     try {
