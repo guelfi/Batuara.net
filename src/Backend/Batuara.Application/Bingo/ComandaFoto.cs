@@ -17,6 +17,8 @@ namespace Batuara.Application.Bingo.Models
 
     public class ComandaFotoExtractResult
     {
+        public string? CustomerName { get; set; }
+        public string? ComandaNumber { get; set; }
         public List<ComandaFotoItem> Items { get; set; } = new();
         public decimal Total { get; set; }
         public string? Notes { get; set; }

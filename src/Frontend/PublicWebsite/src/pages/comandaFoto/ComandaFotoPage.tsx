@@ -65,7 +65,6 @@ const ComandaFotoPage: React.FC = () => {
   const [photo, setPhoto] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [label, setLabel] = useState('');
-  const [notes, setNotes] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,7 +96,6 @@ const ComandaFotoPage: React.FC = () => {
   const onFile = async (file?: File) => {
     if (!file) return;
     setError(null);
-    setNotes(null);
     setBusy('Lendo a comanda...');
     try {
       const b64 = await resizePhoto(file);
@@ -105,7 +103,8 @@ const ComandaFotoPage: React.FC = () => {
       try {
         const r = await http.post('/comanda-foto/ler', { imageBase64: b64, mediaType: 'image/jpeg' });
         setItems(r.data.data.items);
-        setNotes(r.data.data.notes || null);
+        const { comandaNumber, customerName } = r.data.data;
+        setLabel([comandaNumber && `Comanda ${comandaNumber}`, customerName].filter(Boolean).join(' - '));
       } catch (e) {
         setItems([]);
         setError(`${errMsg(e)} Digite os itens abaixo.`);
@@ -129,7 +128,6 @@ const ComandaFotoPage: React.FC = () => {
       setPhoto(null);
       setItems([]);
       setLabel('');
-      setNotes(null);
       setError(null);
     } catch (e) {
       setError(errMsg(e));
@@ -143,8 +141,8 @@ const ComandaFotoPage: React.FC = () => {
       <Typography variant="h5" fontWeight={700}>
         Fechamento Comanda{build && ` - ${build}`}
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        {[eventName, eventDate && !eventName.includes(eventDate) ? eventDate : '', 'Fotografe a comanda para Fechar Conta']
+      <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 2, fontSize: '0.78rem' }}>
+        {[eventName, eventDate && !eventName.includes(eventDate) ? eventDate : '', 'Fotografar comanda para Fechar Conta']
           .filter(Boolean)
           .join(' - ')}
       </Typography>
@@ -175,13 +173,7 @@ const ComandaFotoPage: React.FC = () => {
 
       {photo ? (
         <Paper sx={{ p: 2, mb: 2 }}>
-          <Box component="img" src={`data:image/jpeg;base64,${photo}`} alt="Comanda" sx={{ width: '100%', maxHeight: 220, objectFit: 'contain', mb: 1 }} />
-          {notes && (
-            <Alert severity="warning" sx={{ mb: 1 }}>
-              {notes}
-            </Alert>
-          )}
-          <TextField size="small" fullWidth label="Mesa / nome (opcional)" value={label} onChange={(e) => setLabel(e.target.value)} sx={{ mb: 1 }} />
+          <TextField size="small" fullWidth label="Comanda / nome" value={label} onChange={(e) => setLabel(e.target.value)} sx={{ mb: 1 }} />
           {items.map((it, idx) => (
             <Stack key={idx} direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
               <TextField size="small" type="number" label="Qtd" value={it.quantity} sx={{ width: 70 }} onChange={(e) => patch(idx, { quantity: Math.max(0, Number(e.target.value)) })} />

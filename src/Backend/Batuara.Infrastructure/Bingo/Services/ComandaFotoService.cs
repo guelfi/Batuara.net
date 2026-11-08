@@ -63,12 +63,14 @@ namespace Batuara.Infrastructure.Bingo.Services
 
             var prompt =
                 "Foto de uma comanda de bingo de uma casa de caridade: tabela impressa com os itens do cardápio e marcações feitas à mão. " +
-                "Devolva SOMENTE JSON: {\"items\":[{\"name\":string,\"quantity\":number,\"unitPrice\":number,\"matched\":boolean}],\"notes\":string}.\n" +
+                "Devolva SOMENTE JSON: {\"customerName\":string,\"comandaNumber\":string,\"items\":[{\"name\":string,\"quantity\":number,\"unitPrice\":number,\"matched\":boolean}],\"notes\":string}.\n" +
+                "customerName = nome escrito à mão no alto da comanda, acima da tabela (canto superior esquerdo); comandaNumber = número da comanda escrito à mão no canto superior direito, acima da coluna TOTAL. Se não houver, use string vazia.\n" +
                 "Cardápio oficial:\n" + menuText + "\n" +
                 "REGRAS: 1) Só entram as linhas com marcação feita à mão: tracinhos, número ou número entre parênteses/círculo, na coluna QUANTIDADE ou escrito ao lado do nome do produto. Linhas sem marcação NÃO entram. " +
                 "2) quantity = número de unidades marcadas (tracinho = 1, '(2)' = 2). " +
-                "3) Cerveja Heineken e Cervejas diversas: o preço do cardápio é por PAR (2 unidades); então unitPrice = preço do cardápio dividido por 2 e quantity = número de cervejas marcadas. " +
-                "4) Para os demais itens, unitPrice = preço do cardápio. 5) name = nome exato do cardápio, matched=true. " +
+                "3) unitPrice = valor impresso na coluna VALOR UNITÁRIO da própria comanda, na linha do item; só use o cardápio se o valor impresso estiver ilegível. " +
+                "Cerveja Heineken e Cervejas diversas são vendidas em PAR (2 unidades pelo valor impresso): para elas unitPrice = valor impresso dividido por 2 e quantity = número de cervejas marcadas. " +
+                "4) Os demais itens usam o valor impresso sem dividir. 5) name = nome exato do cardápio, matched=true. " +
                 "6) Linha manuscrita fora do cardápio (ex.: 'Batidas'): inclua só se tiver quantidade marcada, com o preço escrito e matched=false; sem quantidade, ignore e avise em notes. " +
                 "7) Ignore linhas riscadas. Em notes, avise se a foto estiver ilegível ou cortada.";
 
