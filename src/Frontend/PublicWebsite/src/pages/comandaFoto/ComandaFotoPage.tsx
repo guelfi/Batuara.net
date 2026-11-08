@@ -12,6 +12,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { resolveBaseUrl } from '../../services/api';
 
 interface Item {
@@ -22,8 +23,8 @@ interface Item {
 }
 
 const TOKEN_KEY = 'comanda_foto_token';
-// # | descrição | valor | × | qtd | = | total
-const ITEM_COLS = '18px minmax(0,1fr) 50px 10px 40px 10px 60px';
+// # | descrição | valor | × | qtd | = | total | lixeira
+const ITEM_COLS = '18px minmax(0,1fr) 50px 10px 40px 10px 58px 26px';
 const cellSx = { '& input': { py: 0.75, px: 0.75, fontSize: 13 } } as const;
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -215,6 +216,7 @@ const ComandaFotoPage: React.FC = () => {
               <span style={{ textAlign: 'right' }}>Qtd</span>
               <span />
               <span style={{ textAlign: 'right' }}>Total</span>
+              <span />
             </Box>
           )}
           {items.map((it, idx) => (
@@ -231,6 +233,9 @@ const ComandaFotoPage: React.FC = () => {
                 <Typography variant="body2" fontWeight={700} align="right" sx={it.quantity === 0 ? { textDecoration: 'line-through', opacity: 0.5 } : undefined}>
                   {(it.quantity * it.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </Typography>
+                <IconButton size="small" aria-label="Remover item" color="error" onClick={() => setItems((l) => l.filter((_, i) => i !== idx))} sx={{ p: 0.25 }}>
+                  <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
               </Box>
               {!it.matched && (
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ pl: 3, mt: 0.25 }}>
