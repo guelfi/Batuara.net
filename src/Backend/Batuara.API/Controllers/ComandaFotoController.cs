@@ -61,5 +61,40 @@ namespace Batuara.API.Controllers
         [HttpGet("token")]
         [Authorize(Roles = "Admin")]
         public IActionResult Token() => Ok(new { success = true, data = new { token = service.GetAccessToken() } });
+
+        /// <summary>Debug: verifica configuração (apenas Admin)</summary>
+        [HttpGet("debug/config")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult DebugConfig([FromServices] IConfiguration config)
+        {
+            var apiKey = config["GoogleAI:ApiKey"];
+            var model = config["GoogleAI:Model"];
+            return Ok(new
+            {
+                success = true,
+                data = new
+                {
+                    hasApiKey = !string.IsNullOrWhiteSpace(apiKey),
+                    apiKeyLength = apiKey?.Length ?? 0,
+                    apiKeyPrefix = apiKey?.Length > 10 ? apiKey[..10] : "",
+                    model = model ?? "(not set)",
+                    canAccessInternet = TestInternetAccess()
+                }
+            });
+        }
+
+        private bool TestInternetAccess()
+        {
+            try
+            {
+                using var client = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+                var response = client.GetAsync("https://www.google.com").GetAwaiter().GetResult();
+                return response.IsSuccessStatusCode;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
