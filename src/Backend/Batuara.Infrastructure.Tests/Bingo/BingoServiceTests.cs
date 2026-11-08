@@ -1964,5 +1964,25 @@ namespace Batuara.Infrastructure.Tests.Bingo
             summary.ByItem.Should().Contain(i => i.Name == "Água" && i.Quantity == 2);
             summary.ByItem.Should().Contain(i => i.Name.Contains("fora do cardápio"));
         }
+            [Fact]
+        public async Task ComandaFoto_Should_Register_New_Item_In_Digital_Menu_Immediately()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), new FakeConfig(), Options.Create(new ComandaFotoOptions()));
+
+            var act = () => svc.RegisterMenuItemAsync(new ComandaFotoMenuRequest { Name = "Batidas", UnitPrice = 0 }, CancellationToken.None);
+            await act.Should().ThrowAsync<BingoException>();
+
+            var item = await svc.RegisterMenuItemAsync(new ComandaFotoMenuRequest { Name = " Batidas ", UnitPrice = 10 }, CancellationToken.None);
+            item.Name.Should().Be("Batidas");
+            item.Matched.Should().BeTrue();
+
+            (await f.Public.GetInfoAsync()).Menu.Should().Contain(m => m.Name == "Batidas" && m.UnitPrice == 10m);
+
+            // repetir nao duplica
+            await svc.RegisterMenuItemAsync(new ComandaFotoMenuRequest { Name = "batidas", UnitPrice = 12 }, CancellationToken.None);
+            f.Db.BingoMenuItems.Count(m => m.Name == "Batidas").Should().Be(1);
+        }
     }
 }

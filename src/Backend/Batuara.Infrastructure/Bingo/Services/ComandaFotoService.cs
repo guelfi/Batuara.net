@@ -168,6 +168,8 @@ namespace Batuara.Infrastructure.Bingo.Services
             parsed.Items = parsed.Items
                 .Where(i => !string.IsNullOrWhiteSpace(i.Name) && i.Quantity > 0)
                 .ToList();
+            // Conferencia real no backend: nao confia no "matched" do modelo.
+            ValidateAgainstMenu(parsed.Items, menu.Select(m => m.Name));
             parsed.Total = SumTotal(parsed.Items);
             return parsed;
         }
@@ -193,20 +195,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 .Where(x => x.EventId == ev.Id && x.IsActive)
                 .Select(x => x.Name)
                 .ToListAsync(ct);
-            var byKey = menuNames.GroupBy(Normalize).ToDictionary(g => g.Key, g => g.First());
-            foreach (var item in items)
-            {
-                if (byKey.TryGetValue(Normalize(item.Name), out var canonical))
-                {
-                    item.Name = canonical;
-                    item.Matched = true;
-                }
-                else
-                {
-                    item.Name = item.Name.Trim();
-                    item.Matched = false;
-                }
-            }
+            ValidateAgainstMenu(items, menuNames);
 
             var total = SumTotal(items);
             var entity = new BingoPhotoTab(ev.Id, request.Label ?? string.Empty,
@@ -274,6 +263,52 @@ namespace Batuara.Infrastructure.Bingo.Services
                 ?? throw new BingoException(BingoErrorKind.NotFound, "Comanda não encontrada.");
             entity.Discard();
             await Db.SaveChangesAsync(ct);
+        }
+
+        private static void ValidateAgainstMenu(IEnumerable<ComandaFotoItem> items, IEnumerable<string> menuNames)
+        {
+            var byKey = menuNames.GroupBy(Normalize).ToDictionary(g => g.Key, g => g.First());
+            foreach (var item in items)
+            {
+                if (byKey.TryGetValue(Normalize(item.Name), out var canonical))
+                {
+                    item.Name = canonical;
+                    item.Matched = true;
+                }
+                else
+                {
+                    item.Name = item.Name.Trim();
+                    item.Matched = false;
+                }
+            }
+        }
+
+        public async Task<ComandaFotoItem> RegisterMenuItemAsync(ComandaFotoMenuRequest request, CancellationToken ct)
+        {
+            var name = (request.Name ?? string.Empty).Trim();
+            if (name.Length == 0 || name.Length > 150)
+            {
+                throw new BingoException(BingoErrorKind.Validation, "Informe o nome do item (até 150 caracteres).");
+            }
+
+            if (request.UnitPrice <= 0)
+            {
+                throw new BingoException(BingoErrorKind.Validation, "Informe um valor maior que zero.");
+            }
+
+            var ev = await FindOpenEventAsync(ct)
+                ?? throw new BingoException(BingoErrorKind.Validation, "Não há evento aberto.");
+            var existing = await Db.BingoMenuItems.Where(x => x.EventId == ev.Id && x.IsActive).ToListAsync(ct);
+            var key = Normalize(name);
+            var found = existing.FirstOrDefault(m => Normalize(m.Name) == key);
+            if (found == null)
+            {
+                found = new BingoMenuItem(ev.Id, name, request.UnitPrice, true, (existing.Count == 0 ? 0 : existing.Max(m => m.SortOrder)) + 1);
+                Db.BingoMenuItems.Add(found);
+                await Db.SaveChangesAsync(ct);
+            }
+
+            return new ComandaFotoItem { Name = found.Name, Quantity = 1, UnitPrice = request.UnitPrice, Matched = true };
         }
 
         private static string Normalize(string value)

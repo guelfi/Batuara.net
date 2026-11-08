@@ -119,6 +119,19 @@ const ComandaFotoPage: React.FC = () => {
   const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
   const patch = (idx: number, p: Partial<Item>) => setItems((l) => l.map((it, i) => (i === idx ? { ...it, ...p } : it)));
 
+  const registerItem = async (idx: number) => {
+    const it = items[idx];
+    setBusy('Cadastrando no cardápio...');
+    try {
+      const r = await http.post('/comanda-foto/cardapio', { name: it.name, unitPrice: it.unitPrice });
+      patch(idx, { name: r.data.data.name, matched: true });
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const save = async () => {
     setBusy('Fechando comanda...');
     setError(null);
@@ -183,10 +196,15 @@ const ComandaFotoPage: React.FC = () => {
                 value={it.name}
                 fullWidth
                 error={!it.matched}
-                helperText={!it.matched ? 'Conferir' : undefined}
-                onChange={(e) => patch(idx, { name: e.target.value })}
+                helperText={!it.matched ? 'Fora do cardápio' : undefined}
+                onChange={(e) => patch(idx, { name: e.target.value, matched: false })}
               />
               <TextField size="small" type="number" label="R$" value={it.unitPrice} sx={{ width: 90 }} onChange={(e) => patch(idx, { unitPrice: Math.max(0, Number(e.target.value)), matched: true })} />
+              {!it.matched && (
+                <Button size="small" variant="outlined" disabled={!!busy || !it.name.trim() || it.unitPrice <= 0} onClick={() => registerItem(idx)} sx={{ whiteSpace: 'nowrap', minWidth: 0, px: 1 }}>
+                  + Cardápio
+                </Button>
+              )}
               <IconButton aria-label="Remover" onClick={() => setItems((l) => l.filter((_, i) => i !== idx))}>
                 ✕
               </IconButton>

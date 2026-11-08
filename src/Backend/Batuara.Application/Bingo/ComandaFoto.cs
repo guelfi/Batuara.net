@@ -51,6 +51,12 @@ namespace Batuara.Application.Bingo.Models
         public List<ComandaFotoDto> Comandas { get; set; } = new();
     }
 
+    public class ComandaFotoMenuRequest
+    {
+        public string? Name { get; set; }
+        public decimal UnitPrice { get; set; }
+    }
+
     public class ComandaFotoOptions
     {
         public const string SectionName = "GoogleAI";
@@ -68,6 +74,7 @@ namespace Batuara.Application.Bingo.Services
         bool IsTokenValid(string? token);
         string GetAccessToken();
         Task<ComandaFotoExtractResult> ExtractAsync(ComandaFotoExtractRequest request, CancellationToken ct);
+        Task<ComandaFotoItem> RegisterMenuItemAsync(ComandaFotoMenuRequest request, CancellationToken ct);
         Task<ComandaFotoDto> SaveAsync(ComandaFotoSaveRequest request, CancellationToken ct);
         Task<ComandaFotoReport> GetReportAsync(CancellationToken ct);
         Task<(byte[] Data, string ContentType)?> GetPhotoAsync(int id, CancellationToken ct);
