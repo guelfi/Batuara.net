@@ -66,13 +66,14 @@ namespace Batuara.Infrastructure.Bingo.Services
                 "Leia as linhas de itens consumidos e devolva SOMENTE um JSON, sem texto extra, no formato " +
                 "{\"items\":[{\"name\":string,\"quantity\":number,\"unitPrice\":number,\"matched\":boolean}],\"notes\":string}.\n" +
                 "Cardápio e preços oficiais:\n" + menuText + "\n" +
-                "IMPORTANTE: A tabela tem colunas PRODUTO, VALOR UNITÁRIO e QUANTIDADE. Leia a QUANTIDADE da coluna específica (números ou tracinhos). " +
+                "REGRA FUNDAMENTAL: A comanda é uma tabela com várias linhas de produtos. À DIREITA de cada linha há uma coluna QUANTIDADE. " +
+                "INCLUA NO RESULTADO SOMENTE AS LINHAS QUE TÊM MARCAÇÃO NA COLUNA QUANTIDADE (tracinhos, números, /// ou ||||). " +
+                "IGNORE completamente as linhas sem marcação na coluna quantidade - essas são apenas opções do cardápio não consumidas. " +
                 "PREÇOS ESPECIAIS: 'Cerveja Heineken' e 'Cervejas diversas' são vendidas em PAR por R$ 12,00 (2 unidades = R$ 12). " +
-                "'Batidas' custam R$ 10,00 cada. Para calcular o preço: divida a quantidade por 2 e multiplique por 12 para cervejas (arredonde para cima se ímpar). " +
-                "Regras: associe cada linha ao item mais parecido do cardápio e use o nome e o preço do cardápio (matched=true). " +
-                "Traços, riscos ou contagens como /// ou |||| ou números na coluna QUANTIDADE indicam quantas unidades. " +
-                "Some linhas repetidas do mesmo item. " +
-                "Se uma linha não corresponder a nada do cardápio, mantenha o texto lido, use o preço escrito (ou 0) e matched=false. " +
+                "'Batidas' custam R$ 10,00 cada. " +
+                "Para cada item consumido: associe o nome ao item mais parecido do cardápio oficial acima e use seu preço (matched=true). " +
+                "Conte os tracinhos ou leia o número na coluna quantidade. Some linhas repetidas do mesmo item. " +
+                "Se não corresponder ao cardápio, mantenha o nome lido e use preço 0 (matched=false). " +
                 "Ignore linhas riscadas/canceladas. Em notes, avise se a foto está ilegível ou cortada.";
 
             // Google Gemini API request format
