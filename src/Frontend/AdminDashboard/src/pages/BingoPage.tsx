@@ -1594,8 +1594,8 @@ const EventsTab: React.FC<{
                 <TableCell><Chip size="small" color={EVENT_STATUS[ev.status].color} label={EVENT_STATUS[ev.status].label} /></TableCell>
                 <TableCell align="right">{money(ev.totalSold)}</TableCell>
                 <TableCell align="right">
-                  <Stack direction="row" spacing={1} justifyContent="flex-end" flexWrap="wrap" useFlexGap>
-                    <Button size="small" startIcon={<PrintIcon />} disabled={printingId === ev.id} onClick={() => printClosing(ev)}>
+                  <Stack direction="row" spacing={1} justifyContent="flex-end" flexWrap="wrap" useFlexGap sx={{ '& .MuiButton-root': { minWidth: 150 } }}>
+                    <Button size="small" variant="outlined" startIcon={<PrintIcon />} disabled={printingId === ev.id} onClick={() => printClosing(ev)}>
                       Fechamento
                     </Button>
                     {ev.status === 'Draft' && (
@@ -1660,8 +1660,8 @@ const EventsTab: React.FC<{
                             }
                           },
                         })}>Reabrir</Button>
-                        <Button size="small" onClick={() => openReminders(ev)}>Lembretes de contas em aberto</Button>
-                        <Button size="small" onClick={() => showHistory(ev)}>Ver histórico</Button>
+                        <Button size="small" variant="outlined" onClick={() => openReminders(ev)}>Lembretes de contas</Button>
+                        <Button size="small" variant="outlined" onClick={() => showHistory(ev)}>Ver histórico</Button>
                       </>
                     )}
                   </Stack>
