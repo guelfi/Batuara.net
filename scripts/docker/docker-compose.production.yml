@@ -86,6 +86,7 @@ services:
       - WhatsApp__AllowedRecipients=${WHATSAPP_ALLOWED_RECIPIENTS:-}
       - WhatsApp__AccessToken=${WHATSAPP_ACCESS_TOKEN:-}
       - GoogleAI__ApiKey=${GOOGLE_AI_API_KEY:-}
+      - GoogleAI__Model=${GOOGLE_AI_MODEL:-gemini-flash-latest}
       - WhatsApp__PhoneNumberId=${WHATSAPP_PHONE_NUMBER_ID:-}
       - WhatsApp__WebhookVerifyToken=${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-}
       - WhatsApp__AppSecret=${WHATSAPP_APP_SECRET:-}
