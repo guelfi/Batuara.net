@@ -1393,7 +1393,7 @@ const SummaryTab: React.FC<{
   };
 
   const selected = events.find((e) => e.id === eventId);
-  const canReset = !!selected && selected.isTest && selected.id === current?.id;
+  const canReset = !!selected && selected.isTest;
 
   return (
     <Stack spacing={2}>
@@ -1467,6 +1467,20 @@ const EventsTab: React.FC<{
   const [histSummary, setHistSummary] = useState<BingoSummary | null>(null);
   const [histTabs, setHistTabs] = useState<BingoTab[]>([]);
   const [histLoading, setHistLoading] = useState(false);
+  const [closing, setClosing] = useState<{ event: BingoEvent; summary: BingoSummary; tabs: BingoTab[] } | null>(null);
+  const [printingId, setPrintingId] = useState<string | null>(null);
+  const endClosing = useCallback(() => setClosing(null), []);
+  const printClosing = async (ev: BingoEvent) => {
+    setPrintingId(ev.id);
+    try {
+      const [summary, tabs] = await Promise.all([bingoApi.getEventSummary(ev.id), bingoApi.getEventTabs(ev.id)]);
+      setClosing({ event: ev, summary, tabs });
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível preparar o fechamento.'), 'error');
+    } finally {
+      setPrintingId(null);
+    }
+  };
   const [remEvent, setRemEvent] = useState<BingoEvent | null>(null);
   const [remPreview, setRemPreview] = useState<BingoReminderPreview | null>(null);
   const [remLoading, setRemLoading] = useState(false);
@@ -1581,6 +1595,9 @@ const EventsTab: React.FC<{
                 <TableCell align="right">{money(ev.totalSold)}</TableCell>
                 <TableCell align="right">
                   <Stack direction="row" spacing={1} justifyContent="flex-end" flexWrap="wrap" useFlexGap>
+                    <Button size="small" startIcon={<PrintIcon />} disabled={printingId === ev.id} onClick={() => printClosing(ev)}>
+                      Fechamento
+                    </Button>
                     {ev.status === 'Draft' && (
                       <Button size="small" variant="contained" onClick={() => openEvent(ev)}>Abrir</Button>
                     )}
@@ -1629,6 +1646,20 @@ const EventsTab: React.FC<{
                     )}
                     {ev.status === 'Closed' && (
                       <>
+                        <Button size="small" variant="contained" onClick={() => confirm({
+                          title: 'Reabrir evento',
+                          text: `Reabrir "${ev.name}"? Os pedidos voltam a ser aceitos e a data de encerramento é limpa.`,
+                          confirmLabel: 'Reabrir',
+                          onConfirm: async () => {
+                            try {
+                              await bingoApi.reopenEvent(ev.id);
+                              notify('Evento reaberto.', 'success');
+                              onChanged();
+                            } catch (e: any) {
+                              notify(apiError(e, 'Não foi possível reabrir o evento.'), 'error');
+                            }
+                          },
+                        })}>Reabrir</Button>
                         <Button size="small" onClick={() => openReminders(ev)}>Lembretes de contas em aberto</Button>
                         <Button size="small" onClick={() => showHistory(ev)}>Ver histórico</Button>
                       </>
@@ -1722,6 +1753,7 @@ const EventsTab: React.FC<{
         </DialogActions>
       </Dialog>
 
+      {closing && <ClosingReport event={closing.event} summary={closing.summary} tabs={closing.tabs} onDone={endClosing} />}
       <Dialog open={!!history} onClose={() => setHistory(null)} fullWidth maxWidth="md">
         <DialogTitle>Histórico: {history?.name} ({formatDate(history?.eventDate ?? '')})</DialogTitle>
         <DialogContent>

@@ -348,6 +348,8 @@ namespace Batuara.Infrastructure.Bingo.Services
             var tabs = await Db.BingoTabs.Include(x => x.Items).Where(x => x.EventId == ev.Id).ToListAsync(cancellationToken);
             Db.BingoOrderItems.RemoveRange(tabs.SelectMany(x => x.Items));
             Db.BingoTabs.RemoveRange(tabs);
+            // comandas de papel fotografadas tambem sao lancamentos do evento
+            Db.BingoPhotoTabs.RemoveRange(await Db.BingoPhotoTabs.Where(x => x.EventId == ev.Id).ToListAsync(cancellationToken));
             ev.SetCloseAllRequested(false);
             await Db.SaveChangesAsync(cancellationToken);
         }
@@ -436,6 +438,24 @@ namespace Batuara.Infrastructure.Bingo.Services
             }
 
             ev.Resume();
+            await Db.SaveChangesAsync(cancellationToken);
+            return ToEventDto(ev, await LoadTabsAsync(ev.Id, cancellationToken));
+        }
+
+        public async Task<BingoEventDto> ReopenEventAsync(int eventId, CancellationToken cancellationToken = default)
+        {
+            var ev = await ResolveAdminEventAsync(eventId, cancellationToken);
+            if (ev.Status != BingoEventStatus.Closed)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Só um evento encerrado pode ser reaberto.");
+            }
+
+            if (await Db.BingoEvents.AnyAsync(x => x.Status == BingoEventStatus.Open, cancellationToken))
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Já existe um evento aberto. Suspenda ou encerre-o antes de reabrir este.");
+            }
+
+            ev.Reopen();
             await Db.SaveChangesAsync(cancellationToken);
             return ToEventDto(ev, await LoadTabsAsync(ev.Id, cancellationToken));
         }

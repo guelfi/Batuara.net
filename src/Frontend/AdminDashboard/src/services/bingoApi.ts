@@ -177,6 +177,7 @@ export const bingoApi = {
   createEvent: (data: { name: string; eventDate: string; copiarDeEventoId?: string }) =>
     apiService.post<any>(`${BASE}/eventos`, data),
   openEvent: (id: string) => apiService.post<any>(`${BASE}/eventos/${id}/abrir`),
+  reopenEvent: (id: string) => apiService.post<any>(`${BASE}/eventos/${id}/reabrir`),
   suspendEvent: (id: string) => apiService.post<any>(`${BASE}/eventos/${id}/suspender`),
   resumeEvent: (id: string) => apiService.post<any>(`${BASE}/eventos/${id}/retomar`),
   closeEvent: (id: string) => apiService.post<any>(`${BASE}/eventos/${id}/encerrar`),

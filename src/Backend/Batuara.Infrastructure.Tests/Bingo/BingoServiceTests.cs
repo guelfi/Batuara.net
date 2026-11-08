@@ -2006,5 +2006,30 @@ namespace Batuara.Infrastructure.Tests.Bingo
             var notOpen = () => f.Admin.SuspendEventAsync(2);
             await notOpen.Should().ThrowAsync<BingoException>();
         }
+            [Fact]
+        public async Task Event_Should_Reopen_And_Reset_Clears_Photo_Tabs()
+        {
+            var f = new Fixture();
+            await f.Admin.OpenEventAsync(2);
+            var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), new FakeConfig(), Options.Create(new ComandaFotoOptions()));
+            await svc.SaveAsync(new ComandaFotoSaveRequest
+            {
+                ImageBase64 = Convert.ToBase64String(new byte[] { 1 }),
+                Items = new() { new() { Name = "Água", Quantity = 1, UnitPrice = 5 } }
+            }, CancellationToken.None);
+
+            await f.Admin.CloseEventAsync(2);
+            await f.Admin.OpenEventAsync(1);
+            var blocked = () => f.Admin.ReopenEventAsync(2);
+            await blocked.Should().ThrowAsync<BingoException>();
+
+            await f.Admin.SuspendEventAsync(1);
+            var reopened = await f.Admin.ReopenEventAsync(2);
+            reopened.Status.Should().Be(BingoEventStatus.Open);
+            f.Db.BingoEvents.Single(e => e.Id == 2).ClosedAt.Should().BeNull();
+
+            await f.Admin.ResetAsync(2, true);
+            f.Db.BingoPhotoTabs.Count(x => x.EventId == 2).Should().Be(0);
+        }
     }
 }

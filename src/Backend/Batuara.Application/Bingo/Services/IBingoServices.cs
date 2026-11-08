@@ -83,6 +83,7 @@ namespace Batuara.Application.Bingo.Services
         Task<List<BingoEventDto>> GetEventsAsync(CancellationToken cancellationToken = default);
         Task<BingoEventDto> CreateEventAsync(BingoCreateEventRequest request, CancellationToken cancellationToken = default);
         Task<BingoEventDto> OpenEventAsync(int eventId, CancellationToken cancellationToken = default);
+        Task<BingoEventDto> ReopenEventAsync(int eventId, CancellationToken cancellationToken = default);
         Task<BingoEventDto> SuspendEventAsync(int eventId, CancellationToken cancellationToken = default);
         Task<BingoEventDto> ResumeEventAsync(int eventId, CancellationToken cancellationToken = default);
         Task<BingoEventDto> CloseEventAsync(int eventId, CancellationToken cancellationToken = default);
