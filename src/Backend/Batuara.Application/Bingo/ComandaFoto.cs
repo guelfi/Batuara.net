@@ -48,12 +48,17 @@ namespace Batuara.Application.Bingo.Models
         public string Label { get; set; } = string.Empty;
         public decimal Total { get; set; }
         public DateTime CreatedAt { get; set; }
+        public bool Cancelled { get; set; }
+        public string? CancelReason { get; set; }
+        public string? CancelledByName { get; set; }
+        public DateTime? CancelledAt { get; set; }
         public List<ComandaFotoItem> Items { get; set; } = new();
     }
 
     public class ComandaFotoReport
     {
         public string EventName { get; set; } = string.Empty;
+        public bool IsTest { get; set; }
         public DateTime EventDate { get; set; }
         public string Build { get; set; } = string.Empty;
         public int Count { get; set; }
@@ -90,5 +95,6 @@ namespace Batuara.Application.Bingo.Services
         Task<ComandaFotoReport> GetReportAsync(CancellationToken ct);
         Task<(byte[] Data, string ContentType)?> GetPhotoAsync(int id, CancellationToken ct);
         Task DiscardAsync(int id, CancellationToken ct);
+        Task CancelAsync(int id, string? reason, string actorName, CancellationToken ct);
     }
 }

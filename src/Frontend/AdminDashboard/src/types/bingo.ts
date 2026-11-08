@@ -22,6 +22,8 @@ export interface BingoMenuItem {
   unitPrice: number;
   isAvailable: boolean;
   sortOrder: number;
+  /** Nome ja usado em pedidos/comandas: nao pode ser renomeado nem excluido. */
+  isUsed?: boolean;
 }
 
 export interface BingoMenuItemInput {

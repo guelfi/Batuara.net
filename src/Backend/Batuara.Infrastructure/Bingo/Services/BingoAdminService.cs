@@ -36,7 +36,13 @@ namespace Batuara.Infrastructure.Bingo.Services
                 .OrderBy(x => x.SortOrder)
                 .ThenBy(x => x.Name)
                 .ToListAsync(cancellationToken);
-            return items.Select(ToAdminMenuDto).ToList();
+            var used = await GetUsedItemNamesAsync(cancellationToken);
+            return items.Select(i =>
+            {
+                var dto = ToAdminMenuDto(i);
+                dto.IsUsed = used.Contains(NormalizeName(i.Name));
+                return dto;
+            }).ToList();
         }
 
         public async Task<BingoAdminMenuItemDto> CreateMenuItemAsync(int? eventId, BingoMenuItemRequest request, CancellationToken cancellationToken = default)
@@ -52,14 +58,31 @@ namespace Batuara.Infrastructure.Bingo.Services
         public async Task<BingoAdminMenuItemDto> UpdateMenuItemAsync(int id, BingoMenuItemRequest request, CancellationToken cancellationToken = default)
         {
             var item = await FindMenuItemAsync(id, cancellationToken);
-            item.Update(request.Name, request.UnitPrice, request.IsAvailable, request.SortOrder ?? item.SortOrder);
+            var used = (await GetUsedItemNamesAsync(cancellationToken)).Contains(NormalizeName(item.Name));
+            if (used && !string.Equals(item.Name, (request.Name ?? string.Empty).Trim(), StringComparison.Ordinal))
+            {
+                throw new BingoException(BingoErrorKind.Conflict,
+                    "Este item já foi usado em pedidos ou comandas: o nome não pode ser alterado. O preço novo vale só para lançamentos futuros.",
+                    "menu_item_used");
+            }
+
+            item.Update(request.Name!, request.UnitPrice, request.IsAvailable, request.SortOrder ?? item.SortOrder);
             await Db.SaveChangesAsync(cancellationToken);
-            return ToAdminMenuDto(item);
+            var dto = ToAdminMenuDto(item);
+            dto.IsUsed = used;
+            return dto;
         }
 
         public async Task DeleteMenuItemAsync(int id, CancellationToken cancellationToken = default)
         {
             var item = await FindMenuItemAsync(id, cancellationToken);
+            if ((await GetUsedItemNamesAsync(cancellationToken)).Contains(NormalizeName(item.Name)))
+            {
+                throw new BingoException(BingoErrorKind.Conflict,
+                    "Este item já foi usado em pedidos ou comandas e não pode ser excluído. Marque-o como indisponível.",
+                    "menu_item_used");
+            }
+
             item.Remove();
             await Db.SaveChangesAsync(cancellationToken);
         }
@@ -264,6 +287,36 @@ namespace Batuara.Infrastructure.Bingo.Services
             return await PayCoreAsync(tabs, ids, request.PaymentMethodId, actorName, null, request.Note, cancellationToken);
         }
 
+        public async Task CancelTabAsync(string actorName, Guid tabId, string reason, CancellationToken cancellationToken = default)
+        {
+            var text = (reason ?? string.Empty).Trim();
+            if (text.Length < 10 || text.Length > 200)
+            {
+                throw new BingoException(BingoErrorKind.Validation, "Informe a justificativa do cancelamento (10 a 200 caracteres).");
+            }
+
+            var tab = await Db.BingoTabs.Include(x => x.Items).FirstOrDefaultAsync(x => x.Id == tabId, cancellationToken)
+                ?? throw new BingoException(BingoErrorKind.NotFound, "Comanda não encontrada.");
+            if (tab.IsPaid)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Comanda já paga: o cancelamento exige estorno e não é feito por aqui.");
+            }
+
+            var items = tab.Items.Where(i => i.Status != BingoOrderItemStatus.Cancelled).ToList();
+            if (items.Count == 0)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "A comanda não tem itens a cancelar.");
+            }
+
+            var now = DateTime.UtcNow;
+            foreach (var item in items)
+            {
+                item.Cancel(text, actorName, now);
+            }
+
+            await Db.SaveChangesAsync(cancellationToken);
+        }
+
         public Task CancelItemAsync(string actorName, int itemId, string reason, CancellationToken cancellationToken = default)
             => CancelItemCoreAsync(itemId, null, reason, actorName, cancellationToken);
 
@@ -368,12 +421,18 @@ namespace Batuara.Infrastructure.Bingo.Services
 
         public async Task<BingoEventDto> CreateEventAsync(BingoCreateEventRequest request, CancellationToken cancellationToken = default)
         {
+            // espelho: sem origem informada, copia do ultimo evento regular (nunca do teste)
+            var mirrorId = request.CopiarDeEventoId
+                ?? await Db.BingoEvents.Where(x => !x.IsTest)
+                    .OrderByDescending(x => x.EventDate).ThenByDescending(x => x.Id)
+                    .Select(x => (int?)x.Id).FirstOrDefaultAsync(cancellationToken);
+
             var ev = new BingoEvent(request.Name, DateTime.SpecifyKind(request.EventDate, DateTimeKind.Utc));
             Db.BingoEvents.Add(ev);
 
-            if (request.CopiarDeEventoId.HasValue)
+            if (mirrorId.HasValue)
             {
-                var sourceId = request.CopiarDeEventoId.Value;
+                var sourceId = mirrorId.Value;
                 if (!await Db.BingoEvents.AnyAsync(x => x.Id == sourceId, cancellationToken))
                 {
                     throw new BingoException(BingoErrorKind.NotFound, "Evento de origem não encontrado.");
@@ -463,6 +522,11 @@ namespace Batuara.Infrastructure.Bingo.Services
         public async Task<BingoEventDto> CloseEventAsync(int eventId, CancellationToken cancellationToken = default)
         {
             var ev = await ResolveAdminEventAsync(eventId, cancellationToken);
+            if (ev.IsTest)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "O evento de teste é permanente: não pode ser encerrado. Use Suspender.", "test_event_permanent");
+            }
+
             if (ev.Status != BingoEventStatus.Open && ev.Status != BingoEventStatus.Suspended)
             {
                 throw new BingoException(BingoErrorKind.Conflict, "O evento não está aberto nem suspenso.");
@@ -521,7 +585,7 @@ namespace Batuara.Infrastructure.Bingo.Services
 
             // Comandas de papel fotografadas entram no resumo (itens ja validados contra o cardapio ao salvar).
             var photoRows = await Db.BingoPhotoTabs
-                .Where(x => x.EventId == ev.Id && x.IsActive)
+                .Where(x => x.EventId == ev.Id && x.IsActive && x.CancelledAt == null)
                 .Select(x => new { x.Total, x.ItemsJson })
                 .ToListAsync(cancellationToken);
             var photoItems = photoRows

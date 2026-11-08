@@ -12,6 +12,9 @@ namespace Batuara.Domain.Entities
         public string ItemsJson { get; private set; } = "[]";
         public decimal Total { get; private set; }
         public byte[] Photo { get; private set; } = Array.Empty<byte>();
+        public DateTime? CancelledAt { get; private set; }
+        public string? CancelReason { get; private set; }
+        public string? CancelledByName { get; private set; }
 
         private BingoPhotoTab()
         {
@@ -28,5 +31,14 @@ namespace Batuara.Domain.Entities
         }
 
         public void Discard() => SetInactive();
+
+        /// <summary>Cancelamento com justificativa: o registro continua visivel, mas sai dos totais.</summary>
+        public void Cancel(string reason, string byName, DateTime utcNow)
+        {
+            CancelledAt = utcNow;
+            CancelReason = reason;
+            CancelledByName = byName;
+            UpdateTimestamp();
+        }
     }
 }

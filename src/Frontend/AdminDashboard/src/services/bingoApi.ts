@@ -244,6 +244,7 @@ export const bingoApi = {
       unitPrice: num(m.unitPrice),
       isAvailable: !!m.isAvailable,
       sortOrder: num(m.sortOrder),
+      isUsed: !!m.isUsed,
     }));
   },
 
@@ -346,6 +347,10 @@ export const bingoApi = {
     const r = await apiService.get<any>(`${BASE}/mesas/${mesa}/comandas`);
     return asArray(Array.isArray(r.data) ? r.data : pick(r.data, 'comandas', 'tabs')).map(normalizeTab);
   },
+  cancelTab: (tabId: string, reason: string) =>
+    apiService.post<any>(`${BASE}/comandas/${tabId}/cancelar`, { reason }),
+  cancelPhotoTab: (id: number, reason: string) =>
+    apiService.post<any>(`${BASE}/comandas-foto/${id}/cancelar`, { reason }),
   cancelItem: (itemId: string, reason: string) =>
     apiService.post<any>(`${BASE}/itens/${itemId}/cancelar`, { reason }),
   resolveContest: (itemId: string, action: 'ConfirmDelivered' | 'Cancel', note?: string) =>

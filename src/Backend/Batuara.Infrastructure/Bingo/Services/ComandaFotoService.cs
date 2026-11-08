@@ -205,7 +205,7 @@ namespace Batuara.Infrastructure.Bingo.Services
             if (existing != null)
             {
                 throw new BingoException(BingoErrorKind.Conflict,
-                    $"A comanda {number} já foi fechada às {existing.CreatedAt.AddHours(-3):HH:mm} (R$ {existing.Total:0.00}). Se foi engano, descarte a anterior na lista e feche de novo.",
+                    $"A comanda {number} já foi fechada às {existing.CreatedAt.AddHours(-3):HH:mm} (R$ {existing.Total:0.00}). Se foi engano, a anterior precisa ser cancelada (em evento regular, pelo administrador no Dashboard) antes de fechar de novo.",
                     "duplicate_comanda");
             }
 
@@ -224,7 +224,7 @@ namespace Batuara.Infrastructure.Bingo.Services
             var rows = await Db.BingoPhotoTabs
                 .Where(x => x.EventId == ev.Id && x.IsActive)
                 .OrderBy(x => x.CreatedAt)
-                .Select(x => new { x.Id, x.Label, x.Total, x.CreatedAt, x.ItemsJson })
+                .Select(x => new { x.Id, x.Label, x.Total, x.CreatedAt, x.ItemsJson, x.CancelledAt, x.CancelReason, x.CancelledByName })
                 .ToListAsync(ct);
 
             var comandas = rows.Select(r => new ComandaFotoDto
@@ -233,10 +233,16 @@ namespace Batuara.Infrastructure.Bingo.Services
                 Label = r.Label,
                 Total = r.Total,
                 CreatedAt = r.CreatedAt,
+                Cancelled = r.CancelledAt != null,
+                CancelledAt = r.CancelledAt,
+                CancelReason = r.CancelReason,
+                CancelledByName = r.CancelledByName,
                 Items = JsonSerializer.Deserialize<List<ComandaFotoItem>>(r.ItemsJson, Json) ?? new()
             }).ToList();
 
-            var itemTotals = comandas
+            // cancelada continua visivel, mas nao entra nos totais
+            var active = comandas.Where(c => !c.Cancelled).ToList();
+            var itemTotals = active
                 .SelectMany(c => c.Items)
                 .GroupBy(i => i.Name, StringComparer.OrdinalIgnoreCase)
                 .Select(g => new ComandaFotoItem
@@ -253,8 +259,9 @@ namespace Batuara.Infrastructure.Bingo.Services
                 EventName = ev.Name,
                 EventDate = ev.EventDate,
                 Build = configuration["BUILD_VERSION"] ?? "dev",
-                Count = comandas.Count,
-                GrandTotal = comandas.Sum(c => c.Total),
+                IsTest = ev.IsTest,
+                Count = active.Count,
+                GrandTotal = active.Sum(c => c.Total),
                 ItemTotals = itemTotals,
                 Comandas = comandas
             };
@@ -269,11 +276,39 @@ namespace Batuara.Infrastructure.Bingo.Services
             return photo is { Length: > 0 } ? (photo, "image/jpeg") : null;
         }
 
+        /// <summary>Descarte sem justificativa: so no evento de teste. Evento regular exige cancelamento justificado.</summary>
         public async Task DiscardAsync(int id, CancellationToken ct)
         {
             var entity = await Db.BingoPhotoTabs.FirstOrDefaultAsync(x => x.Id == id, ct)
                 ?? throw new BingoException(BingoErrorKind.NotFound, "Comanda não encontrada.");
+            var ev = await Db.BingoEvents.FirstAsync(x => x.Id == entity.EventId, ct);
+            if (!ev.IsTest)
+            {
+                throw new BingoException(BingoErrorKind.Forbidden,
+                    "Em evento regular a comanda só pode ser cancelada pelo administrador no Dashboard, com justificativa.",
+                    "cancel_requires_reason");
+            }
+
             entity.Discard();
+            await Db.SaveChangesAsync(ct);
+        }
+
+        public async Task CancelAsync(int id, string? reason, string actorName, CancellationToken ct)
+        {
+            var text = (reason ?? string.Empty).Trim();
+            if (text.Length < 10 || text.Length > 200)
+            {
+                throw new BingoException(BingoErrorKind.Validation, "Informe a justificativa do cancelamento (10 a 200 caracteres).");
+            }
+
+            var entity = await Db.BingoPhotoTabs.FirstOrDefaultAsync(x => x.Id == id && x.IsActive, ct)
+                ?? throw new BingoException(BingoErrorKind.NotFound, "Comanda não encontrada.");
+            if (entity.CancelledAt != null)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Comanda já cancelada.");
+            }
+
+            entity.Cancel(text, actorName, DateTime.UtcNow);
             await Db.SaveChangesAsync(ct);
         }
 
@@ -349,23 +384,10 @@ namespace Batuara.Infrastructure.Bingo.Services
             }
 
             return Db.BingoPhotoTabs.FirstOrDefaultAsync(
-                x => x.EventId == eventId && x.IsActive && x.ComandaNumber == number, ct);
+                x => x.EventId == eventId && x.IsActive && x.CancelledAt == null && x.ComandaNumber == number, ct);
         }
 
-        private static string Normalize(string value)
-        {
-            var d = value.Trim().ToLowerInvariant().Normalize(System.Text.NormalizationForm.FormD);
-            var sb = new StringBuilder();
-            foreach (var c in d)
-            {
-                if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
-                {
-                    sb.Append(c);
-                }
-            }
-
-            return string.Join(' ', sb.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries));
-        }
+        private static string Normalize(string value) => NormalizeName(value);
 
         // UnitPrice no relatório por item guarda o valor total da linha (soma qty*preço).
         private static decimal SumTotal(IEnumerable<ComandaFotoItem> items)

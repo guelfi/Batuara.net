@@ -130,6 +130,54 @@ namespace Batuara.Infrastructure.Bingo.Services
             return item;
         }
 
+        internal static string NormalizeName(string value)
+        {
+            var d = (value ?? string.Empty).Trim().ToLowerInvariant().Normalize(System.Text.NormalizationForm.FormD);
+            var sb = new System.Text.StringBuilder();
+            foreach (var c in d)
+            {
+                if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+                {
+                    sb.Append(c);
+                }
+            }
+
+            return string.Join(' ', sb.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries));
+        }
+
+        /// <summary>Nomes (normalizados) de itens ja usados em qualquer pedido ou comanda por foto, de qualquer evento.</summary>
+        protected async Task<HashSet<string>> GetUsedItemNamesAsync(CancellationToken cancellationToken)
+        {
+            var used = new HashSet<string>();
+            var orderNames = await Db.BingoOrderItems.Select(x => x.ItemName).Distinct().ToListAsync(cancellationToken);
+            foreach (var n in orderNames)
+            {
+                used.Add(NormalizeName(n));
+            }
+
+            var photoJson = await Db.BingoPhotoTabs.Select(x => x.ItemsJson).ToListAsync(cancellationToken);
+            foreach (var json in photoJson)
+            {
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(json);
+                    foreach (var el in doc.RootElement.EnumerateArray())
+                    {
+                        if (el.TryGetProperty("name", out var nm) && nm.GetString() is { } name)
+                        {
+                            used.Add(NormalizeName(name));
+                        }
+                    }
+                }
+                catch (System.Text.Json.JsonException)
+                {
+                    // registro antigo ilegivel: ignora
+                }
+            }
+
+            return used;
+        }
+
         protected async Task CancelItemCoreAsync(int itemId, int? eventId, string reason, string actorName, CancellationToken cancellationToken)
         {
             var text = NormalizeText(reason, 3, 200, "Informe o motivo do cancelamento (3 a 200 caracteres).");

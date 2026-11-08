@@ -195,6 +195,8 @@ const CashierDialog: React.FC<{
   const [payError, setPayError] = useState<string | null>(null);
   const [cancelItem, setCancelItem] = useState<BingoOrderItem | null>(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [cancelTabOpen, setCancelTabOpen] = useState(false);
+  const [cancelTabReason, setCancelTabReason] = useState('');
   const [resolveItem, setResolveItem] = useState<BingoOrderItem | null>(null);
   const [resolveNote, setResolveNote] = useState('');
   const isMobile = useIsMobile();
@@ -259,6 +261,21 @@ const CashierDialog: React.FC<{
     }
     setCancelItem(null);
     await act(() => bingoApi.cancelItem(item.id, reason), 'Item cancelado.');
+  };
+
+  const cancellableTabs = tabs.filter((t) => selected.includes(t.tabId) && t.status !== 'Paid');
+  const confirmCancelTab = async () => {
+    const reason = cancelTabReason.trim();
+    if (reason.length < 10 || reason.length > 200) {
+      notify('Informe a justificativa (10 a 200 caracteres).', 'error');
+      return;
+    }
+    setCancelTabOpen(false);
+    await act(async () => {
+      for (const t of cancellableTabs) {
+        await bingoApi.cancelTab(t.tabId, reason);
+      }
+    }, cancellableTabs.length > 1 ? 'Comandas canceladas.' : 'Comanda cancelada.');
   };
 
   const confirmResolve = async (action: 'ConfirmDelivered' | 'Cancel') => {
@@ -455,11 +472,33 @@ const CashierDialog: React.FC<{
             </Button>
           </span>
         </Tooltip>
+        <Button color="error" variant="outlined" disabled={busy || cancellableTabs.length === 0}
+          onClick={() => { setCancelTabReason(''); setCancelTabOpen(true); }} sx={isMobile ? { minHeight: 44 } : undefined}>
+          Cancelar comanda
+        </Button>
         <Button onClick={onClose} disabled={busy} sx={isMobile ? { minHeight: 44 } : undefined}>Fechar</Button>
         {blockReason && (
           <Typography variant="body2" color="error" sx={{ width: '100%', textAlign: isMobile ? 'left' : 'right' }}>{blockReason}</Typography>
         )}
       </DialogActions>
+
+      <Dialog open={cancelTabOpen} onClose={() => setCancelTabOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Cancelar comanda</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Todos os itens da comanda serão cancelados e ela sai dos totais. O registro continua no histórico com a justificativa.
+          </DialogContentText>
+          <TextField autoFocus fullWidth required label="Justificativa" value={cancelTabReason}
+            onChange={(e) => setCancelTabReason(e.target.value)} inputProps={{ maxLength: 200 }}
+            helperText="De 10 a 200 caracteres" />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCancelTabOpen(false)}>Voltar</Button>
+          <Button color="error" variant="contained" disabled={cancelTabReason.trim().length < 10} onClick={confirmCancelTab}>
+            Cancelar comanda
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={!!cancelItem} onClose={() => setCancelItem(null)} fullWidth maxWidth="xs">
         <DialogTitle>Cancelar item</DialogTitle>
@@ -640,15 +679,22 @@ const LivePanel: React.FC<{
                 fullWidth={isMobile}
                 sx={isMobile ? { minHeight: 44 } : undefined}
                 onClick={() =>
-                  confirm({
-                    title: 'Encerrar evento',
-                    text: 'Novos pedidos serão bloqueados e o evento ficará encerrado. Deseja continuar?',
-                    confirmLabel: 'Encerrar evento',
-                    onConfirm: async () => run(() => bingoApi.closeEvent(event.id), 'Evento encerrado.'),
-                  })
+                  event.isTest
+                    ? confirm({
+                      title: 'Suspender evento de teste',
+                      text: 'O evento de teste é permanente: ele só é suspenso, nunca encerrado. Novos pedidos serão bloqueados. Deseja continuar?',
+                      confirmLabel: 'Suspender',
+                      onConfirm: async () => run(() => bingoApi.suspendEvent(event.id), 'Evento suspenso.'),
+                    })
+                    : confirm({
+                      title: 'Encerrar evento',
+                      text: 'Novos pedidos serão bloqueados e o evento ficará encerrado. Deseja continuar?',
+                      confirmLabel: 'Encerrar evento',
+                      onConfirm: async () => run(() => bingoApi.closeEvent(event.id), 'Evento encerrado.'),
+                    })
                 }
               >
-                Encerrar pedidos do evento
+                {event.isTest ? 'Suspender pedidos do evento' : 'Encerrar pedidos do evento'}
               </Button>
             ) : (
               <Button
@@ -950,8 +996,9 @@ const MenuTab: React.FC<{
     {
       field: 'actions', headerName: 'Ações', width: 90, sortable: false, filterable: false, align: 'center', headerAlign: 'center',
       renderCell: (params) => (
-        <Tooltip title="Excluir item">
-          <IconButton color="error" size="small" aria-label="Excluir item" onClick={() => confirm({
+        <Tooltip title={params.row.isUsed ? 'Item já usado: marque como indisponível' : 'Excluir item'}>
+          <span>
+          <IconButton color="error" size="small" aria-label="Excluir item" disabled={!!params.row.isUsed} onClick={() => confirm({
             title: 'Excluir item',
             text: `Excluir "${params.row.name}" do cardápio?`,
             confirmLabel: 'Excluir',
@@ -967,6 +1014,7 @@ const MenuTab: React.FC<{
           })}>
             <DeleteIcon />
           </IconButton>
+          </span>
         </Tooltip>
       ),
     },
@@ -985,7 +1033,9 @@ const MenuTab: React.FC<{
                   <Typography sx={{ fontWeight: 600, wordBreak: 'break-word' }}>{item.name}</Typography>
                   <Typography sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{money(item.unitPrice)}</Typography>
                 </Stack>
-                <Typography variant="caption" color="text.secondary">Ordem: {item.sortOrder}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Ordem: {item.sortOrder}{item.isUsed ? ' · já usado (não pode renomear/excluir)' : ''}
+                </Typography>
                 <FormControlLabel
                   control={<Switch checked={item.isAvailable} onChange={(e) => toggle(item, e.target.checked)} />}
                   label="Disponível"
@@ -994,7 +1044,7 @@ const MenuTab: React.FC<{
                   <Button variant="outlined" fullWidth startIcon={<EditIcon />} sx={{ minHeight: 40 }}
                     onClick={() => setEditing({ ...item })}>Editar</Button>
                   <Button variant="outlined" color="error" fullWidth startIcon={<DeleteIcon />} sx={{ minHeight: 40 }}
-                    onClick={() => removeItem(item)}>Excluir</Button>
+                    disabled={!!item.isUsed} onClick={() => removeItem(item)}>Excluir</Button>
                 </Stack>
               </Stack>
             </CardContent>
@@ -1005,7 +1055,9 @@ const MenuTab: React.FC<{
           <DialogContent>
             {editing && (
               <Stack spacing={2} sx={{ mt: 1 }}>
-                <TextField fullWidth label="Nome" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+                <TextField fullWidth label="Nome" value={editing.name} disabled={!!editing.isUsed}
+                  helperText={editing.isUsed ? 'Item já usado: o nome não pode ser alterado.' : undefined}
+                  onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
                 <CurrencyField fullWidth label="Preço" value={editing.unitPrice} onValueChange={(v) => setEditing({ ...editing, unitPrice: v })} />
                 <TextField fullWidth label="Ordem" type="number" value={editing.sortOrder}
                   onChange={(e) => setEditing({ ...editing, sortOrder: e.target.value === '' ? ('' as any) : Number(e.target.value) })} />
@@ -1039,7 +1091,7 @@ const MenuTab: React.FC<{
   }
   return (
     <Stack spacing={1}>
-      <Typography variant="body2" color="text.secondary">Dê dois cliques em uma célula para editar; Enter salva.</Typography>
+      <Typography variant="body2" color="text.secondary">Dê dois cliques em uma célula para editar; Enter salva. Itens já usados em pedidos ou comandas não podem ser renomeados nem excluídos (marque como indisponível). O preço novo vale só para lançamentos futuros.</Typography>
       <Paper>
         <DataGrid
           rows={items}
@@ -1047,6 +1099,7 @@ const MenuTab: React.FC<{
           autoHeight
           disableRowSelectionOnClick
           hideFooter
+          isCellEditable={(params) => !(params.field === 'name' && params.row.isUsed)}
           processRowUpdate={processRowUpdate}
           onProcessRowUpdateError={(e) => notify(e?.message || 'Não foi possível salvar o item.', 'error')}
           localeText={{ noRowsLabel: 'Nenhum item no cardápio.' }}
@@ -1991,7 +2044,7 @@ const EventsTab: React.FC<{
           }
         }}>Retomar</Button>
       )}
-      {(ev.status === 'Open' || ev.status === 'Suspended') && (
+      {!ev.isTest && (ev.status === 'Open' || ev.status === 'Suspended') && (
         <Button size="small" color="error" variant="outlined" onClick={() => confirm({
           title: 'Encerrar evento',
           text: `Encerrar "${ev.name}"? Novos pedidos serão bloqueados.`,
@@ -2372,6 +2425,9 @@ interface PhotoTabItem {
 }
 
 interface PhotoTabData {
+  cancelled?: boolean;
+  cancelReason?: string | null;
+  cancelledByName?: string | null;
   id: number;
   label: string;
   total: number;
@@ -2380,6 +2436,7 @@ interface PhotoTabData {
 }
 
 interface PhotoTabReport {
+  isTest?: boolean;
   eventName: string;
   count: number;
   grandTotal: number;
@@ -2392,6 +2449,8 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
   const [report, setReport] = useState<PhotoTabReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
+  const [cancelPhotoId, setCancelPhotoId] = useState<number | null>(null);
+  const [cancelPhotoReason, setCancelPhotoReason] = useState('');
 
   const load = useCallback(async () => {
     if (!current) return;
@@ -2409,7 +2468,31 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
 
   useEffect(() => { load(); }, [load]);
 
+  const confirmCancelPhoto = async () => {
+    const id = cancelPhotoId;
+    const reason = cancelPhotoReason.trim();
+    if (id === null) return;
+    if (reason.length < 10 || reason.length > 200) {
+      notify('Informe a justificativa (10 a 200 caracteres).', 'error');
+      return;
+    }
+    try {
+      await bingoApi.cancelPhotoTab(id, reason);
+      setCancelPhotoId(null);
+      notify('Comanda cancelada.', 'success');
+      await load();
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível cancelar a comanda.'), 'error');
+    }
+  };
+
   const handleDiscard = async (id: number) => {
+    // evento regular: cancelar exige justificativa; so o teste descarta livremente
+    if (!report?.isTest) {
+      setCancelPhotoReason('');
+      setCancelPhotoId(id);
+      return;
+    }
     if (!window.confirm('Descartar esta comanda fotografada?')) return;
     try {
       await apiService.delete(`/bingo/admin/comandas-foto/${id}`);
@@ -2506,9 +2589,15 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
                   <Button fullWidth variant="outlined" sx={{ minHeight: 40 }} onClick={() => setSelectedPhoto(comanda.id)}>
                     Ver Foto
                   </Button>
-                  <Button fullWidth color="error" variant="outlined" sx={{ minHeight: 40 }} onClick={() => handleDiscard(comanda.id)}>
-                    Descartar
-                  </Button>
+                  {comanda.cancelled ? (
+                    <Typography variant="caption" color="error" sx={{ alignSelf: 'center', flex: 1 }}>
+                      Cancelada{comanda.cancelledByName ? ` por ${comanda.cancelledByName}` : ''}: {comanda.cancelReason}
+                    </Typography>
+                  ) : (
+                    <Button fullWidth color="error" variant="outlined" sx={{ minHeight: 40 }} onClick={() => handleDiscard(comanda.id)}>
+                      {report.isTest ? 'Descartar' : 'Cancelar'}
+                    </Button>
+                  )}
                 </Stack>
               </CardContent>
             </Card>
@@ -2548,9 +2637,15 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
                     <Button size="small" variant="outlined" onClick={() => setSelectedPhoto(comanda.id)}>
                       Ver Foto
                     </Button>
-                    <Button size="small" color="error" onClick={() => handleDiscard(comanda.id)}>
-                      Descartar
-                    </Button>
+                    {comanda.cancelled ? (
+                      <Typography variant="caption" color="error">
+                        Cancelada{comanda.cancelledByName ? ` por ${comanda.cancelledByName}` : ''}: {comanda.cancelReason}
+                      </Typography>
+                    ) : (
+                      <Button size="small" color="error" onClick={() => handleDiscard(comanda.id)}>
+                        {report.isTest ? 'Descartar' : 'Cancelar'}
+                      </Button>
+                    )}
                   </Stack>
                 </TableCell>
               </TableRow>
@@ -2601,6 +2696,24 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
           )}
         </Paper>
       )}
+
+      <Dialog open={cancelPhotoId !== null} onClose={() => setCancelPhotoId(null)} fullWidth maxWidth="xs">
+        <DialogTitle>Cancelar comanda fotografada</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            A comanda continua no histórico, mas sai dos totais. Informe a justificativa.
+          </DialogContentText>
+          <TextField autoFocus fullWidth required label="Justificativa" value={cancelPhotoReason}
+            onChange={(e) => setCancelPhotoReason(e.target.value)} inputProps={{ maxLength: 200 }}
+            helperText="De 10 a 200 caracteres" />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCancelPhotoId(null)}>Voltar</Button>
+          <Button color="error" variant="contained" disabled={cancelPhotoReason.trim().length < 10} onClick={confirmCancelPhoto}>
+            Cancelar comanda
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={selectedPhoto !== null} onClose={() => setSelectedPhoto(null)} maxWidth="md" fullWidth fullScreen={isMobile}>
         <DialogTitle>

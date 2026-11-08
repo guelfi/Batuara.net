@@ -46,6 +46,8 @@ namespace Batuara.Application.Bingo.Models
     public class BingoAdminMenuItemDto : BingoMenuItemDto
     {
         public int SortOrder { get; set; }
+        /// <summary>Nome ja usado em algum pedido ou comanda por foto: nao pode ser renomeado nem excluido.</summary>
+        public bool IsUsed { get; set; }
     }
 
     public class BingoPublicInfoDto

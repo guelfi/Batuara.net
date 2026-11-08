@@ -200,7 +200,7 @@ const ComandaFotoPage: React.FC = () => {
         <Paper sx={{ p: 2, mb: 2 }}>
           {dup && comanda.trim() === dupFor.trim() && (
             <Alert severity="error" sx={{ mb: 1 }}>
-              A comanda {comanda.trim()} já foi fechada às {new Date(dup.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} ({brl(dup.total)}). Confira o número; se foi engano, descarte a anterior na lista e tente de novo.
+              A comanda {comanda.trim()} já foi fechada às {new Date(dup.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} ({brl(dup.total)}). Confira o número; se foi engano, peça ao administrador para cancelar a anterior no Dashboard.
             </Alert>
           )}
           <Stack direction="row" spacing={1} sx={{ mb: 1 }}>

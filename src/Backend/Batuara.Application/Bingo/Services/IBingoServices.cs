@@ -71,6 +71,7 @@ namespace Batuara.Application.Bingo.Services
         Task<BingoSummaryDto> GetSummaryAsync(int? eventId, CancellationToken cancellationToken = default);
         Task<BingoPayResult> PayTabsAsync(string actorName, BingoAdminPayRequest request, CancellationToken cancellationToken = default);
         Task CancelItemAsync(string actorName, int itemId, string reason, CancellationToken cancellationToken = default);
+        Task CancelTabAsync(string actorName, Guid tabId, string reason, CancellationToken cancellationToken = default);
         Task ResolveContestationAsync(string actorName, int itemId, BingoResolveContestRequest request, CancellationToken cancellationToken = default);
         Task DeliverItemAsync(string actorName, int itemId, CancellationToken cancellationToken = default);
         Task<List<BingoAccountDto>> GetTableTabsAsync(int? eventId, int mesa, CancellationToken cancellationToken = default);

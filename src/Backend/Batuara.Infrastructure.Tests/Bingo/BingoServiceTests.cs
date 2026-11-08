@@ -1278,8 +1278,10 @@ namespace Batuara.Infrastructure.Tests.Bingo
             (await f.Admin.GetWaitersAsync(created.Id)).Should().ContainSingle(w => w.HouseMemberId == memberId);
             (await f.Admin.GetMenuAsync(1)).Should().HaveCount(16);
 
-            var empty = await f.Admin.CreateEventAsync(new BingoCreateEventRequest { Name = "Vazio", EventDate = new DateTime(2027, 6, 1) });
-            (await f.Admin.GetMenuAsync(empty.Id)).Should().BeEmpty();
+            // sem origem informada, espelha o ultimo evento regular (nunca o de teste)
+            var mirrored = await f.Admin.CreateEventAsync(new BingoCreateEventRequest { Name = "Espelho", EventDate = new DateTime(2027, 6, 1) });
+            (await f.Admin.GetMenuAsync(mirrored.Id)).Should().HaveCount(16);
+            (await f.Admin.GetMenuAsync(mirrored.Id)).Single(x => x.Name == "Salada").IsAvailable.Should().BeFalse();
             await ShouldThrowAsync(() => f.Admin.CreateEventAsync(new BingoCreateEventRequest { Name = "X", EventDate = DateTime.UtcNow, CopiarDeEventoId = 999 }), BingoErrorKind.NotFound);
         }
 
@@ -1330,7 +1332,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
-        public async Task Menu_Delete_Should_Hide_Item_Without_Breaking_History()
+        public async Task Menu_Used_Item_Cannot_Be_Deleted_Or_Renamed_But_Unused_Can()
         {
             var f = new Fixture();
             await f.OpenEventAsync();
@@ -1338,10 +1340,22 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await f.OrderAsync(tab.TabId, "Salada", 1);
             var menuId = await f.MenuIdAsync("Salada");
 
-            await f.Admin.DeleteMenuItemAsync(menuId);
+            (await f.Admin.GetMenuAsync(null)).Single(x => x.Name == "Salada").IsUsed.Should().BeTrue();
+            (await f.Admin.GetMenuAsync(null)).Single(x => x.Name == "Água").IsUsed.Should().BeFalse();
 
-            (await f.Admin.GetMenuAsync(null)).Should().NotContain(x => x.Name == "Salada");
-            (await f.Public.GetTabAsync(tab.TabId)).Items.Should().ContainSingle(i => i.Name == "Salada");
+            await ShouldThrowAsync(() => f.Admin.DeleteMenuItemAsync(menuId), BingoErrorKind.Conflict);
+            await ShouldThrowAsync(
+                () => f.Admin.UpdateMenuItemAsync(menuId, new BingoMenuItemRequest { Name = "Salada verde", UnitPrice = 7, IsAvailable = true }),
+                BingoErrorKind.Conflict);
+
+            // preco e disponibilidade podem mudar; a venda antiga mantem o valor da epoca
+            await f.Admin.UpdateMenuItemAsync(menuId, new BingoMenuItemRequest { Name = "Salada", UnitPrice = 9, IsAvailable = true });
+            (await f.Public.GetTabAsync(tab.TabId)).Items.Should().ContainSingle(i => i.Name == "Salada" && i.UnitPrice == 7m);
+
+            // item nunca usado pode ser excluido
+            var unused = await f.MenuIdAsync("Mousse de chocolate");
+            await f.Admin.DeleteMenuItemAsync(unused);
+            (await f.Admin.GetMenuAsync(null)).Should().NotContain(x => x.Name == "Mousse de chocolate");
         }
 
         [Fact]
@@ -1928,8 +1942,16 @@ namespace Batuara.Infrastructure.Tests.Bingo
             report.GrandTotal.Should().Be(22m);
             report.ItemTotals.Single(i => i.Name.ToLower() == "água").Quantity.Should().Be(3);
 
-            await svc.DiscardAsync(first.Id, CancellationToken.None);
-            (await svc.GetReportAsync(CancellationToken.None)).GrandTotal.Should().Be(5m);
+            // evento regular: descartar sem justificativa e proibido; cancelar exige motivo
+            var discard = () => svc.DiscardAsync(first.Id, CancellationToken.None);
+            await discard.Should().ThrowAsync<BingoException>();
+            var noReason = () => svc.CancelAsync(first.Id, "curto", "Admin", CancellationToken.None);
+            await noReason.Should().ThrowAsync<BingoException>();
+            await svc.CancelAsync(first.Id, "Lançada em duplicidade", "Admin", CancellationToken.None);
+            var after = await svc.GetReportAsync(CancellationToken.None);
+            after.GrandTotal.Should().Be(5m);
+            after.Count.Should().Be(1);
+            after.Comandas.Should().Contain(c => c.Id == first.Id && c.Cancelled && c.CancelReason == "Lançada em duplicidade");
 
             var act = () => svc.ExtractAsync(new ComandaFotoExtractRequest { ImageBase64 = photo }, CancellationToken.None);
             await act.Should().ThrowAsync<BingoException>();
@@ -1994,44 +2016,82 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await f.Admin.SuspendEventAsync(1);
             (await f.Public.GetInfoAsync()).IsOpen.Should().BeFalse();
 
-            // a vaga de evento aberto fica livre: o evento de teste pode abrir
+            // a vaga de evento aberto fica livre: o evento de teste (2) pode abrir
             await f.Admin.OpenEventAsync(2);
-            var blocked = () => f.Admin.ResumeEventAsync(1);
-            await blocked.Should().ThrowAsync<BingoException>();
+            await ShouldThrowAsync(() => f.Admin.ResumeEventAsync(1), BingoErrorKind.Conflict);
 
-            await f.Admin.CloseEventAsync(2);
+            // o teste e permanente: nao encerra, so suspende
+            await ShouldThrowAsync(() => f.Admin.CloseEventAsync(2), BingoErrorKind.Conflict);
+            await f.Admin.SuspendEventAsync(2);
             var resumed = await f.Admin.ResumeEventAsync(1);
             resumed.Status.Should().Be(BingoEventStatus.Open);
 
-            var notOpen = () => f.Admin.SuspendEventAsync(2);
-            await notOpen.Should().ThrowAsync<BingoException>();
+            await ShouldThrowAsync(() => f.Admin.SuspendEventAsync(2), BingoErrorKind.Conflict);
         }
-            [Fact]
-        public async Task Event_Should_Reopen_And_Reset_Clears_Photo_Tabs()
+
+        [Fact]
+        public async Task Event_Should_Reopen_Regular_And_Reset_Only_Test_Clearing_Photo_Tabs()
         {
             var f = new Fixture();
+            var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), new FakeConfig(), Options.Create(new ComandaFotoOptions()));
+            ComandaFotoSaveRequest Req() => new()
+            {
+                ImageBase64 = Convert.ToBase64String(new byte[] { 1 }),
+                Items = new() { new() { Name = "Água", Quantity = 1, UnitPrice = 5 } }
+            };
+
+            // evento de teste (2) recebe uma comanda por foto
+            await f.Admin.OpenEventAsync(2);
+            await svc.SaveAsync(Req(), CancellationToken.None);
+            await f.Admin.SuspendEventAsync(2);
+
+            // evento regular (1): abre, encerra e so reabre se nao houver outro aberto
+            await f.Admin.OpenEventAsync(1);
+            await f.Admin.CloseEventAsync(1);
+            await f.Admin.ResumeEventAsync(2);
+            await ShouldThrowAsync(() => f.Admin.ReopenEventAsync(1), BingoErrorKind.Conflict);
+            await f.Admin.SuspendEventAsync(2);
+            var reopened = await f.Admin.ReopenEventAsync(1);
+            reopened.Status.Should().Be(BingoEventStatus.Open);
+            f.Db.BingoEvents.Single(e => e.Id == 1).ClosedAt.Should().BeNull();
+
+            // zerar: so no teste, e apaga tambem as comandas por foto
+            await ShouldThrowAsync(() => f.Admin.ResetAsync(1, true), BingoErrorKind.Validation);
+            await f.Admin.ResetAsync(2, true);
+            f.Db.BingoPhotoTabs.Count(x => x.EventId == 2).Should().Be(0);
+        }
+
+        [Fact]
+        public async Task Admin_Should_Cancel_Tab_With_Justification_And_Test_Discard_Is_Free()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync(1);
+            var tab = await f.NewTabAsync("11999990001", 3);
+            await f.OrderAsync(tab.TabId, "Água", 2);
+
+            await ShouldThrowAsync(() => f.Admin.CancelTabAsync("Admin", tab.TabId, "curto", CancellationToken.None), BingoErrorKind.Validation);
+            await f.Admin.CancelTabAsync("Admin", tab.TabId, "Comanda aberta por engano na mesa 3", CancellationToken.None);
+
+            var items = (await f.Public.GetTabAsync(tab.TabId)).Items;
+            items.Should().OnlyContain(i => i.Status == BingoOrderItemStatus.Cancelled);
+            f.Db.BingoOrderItems.Where(i => i.TabId == tab.TabId).Select(i => i.CancelReason).Distinct().Single()
+                .Should().Be("Comanda aberta por engano na mesa 3");
+            await ShouldThrowAsync(() => f.Admin.CancelTabAsync("Admin", tab.TabId, "Cancelar de novo sem itens", CancellationToken.None), BingoErrorKind.Conflict);
+
+            // teste: descartar comanda por foto e livre
+            await f.Admin.SuspendEventAsync(1);
             await f.Admin.OpenEventAsync(2);
             var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), new FakeConfig(), Options.Create(new ComandaFotoOptions()));
-            await svc.SaveAsync(new ComandaFotoSaveRequest
+            var saved = await svc.SaveAsync(new ComandaFotoSaveRequest
             {
                 ImageBase64 = Convert.ToBase64String(new byte[] { 1 }),
                 Items = new() { new() { Name = "Água", Quantity = 1, UnitPrice = 5 } }
             }, CancellationToken.None);
-
-            await f.Admin.CloseEventAsync(2);
-            await f.Admin.OpenEventAsync(1);
-            var blocked = () => f.Admin.ReopenEventAsync(2);
-            await blocked.Should().ThrowAsync<BingoException>();
-
-            await f.Admin.SuspendEventAsync(1);
-            var reopened = await f.Admin.ReopenEventAsync(2);
-            reopened.Status.Should().Be(BingoEventStatus.Open);
-            f.Db.BingoEvents.Single(e => e.Id == 2).ClosedAt.Should().BeNull();
-
-            await f.Admin.ResetAsync(2, true);
-            f.Db.BingoPhotoTabs.Count(x => x.EventId == 2).Should().Be(0);
+            await svc.DiscardAsync(saved.Id, CancellationToken.None);
+            (await svc.GetReportAsync(CancellationToken.None)).Count.Should().Be(0);
         }
-            [Fact]
+
+        [Fact]
         public async Task ComandaFoto_Should_Block_Closing_The_Same_Comanda_Twice()
         {
             var f = new Fixture();
@@ -2054,8 +2114,8 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await svc.SaveAsync(Req(""), CancellationToken.None);
             await svc.SaveAsync(Req(""), CancellationToken.None);
 
-            // descartada a anterior, pode fechar de novo
-            await svc.DiscardAsync(first.Id, CancellationToken.None);
+            // cancelada a anterior (com justificativa), pode fechar de novo
+            await svc.CancelAsync(first.Id, "Fechada por engano na mesa errada", "Admin", CancellationToken.None);
             await svc.SaveAsync(Req("13"), CancellationToken.None);
         }
     }

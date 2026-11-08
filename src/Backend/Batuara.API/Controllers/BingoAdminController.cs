@@ -201,6 +201,20 @@ namespace Batuara.API.Controllers
             return photo is null ? NotFound() : File(photo.Value.Data, photo.Value.ContentType);
         }
 
+        [HttpPost("comandas/{tabId:guid}/cancelar")]
+        public async Task<IActionResult> CancelTab(Guid tabId, [FromBody] BingoCancelItemRequest request, CancellationToken ct)
+        {
+            await service.CancelTabAsync(ActorName(), tabId, request.Reason, ct);
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("comandas-foto/{id:int}/cancelar")]
+        public async Task<IActionResult> CancelPhotoTab(int id, [FromBody] BingoCancelItemRequest request, CancellationToken ct)
+        {
+            await comandaFoto.CancelAsync(id, request.Reason, ActorName(), ct);
+            return Ok(new { success = true });
+        }
+
         [HttpDelete("comandas-foto/{id:int}")]
         public async Task<IActionResult> DiscardPhotoTab(int id, CancellationToken ct)
         {
