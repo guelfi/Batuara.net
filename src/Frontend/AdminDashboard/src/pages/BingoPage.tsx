@@ -15,6 +15,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Divider,
   FormControl,
   FormControlLabel,
   IconButton,
@@ -1357,6 +1358,7 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
 
 /* ---------- Garçons ---------- */
 const WaitersTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void }> = ({ notify, confirm }) => {
+  const isMobile = useIsMobile();
   const [waiters, setWaiters] = useState<BingoWaiter[]>([]);
   const [options, setOptions] = useState<HouseMember[]>([]);
   const [search, setSearch] = useState('');
@@ -1410,6 +1412,21 @@ const WaitersTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void 
   const connected = (w: BingoWaiter) =>
     !!w.lastSeenAt && Date.now() - new Date(w.lastSeenAt).getTime() < 2 * 60 * 1000;
 
+  const askRemove = (w: BingoWaiter) => confirm({
+    title: 'Remover garçom',
+    text: `Remover ${w.name} da escala? A sessão dele será encerrada.`,
+    confirmLabel: 'Remover',
+    onConfirm: async () => {
+      try {
+        await bingoApi.removeWaiter(w.houseMemberId);
+        notify('Garçom removido.', 'success');
+        await load();
+      } catch (e: any) {
+        notify(apiError(e, 'Não foi possível remover o garçom.'), 'error');
+      }
+    },
+  });
+
   if (loading) return <CircularProgress />;
   return (
     <Stack spacing={2}>
@@ -1427,13 +1444,37 @@ const WaitersTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void 
             noOptionsText="Digite ao menos 2 letras do nome"
             renderInput={(params) => <TextField {...params} label="Buscar filho ativo" />}
           />
-          <Button variant="contained" startIcon={<AddIcon />} disabled={!selected} onClick={add}>Escalar</Button>
+          <Button variant="contained" startIcon={<AddIcon />} disabled={!selected} onClick={add}
+            sx={isMobile ? { minHeight: 44 } : undefined}>Escalar</Button>
         </Stack>
         <Typography variant="caption" color="text.secondary">
           O filho precisa ter celular cadastrado para entrar como garçom.
         </Typography>
       </Paper>
 
+      {isMobile ? (
+        <Stack spacing={1.5}>
+          {waiters.map((w) => (
+            <Card key={String(w.houseMemberId)}>
+              <CardContent>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+                  <Typography fontWeight={700} sx={{ minWidth: 0, wordBreak: 'break-word' }}>{w.name}</Typography>
+                  <Chip size="small" color={connected(w) ? 'success' : 'default'}
+                    label={connected(w) ? 'Conectado' : 'Não entrou'} />
+                </Stack>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  Entregas: {w.deliveries}
+                </Typography>
+                <Button fullWidth color="error" variant="outlined" startIcon={<DeleteIcon />}
+                  sx={{ mt: 1.5, minHeight: 40 }} onClick={() => askRemove(w)}>
+                  Remover
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+          {waiters.length === 0 && <Alert severity="info">Nenhum garçom escalado.</Alert>}
+        </Stack>
+      ) : (
       <TableContainer component={Paper}>
         <Table size="small">
           <TableHead>
@@ -1479,9 +1520,10 @@ const WaitersTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void 
           </TableBody>
         </Table>
       </TableContainer>
+      )}
 
       <Box>
-        <Button color="error" variant="outlined" disabled={waiters.length === 0} onClick={() => confirm({
+        <Button fullWidth={isMobile} sx={isMobile ? { minHeight: 40 } : undefined} color="error" variant="outlined" disabled={waiters.length === 0} onClick={() => confirm({
           title: 'Encerrar sessão dos garçons',
           text: 'Todos os garçons serão desconectados e precisarão ser escalados novamente. Confirmar?',
           confirmLabel: 'Encerrar sessões',
@@ -1503,7 +1545,9 @@ const WaitersTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void 
 };
 
 /* ---------- Resumo (conteúdo reutilizado no histórico) ---------- */
-const SummaryView: React.FC<{ summary: BingoSummary }> = ({ summary }) => (
+const SummaryView: React.FC<{ summary: BingoSummary }> = ({ summary }) => {
+  const isMobile = useIsMobile();
+  return (
   <Stack spacing={2}>
     {summary.contestedOpen > 0 && (
       <Alert severity="warning">
@@ -1544,6 +1588,23 @@ const SummaryView: React.FC<{ summary: BingoSummary }> = ({ summary }) => (
       </CardContent></Card>
     </Stack>
     <Typography variant="h6">Por forma de pagamento</Typography>
+    {isMobile ? (
+    <Paper>
+      {summary.byPayment.map((l, i) => (
+        <React.Fragment key={l.label}>
+          {i > 0 && <Divider />}
+          <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ p: 1.5 }}>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography fontWeight={600}>{payLabel(l.label)}</Typography>
+              <Typography variant="caption" color="text.secondary">{l.count ?? '-'} contas</Typography>
+            </Box>
+            <Typography fontWeight={700}>{money(l.total)}</Typography>
+          </Stack>
+        </React.Fragment>
+      ))}
+      {summary.byPayment.length === 0 && <Typography sx={{ p: 1.5 }}>Sem pagamentos.</Typography>}
+    </Paper>
+    ) : (
     <TableContainer component={Paper}>
       <Table size="small">
         <TableHead>
@@ -1561,7 +1622,25 @@ const SummaryView: React.FC<{ summary: BingoSummary }> = ({ summary }) => (
         </TableBody>
       </Table>
     </TableContainer>
+    )}
     <Typography variant="h6">Por item</Typography>
+    {isMobile ? (
+    <Paper>
+      {summary.byItem.map((l, i) => (
+        <React.Fragment key={l.label}>
+          {i > 0 && <Divider />}
+          <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ p: 1.5 }}>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography fontWeight={600} sx={{ wordBreak: 'break-word' }}>{l.label}</Typography>
+              <Typography variant="caption" color="text.secondary">Qtd.: {l.quantity ?? '-'}</Typography>
+            </Box>
+            <Typography fontWeight={700}>{money(l.total)}</Typography>
+          </Stack>
+        </React.Fragment>
+      ))}
+      {summary.byItem.length === 0 && <Typography sx={{ p: 1.5 }}>Sem itens.</Typography>}
+    </Paper>
+    ) : (
     <TableContainer component={Paper}>
       <Table size="small">
         <TableHead><TableRow><TableCell>Item</TableCell><TableCell align="right">Qtd.</TableCell><TableCell align="right">Valor</TableCell></TableRow></TableHead>
@@ -1577,7 +1656,33 @@ const SummaryView: React.FC<{ summary: BingoSummary }> = ({ summary }) => (
         </TableBody>
       </Table>
     </TableContainer>
+    )}
     <Typography variant="h6">Conferência de caixa por garçom</Typography>
+    {isMobile ? (
+    <Paper>
+      {summary.byWaiter.map((w, i) => (
+        <React.Fragment key={w.name}>
+          {i > 0 && <Divider />}
+          <Box sx={{ p: 1.5 }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography fontWeight={600} sx={{ wordBreak: 'break-word' }}>{w.name}</Typography>
+                <Typography variant="caption" color="text.secondary">{w.count} contas</Typography>
+              </Box>
+              <Typography fontWeight={700}>{money(w.total)}</Typography>
+            </Stack>
+            {w.byMethod.map((m) => (
+              <Stack key={m.method} direction="row" justifyContent="space-between" sx={{ mt: 0.5, pl: 1.5 }}>
+                <Typography variant="body2" color="text.secondary">{payLabel(m.method)}</Typography>
+                <Typography variant="body2">{money(m.total)}</Typography>
+              </Stack>
+            ))}
+          </Box>
+        </React.Fragment>
+      ))}
+      {summary.byWaiter.length === 0 && <Typography sx={{ p: 1.5 }}>Sem recebimentos.</Typography>}
+    </Paper>
+    ) : (
     <TableContainer component={Paper}>
       <Table size="small">
         <TableHead>
@@ -1601,8 +1706,10 @@ const SummaryView: React.FC<{ summary: BingoSummary }> = ({ summary }) => (
         </TableBody>
       </Table>
     </TableContainer>
+    )}
   </Stack>
-);
+  );
+};
 
 const SummaryTab: React.FC<{
   events: BingoEvent[];
@@ -1611,6 +1718,7 @@ const SummaryTab: React.FC<{
   confirm: (s: ConfirmState) => void;
   onEventChanged: () => void;
 }> = ({ events, current, notify, confirm, onEventChanged }) => {
+  const isMobile = useIsMobile();
   const [eventId, setEventId] = useState<string>(current?.id ?? '');
   const [summary, setSummary] = useState<BingoSummary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1674,8 +1782,9 @@ const SummaryTab: React.FC<{
 
   return (
     <Stack spacing={2}>
-      <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-        <FormControl sx={{ minWidth: 300 }}>
+      <Stack direction={isMobile ? 'column' : 'row'} spacing={2} alignItems={isMobile ? 'stretch' : 'center'} flexWrap="wrap"
+        sx={isMobile ? { '& .MuiButton-root': { minHeight: 40 } } : undefined}>
+        <FormControl sx={{ minWidth: isMobile ? 0 : 300 }} fullWidth={isMobile}>
           <InputLabel id="sum-ev">Evento</InputLabel>
           <Select labelId="sum-ev" label="Evento" value={eventId} onChange={(e) => setEventId(e.target.value)}>
             {events.map((e) => (
@@ -1707,7 +1816,7 @@ const SummaryTab: React.FC<{
       {summary && <SummaryView summary={summary} />}
       {canReset && (
         <Box>
-          <Button color="error" variant="contained" onClick={() => confirm({
+          <Button fullWidth={isMobile} sx={isMobile ? { minHeight: 40 } : undefined} color="error" variant="contained" onClick={() => confirm({
             title: 'Zerar dados do evento de teste',
             text: 'Apaga todas as comandas e pedidos deste evento de teste (cardápio, mesas e garçons são mantidos). Não há como desfazer.',
             confirmLabel: 'Zerar dados',
@@ -2280,6 +2389,7 @@ interface PhotoTabReport {
 }
 
 const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = ({ notify, current }) => {
+  const isMobile = useIsMobile();
   const [report, setReport] = useState<PhotoTabReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
@@ -2344,15 +2454,15 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
   return (
     <Stack spacing={3}>
       <Paper sx={{ p: 2 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+        <Stack direction={isMobile ? 'column' : 'row'} justifyContent="space-between" alignItems={isMobile ? 'stretch' : 'center'} spacing={isMobile ? 1.5 : 0} sx={{ mb: 2 }}>
           <Typography variant="h6" fontWeight={700}>
             Comandas Fotografadas — {report.eventName}
           </Typography>
-          <Button variant="contained" color="success" onClick={sendPhotoLinkWhatsApp}>
+          <Button variant="contained" color="success" onClick={sendPhotoLinkWhatsApp} sx={isMobile ? { minHeight: 40 } : undefined}>
             Enviar link por WhatsApp
           </Button>
         </Stack>
-        <Stack direction="row" spacing={2} alignItems="baseline">
+        <Stack direction={isMobile ? 'column' : 'row'} spacing={isMobile ? 0.5 : 2} alignItems="baseline">
           <Typography variant="body1">
             <strong>{report.count}</strong> comandas
           </Typography>
@@ -2362,6 +2472,50 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
         </Stack>
       </Paper>
 
+      {isMobile ? (
+        <Stack spacing={1.5}>
+          {report.comandas.map((comanda) => (
+            <Card key={comanda.id}>
+              <CardContent>
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography fontWeight={700} sx={{ wordBreak: 'break-word' }}>
+                      #{comanda.id} · {comanda.label || '—'}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(comanda.createdAt).toLocaleString('pt-BR', {
+                        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                      })}
+                    </Typography>
+                  </Box>
+                  <Typography fontWeight={800} color="primary">{money(comanda.total)}</Typography>
+                </Stack>
+                {comanda.items?.length > 0 && (
+                  <Box sx={{ mt: 1 }}>
+                    <Divider sx={{ mb: 0.5 }} />
+                    {comanda.items.map((it, idx) => (
+                      <Stack key={idx} direction="row" justifyContent="space-between" spacing={1} sx={{ py: 0.25 }}>
+                        <Typography variant="body2" sx={{ minWidth: 0, wordBreak: 'break-word' }}>{it.name}</Typography>
+                        <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
+                          {it.quantity} × {money(it.unitPrice)} = {money(it.quantity * it.unitPrice)}
+                        </Typography>
+                      </Stack>
+                    ))}
+                  </Box>
+                )}
+                <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+                  <Button fullWidth variant="outlined" sx={{ minHeight: 40 }} onClick={() => setSelectedPhoto(comanda.id)}>
+                    Ver Foto
+                  </Button>
+                  <Button fullWidth color="error" variant="outlined" sx={{ minHeight: 40 }} onClick={() => handleDiscard(comanda.id)}>
+                    Descartar
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
+          ))}
+        </Stack>
+      ) : (
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -2405,12 +2559,26 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
           </TableBody>
         </Table>
       </TableContainer>
+      )}
 
       {report.itemTotals.length > 0 && (
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" fontWeight={700} gutterBottom>
             Consolidado por Item
           </Typography>
+          {isMobile ? (
+            <Stack divider={<Divider />}>
+              {report.itemTotals.map((item, idx) => (
+                <Stack key={idx} direction="row" justifyContent="space-between" spacing={1} sx={{ py: 1 }}>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography fontWeight={600} sx={{ wordBreak: 'break-word' }}>{item.name}</Typography>
+                    <Typography variant="caption" color="text.secondary">Qtd.: {item.quantity}</Typography>
+                  </Box>
+                  <Typography fontWeight={700}>{money(item.unitPrice)}</Typography>
+                </Stack>
+              ))}
+            </Stack>
+          ) : (
           <TableContainer>
             <Table size="small">
               <TableHead>
@@ -2431,10 +2599,11 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
               </TableBody>
             </Table>
           </TableContainer>
+          )}
         </Paper>
       )}
 
-      <Dialog open={selectedPhoto !== null} onClose={() => setSelectedPhoto(null)} maxWidth="md" fullWidth>
+      <Dialog open={selectedPhoto !== null} onClose={() => setSelectedPhoto(null)} maxWidth="md" fullWidth fullScreen={isMobile}>
         <DialogTitle>
           Foto da Comanda #{selectedPhoto}
           <IconButton
