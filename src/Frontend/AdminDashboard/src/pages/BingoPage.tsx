@@ -42,6 +42,7 @@ import {
   Add as AddIcon,
   Close as CloseIcon,
   Delete as DeleteIcon,
+  Edit as EditIcon,
   Print as PrintIcon,
   Cast as ProjectIcon,
 } from '@mui/icons-material';
@@ -847,6 +848,8 @@ const MenuTab: React.FC<{
   const [items, setItems] = useState<BingoMenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ name: '', price: 0, isAvailable: true });
+  const isMobile = useIsMobile();
+  const [editing, setEditing] = useState<BingoMenuItem | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -902,6 +905,33 @@ const MenuTab: React.FC<{
     }
   };
 
+  const saveEditing = async () => {
+    if (!editing) return;
+    const old = items.find((i) => i.id === editing.id);
+    if (!old) { setEditing(null); return; }
+    try {
+      await processRowUpdate(editing, old);
+      setEditing(null);
+    } catch (e: any) {
+      notify(e?.message || 'Não foi possível salvar o item.', 'error');
+    }
+  };
+
+  const removeItem = (item: BingoMenuItem) => confirm({
+    title: 'Excluir item',
+    text: `Excluir "${item.name}" do cardápio?`,
+    confirmLabel: 'Excluir',
+    onConfirm: async () => {
+      try {
+        await bingoApi.deleteMenuItem(item.id);
+        notify('Item removido.', 'success');
+        await load();
+      } catch (e: any) {
+        notify(apiError(e, 'Não foi possível remover o item.'), 'error');
+      }
+    },
+  });
+
   const columns: GridColDef<BingoMenuItem>[] = [
     { field: 'sortOrder', headerName: 'Ordem', type: 'number', width: 90, editable: true, align: 'center', headerAlign: 'center' },
     { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180, editable: true },
@@ -943,6 +973,70 @@ const MenuTab: React.FC<{
   ];
 
   if (loading) return <CircularProgress />;
+  if (isMobile) {
+    return (
+      <Stack spacing={1.5}>
+        {items.length === 0 && <Typography color="text.secondary">Nenhum item no cardápio.</Typography>}
+        {items.map((item) => (
+          <Card key={item.id} variant="outlined">
+            <CardContent sx={{ '&:last-child': { pb: 2 } }}>
+              <Stack spacing={1}>
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+                  <Typography sx={{ fontWeight: 600, wordBreak: 'break-word' }}>{item.name}</Typography>
+                  <Typography sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{money(item.unitPrice)}</Typography>
+                </Stack>
+                <Typography variant="caption" color="text.secondary">Ordem: {item.sortOrder}</Typography>
+                <FormControlLabel
+                  control={<Switch checked={item.isAvailable} onChange={(e) => toggle(item, e.target.checked)} />}
+                  label="Disponível"
+                />
+                <Stack direction="row" spacing={1}>
+                  <Button variant="outlined" fullWidth startIcon={<EditIcon />} sx={{ minHeight: 40 }}
+                    onClick={() => setEditing({ ...item })}>Editar</Button>
+                  <Button variant="outlined" color="error" fullWidth startIcon={<DeleteIcon />} sx={{ minHeight: 40 }}
+                    onClick={() => removeItem(item)}>Excluir</Button>
+                </Stack>
+              </Stack>
+            </CardContent>
+          </Card>
+        ))}
+        <Dialog fullScreen open={!!editing} onClose={() => setEditing(null)}>
+          <DialogTitle>Editar item</DialogTitle>
+          <DialogContent>
+            {editing && (
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                <TextField fullWidth label="Nome" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+                <CurrencyField fullWidth label="Preço" value={editing.unitPrice} onValueChange={(v) => setEditing({ ...editing, unitPrice: v })} />
+                <TextField fullWidth label="Ordem" type="number" value={editing.sortOrder}
+                  onChange={(e) => setEditing({ ...editing, sortOrder: e.target.value === '' ? ('' as any) : Number(e.target.value) })} />
+              </Stack>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setEditing(null)} sx={{ minHeight: 40 }}>Cancelar</Button>
+            <Button variant="contained" onClick={saveEditing} sx={{ minHeight: 40 }}>Salvar</Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog open={addOpen} onClose={onAddClose} fullScreen>
+          <DialogTitle>Adicionar item</DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField autoFocus fullWidth label="Nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <CurrencyField fullWidth label="Preço" value={form.price} onValueChange={(v) => setForm({ ...form, price: v })} />
+              <FormControlLabel
+                control={<Switch checked={form.isAvailable} onChange={(e) => setForm({ ...form, isAvailable: e.target.checked })} />}
+                label="Disponível"
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={onAddClose} sx={{ minHeight: 40 }}>Cancelar</Button>
+            <Button variant="contained" onClick={add} sx={{ minHeight: 40 }}>Adicionar</Button>
+          </DialogActions>
+        </Dialog>
+      </Stack>
+    );
+  }
   return (
     <Stack spacing={1}>
       <Typography variant="body2" color="text.secondary">Dê dois cliques em uma célula para editar; Enter salva.</Typography>
@@ -984,6 +1078,8 @@ const PaymentMethodsTab: React.FC<{ notify: Notify; addOpen: boolean; onAddClose
   const [methods, setMethods] = useState<BingoPayMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
+  const isMobile = useIsMobile();
+  const [editing, setEditing] = useState<BingoPayMethod | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -1036,6 +1132,18 @@ const PaymentMethodsTab: React.FC<{ notify: Notify; addOpen: boolean; onAddClose
     }
   };
 
+  const saveEditing = async () => {
+    if (!editing) return;
+    const old = methods.find((m) => m.id === editing.id);
+    if (!old) { setEditing(null); return; }
+    try {
+      await processRowUpdate(editing, old);
+      setEditing(null);
+    } catch (e: any) {
+      notify(e?.message || 'Não foi possível salvar.', 'error');
+    }
+  };
+
   const columns: GridColDef<BingoPayMethod>[] = [
     { field: 'sortOrder', headerName: 'Ordem', type: 'number', width: 90, editable: true, align: 'center', headerAlign: 'center' },
     { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180, editable: true },
@@ -1049,6 +1157,56 @@ const PaymentMethodsTab: React.FC<{ notify: Notify; addOpen: boolean; onAddClose
   ];
 
   if (loading) return <CircularProgress />;
+  if (isMobile) {
+    return (
+      <Stack spacing={1.5}>
+        <Alert severity="info">As formas ativas aparecem para o garçom escolher ao cobrar.</Alert>
+        {methods.length === 0 && <Typography color="text.secondary">Nenhuma forma de pagamento.</Typography>}
+        {methods.map((m) => (
+          <Card key={m.id} variant="outlined">
+            <CardContent sx={{ '&:last-child': { pb: 2 } }}>
+              <Stack spacing={1}>
+                <Typography sx={{ fontWeight: 600, wordBreak: 'break-word' }}>{m.name}</Typography>
+                <Typography variant="caption" color="text.secondary">Ordem: {m.sortOrder}</Typography>
+                <FormControlLabel
+                  control={<Switch checked={m.isActive} onChange={(e) => toggle(m, e.target.checked)} />}
+                  label="Ativa"
+                />
+                <Button variant="outlined" fullWidth startIcon={<EditIcon />} sx={{ minHeight: 40 }}
+                  onClick={() => setEditing({ ...m })}>Editar</Button>
+              </Stack>
+            </CardContent>
+          </Card>
+        ))}
+        <Dialog fullScreen open={!!editing} onClose={() => setEditing(null)}>
+          <DialogTitle>Editar forma de pagamento</DialogTitle>
+          <DialogContent>
+            {editing && (
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                <TextField fullWidth label="Nome" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+                <TextField fullWidth label="Ordem" type="number" value={editing.sortOrder}
+                  onChange={(e) => setEditing({ ...editing, sortOrder: e.target.value === '' ? ('' as any) : Number(e.target.value) })} />
+              </Stack>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setEditing(null)} sx={{ minHeight: 40 }}>Cancelar</Button>
+            <Button variant="contained" onClick={saveEditing} sx={{ minHeight: 40 }}>Salvar</Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog open={addOpen} onClose={onAddClose} fullScreen>
+          <DialogTitle>Adicionar forma de pagamento</DialogTitle>
+          <DialogContent>
+            <TextField autoFocus fullWidth label="Nome" value={name} sx={{ mt: 1 }} onChange={(e) => setName(e.target.value)} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={onAddClose} sx={{ minHeight: 40 }}>Cancelar</Button>
+            <Button variant="contained" onClick={add} sx={{ minHeight: 40 }}>Adicionar</Button>
+          </DialogActions>
+        </Dialog>
+      </Stack>
+    );
+  }
   return (
     <Stack spacing={1}>
       <Alert severity="info">As formas ativas aparecem para o garçom escolher ao cobrar.</Alert>
@@ -1089,6 +1247,8 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
   const [loading, setLoading] = useState(true);
   const [qr, setQr] = useState('');
   const [projecting, setProjecting] = useState(false);
+  const isMobile = useIsMobile();
+  const btnSx = isMobile ? { minHeight: 40 } : undefined;
 
   useEffect(() => {
     bingoApi.getTableCount()
@@ -1119,10 +1279,12 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
     <Stack spacing={2}>
       <Paper sx={{ p: 2 }}>
         <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={2}
-          alignItems={{ xs: 'stretch', sm: 'center' }}
+          direction={isMobile ? 'row' : { xs: 'column', sm: 'row' }}
+          spacing={isMobile ? 0 : 2}
+          alignItems={isMobile ? 'center' : { xs: 'stretch', sm: 'center' }}
           justifyContent="center"
+          flexWrap={isMobile ? 'wrap' : undefined}
+          gap={isMobile ? 1.5 : undefined}
           className="bingo-no-print"
         >
           <TextField
@@ -1133,13 +1295,13 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
             disabled={locked}
             onChange={(e) => setCount(e.target.value)}
             inputProps={{ min: 1, max: 500 }}
-            sx={{ width: 190 }}
+            sx={isMobile ? { flex: '1 1 160px', minWidth: 0 } : { width: 190 }}
           />
-          <Button variant="contained" onClick={save} disabled={locked}>Salvar</Button>
-          <Button variant="contained" color="secondary" startIcon={<PrintIcon />} onClick={() => window.print()} disabled={!qr}>
+          <Button variant="contained" onClick={save} disabled={locked} sx={btnSx}>Salvar</Button>
+          <Button variant="contained" color="secondary" startIcon={<PrintIcon />} onClick={() => window.print()} disabled={!qr} sx={btnSx}>
             Imprimir
           </Button>
-          <Button variant="outlined" startIcon={<ProjectIcon />} onClick={() => setProjecting(true)} disabled={!qr}>
+          <Button variant="outlined" startIcon={<ProjectIcon />} onClick={() => setProjecting(true)} disabled={!qr} sx={btnSx}>
             Projetar QR
           </Button>
           <Box
