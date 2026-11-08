@@ -66,6 +66,8 @@ const ComandaFotoPage: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [comanda, setComanda] = useState('');
   const [nome, setNome] = useState('');
+  const [dupFor, setDupFor] = useState('');
+  const [dup, setDup] = useState<{ id: number; label: string; total: number; createdAt: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -107,6 +109,8 @@ const ComandaFotoPage: React.FC = () => {
         const { comandaNumber, customerName } = r.data.data;
         setComanda(String(comandaNumber ?? ''));
         setNome(String(customerName ?? ''));
+        setDup(r.data.data.duplicate ?? null);
+        setDupFor(String(comandaNumber ?? ''));
       } catch (e) {
         setItems([]);
         setError(`${errMsg(e)} Digite os itens abaixo.`);
@@ -138,12 +142,13 @@ const ComandaFotoPage: React.FC = () => {
     setBusy('Fechando comanda...');
     setError(null);
     try {
-      await http.post('/comanda-foto', { label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), items, imageBase64: photo });
+      await http.post('/comanda-foto', { comandaNumber: comanda.trim(), label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), items, imageBase64: photo });
       // Limpa tudo e volta ao estado inicial
       setPhoto(null);
       setItems([]);
       setComanda('');
       setNome('');
+      setDup(null);
       setError(null);
     } catch (e) {
       setError(errMsg(e));
@@ -189,6 +194,11 @@ const ComandaFotoPage: React.FC = () => {
 
       {photo ? (
         <Paper sx={{ p: 2, mb: 2 }}>
+          {dup && comanda.trim() === dupFor.trim() && (
+            <Alert severity="error" sx={{ mb: 1 }}>
+              A comanda {comanda.trim()} já foi fechada às {new Date(dup.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} ({brl(dup.total)}). Confira o número; se foi engano, descarte a anterior na lista e tente de novo.
+            </Alert>
+          )}
           <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
             <TextField size="small" label="Comanda" value={comanda} onChange={(e) => setComanda(e.target.value)} inputProps={{ inputMode: 'numeric', maxLength: 10 }} sx={{ width: 110 }} />
             <TextField size="small" fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} inputProps={{ maxLength: 40 }} />
@@ -226,7 +236,7 @@ const ComandaFotoPage: React.FC = () => {
             <Button fullWidth variant="outlined" onClick={() => setPhoto(null)} disabled={!!busy}>
               Descartar
             </Button>
-            <Button fullWidth variant="contained" size="large" onClick={save} disabled={!!busy || items.length === 0}>
+            <Button fullWidth variant="contained" size="large" onClick={save} disabled={!!busy || items.length === 0 || (!!dup && comanda.trim() === dupFor.trim())}>
               Fechar comanda
             </Button>
           </Stack>

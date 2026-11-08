@@ -2031,5 +2031,32 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await f.Admin.ResetAsync(2, true);
             f.Db.BingoPhotoTabs.Count(x => x.EventId == 2).Should().Be(0);
         }
+            [Fact]
+        public async Task ComandaFoto_Should_Block_Closing_The_Same_Comanda_Twice()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), new FakeConfig(), Options.Create(new ComandaFotoOptions()));
+            ComandaFotoSaveRequest Req(string number) => new()
+            {
+                ComandaNumber = number,
+                ImageBase64 = Convert.ToBase64String(new byte[] { 1 }),
+                Items = new() { new() { Name = "Água", Quantity = 1, UnitPrice = 5 } }
+            };
+
+            var first = await svc.SaveAsync(Req("13"), CancellationToken.None);
+
+            var dup = () => svc.SaveAsync(Req(" 013 "), CancellationToken.None);
+            (await dup.Should().ThrowAsync<BingoException>()).Which.Code.Should().Be("duplicate_comanda");
+
+            // outra comanda e comanda sem numero nao sao bloqueadas
+            await svc.SaveAsync(Req("14"), CancellationToken.None);
+            await svc.SaveAsync(Req(""), CancellationToken.None);
+            await svc.SaveAsync(Req(""), CancellationToken.None);
+
+            // descartada a anterior, pode fechar de novo
+            await svc.DiscardAsync(first.Id, CancellationToken.None);
+            await svc.SaveAsync(Req("13"), CancellationToken.None);
+        }
     }
 }

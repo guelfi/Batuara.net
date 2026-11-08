@@ -15,8 +15,18 @@ namespace Batuara.Application.Bingo.Models
         public string MediaType { get; set; } = "image/jpeg";
     }
 
+    public class ComandaFotoDuplicate
+    {
+        public int Id { get; set; }
+        public string Label { get; set; } = string.Empty;
+        public decimal Total { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
     public class ComandaFotoExtractResult
     {
+        /// <summary>Preenchido quando o numero lido ja foi fechado neste evento.</summary>
+        public ComandaFotoDuplicate? Duplicate { get; set; }
         public string? CustomerName { get; set; }
         public string? ComandaNumber { get; set; }
         public List<ComandaFotoItem> Items { get; set; } = new();
@@ -27,6 +37,7 @@ namespace Batuara.Application.Bingo.Models
     public class ComandaFotoSaveRequest
     {
         public string? Label { get; set; }
+        public string? ComandaNumber { get; set; }
         public List<ComandaFotoItem> Items { get; set; } = new();
         public string ImageBase64 { get; set; } = string.Empty;
     }

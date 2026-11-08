@@ -66,7 +66,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 "Cardápio oficial:\n" + menuText + "\n" +
                 "REGRAS: 1) O consumo é marcado SOMENTE na coluna QUANTIDADE (tracinhos, números ou riscos à direita do VALOR UNITÁRIO). Linhas sem marca nessa coluna NÃO entram. " +
                 "2) Números escritos à mão ao lado ou dentro do nome do produto (ex.: '(2)' junto de Cerveja Heineken ou Cervejas diversas) fazem parte do item, indicam o pacote vendido, e NÃO são quantidade consumida: ignore-os. " +
-                "3) quantity = número de marcas na coluna QUANTIDADE (tracinho = 1). unitPrice = valor impresso na coluna VALOR UNITÁRIO da própria linha, sem dividir nem multiplicar; use o cardápio só se o valor impresso estiver ilegível. " +
+                "3) CONTAGEM: cada traço feito à mão conta 1, em qualquer direção. Um 'L' ou 'Γ' (um traço vertical mais um horizontal) = 2; '||' = 2; '///' = 3. Grupo de cinco: quatro traços paralelos cortados por um traço transversal = 5; um quadrado (4 lados) cortado por uma diagonal = 5. Some grupos e traços soltos (ex.: um grupo de 5 e mais 2 traços = 7). quantity = total contado. unitPrice = valor impresso na coluna VALOR UNITÁRIO da própria linha, sem dividir nem multiplicar; use o cardápio só se o valor impresso estiver ilegível. " +
                 "4) name = nome exato do cardápio, matched=true. " +
                 "5) Linha manuscrita fora do cardápio (ex.: 'Batidas'): inclua só se tiver marca na coluna QUANTIDADE, com o preço escrito e matched=false; sem marca, ignore. " +
                 "6) Ignore linhas riscadas. Em notes, avise se a foto estiver ilegível ou cortada.";
@@ -171,6 +171,8 @@ namespace Batuara.Infrastructure.Bingo.Services
             // Conferencia real no backend: nao confia no "matched" do modelo.
             ValidateAgainstMenu(parsed.Items, menu.Select(m => m.Name));
             parsed.Total = SumTotal(parsed.Items);
+            var dup = await FindDuplicateAsync(ev.Id, NormalizeNumber(parsed.ComandaNumber), ct);
+            parsed.Duplicate = dup == null ? null : new ComandaFotoDuplicate { Id = dup.Id, Label = dup.Label, Total = dup.Total, CreatedAt = dup.CreatedAt };
             return parsed;
         }
 
@@ -198,9 +200,18 @@ namespace Batuara.Infrastructure.Bingo.Services
             ValidateAgainstMenu(items, menuNames);
 
             var total = SumTotal(items);
+            var number = NormalizeNumber(request.ComandaNumber);
+            var existing = await FindDuplicateAsync(ev.Id, number, ct);
+            if (existing != null)
+            {
+                throw new BingoException(BingoErrorKind.Conflict,
+                    $"A comanda {number} já foi fechada às {existing.CreatedAt.AddHours(-3):HH:mm} (R$ {existing.Total:0.00}). Se foi engano, descarte a anterior na lista e feche de novo.",
+                    "duplicate_comanda");
+            }
+
             var label = (request.Label ?? string.Empty).Trim();
             var entity = new BingoPhotoTab(ev.Id, label.Length > 60 ? label[..60] : label,
-                JsonSerializer.Serialize(items, Json), total, photo);
+                JsonSerializer.Serialize(items, Json), total, photo, number);
             Db.BingoPhotoTabs.Add(entity);
             await Db.SaveChangesAsync(ct);
             return ToDto(entity);
@@ -310,6 +321,35 @@ namespace Batuara.Infrastructure.Bingo.Services
             }
 
             return new ComandaFotoItem { Name = found.Name, Quantity = 1, UnitPrice = request.UnitPrice, Matched = true };
+        }
+
+        private static string? NormalizeNumber(string? raw)
+        {
+            var v = (raw ?? string.Empty).Trim();
+            if (v.Length == 0)
+            {
+                return null;
+            }
+
+            if (v.All(char.IsDigit))
+            {
+                v = v.TrimStart('0');
+                return v.Length == 0 ? "0" : (v.Length > 10 ? v[..10] : v);
+            }
+
+            v = v.ToUpperInvariant();
+            return v.Length > 10 ? v[..10] : v;
+        }
+
+        private Task<BingoPhotoTab?> FindDuplicateAsync(int eventId, string? number, CancellationToken ct)
+        {
+            if (number == null)
+            {
+                return Task.FromResult<BingoPhotoTab?>(null);
+            }
+
+            return Db.BingoPhotoTabs.FirstOrDefaultAsync(
+                x => x.EventId == eventId && x.IsActive && x.ComandaNumber == number, ct);
         }
 
         private static string Normalize(string value)

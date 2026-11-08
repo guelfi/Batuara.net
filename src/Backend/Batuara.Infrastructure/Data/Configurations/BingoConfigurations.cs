@@ -286,6 +286,7 @@ namespace Batuara.Infrastructure.Data.Configurations
             builder.HasKey(x => x.Id);
             builder.Property(x => x.Id).ValueGeneratedOnAdd();
             builder.Property(x => x.Label).IsRequired().HasMaxLength(60);
+            builder.Property(x => x.ComandaNumber).HasMaxLength(10);
             builder.Property(x => x.ItemsJson).IsRequired();
             builder.Property(x => x.Total).HasPrecision(10, 2).IsRequired();
             builder.Property(x => x.Photo).IsRequired();
