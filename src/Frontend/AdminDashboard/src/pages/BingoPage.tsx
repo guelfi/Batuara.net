@@ -48,6 +48,7 @@ import {
 import QRCode from 'qrcode';
 import apiService from '../services/api';
 import CurrencyField from '../components/common/CurrencyField';
+import useIsMobile from '../hooks/useIsMobile';
 import bingoApi from '../services/bingoApi';
 import {
   BingoEvent,
@@ -1460,7 +1461,9 @@ const EventsTab: React.FC<{
   notify: Notify;
   confirm: (s: ConfirmState) => void;
   onChanged: () => void;
-}> = ({ events, notify, confirm, onChanged }) => {
+  /** No celular: caixa de selecao da navegacao, ao lado do botao "Novo evento". */
+  navSlot?: React.ReactNode;
+}> = ({ events, notify, confirm, onChanged, navSlot }) => {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: '', eventDate: '', copyFrom: '' });
   const [history, setHistory] = useState<BingoEvent | null>(null);
@@ -1570,9 +1573,10 @@ const EventsTab: React.FC<{
 
   return (
     <Stack spacing={2}>
-      <Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreating(true)}>Novo evento</Button>
-      </Box>
+      <Stack direction="row" spacing={1} alignItems="center">
+        {navSlot}
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreating(true)} sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>Novo evento</Button>
+      </Stack>
       <TableContainer component={Paper}>
         <Table size="small">
           <TableHead>
@@ -1846,6 +1850,17 @@ const BingoPage: React.FC = () => {
   }, [events]);
 
   const needsEvent = tab !== 0;
+  const isMobile = useIsMobile();
+  const TAB_LABELS = ['Eventos', 'Painel ao vivo', 'Cardápio', 'Mesas', 'Garçons', 'Formas de pagamento', 'Resumo', 'Comandas Foto'];
+  const navSelect = (
+    <FormControl size="small" sx={{ flex: 1, minWidth: 0 }}>
+      <Select value={tab} onChange={(e) => setTab(Number(e.target.value))} inputProps={{ 'aria-label': 'Seção do Bingo' }}>
+        {TAB_LABELS.map((l, i) => (
+          <MenuItem key={l} value={i}>{l}</MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  );
 
   return (
     <Box>
@@ -1862,25 +1877,34 @@ const BingoPage: React.FC = () => {
         )}
       </Stack>
 
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ minWidth: 0, flex: '0 1 auto' }}>
-          <Tab label="Eventos" />
-          <Tab label="Painel ao vivo" />
-          <Tab label="Cardápio" />
-          <Tab label="Mesas" />
-          <Tab label="Garçons" />
-          <Tab label="Formas de pagamento" />
-          <Tab label="Resumo" />
-          <Tab label="Comandas Foto" />
-        </Tabs>
-        <Box sx={{ flex: 1 }} />
-        {tab === 2 && (
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddMenuOpen(true)}>Adicionar item</Button>
-        )}
-        {tab === 5 && (
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddPayOpen(true)}>Adicionar forma</Button>
-        )}
-      </Stack>
+      {isMobile ? (
+        tab !== 0 && (
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+            {navSelect}
+            {tab === 2 && (
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddMenuOpen(true)} sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>Adicionar</Button>
+            )}
+            {tab === 5 && (
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddPayOpen(true)} sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>Adicionar</Button>
+            )}
+          </Stack>
+        )
+      ) : (
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+          <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ minWidth: 0, flex: '0 1 auto' }}>
+            {TAB_LABELS.map((l) => (
+              <Tab key={l} label={l} />
+            ))}
+          </Tabs>
+          <Box sx={{ flex: 1 }} />
+          {tab === 2 && (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddMenuOpen(true)}>Adicionar item</Button>
+          )}
+          {tab === 5 && (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddPayOpen(true)}>Adicionar forma</Button>
+          )}
+        </Stack>
+      )}
 
       {eventsLoading ? (
         <CircularProgress />
@@ -1888,7 +1912,7 @@ const BingoPage: React.FC = () => {
         <Alert severity="info">Não há evento atual. Crie ou abra um evento na aba Eventos.</Alert>
       ) : (
         <>
-          {tab === 0 && <EventsTab events={events} notify={notify} confirm={setConfirmState} onChanged={loadEvents} />}
+          {tab === 0 && <EventsTab events={events} notify={notify} confirm={setConfirmState} onChanged={loadEvents} navSlot={isMobile ? navSelect : undefined} />}
           {tab === 1 && <LivePanel event={current} notify={notify} confirm={setConfirmState} onEventChanged={loadEvents} />}
           {tab === 2 && (
             <MenuTab notify={notify} confirm={setConfirmState} addOpen={addMenuOpen} onAddClose={() => setAddMenuOpen(false)} />
