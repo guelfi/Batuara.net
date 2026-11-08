@@ -22,8 +22,8 @@ interface Item {
 }
 
 const TOKEN_KEY = 'comanda_foto_token';
-// # | descrição | valor | qtd | total | remover
-const ITEM_COLS = '18px minmax(0,1fr) 54px 42px 62px 22px';
+// # | descrição | valor | × | qtd | = | total
+const ITEM_COLS = '18px minmax(0,1fr) 50px 10px 40px 10px 60px';
 const cellSx = { '& input': { py: 0.75, px: 0.75, fontSize: 13 } } as const;
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -145,7 +145,7 @@ const ComandaFotoPage: React.FC = () => {
     setBusy('Fechando comanda...');
     setError(null);
     try {
-      await http.post('/comanda-foto', { comandaNumber: comanda.trim(), label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), items, imageBase64: photo });
+      await http.post('/comanda-foto', { comandaNumber: comanda.trim(), items: items.filter((i) => i.quantity > 0), label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), imageBase64: photo });
       // Limpa tudo e volta ao estado inicial
       setPhoto(null);
       setItems([]);
@@ -211,26 +211,26 @@ const ComandaFotoPage: React.FC = () => {
               <span>#</span>
               <span>Descrição</span>
               <span style={{ textAlign: 'right' }}>Valor</span>
-              <span style={{ textAlign: 'right' }}>Qtd</span>
-              <span style={{ textAlign: 'right' }}>Total</span>
               <span />
+              <span style={{ textAlign: 'right' }}>Qtd</span>
+              <span />
+              <span style={{ textAlign: 'right' }}>Total</span>
             </Box>
           )}
           {items.map((it, idx) => (
-            <Box key={idx} sx={{ mb: 0.75 }}>
+            <Box key={idx} sx={{ mb: 0.75, opacity: it.quantity === 0 ? 0.5 : 1 }}>
               <Box sx={{ display: 'grid', gridTemplateColumns: ITEM_COLS, columnGap: 0.5, alignItems: 'center' }}>
                 <Typography variant="caption" color="text.secondary">
                   {idx + 1}
                 </Typography>
                 <TextField size="small" value={it.name} error={!it.matched} sx={cellSx} onChange={(e) => patch(idx, { name: e.target.value, matched: false })} />
                 <TextField size="small" type="number" value={it.unitPrice} sx={{ ...cellSx, '& input': { ...cellSx['& input'], textAlign: 'right' } }} onChange={(e) => patch(idx, { unitPrice: Math.max(0, Number(e.target.value)) })} />
+                <Typography variant="body2" color="text.secondary" align="center">×</Typography>
                 <TextField size="small" type="number" value={it.quantity} sx={{ ...cellSx, '& input': { ...cellSx['& input'], textAlign: 'right' } }} onChange={(e) => patch(idx, { quantity: Math.max(0, Number(e.target.value)) })} />
-                <Typography variant="body2" fontWeight={700} align="right">
+                <Typography variant="body2" color="text.secondary" align="center">=</Typography>
+                <Typography variant="body2" fontWeight={700} align="right" sx={it.quantity === 0 ? { textDecoration: 'line-through', opacity: 0.5 } : undefined}>
                   {(it.quantity * it.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </Typography>
-                <IconButton size="small" aria-label="Remover" onClick={() => setItems((l) => l.filter((_, i) => i !== idx))} sx={{ p: 0.25 }}>
-                  ✕
-                </IconButton>
               </Box>
               {!it.matched && (
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ pl: 3, mt: 0.25 }}>
@@ -254,7 +254,7 @@ const ComandaFotoPage: React.FC = () => {
             <Button fullWidth variant="outlined" onClick={() => setPhoto(null)} disabled={!!busy}>
               Descartar
             </Button>
-            <Button fullWidth variant="contained" size="large" onClick={save} disabled={!!busy || items.length === 0 || (!!dup && comanda.trim() === dupFor.trim())}>
+            <Button fullWidth variant="contained" size="large" onClick={save} disabled={!!busy || items.every((i) => i.quantity <= 0) || (!!dup && comanda.trim() === dupFor.trim())}>
               Fechar comanda
             </Button>
           </Stack>
