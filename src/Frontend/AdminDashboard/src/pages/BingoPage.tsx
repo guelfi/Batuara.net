@@ -66,7 +66,6 @@ import {
   BingoWaiter,
 } from '../types/bingo';
 import { HouseMember } from '../types';
-import useIsMobile from '../hooks/useIsMobile';
 
 const BINGO_URL = 'https://www.batuara.org.br/bingo';
 const POLL_MS = 4000;
