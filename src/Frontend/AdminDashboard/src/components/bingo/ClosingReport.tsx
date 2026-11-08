@@ -15,7 +15,7 @@ const dateBR = (iso: string) => {
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-BR');
 };
 const STATUS_LABEL: Record<string, string> = { Open: 'Aberta', CloseRequested: 'Pediu a conta', Paid: 'Paga' };
-const EVENT_LABEL: Record<string, string> = { Draft: 'Rascunho', Open: 'Aberto', Closed: 'Encerrado' };
+const EVENT_LABEL: Record<string, string> = { Draft: 'Rascunho', Open: 'Aberto', Closed: 'Encerrado', Suspended: 'Suspenso' };
 const PAY_LABEL: Record<string, string> = {
   Cash: 'Dinheiro', Pix: 'Pix', CreditCard: 'Cartão de crédito', DebitCard: 'Cartão de débito', Card: 'Cartão',
 };

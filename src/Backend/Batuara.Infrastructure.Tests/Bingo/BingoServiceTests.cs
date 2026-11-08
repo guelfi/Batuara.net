@@ -1984,5 +1984,27 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await svc.RegisterMenuItemAsync(new ComandaFotoMenuRequest { Name = "batidas", UnitPrice = 12 }, CancellationToken.None);
             f.Db.BingoMenuItems.Count(m => m.Name == "Batidas").Should().Be(1);
         }
+            [Fact]
+        public async Task Event_Should_Suspend_Free_The_Open_Slot_And_Resume()
+        {
+            var f = new Fixture();
+            await f.Admin.OpenEventAsync(1);
+            (await f.Public.GetInfoAsync()).IsOpen.Should().BeTrue();
+
+            await f.Admin.SuspendEventAsync(1);
+            (await f.Public.GetInfoAsync()).IsOpen.Should().BeFalse();
+
+            // a vaga de evento aberto fica livre: o evento de teste pode abrir
+            await f.Admin.OpenEventAsync(2);
+            var blocked = () => f.Admin.ResumeEventAsync(1);
+            await blocked.Should().ThrowAsync<BingoException>();
+
+            await f.Admin.CloseEventAsync(2);
+            var resumed = await f.Admin.ResumeEventAsync(1);
+            resumed.Status.Should().Be(BingoEventStatus.Open);
+
+            var notOpen = () => f.Admin.SuspendEventAsync(2);
+            await notOpen.Should().ThrowAsync<BingoException>();
+        }
     }
 }

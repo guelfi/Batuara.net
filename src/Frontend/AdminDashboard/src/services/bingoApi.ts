@@ -129,6 +129,7 @@ const normalizeEvent = (e: any): BingoEvent => {
   const st = e.status;
   const status: BingoEvent['status'] =
     st === 'Open' || st === 'Aberto' || st === 1 ? 'Open'
+      : st === 'Suspended' || st === 'Suspenso' || st === 3 ? 'Suspended'
       : st === 'Closed' || st === 'Encerrado' || st === 2 ? 'Closed' : 'Draft';
   return {
     id: String(e.id),
@@ -176,6 +177,8 @@ export const bingoApi = {
   createEvent: (data: { name: string; eventDate: string; copiarDeEventoId?: string }) =>
     apiService.post<any>(`${BASE}/eventos`, data),
   openEvent: (id: string) => apiService.post<any>(`${BASE}/eventos/${id}/abrir`),
+  suspendEvent: (id: string) => apiService.post<any>(`${BASE}/eventos/${id}/suspender`),
+  resumeEvent: (id: string) => apiService.post<any>(`${BASE}/eventos/${id}/retomar`),
   closeEvent: (id: string) => apiService.post<any>(`${BASE}/eventos/${id}/encerrar`),
 
   async getEventTabs(id: string): Promise<BingoTab[]> {

@@ -4,7 +4,9 @@ namespace Batuara.Domain.Enums
     {
         Draft,
         Open,
-        Closed
+        Closed,
+        /// <summary>Pausado: bloqueia pedidos e libera a vaga de evento aberto; pode ser retomado.</summary>
+        Suspended
     }
 
     public enum BingoTabStatus

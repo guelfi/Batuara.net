@@ -4,7 +4,7 @@ export type BingoPaymentMethod = 'Card' | 'Pix' | 'Cash';
 export type BingoTabStatus = 'Open' | 'CloseRequested' | 'Paid';
 export type BingoItemStatus = 'Pending' | 'Retrieved' | 'Delivered' | 'Contested' | 'Cancelled';
 
-export type BingoEventStatus = 'Draft' | 'Open' | 'Closed';
+export type BingoEventStatus = 'Draft' | 'Open' | 'Closed' | 'Suspended';
 
 export interface BingoEvent {
   id: string;

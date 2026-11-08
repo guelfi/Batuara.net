@@ -409,12 +409,43 @@ namespace Batuara.Infrastructure.Bingo.Services
             return ToEventDto(ev, await LoadTabsAsync(ev.Id, cancellationToken));
         }
 
-        public async Task<BingoEventDto> CloseEventAsync(int eventId, CancellationToken cancellationToken = default)
+        public async Task<BingoEventDto> SuspendEventAsync(int eventId, CancellationToken cancellationToken = default)
         {
             var ev = await ResolveAdminEventAsync(eventId, cancellationToken);
             if (ev.Status != BingoEventStatus.Open)
             {
-                throw new BingoException(BingoErrorKind.Conflict, "O evento não está aberto.");
+                throw new BingoException(BingoErrorKind.Conflict, "Só um evento aberto pode ser suspenso.");
+            }
+
+            ev.Suspend();
+            await Db.SaveChangesAsync(cancellationToken);
+            return ToEventDto(ev, await LoadTabsAsync(ev.Id, cancellationToken));
+        }
+
+        public async Task<BingoEventDto> ResumeEventAsync(int eventId, CancellationToken cancellationToken = default)
+        {
+            var ev = await ResolveAdminEventAsync(eventId, cancellationToken);
+            if (ev.Status != BingoEventStatus.Suspended)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Só um evento suspenso pode ser retomado.");
+            }
+
+            if (await Db.BingoEvents.AnyAsync(x => x.Status == BingoEventStatus.Open, cancellationToken))
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Já existe um evento aberto. Suspenda ou encerre-o antes de retomar este.");
+            }
+
+            ev.Resume();
+            await Db.SaveChangesAsync(cancellationToken);
+            return ToEventDto(ev, await LoadTabsAsync(ev.Id, cancellationToken));
+        }
+
+        public async Task<BingoEventDto> CloseEventAsync(int eventId, CancellationToken cancellationToken = default)
+        {
+            var ev = await ResolveAdminEventAsync(eventId, cancellationToken);
+            if (ev.Status != BingoEventStatus.Open && ev.Status != BingoEventStatus.Suspended)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "O evento não está aberto nem suspenso.");
             }
 
             ev.Close(DateTime.UtcNow);

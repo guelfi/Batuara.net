@@ -80,6 +80,7 @@ const EVENT_STATUS: Record<BingoEvent['status'], { label: string; color: 'defaul
   Draft: { label: 'Rascunho', color: 'warning' },
   Open: { label: 'Aberto', color: 'success' },
   Closed: { label: 'Encerrado', color: 'default' },
+  Suspended: { label: 'Suspenso', color: 'warning' },
 };
 
 const formatDate = (iso: string) => {
@@ -1584,6 +1585,33 @@ const EventsTab: React.FC<{
                       <Button size="small" variant="contained" onClick={() => openEvent(ev)}>Abrir</Button>
                     )}
                     {ev.status === 'Open' && (
+                      <Button size="small" variant="outlined" onClick={() => confirm({
+                        title: 'Suspender evento',
+                        text: `Suspender "${ev.name}"? Os pedidos ficam bloqueados e nada é apagado. Você poderá retomar depois, e isso libera a vaga para abrir outro evento.`,
+                        confirmLabel: 'Suspender',
+                        onConfirm: async () => {
+                          try {
+                            await bingoApi.suspendEvent(ev.id);
+                            notify('Evento suspenso.', 'success');
+                            onChanged();
+                          } catch (e: any) {
+                            notify(apiError(e, 'Não foi possível suspender o evento.'), 'error');
+                          }
+                        },
+                      })}>Suspender</Button>
+                    )}
+                    {ev.status === 'Suspended' && (
+                      <Button size="small" variant="contained" onClick={async () => {
+                        try {
+                          await bingoApi.resumeEvent(ev.id);
+                          notify('Evento retomado.', 'success');
+                          onChanged();
+                        } catch (e: any) {
+                          notify(apiError(e, 'Não foi possível retomar o evento.'), 'error');
+                        }
+                      }}>Retomar</Button>
+                    )}
+                    {(ev.status === 'Open' || ev.status === 'Suspended') && (
                       <Button size="small" color="error" variant="outlined" onClick={() => confirm({
                         title: 'Encerrar evento',
                         text: `Encerrar "${ev.name}"? Novos pedidos serão bloqueados.`,
