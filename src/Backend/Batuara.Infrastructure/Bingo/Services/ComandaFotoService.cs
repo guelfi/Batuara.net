@@ -66,8 +66,10 @@ namespace Batuara.Infrastructure.Bingo.Services
                 "Leia as linhas de itens consumidos e devolva SOMENTE um JSON, sem texto extra, no formato " +
                 "{\"items\":[{\"name\":string,\"quantity\":number,\"unitPrice\":number,\"matched\":boolean}],\"notes\":string}.\n" +
                 "Cardápio e preços oficiais:\n" + menuText + "\n" +
+                "IMPORTANTE: A tabela tem colunas PRODUTO, VALOR UNITÁRIO e QUANTIDADE. Leia a QUANTIDADE da coluna específica (números ou tracinhos). " +
                 "Regras: associe cada linha ao item mais parecido do cardápio e use o nome e o preço do cardápio (matched=true). " +
-                "Traços, riscos ou contagens como /// ou |||| indicam quantidade. Some linhas repetidas do mesmo item. " +
+                "Traços, riscos ou contagens como /// ou |||| ou números na coluna QUANTIDADE indicam quantas unidades. " +
+                "Some linhas repetidas do mesmo item. " +
                 "Se uma linha não corresponder a nada do cardápio, mantenha o texto lido, use o preço escrito (ou 0) e matched=false. " +
                 "Ignore linhas riscadas/canceladas. Em notes, avise se a foto está ilegível ou cortada.";
 

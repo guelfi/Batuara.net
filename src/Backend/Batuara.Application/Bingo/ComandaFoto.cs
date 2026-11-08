@@ -51,7 +51,7 @@ namespace Batuara.Application.Bingo.Models
     {
         public const string SectionName = "GoogleAI";
         public string ApiKey { get; set; } = string.Empty;
-        public string Model { get; set; } = "gemini-1.5-flash";
+        public string Model { get; set; } = "gemini-flash-latest";
     }
 }
 
