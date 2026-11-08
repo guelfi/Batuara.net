@@ -46,7 +46,6 @@ import {
   Cast as ProjectIcon,
 } from '@mui/icons-material';
 import QRCode from 'qrcode';
-import { useIsMobile } from '../hooks/useIsMobile';
 import apiService from '../services/api';
 import CurrencyField from '../components/common/CurrencyField';
 import useIsMobile from '../hooks/useIsMobile';
