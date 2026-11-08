@@ -1954,7 +1954,8 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
     setLoading(true);
     try {
       const r = await apiService.get<any>('/bingo/admin/comandas-foto');
-      setReport(r.data?.data ?? null);
+      // apiService ja devolve {success,data}: o relatorio esta em r.data
+      setReport(r.data?.comandas ? r.data : r.data?.data ?? null);
     } catch (e: any) {
       notify(apiError(e, 'Não foi possível carregar as comandas fotografadas.'), 'error');
     } finally {

@@ -198,7 +198,8 @@ namespace Batuara.Infrastructure.Bingo.Services
             ValidateAgainstMenu(items, menuNames);
 
             var total = SumTotal(items);
-            var entity = new BingoPhotoTab(ev.Id, request.Label ?? string.Empty,
+            var label = (request.Label ?? string.Empty).Trim();
+            var entity = new BingoPhotoTab(ev.Id, label.Length > 60 ? label[..60] : label,
                 JsonSerializer.Serialize(items, Json), total, photo);
             Db.BingoPhotoTabs.Add(entity);
             await Db.SaveChangesAsync(ct);

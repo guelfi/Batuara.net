@@ -64,7 +64,8 @@ const ComandaFotoPage: React.FC = () => {
   const [build, setBuild] = useState<string>('');
   const [photo, setPhoto] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
-  const [label, setLabel] = useState('');
+  const [comanda, setComanda] = useState('');
+  const [nome, setNome] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -104,7 +105,8 @@ const ComandaFotoPage: React.FC = () => {
         const r = await http.post('/comanda-foto/ler', { imageBase64: b64, mediaType: 'image/jpeg' });
         setItems(r.data.data.items);
         const { comandaNumber, customerName } = r.data.data;
-        setLabel([comandaNumber && `Comanda ${comandaNumber}`, customerName].filter(Boolean).join(' - '));
+        setComanda(String(comandaNumber ?? ''));
+        setNome(String(customerName ?? ''));
       } catch (e) {
         setItems([]);
         setError(`${errMsg(e)} Digite os itens abaixo.`);
@@ -136,11 +138,12 @@ const ComandaFotoPage: React.FC = () => {
     setBusy('Fechando comanda...');
     setError(null);
     try {
-      await http.post('/comanda-foto', { label, items, imageBase64: photo });
+      await http.post('/comanda-foto', { label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), items, imageBase64: photo });
       // Limpa tudo e volta ao estado inicial
       setPhoto(null);
       setItems([]);
-      setLabel('');
+      setComanda('');
+      setNome('');
       setError(null);
     } catch (e) {
       setError(errMsg(e));
@@ -186,7 +189,10 @@ const ComandaFotoPage: React.FC = () => {
 
       {photo ? (
         <Paper sx={{ p: 2, mb: 2 }}>
-          <TextField size="small" fullWidth label="Comanda / nome" value={label} onChange={(e) => setLabel(e.target.value)} sx={{ mb: 1 }} />
+          <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+            <TextField size="small" label="Comanda" value={comanda} onChange={(e) => setComanda(e.target.value)} inputProps={{ inputMode: 'numeric', maxLength: 10 }} sx={{ width: 110 }} />
+            <TextField size="small" fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} inputProps={{ maxLength: 40 }} />
+          </Stack>
           {items.map((it, idx) => (
             <Stack key={idx} direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
               <TextField size="small" type="number" label="Qtd" value={it.quantity} sx={{ width: 70 }} onChange={(e) => patch(idx, { quantity: Math.max(0, Number(e.target.value)) })} />
