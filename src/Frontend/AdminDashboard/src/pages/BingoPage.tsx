@@ -46,6 +46,7 @@ import {
   Cast as ProjectIcon,
 } from '@mui/icons-material';
 import QRCode from 'qrcode';
+import { useIsMobile } from '../hooks/useIsMobile';
 import apiService from '../services/api';
 import CurrencyField from '../components/common/CurrencyField';
 import bingoApi from '../services/bingoApi';
@@ -1460,7 +1461,9 @@ const EventsTab: React.FC<{
   notify: Notify;
   confirm: (s: ConfirmState) => void;
   onChanged: () => void;
-}> = ({ events, notify, confirm, onChanged }) => {
+  navSlot?: React.ReactNode;
+}> = ({ events, notify, confirm, onChanged, navSlot }) => {
+  const isMobile = useIsMobile();
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: '', eventDate: '', copyFrom: '' });
   const [history, setHistory] = useState<BingoEvent | null>(null);
@@ -1568,12 +1571,115 @@ const EventsTab: React.FC<{
     }
   };
 
+  const renderActions = (ev: BingoEvent) => (
+    <>
+      <Button size="small" variant="outlined" startIcon={<PrintIcon />} disabled={printingId === ev.id} onClick={() => printClosing(ev)}>
+        Fechamento
+      </Button>
+      {ev.status === 'Draft' && (
+        <Button size="small" variant="contained" onClick={() => openEvent(ev)}>Abrir</Button>
+      )}
+      {ev.status === 'Open' && (
+        <Button size="small" variant="outlined" onClick={() => confirm({
+          title: 'Suspender evento',
+          text: `Suspender "${ev.name}"? Os pedidos ficam bloqueados e nada é apagado. Você poderá retomar depois, e isso libera a vaga para abrir outro evento.`,
+          confirmLabel: 'Suspender',
+          onConfirm: async () => {
+            try {
+              await bingoApi.suspendEvent(ev.id);
+              notify('Evento suspenso.', 'success');
+              onChanged();
+            } catch (e: any) {
+              notify(apiError(e, 'Não foi possível suspender o evento.'), 'error');
+            }
+          },
+        })}>Suspender</Button>
+      )}
+      {ev.status === 'Suspended' && (
+        <Button size="small" variant="contained" onClick={async () => {
+          try {
+            await bingoApi.resumeEvent(ev.id);
+            notify('Evento retomado.', 'success');
+            onChanged();
+          } catch (e: any) {
+            notify(apiError(e, 'Não foi possível retomar o evento.'), 'error');
+          }
+        }}>Retomar</Button>
+      )}
+      {(ev.status === 'Open' || ev.status === 'Suspended') && (
+        <Button size="small" color="error" variant="outlined" onClick={() => confirm({
+          title: 'Encerrar evento',
+          text: `Encerrar "${ev.name}"? Novos pedidos serão bloqueados.`,
+          confirmLabel: 'Encerrar',
+          onConfirm: async () => {
+            try {
+              await bingoApi.closeEvent(ev.id);
+              notify('Evento encerrado.', 'success');
+              onChanged();
+            } catch (e: any) {
+              notify(apiError(e, 'Não foi possível encerrar o evento.'), 'error');
+            }
+          },
+        })}>Encerrar</Button>
+      )}
+      {ev.status === 'Closed' && (
+        <>
+          <Button size="small" variant="contained" onClick={() => confirm({
+            title: 'Reabrir evento',
+            text: `Reabrir "${ev.name}"? Os pedidos voltam a ser aceitos e a data de encerramento é limpa.`,
+            confirmLabel: 'Reabrir',
+            onConfirm: async () => {
+              try {
+                await bingoApi.reopenEvent(ev.id);
+                notify('Evento reaberto.', 'success');
+                onChanged();
+              } catch (e: any) {
+                notify(apiError(e, 'Não foi possível reabrir o evento.'), 'error');
+              }
+            },
+          })}>Reabrir</Button>
+          <Button size="small" variant="outlined" onClick={() => openReminders(ev)}>Lembretes de contas</Button>
+          <Button size="small" variant="outlined" onClick={() => showHistory(ev)}>Ver histórico</Button>
+        </>
+      )}
+    </>
+  );
+
   return (
     <Stack spacing={2}>
-      <Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreating(true)}>Novo evento</Button>
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        {navSlot}
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreating(true)} sx={{ flexShrink: 0 }}>Novo evento</Button>
       </Box>
-      <TableContainer component={Paper}>
+      {isMobile && (
+        <Stack spacing={1.5}>
+          {events.map((ev) => (
+            <Card key={ev.id} variant="outlined">
+              <CardContent sx={{ '&:last-child': { pb: 2 } }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="subtitle1" fontWeight={600} sx={{ wordBreak: 'break-word' }}>{ev.name}</Typography>
+                    <Typography variant="body2" color="text.secondary">{formatDate(ev.eventDate)}</Typography>
+                  </Box>
+                  <Stack direction="row" spacing={0.5} flexShrink={0}>
+                    {ev.isTest && <Chip size="small" label="Teste" color="secondary" />}
+                    <Chip size="small" color={EVENT_STATUS[ev.status].color} label={EVENT_STATUS[ev.status].label} />
+                  </Stack>
+                </Stack>
+                <Typography variant="body2" sx={{ mt: 1, mb: 1.5 }}>Total vendido: <strong>{money(ev.totalSold)}</strong></Typography>
+                <Box sx={{
+                  display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1,
+                  '& .MuiButton-root': { minHeight: 40, width: '100%', minWidth: 0 },
+                }}>
+                  {renderActions(ev)}
+                </Box>
+              </CardContent>
+            </Card>
+          ))}
+          {events.length === 0 && <Typography color="text.secondary">Nenhum evento cadastrado.</Typography>}
+        </Stack>
+      )}
+      {!isMobile && <TableContainer component={Paper}>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -1595,75 +1701,7 @@ const EventsTab: React.FC<{
                 <TableCell align="right">{money(ev.totalSold)}</TableCell>
                 <TableCell align="right">
                   <Stack direction="row" spacing={1} justifyContent="flex-end" flexWrap="wrap" useFlexGap sx={{ '& .MuiButton-root': { minWidth: 150 } }}>
-                    <Button size="small" variant="outlined" startIcon={<PrintIcon />} disabled={printingId === ev.id} onClick={() => printClosing(ev)}>
-                      Fechamento
-                    </Button>
-                    {ev.status === 'Draft' && (
-                      <Button size="small" variant="contained" onClick={() => openEvent(ev)}>Abrir</Button>
-                    )}
-                    {ev.status === 'Open' && (
-                      <Button size="small" variant="outlined" onClick={() => confirm({
-                        title: 'Suspender evento',
-                        text: `Suspender "${ev.name}"? Os pedidos ficam bloqueados e nada é apagado. Você poderá retomar depois, e isso libera a vaga para abrir outro evento.`,
-                        confirmLabel: 'Suspender',
-                        onConfirm: async () => {
-                          try {
-                            await bingoApi.suspendEvent(ev.id);
-                            notify('Evento suspenso.', 'success');
-                            onChanged();
-                          } catch (e: any) {
-                            notify(apiError(e, 'Não foi possível suspender o evento.'), 'error');
-                          }
-                        },
-                      })}>Suspender</Button>
-                    )}
-                    {ev.status === 'Suspended' && (
-                      <Button size="small" variant="contained" onClick={async () => {
-                        try {
-                          await bingoApi.resumeEvent(ev.id);
-                          notify('Evento retomado.', 'success');
-                          onChanged();
-                        } catch (e: any) {
-                          notify(apiError(e, 'Não foi possível retomar o evento.'), 'error');
-                        }
-                      }}>Retomar</Button>
-                    )}
-                    {(ev.status === 'Open' || ev.status === 'Suspended') && (
-                      <Button size="small" color="error" variant="outlined" onClick={() => confirm({
-                        title: 'Encerrar evento',
-                        text: `Encerrar "${ev.name}"? Novos pedidos serão bloqueados.`,
-                        confirmLabel: 'Encerrar',
-                        onConfirm: async () => {
-                          try {
-                            await bingoApi.closeEvent(ev.id);
-                            notify('Evento encerrado.', 'success');
-                            onChanged();
-                          } catch (e: any) {
-                            notify(apiError(e, 'Não foi possível encerrar o evento.'), 'error');
-                          }
-                        },
-                      })}>Encerrar</Button>
-                    )}
-                    {ev.status === 'Closed' && (
-                      <>
-                        <Button size="small" variant="contained" onClick={() => confirm({
-                          title: 'Reabrir evento',
-                          text: `Reabrir "${ev.name}"? Os pedidos voltam a ser aceitos e a data de encerramento é limpa.`,
-                          confirmLabel: 'Reabrir',
-                          onConfirm: async () => {
-                            try {
-                              await bingoApi.reopenEvent(ev.id);
-                              notify('Evento reaberto.', 'success');
-                              onChanged();
-                            } catch (e: any) {
-                              notify(apiError(e, 'Não foi possível reabrir o evento.'), 'error');
-                            }
-                          },
-                        })}>Reabrir</Button>
-                        <Button size="small" variant="outlined" onClick={() => openReminders(ev)}>Lembretes de contas</Button>
-                        <Button size="small" variant="outlined" onClick={() => showHistory(ev)}>Ver histórico</Button>
-                      </>
-                    )}
+                    {renderActions(ev)}
                   </Stack>
                 </TableCell>
               </TableRow>
@@ -1671,9 +1709,9 @@ const EventsTab: React.FC<{
             {events.length === 0 && <TableRow><TableCell colSpan={5}>Nenhum evento cadastrado.</TableCell></TableRow>}
           </TableBody>
         </Table>
-      </TableContainer>
+      </TableContainer>}
 
-      <Dialog open={creating} onClose={() => setCreating(false)} fullWidth maxWidth="sm">
+      <Dialog open={creating} onClose={() => setCreating(false)} fullWidth maxWidth="sm" fullScreen={isMobile}>
         <DialogTitle>Novo evento</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -1698,7 +1736,7 @@ const EventsTab: React.FC<{
         </DialogActions>
       </Dialog>
 
-      <Dialog open={!!remEvent} onClose={closeReminders} fullWidth maxWidth="sm">
+      <Dialog open={!!remEvent} onClose={closeReminders} fullWidth maxWidth="sm" fullScreen={isMobile}>
         <DialogTitle>Lembretes de contas em aberto: {remEvent?.name}</DialogTitle>
         <DialogContent>
           {remLoading && <CircularProgress />}
@@ -1714,7 +1752,7 @@ const EventsTab: React.FC<{
               </Typography>
               <Alert severity="info">Cada comanda recebe no máximo um lembrete.</Alert>
               {remPreview.items.length > 0 && (
-                <TableContainer component={Paper} sx={{ maxHeight: 280 }}>
+                <TableContainer component={Paper} sx={{ maxHeight: 280, overflowX: 'auto' }}>
                   <Table size="small" stickyHeader>
                     <TableHead>
                       <TableRow>
@@ -1754,7 +1792,7 @@ const EventsTab: React.FC<{
       </Dialog>
 
       {closing && <ClosingReport event={closing.event} summary={closing.summary} tabs={closing.tabs} onDone={endClosing} />}
-      <Dialog open={!!history} onClose={() => setHistory(null)} fullWidth maxWidth="md">
+      <Dialog open={!!history} onClose={() => setHistory(null)} fullWidth maxWidth="md" fullScreen={isMobile}>
         <DialogTitle>Histórico: {history?.name} ({formatDate(history?.eventDate ?? '')})</DialogTitle>
         <DialogContent>
           {histLoading && <CircularProgress />}
@@ -1763,8 +1801,8 @@ const EventsTab: React.FC<{
             {histTabs.length > 0 && (
               <>
                 <Typography variant="h6">Comandas</Typography>
-                <TableContainer component={Paper}>
-                  <Table size="small">
+                <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+                  <Table size="small" sx={{ minWidth: isMobile ? 560 : undefined }}>
                     <TableHead>
                       <TableRow>
                         <TableCell>Mesa</TableCell><TableCell>Cliente</TableCell>
