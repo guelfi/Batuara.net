@@ -22,6 +22,9 @@ interface Item {
 }
 
 const TOKEN_KEY = 'comanda_foto_token';
+// # | descrição | valor | qtd | total | remover
+const ITEM_COLS = '18px minmax(0,1fr) 54px 42px 62px 22px';
+const cellSx = { '& input': { py: 0.75, px: 0.75, fontSize: 13 } } as const;
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const getToken = (): string => {
@@ -203,34 +206,49 @@ const ComandaFotoPage: React.FC = () => {
             <TextField size="small" label="Comanda" value={comanda} onChange={(e) => setComanda(e.target.value)} inputProps={{ inputMode: 'numeric', maxLength: 10 }} sx={{ width: 110 }} />
             <TextField size="small" fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} inputProps={{ maxLength: 40 }} />
           </Stack>
+          {items.length > 0 && (
+            <Box sx={{ display: 'grid', gridTemplateColumns: ITEM_COLS, columnGap: 0.5, alignItems: 'center', mb: 0.5, color: 'text.secondary', fontSize: 11, fontWeight: 700 }}>
+              <span>#</span>
+              <span>Descrição</span>
+              <span style={{ textAlign: 'right' }}>Valor</span>
+              <span style={{ textAlign: 'right' }}>Qtd</span>
+              <span style={{ textAlign: 'right' }}>Total</span>
+              <span />
+            </Box>
+          )}
           {items.map((it, idx) => (
-            <Stack key={idx} direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-              <TextField size="small" type="number" label="Qtd" value={it.quantity} sx={{ width: 70 }} onChange={(e) => patch(idx, { quantity: Math.max(0, Number(e.target.value)) })} />
-              <TextField
-                size="small"
-                label="Item"
-                value={it.name}
-                fullWidth
-                error={!it.matched}
-                helperText={!it.matched ? 'Fora do cardápio' : undefined}
-                onChange={(e) => patch(idx, { name: e.target.value, matched: false })}
-              />
-              <TextField size="small" type="number" label="R$" value={it.unitPrice} sx={{ width: 90 }} onChange={(e) => patch(idx, { unitPrice: Math.max(0, Number(e.target.value)), matched: true })} />
+            <Box key={idx} sx={{ mb: 0.75 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: ITEM_COLS, columnGap: 0.5, alignItems: 'center' }}>
+                <Typography variant="caption" color="text.secondary">
+                  {idx + 1}
+                </Typography>
+                <TextField size="small" value={it.name} error={!it.matched} sx={cellSx} onChange={(e) => patch(idx, { name: e.target.value, matched: false })} />
+                <TextField size="small" type="number" value={it.unitPrice} sx={{ ...cellSx, '& input': { ...cellSx['& input'], textAlign: 'right' } }} onChange={(e) => patch(idx, { unitPrice: Math.max(0, Number(e.target.value)) })} />
+                <TextField size="small" type="number" value={it.quantity} sx={{ ...cellSx, '& input': { ...cellSx['& input'], textAlign: 'right' } }} onChange={(e) => patch(idx, { quantity: Math.max(0, Number(e.target.value)) })} />
+                <Typography variant="body2" fontWeight={700} align="right">
+                  {(it.quantity * it.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </Typography>
+                <IconButton size="small" aria-label="Remover" onClick={() => setItems((l) => l.filter((_, i) => i !== idx))} sx={{ p: 0.25 }}>
+                  ✕
+                </IconButton>
+              </Box>
               {!it.matched && (
-                <Button size="small" variant="outlined" disabled={!!busy || !it.name.trim() || it.unitPrice <= 0} onClick={() => registerItem(idx)} sx={{ whiteSpace: 'nowrap', minWidth: 0, px: 1 }}>
-                  + Cardápio
-                </Button>
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ pl: 3, mt: 0.25 }}>
+                  <Typography variant="caption" color="error">
+                    Fora do cardápio
+                  </Typography>
+                  <Button size="small" variant="outlined" disabled={!!busy || !it.name.trim() || it.unitPrice <= 0} onClick={() => registerItem(idx)} sx={{ whiteSpace: 'nowrap', minWidth: 0, px: 1, py: 0, fontSize: 12 }}>
+                    + Cardápio
+                  </Button>
+                </Stack>
               )}
-              <IconButton aria-label="Remover" onClick={() => setItems((l) => l.filter((_, i) => i !== idx))}>
-                ✕
-              </IconButton>
-            </Stack>
+            </Box>
           ))}
           <Button size="small" onClick={() => setItems((l) => [...l, { name: '', quantity: 1, unitPrice: 0, matched: true }])}>
             + Adicionar item
           </Button>
-          <Typography variant="h4" fontWeight={800} align="center" sx={{ my: 1 }}>
-            Total {brl(total)}
+          <Typography variant="h5" fontWeight={800} align="center" sx={{ my: 1 }}>
+            Total da comanda {brl(total)}
           </Typography>
           <Stack direction="row" spacing={1}>
             <Button fullWidth variant="outlined" onClick={() => setPhoto(null)} disabled={!!busy}>
