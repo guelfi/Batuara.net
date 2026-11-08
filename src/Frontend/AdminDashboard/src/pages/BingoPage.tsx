@@ -64,6 +64,7 @@ import {
   BingoWaiter,
 } from '../types/bingo';
 import { HouseMember } from '../types';
+import useIsMobile from '../hooks/useIsMobile';
 
 const BINGO_URL = 'https://www.batuara.org.br/bingo';
 const POLL_MS = 4000;
@@ -195,6 +196,7 @@ const CashierDialog: React.FC<{
   const [cancelReason, setCancelReason] = useState('');
   const [resolveItem, setResolveItem] = useState<BingoOrderItem | null>(null);
   const [resolveNote, setResolveNote] = useState('');
+  const isMobile = useIsMobile();
 
   const loadTabs = useCallback(async () => {
     try {
@@ -306,7 +308,7 @@ const CashierDialog: React.FC<{
   };
 
   return (
-    <Dialog open onClose={busy ? undefined : onClose} fullWidth maxWidth="lg">
+    <Dialog open onClose={busy ? undefined : onClose} fullWidth maxWidth="lg" fullScreen={isMobile}>
       <DialogTitle>Fechar conta: mesa {tab.mesa}</DialogTitle>
       <DialogContent dividers>
         {loading && <CircularProgress size={24} />}
@@ -326,6 +328,49 @@ const CashierDialog: React.FC<{
                   <Typography variant="body2" color="text.secondary">Consumo {money(t.total)}</Typography>
                   <Typography sx={{ fontWeight: 700 }}>A cobrar {money(t.amountDue)}</Typography>
                 </Stack>
+                {isMobile ? (
+                  <Stack spacing={1}>
+                    {t.items.map((i) => (
+                      <Box key={i.id} sx={{ p: 1, borderRadius: 1, border: 1, borderColor: 'divider', bgcolor: itemBg(i.status) }}>
+                        <Stack direction="row" justifyContent="space-between" spacing={1}>
+                          <Typography sx={{ fontWeight: 600, textDecoration: i.status === 'Cancelled' ? 'line-through' : undefined }}>
+                            {i.quantity}x {i.name}
+                          </Typography>
+                          <Typography sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{money(i.unitPrice * i.quantity)}</Typography>
+                        </Stack>
+                        <Box sx={{ mt: 0.5 }}>
+                          <Chip size="small" color={ITEM_CHIP[i.status].color} label={ITEM_CHIP[i.status].label} />
+                        </Box>
+                        {itemNote(i) && (
+                          <Typography variant="body2" sx={{ mt: 0.5, color: i.status === 'Contested' ? 'error.main' : 'text.secondary' }}>
+                            {itemNote(i)}
+                          </Typography>
+                        )}
+                        <Stack spacing={1} sx={{ mt: 1 }}>
+                          {(i.status === 'Pending' || i.status === 'Retrieved') && (
+                            <Button fullWidth variant="outlined" disabled={busy} sx={{ minHeight: 40 }}
+                              onClick={() => act(() => bingoApi.deliverItemAdmin(i.id), 'Item marcado como entregue.')}>
+                              Marcar entregue
+                            </Button>
+                          )}
+                          {i.status === 'Contested' && (
+                            <Button fullWidth color="error" variant="outlined" disabled={busy} sx={{ minHeight: 40 }}
+                              onClick={() => { setResolveNote(''); setResolveItem(i); }}>
+                              Resolver contestação
+                            </Button>
+                          )}
+                          {i.status !== 'Cancelled' && (
+                            <Button fullWidth color="error" variant="outlined" disabled={busy} sx={{ minHeight: 40 }}
+                              onClick={() => { setCancelReason(''); setCancelItem(i); }}>
+                              Cancelar
+                            </Button>
+                          )}
+                        </Stack>
+                      </Box>
+                    ))}
+                    {t.items.length === 0 && <Typography variant="body2">Sem itens.</Typography>}
+                  </Stack>
+                ) : (
                 <TableContainer>
                   <Table size="small">
                     <TableHead>
@@ -378,15 +423,21 @@ const CashierDialog: React.FC<{
                     </TableBody>
                   </Table>
                 </TableContainer>
+                )}
               </Paper>
             );
           })}
           {payError && <Alert severity="error">{payError}</Alert>}
         </Stack>
       </DialogContent>
-      <DialogActions sx={{ flexWrap: 'wrap', gap: 1, p: 2, alignItems: 'center' }}>
+      <DialogActions
+        sx={{
+          flexWrap: 'wrap', gap: 1, p: 2, alignItems: 'center',
+          ...(isMobile && { flexDirection: 'column', alignItems: 'stretch', '& > :not(style)': { ml: 0, width: '100%' } }),
+        }}
+      >
         <Typography variant="h6" sx={{ mr: 'auto' }}>Total a cobrar: {money(totalDue)}</Typography>
-        <FormControl size="small" sx={{ minWidth: 200 }}>
+        <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 200 }}>
           <InputLabel id="caixa-forma">Forma de pagamento</InputLabel>
           <Select labelId="caixa-forma" label="Forma de pagamento" value={methodId}
             onChange={(e) => setMethodId(e.target.value === ('' as any) ? '' : Number(e.target.value))}>
@@ -394,17 +445,18 @@ const CashierDialog: React.FC<{
           </Select>
         </FormControl>
         <TextField size="small" label="Observação (opcional)" value={note} onChange={(e) => setNote(e.target.value)}
-          inputProps={{ maxLength: 200 }} sx={{ minWidth: 220 }} />
+          inputProps={{ maxLength: 200 }} sx={{ minWidth: isMobile ? 0 : 220 }} />
         <Tooltip title={blockReason}>
           <span>
-            <Button variant="contained" color="success" disabled={busy || !!blockReason} onClick={pay}>
+            <Button variant="contained" color="success" disabled={busy || !!blockReason} onClick={pay}
+              fullWidth={isMobile} sx={isMobile ? { minHeight: 44 } : undefined}>
               Registrar pagamento
             </Button>
           </span>
         </Tooltip>
-        <Button onClick={onClose} disabled={busy}>Fechar</Button>
+        <Button onClick={onClose} disabled={busy} sx={isMobile ? { minHeight: 44 } : undefined}>Fechar</Button>
         {blockReason && (
-          <Typography variant="body2" color="error" sx={{ width: '100%', textAlign: 'right' }}>{blockReason}</Typography>
+          <Typography variant="body2" color="error" sx={{ width: '100%', textAlign: isMobile ? 'left' : 'right' }}>{blockReason}</Typography>
         )}
       </DialogActions>
 
@@ -456,6 +508,7 @@ const LivePanel: React.FC<{
   const [error, setError] = useState<string | null>(null);
   const [closeTarget, setCloseTarget] = useState<BingoTab | null>(null);
   const [busy, setBusy] = useState(false);
+  const isMobile = useIsMobile();
 
   const load = useCallback(async () => {
     try {
@@ -547,7 +600,8 @@ const LivePanel: React.FC<{
       {error && <Alert severity="error">{error}</Alert>}
       <Paper sx={{ p: 2 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }} justifyContent="space-between">
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap
+            sx={isMobile ? { '& .MuiChip-root': { height: 36, maxWidth: '100%' } } : undefined}>
             <Chip {...chipFilter('open')} label={`Em aberto: ${open.length}`} />
             <Chip {...chipFilter('closing')} color="warning" label={`Pediram a conta: ${closing.length}`} />
             <Chip {...chipFilter('paid')} color="success" label={`Pagas: ${paid.length}`} />
@@ -582,6 +636,8 @@ const LivePanel: React.FC<{
                 color="error"
                 variant="outlined"
                 disabled={busy}
+                fullWidth={isMobile}
+                sx={isMobile ? { minHeight: 44 } : undefined}
                 onClick={() =>
                   confirm({
                     title: 'Encerrar evento',
@@ -596,6 +652,8 @@ const LivePanel: React.FC<{
             ) : (
               <Button
                 variant="contained"
+                fullWidth={isMobile}
+                sx={isMobile ? { minHeight: 44 } : undefined}
                 disabled={busy || event.status === 'Closed'}
                 onClick={() => run(() => bingoApi.openEvent(event.id), 'Evento aberto.')}
               >
@@ -609,6 +667,27 @@ const LivePanel: React.FC<{
       <Typography variant="h6">Mesas</Typography>
       {mesaRows.length === 0 ? (
         <Typography color="text.secondary">Nenhum pedido nas mesas.</Typography>
+      ) : isMobile ? (
+        <Stack spacing={1.5}>
+          {mesaRows.map(({ tab, toDeliver, delivered, contested }) => (
+            <Paper key={tab.tabId} variant="outlined" sx={{ p: 1.5 }}>
+              <Stack direction="row" spacing={1} alignItems="baseline" sx={{ mb: 1 }}>
+                <Typography sx={{ fontWeight: 700 }}>Mesa {tab.mesa}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>{tab.customerName}</Typography>
+              </Stack>
+              <Typography variant="body2" sx={{ color: 'warning.dark', fontWeight: 600 }}>A entregar</Typography>
+              <Typography variant="body2" sx={{ mb: 1 }}>{toDeliver.length ? itemsText(toDeliver) : '—'}</Typography>
+              <Typography variant="body2" sx={{ color: 'success.dark', fontWeight: 600 }}>Entregues</Typography>
+              <Typography variant="body2">{delivered.length ? itemsText(delivered) : '—'}</Typography>
+              {contested.length > 0 && (
+                <>
+                  <Typography variant="body2" sx={{ color: 'error.main', fontWeight: 600, mt: 1 }}>Em contestação</Typography>
+                  <Typography variant="body2" sx={{ color: 'error.main' }}>{itemsText(contested)}</Typography>
+                </>
+              )}
+            </Paper>
+          ))}
+        </Stack>
       ) : (
         <TableContainer component={Paper}>
           <Table size="small">
@@ -647,6 +726,40 @@ const LivePanel: React.FC<{
       )}
 
       <Typography variant="h6">Contas</Typography>
+      {isMobile ? (
+        <Stack spacing={1.5}>
+          {[...closing, ...open, ...paid].filter(matchesFilter).map((t) => (
+            <Paper key={t.tabId} variant="outlined"
+              sx={{ p: 1.5, ...(t.status === 'CloseRequested' && { bgcolor: 'warning.light' }) }}>
+              <Stack direction="row" justifyContent="space-between" spacing={1}>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography sx={{ fontWeight: 700 }}>Mesa {t.mesa}</Typography>
+                  <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>{t.customerName}</Typography>
+                </Box>
+                <Box sx={{ textAlign: 'right' }}>
+                  <Typography sx={{ fontWeight: 700 }}>{money(t.total)}</Typography>
+                  {t.status !== 'Paid' && t.amountDue !== t.total && (
+                    <Typography variant="caption" display="block" color="text.secondary">
+                      a cobrar {money(t.amountDue)}
+                    </Typography>
+                  )}
+                </Box>
+              </Stack>
+              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                {t.status === 'Paid' ? `Paga (${payLabel(t.paymentMethod)}${t.paidByName ? `, ${t.paidByName}` : ''})`
+                  : t.status === 'CloseRequested' ? 'Pediu para encerrar' : 'Aberta'}
+              </Typography>
+              <Box sx={{ mt: 0.5 }}><PhoneBadge tab={t} /></Box>
+              {t.status !== 'Paid' && (
+                <Button fullWidth variant="contained" sx={{ mt: 1, minHeight: 44 }} onClick={() => setCloseTarget(t)}>
+                  Fechar conta
+                </Button>
+              )}
+            </Paper>
+          ))}
+          {tabs.length === 0 && <Typography color="text.secondary">Nenhuma comanda ainda.</Typography>}
+        </Stack>
+      ) : (
       <TableContainer component={Paper}>
         <Table size="small">
           <TableHead>
@@ -694,6 +807,7 @@ const LivePanel: React.FC<{
           </TableBody>
         </Table>
       </TableContainer>
+      )}
 
       {closeTarget && (
         <CashierDialog
