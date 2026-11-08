@@ -105,20 +105,41 @@ namespace Batuara.Infrastructure.Bingo.Services
             };
 
             var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
+            Console.WriteLine($"[ComandaFoto] Chamando Google Gemini API - Modelo: {model}");
+            
             using var message = new HttpRequestMessage(HttpMethod.Post, url)
             {
                 Content = JsonContent.Create(body)
             };
 
-            using var response = await http.SendAsync(message, ct);
+            HttpResponseMessage response;
+            try
+            {
+                response = await http.SendAsync(message, ct);
+            }
+            catch (TaskCanceledException ex)
+            {
+                Console.WriteLine($"[ComandaFoto] Timeout ao chamar API do Google: {ex.Message}");
+                throw new BingoException(BingoErrorKind.Validation,
+                    "A leitura da foto demorou muito. Tente com uma foto menor ou com melhor iluminação.", "ocr_timeout");
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"[ComandaFoto] Erro de conexão com API do Google: {ex.Message}");
+                throw new BingoException(BingoErrorKind.Validation,
+                    "Não foi possível conectar ao serviço de leitura. Tente novamente.", "ocr_connection_failed");
+            }
+
             var raw = await response.Content.ReadAsStringAsync(ct);
             if (!response.IsSuccessStatusCode)
             {
-                var errorMsg = $"Google Gemini API error: {response.StatusCode} - {raw}";
+                var errorMsg = $"[ComandaFoto] Google Gemini API error: {response.StatusCode} - {raw}";
                 Console.WriteLine(errorMsg);
                 throw new BingoException(BingoErrorKind.Validation,
                     "Não consegui ler a foto agora. Tente de novo ou digite os itens.", "ocr_failed");
             }
+            
+            Console.WriteLine($"[ComandaFoto] API respondeu com sucesso");
 
             string text;
             try

@@ -55,7 +55,7 @@ const resizePhoto = (file: File): Promise<string> =>
 const ComandaFotoPage: React.FC = () => {
   const token = useRef(getToken()).current;
   const http = useRef(
-    axios.create({ baseURL: resolveBaseUrl(), timeout: 70000, headers: { 'X-Comanda-Token': token } }),
+    axios.create({ baseURL: resolveBaseUrl(), timeout: 95000, headers: { 'X-Comanda-Token': token } }),
   ).current;
   const fileRef = useRef<HTMLInputElement>(null);
 
