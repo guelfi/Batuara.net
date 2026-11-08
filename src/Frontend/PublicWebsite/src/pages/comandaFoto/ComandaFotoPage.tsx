@@ -60,6 +60,8 @@ const ComandaFotoPage: React.FC = () => {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [eventName, setEventName] = useState<string>('');
+  const [eventDate, setEventDate] = useState<string>('');
+  const [build, setBuild] = useState<string>('');
   const [photo, setPhoto] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [label, setLabel] = useState('');
@@ -79,7 +81,10 @@ const ComandaFotoPage: React.FC = () => {
   const loadEventName = useCallback(async () => {
     try {
       const r = await http.get('/comanda-foto/relatorio');
-      setEventName(r.data.data?.eventName ?? 'Evento');
+      const d = r.data.data;
+      setEventName(d?.eventName ?? 'Evento');
+      setEventDate(d?.eventDate ? new Date(d.eventDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '');
+      setBuild(d?.build ?? '');
     } catch (e) {
       setError(errMsg(e));
     }
@@ -136,10 +141,12 @@ const ComandaFotoPage: React.FC = () => {
   return (
     <Container maxWidth="sm" sx={{ py: 2 }}>
       <Typography variant="h5" fontWeight={700}>
-        Fechamento de Comanda
+        Fechamento Comanda{build && ` - ${build}`}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        {eventName} — fotografe a comanda de papel para fechar a conta.
+        {[eventName, eventDate && !eventName.includes(eventDate) ? eventDate : '', 'Fotografe a comanda para Fechar Conta']
+          .filter(Boolean)
+          .join(' - ')}
       </Typography>
 
       {error && (

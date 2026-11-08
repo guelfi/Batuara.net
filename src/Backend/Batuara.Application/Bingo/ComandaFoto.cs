@@ -41,6 +41,8 @@ namespace Batuara.Application.Bingo.Models
     public class ComandaFotoReport
     {
         public string EventName { get; set; } = string.Empty;
+        public DateTime EventDate { get; set; }
+        public string Build { get; set; } = string.Empty;
         public int Count { get; set; }
         public decimal GrandTotal { get; set; }
         public List<ComandaFotoItem> ItemTotals { get; set; } = new();

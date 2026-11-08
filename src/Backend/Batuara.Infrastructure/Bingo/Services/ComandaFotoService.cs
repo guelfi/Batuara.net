@@ -231,6 +231,8 @@ namespace Batuara.Infrastructure.Bingo.Services
             return new ComandaFotoReport
             {
                 EventName = ev.Name,
+                EventDate = ev.EventDate,
+                Build = configuration["BUILD_VERSION"] ?? "dev",
                 Count = comandas.Count,
                 GrandTotal = comandas.Sum(c => c.Total),
                 ItemTotals = itemTotals,
