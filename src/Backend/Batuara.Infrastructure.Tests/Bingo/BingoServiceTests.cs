@@ -1934,5 +1934,35 @@ namespace Batuara.Infrastructure.Tests.Bingo
             var act = () => svc.ExtractAsync(new ComandaFotoExtractRequest { ImageBase64 = photo }, CancellationToken.None);
             await act.Should().ThrowAsync<BingoException>();
         }
+            [Fact]
+        public async Task ComandaFoto_Should_Validate_Menu_And_Feed_Event_Summary()
+        {
+            var f = new Fixture();
+            var eventId = await f.OpenEventAsync();
+            var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), new FakeConfig(), Options.Create(new ComandaFotoOptions()));
+            var photo = Convert.ToBase64String(new byte[] { 1, 2, 3 });
+
+            var saved = await svc.SaveAsync(new ComandaFotoSaveRequest
+            {
+                ImageBase64 = photo,
+                Items = new()
+                {
+                    new() { Name = "  agua ", Quantity = 2, UnitPrice = 5 },
+                    new() { Name = "Batidas", Quantity = 1, UnitPrice = 10 }
+                }
+            }, CancellationToken.None);
+
+            saved.Items.Single(i => i.Quantity == 2).Name.Should().Be("Água");
+            saved.Items.Single(i => i.Quantity == 2).Matched.Should().BeTrue();
+            saved.Items.Single(i => i.Name == "Batidas").Matched.Should().BeFalse();
+
+            var summary = await f.Admin.GetEventSummaryAsync(eventId, CancellationToken.None);
+            summary.PhotoCount.Should().Be(1);
+            summary.PhotoTotal.Should().Be(20m);
+            summary.PhotoUnmatched.Should().Be(1);
+            summary.GrandTotal.Should().Be(summary.TotalSold + 20m);
+            summary.ByItem.Should().Contain(i => i.Name == "Água" && i.Quantity == 2);
+            summary.ByItem.Should().Contain(i => i.Name.Contains("fora do cardápio"));
+        }
     }
 }

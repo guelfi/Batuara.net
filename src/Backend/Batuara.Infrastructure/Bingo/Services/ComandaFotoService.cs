@@ -188,6 +188,26 @@ namespace Batuara.Infrastructure.Bingo.Services
             var photo = ValidateImage(request.ImageBase64);
             var ev = await FindOpenEventAsync(ct)
                 ?? throw new BingoException(BingoErrorKind.Validation, "Não há evento aberto.");
+            // Valida os itens contra o cardapio do evento: nome canonico quando reconhecido, senao matched=false.
+            var menuNames = await Db.BingoMenuItems
+                .Where(x => x.EventId == ev.Id && x.IsActive)
+                .Select(x => x.Name)
+                .ToListAsync(ct);
+            var byKey = menuNames.GroupBy(Normalize).ToDictionary(g => g.Key, g => g.First());
+            foreach (var item in items)
+            {
+                if (byKey.TryGetValue(Normalize(item.Name), out var canonical))
+                {
+                    item.Name = canonical;
+                    item.Matched = true;
+                }
+                else
+                {
+                    item.Name = item.Name.Trim();
+                    item.Matched = false;
+                }
+            }
+
             var total = SumTotal(items);
             var entity = new BingoPhotoTab(ev.Id, request.Label ?? string.Empty,
                 JsonSerializer.Serialize(items, Json), total, photo);
@@ -254,6 +274,21 @@ namespace Batuara.Infrastructure.Bingo.Services
                 ?? throw new BingoException(BingoErrorKind.NotFound, "Comanda não encontrada.");
             entity.Discard();
             await Db.SaveChangesAsync(ct);
+        }
+
+        private static string Normalize(string value)
+        {
+            var d = value.Trim().ToLowerInvariant().Normalize(System.Text.NormalizationForm.FormD);
+            var sb = new StringBuilder();
+            foreach (var c in d)
+            {
+                if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+                {
+                    sb.Append(c);
+                }
+            }
+
+            return string.Join(' ', sb.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries));
         }
 
         // UnitPrice no relatório por item guarda o valor total da linha (soma qty*preço).

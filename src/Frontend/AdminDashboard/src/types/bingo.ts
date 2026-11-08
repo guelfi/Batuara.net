@@ -142,6 +142,10 @@ export interface BingoSummary {
   byItem: BingoSummaryLine[];
   cancelledTotal: number;
   contestedOpen: number;
+  photoCount: number;
+  photoTotal: number;
+  photoUnmatched: number;
+  grandTotal: number;
   byWaiter: BingoWaiterSummary[];
 }
 

@@ -479,6 +479,11 @@ namespace Batuara.Application.Bingo.Models
         public decimal TotalOpen { get; set; }
         public decimal CancelledTotal { get; set; }
         public int ContestedOpen { get; set; }
+        /// <summary>Comandas de papel fotografadas (fechamento por foto): quantidade, total e itens fora do cardapio.</summary>
+        public int PhotoCount { get; set; }
+        public decimal PhotoTotal { get; set; }
+        public int PhotoUnmatched { get; set; }
+        public decimal GrandTotal { get; set; }
         public List<BingoWaiterSummaryDto> ByWaiter { get; set; } = new();
         public List<BingoPaymentSummaryDto> ByPaymentMethod { get; set; } = new();
         public List<BingoItemSummaryDto> ByItem { get; set; } = new();

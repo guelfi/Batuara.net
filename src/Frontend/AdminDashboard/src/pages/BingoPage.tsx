@@ -1232,6 +1232,21 @@ const SummaryView: React.FC<{ summary: BingoSummary }> = ({ summary }) => (
         Há {summary.contestedOpen} {summary.contestedOpen === 1 ? 'item em contestação' : 'itens em contestação'} sem resolução.
       </Alert>
     )}
+    {summary.photoUnmatched > 0 && (
+      <Alert severity="warning">
+        {summary.photoUnmatched} {summary.photoUnmatched === 1 ? 'item das comandas por foto está' : 'itens das comandas por foto estão'} fora do cardápio. Confira em "Comandas fotografadas".
+      </Alert>
+    )}
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+      <Card sx={{ flex: 1, borderColor: 'primary.main', borderWidth: 2, borderStyle: 'solid' }}><CardContent>
+        <Typography color="text.secondary">Total geral (digital + foto)</Typography>
+        <Typography variant="h4">{money(summary.grandTotal)}</Typography>
+      </CardContent></Card>
+      <Card sx={{ flex: 1 }}><CardContent>
+        <Typography color="text.secondary">Comandas por foto ({summary.photoCount})</Typography>
+        <Typography variant="h4">{money(summary.photoTotal)}</Typography>
+      </CardContent></Card>
+    </Stack>
     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
       <Card sx={{ flex: 1 }}><CardContent>
         <Typography color="text.secondary">Total vendido (pago)</Typography>

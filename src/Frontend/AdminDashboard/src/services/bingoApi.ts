@@ -153,6 +153,10 @@ const normalizeSummary = (d: any): BingoSummary => {
     byItem: normalizeLines(pick(d, 'byItem', 'porItem', 'items'), ['name', 'itemName', 'item', 'label']),
     cancelledTotal: num(d.cancelledTotal),
     contestedOpen: num(d.contestedOpen),
+    photoCount: num(d.photoCount),
+    photoTotal: num(d.photoTotal),
+    photoUnmatched: num(d.photoUnmatched),
+    grandTotal: d.grandTotal !== undefined ? num(d.grandTotal) : num(pick(d, 'totalSold', 'totalVendido', 'totalPaid')),
     byWaiter: asArray(d.byWaiter).map((w: any) => ({
       name: w.name ?? '-',
       count: num(w.count),
