@@ -884,7 +884,7 @@ const ExitTab: React.FC = () => {
         </>
       )}
       {error && <Alert severity="error">{error}</Alert>}
-      <Typography variant="body2" sx={{ opacity: 0.8 }}>Ou digite o código de 6 caracteres que aparece abaixo do QR do cliente:</Typography>
+      <Typography variant="body2" noWrap sx={{ opacity: 0.8, fontSize: 'clamp(0.6rem, 3.1vw, 0.875rem)' }}>Ou digite o código de 6 caracteres do QR do cliente:</Typography>
       <TextField
         label="Código da comanda"
         value={code}
