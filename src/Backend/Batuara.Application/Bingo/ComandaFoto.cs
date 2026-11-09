@@ -29,6 +29,10 @@ namespace Batuara.Application.Bingo.Models
         public ComandaFotoDuplicate? Duplicate { get; set; }
         public string? CustomerName { get; set; }
         public string? ComandaNumber { get; set; }
+        /// <summary>Texto da forma de pagamento escrito/marcado na comanda, como a IA leu.</summary>
+        public string? PaymentMethod { get; set; }
+        /// <summary>Forma de pagamento cadastrada que combina com o texto lido (null quando não identificada).</summary>
+        public int? PaymentMethodId { get; set; }
         public List<ComandaFotoItem> Items { get; set; } = new();
         public decimal Total { get; set; }
         public string? Notes { get; set; }

@@ -1983,6 +1983,26 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public void ComandaFoto_Should_Match_Payment_Method_Written_On_The_Paper()
+        {
+            var methods = new[] { (1, "Dinheiro"), (2, "Pix"), (3, "Cartão de crédito"), (4, "Cartão de débito") };
+
+            ComandaFotoService.MatchPaymentMethod("Pix", methods).Should().Be(2);
+            ComandaFotoService.MatchPaymentMethod("  PIX ", methods).Should().Be(2);
+            ComandaFotoService.MatchPaymentMethod("dinheiro", methods).Should().Be(1);
+            ComandaFotoService.MatchPaymentMethod("Espécie", methods).Should().Be(1);
+            ComandaFotoService.MatchPaymentMethod("Crédito", methods).Should().Be(3);
+            ComandaFotoService.MatchPaymentMethod("Credito", methods).Should().Be(3);
+            ComandaFotoService.MatchPaymentMethod("Débito", methods).Should().Be(4);
+            ComandaFotoService.MatchPaymentMethod("Cartão de débito", methods).Should().Be(4);
+            // ambíguo ou sem texto: não assume
+            ComandaFotoService.MatchPaymentMethod("Cartão", methods).Should().BeNull();
+            ComandaFotoService.MatchPaymentMethod("", methods).Should().BeNull();
+            ComandaFotoService.MatchPaymentMethod(null, methods).Should().BeNull();
+            ComandaFotoService.MatchPaymentMethod("fiado", methods).Should().BeNull();
+        }
+
+        [Fact]
         public async Task ComandaFoto_Should_List_Menu_And_Save_Manual_Tab_Without_Photo()
         {
             var f = new Fixture();

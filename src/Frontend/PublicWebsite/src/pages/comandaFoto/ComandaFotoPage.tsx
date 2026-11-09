@@ -104,6 +104,8 @@ const ComandaFotoPage: React.FC = () => {
   const [attempt, setAttempt] = useState(0);
   const [readFailure, setReadFailure] = useState<string | null>(null);
   const [manual, setManual] = useState(false);
+  // forma de pagamento que a IA achou escrita na comanda (pré-seleciona no diálogo)
+  const [suggestedPay, setSuggestedPay] = useState<number | null>(null);
 
   const loadEventName = useCallback(async () => {
     try {
@@ -125,6 +127,7 @@ const ComandaFotoPage: React.FC = () => {
 
   const readPhoto = async (b64: string) => {
     setReadFailure(null);
+    setSuggestedPay(null);
     let lastError: unknown = null;
     for (let n = 1; n <= MAX_ATTEMPTS; n += 1) {
       setAttempt(n);
@@ -136,6 +139,7 @@ const ComandaFotoPage: React.FC = () => {
         setNome(String(customerName ?? ''));
         setDup(r.data.data.duplicate ?? null);
         setDupFor(String(comandaNumber ?? ''));
+        setSuggestedPay(r.data.data.paymentMethodId ?? null);
         setAttempt(0);
         return;
       } catch (e) {
@@ -173,6 +177,7 @@ const ComandaFotoPage: React.FC = () => {
     setReadFailure(null);
     setManual(false);
     setAttempt(0);
+    setSuggestedPay(null);
   };
 
   const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
@@ -361,8 +366,13 @@ const ComandaFotoPage: React.FC = () => {
         <DialogContent>
           <Stack spacing={1} sx={{ pt: 1 }}>
             {payMethods.length === 0 && <Typography color="text.secondary">Nenhuma forma de pagamento ativa.</Typography>}
+            {suggestedPay !== null && (
+              <Typography variant="body2" color="text.secondary">
+                Identificado na comanda: confirme ou escolha outra.
+              </Typography>
+            )}
             {payMethods.map((m) => (
-              <Button key={m.id} variant="outlined" size="large" onClick={() => save(m.id)}>
+              <Button key={m.id} variant={m.id === suggestedPay ? 'contained' : 'outlined'} size="large" onClick={() => save(m.id)}>
                 {m.name}
               </Button>
             ))}

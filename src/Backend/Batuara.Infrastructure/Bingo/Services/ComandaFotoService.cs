@@ -58,10 +58,12 @@ namespace Batuara.Infrastructure.Bingo.Services
                 .OrderBy(x => x.SortOrder)
                 .ToListAsync(ct);
             var menuText = string.Join("\n", menu.Select(m => $"- {m.Name} = R$ {m.UnitPrice:0.00}"));
+            var payOptions = await Db.BingoPaymentOptions.Where(x => x.IsActive).OrderBy(x => x.SortOrder).ThenBy(x => x.Name).ToListAsync(ct);
+            var payText = string.Join(", ", payOptions.Select(m => $"\"{m.Name}\""));
 
             var prompt =
                 "Foto de uma comanda de bingo de uma casa de caridade: tabela impressa com os itens do cardápio e marcações feitas à mão. " +
-                "Devolva SOMENTE JSON: {\"customerName\":string,\"comandaNumber\":string,\"items\":[{\"name\":string,\"quantity\":number,\"unitPrice\":number,\"matched\":boolean}],\"notes\":string}.\n" +
+                "Devolva SOMENTE JSON: {\"customerName\":string,\"comandaNumber\":string,\"paymentMethod\":string,\"items\":[{\"name\":string,\"quantity\":number,\"unitPrice\":number,\"matched\":boolean}],\"notes\":string}.\n" +
                 "customerName = nome escrito à mão no alto da comanda, acima da tabela (canto superior esquerdo); comandaNumber = número da comanda escrito à mão no canto superior direito, acima da coluna TOTAL. Se não houver, use string vazia.\n" +
                 "Cardápio oficial:\n" + menuText + "\n" +
                 "REGRAS: 1) O consumo é marcado SOMENTE na coluna QUANTIDADE (tracinhos, números ou riscos à direita do VALOR UNITÁRIO). Linhas sem marca nessa coluna NÃO entram. " +
@@ -69,7 +71,9 @@ namespace Batuara.Infrastructure.Bingo.Services
                 "3) CONTAGEM: cada traço feito à mão conta 1, em qualquer direção. Um 'L' ou 'Γ' (um traço vertical mais um horizontal) = 2; '||' = 2; '///' = 3. Grupo de cinco: quatro traços paralelos cortados por um traço transversal = 5; um quadrado (4 lados) cortado por uma diagonal = 5. Some grupos e traços soltos (ex.: um grupo de 5 e mais 2 traços = 7). quantity = total contado. unitPrice = valor impresso na coluna VALOR UNITÁRIO da própria linha, sem dividir nem multiplicar; use o cardápio só se o valor impresso estiver ilegível. " +
                 "4) name = nome exato do cardápio, matched=true. " +
                 "5) Linha manuscrita fora do cardápio (ex.: 'Batidas'): inclua só se tiver marca na coluna QUANTIDADE, com o preço escrito e matched=false; sem marca, ignore. " +
-                "6) Ignore linhas riscadas. Em notes, avise se a foto estiver ilegível ou cortada.";
+                "6) Ignore linhas riscadas. " +
+                "7) paymentMethod = forma de pagamento escrita ou marcada à mão, normalmente no FINAL da comanda, depois da linha dos totais e FORA da tabela de itens. Formas possíveis: " + payText + ". Devolva exatamente um desses nomes; se não houver nada escrito ou marcado, string vazia. Não deduza nem invente. " +
+                "Em notes, avise se a foto estiver ilegível ou cortada.";
 
             // Google Gemini API request format
             var body = new
@@ -171,6 +175,7 @@ namespace Batuara.Infrastructure.Bingo.Services
             // Conferencia real no backend: nao confia no "matched" do modelo.
             ValidateAgainstMenu(parsed.Items, menu.Select(m => m.Name));
             parsed.Total = SumTotal(parsed.Items);
+            parsed.PaymentMethodId = MatchPaymentMethod(parsed.PaymentMethod, payOptions.Select(m => (m.Id, m.Name)));
             var dup = await FindDuplicateAsync(ev.Id, NormalizeNumber(parsed.ComandaNumber), ct);
             parsed.Duplicate = dup == null ? null : new ComandaFotoDuplicate { Id = dup.Id, Label = dup.Label, Total = dup.Total, CreatedAt = dup.CreatedAt };
             return parsed;
@@ -417,6 +422,40 @@ namespace Batuara.Infrastructure.Bingo.Services
         }
 
         private static string Normalize(string value) => NormalizeName(value);
+
+        /// <summary>
+        /// Liga o texto lido na comanda a uma forma de pagamento cadastrada (sem acento/caixa; aceita variações
+        /// como "cartão de crédito", "crédito", "espécie"). Só devolve quando há exatamente uma correspondência.
+        /// </summary>
+        public static int? MatchPaymentMethod(string? raw, IEnumerable<(int Id, string Name)> methods)
+        {
+            var text = Normalize(raw ?? string.Empty);
+            if (text.Length == 0)
+            {
+                return null;
+            }
+
+            var list = methods.Select(m => (m.Id, Key: Normalize(m.Name))).Where(m => m.Key.Length > 0).ToList();
+            var exact = list.Where(m => m.Key == text).ToList();
+            if (exact.Count == 1)
+            {
+                return exact[0].Id;
+            }
+
+            // variacoes comuns escritas a mao
+            var aliases = new Dictionary<string, string[]>
+            {
+                ["dinheiro"] = new[] { "dinheiro", "especie", "cash" },
+                ["pix"] = new[] { "pix" },
+                ["credito"] = new[] { "credito", "cred" },
+                ["debito"] = new[] { "debito", "deb" },
+            };
+            var hits = list.Where(m =>
+                    text.Contains(m.Key) || m.Key.Contains(text)
+                    || aliases.Any(a => m.Key.Contains(a.Key) && a.Value.Any(v => text.Contains(v))))
+                .Select(m => m.Id).Distinct().ToList();
+            return hits.Count == 1 ? hits[0] : null;
+        }
 
         // UnitPrice no relatório por item guarda o valor total da linha (soma qty*preço).
         private static decimal SumTotal(IEnumerable<ComandaFotoItem> items)
