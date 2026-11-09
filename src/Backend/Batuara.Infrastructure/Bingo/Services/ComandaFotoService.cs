@@ -217,12 +217,17 @@ namespace Batuara.Infrastructure.Bingo.Services
                     "duplicate_comanda");
             }
 
-            var method = await Db.BingoPaymentOptions.FirstOrDefaultAsync(x => x.Id == request.PaymentMethodId && x.IsActive, ct)
-                ?? throw new BingoException(BingoErrorKind.Validation, "Escolha a forma de pagamento.");
+            string? methodName = null;
+            if (!request.PaymentNotIdentified)
+            {
+                var method = await Db.BingoPaymentOptions.FirstOrDefaultAsync(x => x.Id == request.PaymentMethodId && x.IsActive, ct)
+                    ?? throw new BingoException(BingoErrorKind.Validation, "Escolha a forma de pagamento.");
+                methodName = method.Name;
+            }
 
             var label = (request.Label ?? string.Empty).Trim();
             var entity = new BingoPhotoTab(ev.Id, label.Length > 60 ? label[..60] : label,
-                JsonSerializer.Serialize(items, Json), total, photo, number, method.Name);
+                JsonSerializer.Serialize(items, Json), total, photo, number, methodName);
             Db.BingoPhotoTabs.Add(entity);
             await Db.SaveChangesAsync(ct);
             return ToDto(entity);

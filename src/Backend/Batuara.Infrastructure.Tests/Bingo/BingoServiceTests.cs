@@ -2004,6 +2004,25 @@ namespace Batuara.Infrastructure.Tests.Bingo
             saved.Total.Should().Be(13m);
             saved.Items.Single(i => i.Name == "Item novo").Matched.Should().BeFalse();
             (await svc.GetPhotoAsync(saved.Id, CancellationToken.None)).Should().BeNull();
+
+            // forma de pagamento desconhecida: guarda sem forma e o resumo mostra "Não identificado"
+            var unknown = await svc.SaveAsync(new ComandaFotoSaveRequest
+            {
+                PaymentNotIdentified = true,
+                ComandaNumber = "78",
+                Items = new() { new() { Name = "Água", Quantity = 1, UnitPrice = 5 } }
+            }, CancellationToken.None);
+            unknown.PaymentMethod.Should().BeNull();
+            var summary = await f.Admin.GetEventSummaryAsync(1);
+            summary.ByPaymentMethod.Should().Contain(m => m.Method == "Não identificado" && m.Total == 5m);
+
+            // sem escolher forma e sem marcar "nao identificado": continua exigindo
+            var missing = () => svc.SaveAsync(new ComandaFotoSaveRequest
+            {
+                ComandaNumber = "79",
+                Items = new() { new() { Name = "Água", Quantity = 1, UnitPrice = 5 } }
+            }, CancellationToken.None);
+            await missing.Should().ThrowAsync<BingoException>();
         }
 
             [Fact]

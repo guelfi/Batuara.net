@@ -126,7 +126,7 @@ const ComandaManual: React.FC<Props> = ({ http, payMethods, photo, errMsg, onBac
     }
   };
 
-  const save = async (paymentMethodId: number) => {
+  const save = async (paymentMethodId: number | null) => {
     setPayOpen(false);
     setBusy('Fechando comanda...');
     setError(null);
@@ -137,7 +137,8 @@ const ComandaManual: React.FC<Props> = ({ http, payMethods, photo, errMsg, onBac
     try {
       await http.post('/comanda-foto', {
         comandaNumber: comanda.trim(),
-        paymentMethodId,
+        paymentMethodId: paymentMethodId ?? 0,
+        paymentNotIdentified: paymentMethodId === null,
         items,
         label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60),
         imageBase64: photo ?? '',
@@ -337,6 +338,9 @@ const ComandaManual: React.FC<Props> = ({ http, payMethods, photo, errMsg, onBac
                 {m.name}
               </Button>
             ))}
+            <Button variant="outlined" size="large" color="inherit" onClick={() => save(null)}>
+              Não identificado
+            </Button>
             <Button onClick={() => setPayOpen(false)}>Voltar</Button>
           </Stack>
         </DialogContent>

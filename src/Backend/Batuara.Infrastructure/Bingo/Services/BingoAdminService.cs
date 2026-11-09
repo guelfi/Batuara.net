@@ -639,7 +639,7 @@ namespace Batuara.Infrastructure.Bingo.Services
             var paid = tabs.Where(x => x.IsPaid).ToList();
 
             const string NoName = "Não informado";
-            const string NoMethod = "Não informado";
+            const string NoMethod = "Não identificado";
 
             // Comandas de papel fotografadas entram no resumo (itens ja validados contra o cardapio ao salvar).
             var photoRows = await Db.BingoPhotoTabs

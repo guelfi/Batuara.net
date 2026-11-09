@@ -2701,7 +2701,7 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
                     ))}
                     <Divider sx={{ mt: 0.5, mb: 0.75 }} />
                     <Typography variant="body2">
-                      Forma de pagamento: <strong>{comanda.paymentMethod || 'Não informado'}</strong>
+                      Forma de pagamento: <strong>{comanda.paymentMethod || 'Não identificado'}</strong>
                     </Typography>
                   </Box>
                 )}

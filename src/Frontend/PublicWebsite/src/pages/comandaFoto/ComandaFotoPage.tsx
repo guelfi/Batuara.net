@@ -191,12 +191,12 @@ const ComandaFotoPage: React.FC = () => {
     }
   };
 
-  const save = async (paymentMethodId: number) => {
+  const save = async (paymentMethodId: number | null) => {
     setPayOpen(false);
     setBusy('Fechando comanda...');
     setError(null);
     try {
-      await http.post('/comanda-foto', { comandaNumber: comanda.trim(), paymentMethodId, items: items.filter((i) => i.quantity > 0), label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), imageBase64: photo });
+      await http.post('/comanda-foto', { comandaNumber: comanda.trim(), paymentMethodId: paymentMethodId ?? 0, paymentNotIdentified: paymentMethodId === null, items: items.filter((i) => i.quantity > 0), label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), imageBase64: photo });
       resetAll();
     } catch (e) {
       setError(errMsg(e));
@@ -366,6 +366,9 @@ const ComandaFotoPage: React.FC = () => {
                 {m.name}
               </Button>
             ))}
+            <Button variant="outlined" size="large" color="inherit" onClick={() => save(null)}>
+              Não identificado
+            </Button>
             <Button onClick={() => setPayOpen(false)}>Voltar</Button>
           </Stack>
         </DialogContent>

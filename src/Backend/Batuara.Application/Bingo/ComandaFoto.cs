@@ -39,6 +39,8 @@ namespace Batuara.Application.Bingo.Models
         public string? Label { get; set; }
         public string? ComandaNumber { get; set; }
         public int PaymentMethodId { get; set; }
+        /// <summary>Quando a forma de pagamento não é conhecida: guarda sem forma (exibida como "Não identificado").</summary>
+        public bool PaymentNotIdentified { get; set; }
         public List<ComandaFotoItem> Items { get; set; } = new();
         /// <summary>Vazio quando a comanda foi digitada manualmente (sem foto).</summary>
         public string ImageBase64 { get; set; } = string.Empty;
