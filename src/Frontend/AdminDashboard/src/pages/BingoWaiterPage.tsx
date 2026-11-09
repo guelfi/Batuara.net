@@ -1070,7 +1070,7 @@ const BingoWaiterPage: React.FC = () => {
         />
         <Tab label="Mesas" sx={{ minHeight: 56, fontWeight: 700 }} />
         <Tab label="Saída" sx={{ minHeight: 56, fontWeight: 700 }} />
-        <Tab label="Foto" sx={{ minHeight: 56, fontWeight: 700 }} />
+        <Tab label="Ler Comanda" wrapped sx={{ minHeight: 56, fontWeight: 700, lineHeight: 1.15 }} />
       </Tabs>
       {tab === 0 && <OrdersTab groups={groups} contestations={contestations} loadError={ordersError} reload={async () => { await Promise.all([loadOrders(), loadContestations()]); }} />}
       {tab === 1 && <AccountsTab mesas={mesas} />}
