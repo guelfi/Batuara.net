@@ -48,6 +48,7 @@ import {
   Cast as ProjectIcon,
 } from '@mui/icons-material';
 import QRCode from 'qrcode';
+import CompactRowList from '../components/bingo/CompactRowList';
 import apiService from '../services/api';
 import CurrencyField from '../components/common/CurrencyField';
 import useIsMobile from '../hooks/useIsMobile';
@@ -640,6 +641,38 @@ const LivePanel: React.FC<{
       {error && <Alert severity="error">{error}</Alert>}
       <Paper sx={{ p: 2 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }} justifyContent="space-between">
+          {isMobile ? (
+            <Stack spacing={1.5}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                {[
+                  { label: 'Itens pendentes', value: String(pendingCount), color: 'info.main' },
+                  { label: 'Itens retirados', value: String(retrievedCount), color: 'secondary.main' },
+                  { label: 'Total vendido', value: money(totalSold), color: 'primary.main' },
+                  ...(contestedCount > 0 ? [{ label: 'Em contestação', value: String(contestedCount), color: 'error.main' }] : []),
+                  ...(!!panel?.codeDeliveryFailedCount ? [{ label: 'Falha de entrega', value: String(panel.codeDeliveryFailedCount), color: 'error.main' }] : []),
+                ].map((m) => (
+                  <Box key={m.label} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, px: 1.5, py: 1, minWidth: 0 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }}>{m.label}</Typography>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: m.color, wordBreak: 'break-word' }}>{m.value}</Typography>
+                  </Box>
+                ))}
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>Filtrar comandas</Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, '& .MuiChip-root': { height: 36, width: '100%' } }}>
+                  <Chip {...chipFilter('open')} label={`Em aberto: ${open.length}`} />
+                  <Chip {...chipFilter('closing')} color="warning" label={`Pediram a conta: ${closing.length}`} />
+                  <Chip {...chipFilter('paid')} color="success" label={`Pagas: ${paid.length}`} />
+                  {panel?.phoneVerifiedCount !== undefined && (
+                    <Chip {...chipFilter('verified')} color="success" label={`Celular confirmado: ${panel.phoneVerifiedCount}`} />
+                  )}
+                  {panel?.phoneNotVerifiedCount !== undefined && (
+                    <Chip {...chipFilter('unverified')} label={`Não confirmado: ${panel.phoneNotVerifiedCount}`} />
+                  )}
+                </Box>
+              </Box>
+            </Stack>
+          ) : (
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap
             sx={isMobile ? { '& .MuiChip-root': { height: 36, maxWidth: '100%' } } : undefined}>
             <Chip {...chipFilter('open')} label={`Em aberto: ${open.length}`} />
@@ -659,6 +692,7 @@ const LivePanel: React.FC<{
               <Chip color="error" variant="outlined" label={`Falha de entrega: ${panel.codeDeliveryFailedCount}`} />
             )}
           </Stack>
+          )}
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
             <Stack direction="row" alignItems="center">
               <Switch
@@ -1024,32 +1058,16 @@ const MenuTab: React.FC<{
   if (isMobile) {
     return (
       <Stack spacing={1.5}>
-        {items.length === 0 && <Typography color="text.secondary">Nenhum item no cardápio.</Typography>}
-        {items.map((item) => (
-          <Card key={item.id} variant="outlined">
-            <CardContent sx={{ '&:last-child': { pb: 2 } }}>
-              <Stack spacing={1}>
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
-                  <Typography sx={{ fontWeight: 600, wordBreak: 'break-word' }}>{item.name}</Typography>
-                  <Typography sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{money(item.unitPrice)}</Typography>
-                </Stack>
-                <Typography variant="caption" color="text.secondary">
-                  Ordem: {item.sortOrder}{item.isUsed ? ' · já usado (não pode renomear/excluir)' : ''}
-                </Typography>
-                <FormControlLabel
-                  control={<Switch checked={item.isAvailable} onChange={(e) => toggle(item, e.target.checked)} />}
-                  label="Disponível"
-                />
-                <Stack direction="row" spacing={1}>
-                  <Button variant="outlined" fullWidth startIcon={<EditIcon />} sx={{ minHeight: 40 }}
-                    onClick={() => setEditing({ ...item })}>Editar</Button>
-                  <Button variant="outlined" color="error" fullWidth startIcon={<DeleteIcon />} sx={{ minHeight: 40 }}
-                    disabled={!!item.isUsed} onClick={() => removeItem(item)}>Excluir</Button>
-                </Stack>
-              </Stack>
-            </CardContent>
-          </Card>
-        ))}
+        <CompactRowList
+          emptyText="Nenhum item no cardápio."
+          rows={items.map((item) => ({
+            id: String(item.id), order: item.sortOrder, name: item.name, trailing: money(item.unitPrice),
+            note: item.isUsed ? 'já usado: nome travado' : undefined,
+            checked: item.isAvailable, onToggle: (c) => toggle(item, c),
+            onEdit: () => setEditing({ ...item }),
+            onDelete: () => removeItem(item), deleteDisabled: !!item.isUsed,
+          }))}
+        />
         <Dialog fullScreen open={!!editing} onClose={() => setEditing(null)}>
           <DialogTitle>Editar item</DialogTitle>
           <DialogContent>
@@ -1214,23 +1232,14 @@ const PaymentMethodsTab: React.FC<{ notify: Notify; addOpen: boolean; onAddClose
     return (
       <Stack spacing={1.5}>
         <Alert severity="info">As formas ativas aparecem para o garçom escolher ao cobrar.</Alert>
-        {methods.length === 0 && <Typography color="text.secondary">Nenhuma forma de pagamento.</Typography>}
-        {methods.map((m) => (
-          <Card key={m.id} variant="outlined">
-            <CardContent sx={{ '&:last-child': { pb: 2 } }}>
-              <Stack spacing={1}>
-                <Typography sx={{ fontWeight: 600, wordBreak: 'break-word' }}>{m.name}</Typography>
-                <Typography variant="caption" color="text.secondary">Ordem: {m.sortOrder}</Typography>
-                <FormControlLabel
-                  control={<Switch checked={m.isActive} onChange={(e) => toggle(m, e.target.checked)} />}
-                  label="Ativa"
-                />
-                <Button variant="outlined" fullWidth startIcon={<EditIcon />} sx={{ minHeight: 40 }}
-                  onClick={() => setEditing({ ...m })}>Editar</Button>
-              </Stack>
-            </CardContent>
-          </Card>
-        ))}
+        <CompactRowList
+          emptyText="Nenhuma forma de pagamento."
+          rows={methods.map((m) => ({
+            id: String(m.id), order: m.sortOrder, name: m.name,
+            checked: m.isActive, onToggle: (c) => toggle(m, c),
+            onEdit: () => setEditing({ ...m }),
+          }))}
+        />
         <Dialog fullScreen open={!!editing} onClose={() => setEditing(null)}>
           <DialogTitle>Editar forma de pagamento</DialogTitle>
           <DialogContent>
@@ -1377,14 +1386,21 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
       </Paper>
 
       <Dialog fullScreen open={projecting} onClose={() => setProjecting(false)}>
-        <Box sx={{ minHeight: '100vh', bgcolor: '#fff', color: '#000', textAlign: 'center', p: 2,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ minHeight: isMobile ? '100dvh' : '100vh', height: isMobile ? '100dvh' : undefined, bgcolor: '#fff', color: '#000', textAlign: 'center', p: 2,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          ...(isMobile && { boxSizing: 'border-box', pt: 'calc(env(safe-area-inset-top) + 16px)', pb: 'calc(env(safe-area-inset-bottom) + 16px)' }) }}
+          onClick={isMobile ? () => setProjecting(false) : undefined}>
           <IconButton onClick={() => setProjecting(false)} sx={{ position: 'absolute', top: 8, right: 8 }} aria-label="Fechar">
             <CloseIcon fontSize="large" />
           </IconButton>
-          <Typography variant="h2" sx={{ fontWeight: 700, mb: 2 }}>Aponte a câmera para pedir</Typography>
-          <Box component="img" src={qr} alt="QR Code" sx={{ height: '62vh', maxWidth: '90vw', objectFit: 'contain' }} />
-          <Typography variant="h3" sx={{ mt: 2 }}>{BINGO_URL}</Typography>
+          <Typography variant={isMobile ? 'h5' : 'h2'} sx={{ fontWeight: 700, mb: 2 }}>Aponte a câmera para pedir</Typography>
+          <Box component="img" src={qr} alt="QR Code"
+            sx={isMobile ? { width: 'min(80vw, 50dvh)', height: 'min(80vw, 50dvh)', objectFit: 'contain' } : { height: '62vh', maxWidth: '90vw', objectFit: 'contain' }} />
+          <Typography variant={isMobile ? 'body1' : 'h3'} sx={{ mt: 2, wordBreak: 'break-all' }}>{BINGO_URL}</Typography>
+          {isMobile && (
+            <Button variant="contained" size="large" fullWidth sx={{ mt: 3, minHeight: 48, maxWidth: 360 }}
+              onClick={() => setProjecting(false)}>Fechar</Button>
+          )}
         </Box>
       </Dialog>
 
@@ -1846,15 +1862,19 @@ const SummaryTab: React.FC<{
             ))}
           </Select>
         </FormControl>
-        <Button variant="outlined" onClick={showPhotoLink}>Copiar link</Button>
-        <Button variant="contained" color="success" onClick={sendPhotoLinkWhatsApp}>
-          Enviar por WhatsApp
-        </Button>
-        {summary && (
-          <Button variant="contained" color="secondary" startIcon={<PrintIcon />} onClick={printClosing} disabled={preparing || loading}>
-            Imprimir fechamento
-          </Button>
-        )}
+        <Box sx={isMobile ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 } : { display: 'contents' }}>
+          <Button variant="outlined" onClick={showPhotoLink}>Copiar link</Button>
+          {!isMobile && (
+            <Button variant="contained" color="success" onClick={sendPhotoLinkWhatsApp}>
+              Enviar por WhatsApp
+            </Button>
+          )}
+          {summary && (
+            <Button variant="contained" color="secondary" startIcon={<PrintIcon />} onClick={printClosing} disabled={preparing || loading}>
+              Imprimir fechamento
+            </Button>
+          )}
+        </Box>
       </Stack>
       {photoLink && (
         <Alert severity="info">
@@ -2116,21 +2136,21 @@ const EventsTab: React.FC<{
         <Stack spacing={1.5}>
           {events.map((ev) => (
             <Card key={ev.id} variant="outlined">
-              <CardContent sx={{ '&:last-child': { pb: 2 } }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="subtitle1" fontWeight={600} sx={{ wordBreak: 'break-word' }}>{ev.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">{formatDate(ev.eventDate)}</Typography>
-                  </Box>
+              <CardContent sx={{ '&:last-child': { pb: 1.5 }, py: 1.5 }}>
+                <Stack direction="row" alignItems="baseline" spacing={1} sx={{ minWidth: 0 }}>
+                  <Typography variant="subtitle1" fontWeight={600} sx={{ wordBreak: 'break-word' }}>{ev.name}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>{formatDate(ev.eventDate)}</Typography>
+                </Stack>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ my: 1 }}>
+                  <Typography variant="body2">Total vendido: <strong>{money(ev.totalSold)}</strong></Typography>
                   <Stack direction="row" spacing={0.5} flexShrink={0}>
                     {ev.isTest && <Chip size="small" label="Teste" color="secondary" />}
                     <Chip size="small" color={EVENT_STATUS[ev.status].color} label={EVENT_STATUS[ev.status].label} />
                   </Stack>
                 </Stack>
-                <Typography variant="body2" sx={{ mt: 1, mb: 1.5 }}>Total vendido: <strong>{money(ev.totalSold)}</strong></Typography>
                 <Box sx={{
-                  display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1,
-                  '& .MuiButton-root': { minHeight: 40, width: '100%', minWidth: 0 },
+                  display: 'flex', flexWrap: 'nowrap', gap: 1, overflowX: 'auto', pb: 0.5,
+                  '& .MuiButton-root': { minHeight: 36, flex: '0 0 auto', whiteSpace: 'nowrap' },
                 }}>
                   {renderActions(ev)}
                 </Box>

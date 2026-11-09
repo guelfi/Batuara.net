@@ -225,7 +225,7 @@ const ComandaFotoPage: React.FC = () => {
                 <Typography variant="caption" color="text.secondary">
                   {idx + 1}
                 </Typography>
-                <TextField size="small" value={it.name} error={!it.matched} sx={cellSx} onChange={(e) => patch(idx, { name: e.target.value, matched: false })} />
+                <TextField size="small" multiline maxRows={3} value={it.name} error={!it.matched} sx={{ ...cellSx, '& .MuiInputBase-root': { py: 0 } }} onChange={(e) => patch(idx, { name: e.target.value, matched: false })} />
                 <TextField size="small" type="number" value={it.unitPrice} sx={{ ...cellSx, '& input': { ...cellSx['& input'], textAlign: 'right' } }} onChange={(e) => patch(idx, { unitPrice: Math.max(0, Number(e.target.value)) })} />
                 <Typography variant="body2" color="text.secondary" align="center">×</Typography>
                 <TextField size="small" type="number" value={it.quantity} sx={{ ...cellSx, '& input': { ...cellSx['& input'], textAlign: 'right' } }} onChange={(e) => patch(idx, { quantity: Math.max(0, Number(e.target.value)) })} />
