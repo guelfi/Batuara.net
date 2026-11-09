@@ -2007,6 +2007,19 @@ namespace Batuara.Infrastructure.Tests.Bingo
             f.Db.BingoMenuItems.Count(m => m.Name == "Batidas").Should().Be(1);
         }
             [Fact]
+        public async Task Event_Should_Update_Name_And_Date_With_Validation()
+        {
+            var f = new Fixture();
+            var updated = await f.Admin.UpdateEventAsync(1, new BingoUpdateEventRequest { Name = "  Bingo Junino ", EventDate = new DateTime(2026, 12, 5) });
+            updated.Name.Should().Be("Bingo Junino");
+            updated.EventDate.Date.Should().Be(new DateTime(2026, 12, 5));
+
+            await ShouldThrowAsync(() => f.Admin.UpdateEventAsync(1, new BingoUpdateEventRequest { Name = " ", EventDate = new DateTime(2026, 12, 5) }), BingoErrorKind.Validation);
+            await ShouldThrowAsync(() => f.Admin.UpdateEventAsync(1, new BingoUpdateEventRequest { Name = "x" }), BingoErrorKind.Validation);
+            await ShouldThrowAsync(() => f.Admin.UpdateEventAsync(999, new BingoUpdateEventRequest { Name = "x", EventDate = new DateTime(2026, 12, 5) }), BingoErrorKind.NotFound);
+        }
+
+        [Fact]
         public async Task Event_Should_Suspend_Free_The_Open_Slot_And_Resume()
         {
             var f = new Fixture();

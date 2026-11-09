@@ -1963,6 +1963,28 @@ const EventsTab: React.FC<{
     }
   };
 
+  const [editEv, setEditEv] = useState<BingoEvent | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', eventDate: '' });
+  const startEdit = (ev: BingoEvent) => {
+    setEditForm({ name: ev.name, eventDate: String(ev.eventDate).slice(0, 10) });
+    setEditEv(ev);
+  };
+  const saveEdit = async () => {
+    if (!editEv) return;
+    if (!editForm.name.trim() || !editForm.eventDate) {
+      notify('Informe nome e data do evento.', 'error');
+      return;
+    }
+    try {
+      await bingoApi.updateEvent(editEv.id, { name: editForm.name.trim(), eventDate: editForm.eventDate });
+      notify('Evento atualizado.', 'success');
+      setEditEv(null);
+      onChanged();
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível atualizar o evento.'), 'error');
+    }
+  };
+
   const create = async () => {
     if (!form.name.trim() || !form.eventDate) {
       notify('Informe nome e data do evento.', 'error');
@@ -2014,6 +2036,7 @@ const EventsTab: React.FC<{
       <Button size="small" variant="outlined" startIcon={<PrintIcon />} disabled={printingId === ev.id} onClick={() => printClosing(ev)}>
         Fechamento
       </Button>
+      <Button size="small" variant="outlined" startIcon={<EditIcon />} onClick={() => startEdit(ev)}>Editar</Button>
       {ev.status === 'Draft' && (
         <Button size="small" variant="contained" onClick={() => openEvent(ev)}>Abrir</Button>
       )}
@@ -2171,6 +2194,22 @@ const EventsTab: React.FC<{
         <DialogActions>
           <Button onClick={() => setCreating(false)}>Cancelar</Button>
           <Button variant="contained" onClick={create}>Criar</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={!!editEv} onClose={() => setEditEv(null)} fullWidth maxWidth="sm" fullScreen={isMobile}>
+        <DialogTitle>Editar evento</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField label="Nome" value={editForm.name} inputProps={{ maxLength: 200 }}
+              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+            <TextField label="Data" type="date" InputLabelProps={{ shrink: true }} value={editForm.eventDate}
+              onChange={(e) => setEditForm({ ...editForm, eventDate: e.target.value })} />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditEv(null)}>Cancelar</Button>
+          <Button variant="contained" onClick={saveEdit}>Salvar</Button>
         </DialogActions>
       </Dialog>
 

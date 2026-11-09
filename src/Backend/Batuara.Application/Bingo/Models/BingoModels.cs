@@ -510,6 +510,12 @@ namespace Batuara.Application.Bingo.Models
         public decimal TotalSold { get; set; }
     }
 
+    public class BingoUpdateEventRequest
+    {
+        public string Name { get; set; } = string.Empty;
+        public DateTime EventDate { get; set; }
+    }
+
     public class BingoCreateEventRequest
     {
         public string Name { get; set; } = string.Empty;

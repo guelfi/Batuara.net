@@ -52,6 +52,18 @@ namespace Batuara.Domain.Entities
             UpdateTimestamp();
         }
 
+        public void Rename(string name, DateTime eventDate)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentException("O nome do evento é obrigatório.", nameof(name));
+            }
+
+            Name = name.Trim();
+            EventDate = eventDate;
+            UpdateTimestamp();
+        }
+
         public void Suspend()
         {
             Status = BingoEventStatus.Suspended;

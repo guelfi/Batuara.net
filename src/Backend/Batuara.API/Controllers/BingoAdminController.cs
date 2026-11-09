@@ -154,6 +154,10 @@ namespace Batuara.API.Controllers
         public async Task<IActionResult> CreateEvent([FromBody] BingoCreateEventRequest request, CancellationToken ct)
             => Ok(new { success = true, data = await service.CreateEventAsync(request, ct) });
 
+        [HttpPut("eventos/{id:int}")]
+        public async Task<IActionResult> UpdateEvent(int id, [FromBody] BingoUpdateEventRequest request, CancellationToken ct)
+            => Ok(new { success = true, data = await service.UpdateEventAsync(id, request, ct) });
+
         [HttpPost("eventos/{id:int}/abrir")]
         public async Task<IActionResult> OpenEvent(int id, CancellationToken ct)
             => Ok(new { success = true, data = await service.OpenEventAsync(id, ct) });

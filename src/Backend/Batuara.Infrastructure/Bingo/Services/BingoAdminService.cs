@@ -483,6 +483,25 @@ namespace Batuara.Infrastructure.Bingo.Services
             return ToEventDto(ev, await LoadTabsAsync(ev.Id, cancellationToken));
         }
 
+        public async Task<BingoEventDto> UpdateEventAsync(int eventId, BingoUpdateEventRequest request, CancellationToken cancellationToken = default)
+        {
+            var name = request.Name?.Trim() ?? string.Empty;
+            if (name.Length == 0 || name.Length > 200)
+            {
+                throw new BingoException(BingoErrorKind.Validation, "Informe o nome do evento (até 200 caracteres).");
+            }
+
+            if (request.EventDate == default)
+            {
+                throw new BingoException(BingoErrorKind.Validation, "Informe a data do evento.");
+            }
+
+            var ev = await ResolveAdminEventAsync(eventId, cancellationToken);
+            ev.Rename(name, DateTime.SpecifyKind(request.EventDate, DateTimeKind.Utc));
+            await Db.SaveChangesAsync(cancellationToken);
+            return ToEventDto(ev, await LoadTabsAsync(ev.Id, cancellationToken));
+        }
+
         public async Task<BingoEventDto> ResumeEventAsync(int eventId, CancellationToken cancellationToken = default)
         {
             var ev = await ResolveAdminEventAsync(eventId, cancellationToken);
