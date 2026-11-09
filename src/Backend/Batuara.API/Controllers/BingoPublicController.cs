@@ -1,4 +1,5 @@
 using Batuara.API.Filters;
+using Batuara.API.Services;
 using Batuara.Application.Bingo.Models;
 using Batuara.Application.Bingo.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -9,19 +10,30 @@ namespace Batuara.API.Controllers
     [ApiController]
     [BingoExceptionFilter]
     [Route("api/bingo/public")]
-    public class BingoPublicController(IBingoPublicService service) : ControllerBase
+    public class BingoPublicController(IBingoPublicService service, IConfiguration configuration) : ControllerBase
     {
         [HttpGet("info")]
         [EnableRateLimiting("bingo-read")]
-        public async Task<IActionResult> GetInfo(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetInfo([FromQuery] int? mesa, [FromQuery] string? s, CancellationToken cancellationToken)
         {
-            return Ok(new { success = true, data = await service.GetInfoAsync(cancellationToken) });
+            var info = await service.GetInfoAsync(cancellationToken);
+            if (mesa is > 0 && BingoMesaSignature.IsValid(configuration, mesa.Value, s) && info.Mesas.Contains(mesa.Value))
+            {
+                info.LockedMesa = mesa.Value;
+            }
+
+            return Ok(new { success = true, data = info });
         }
 
         [HttpPost("comandas")]
         [EnableRateLimiting("bingo-write")]
         public async Task<IActionResult> CreateTab([FromBody] BingoCreateTabRequest request, CancellationToken cancellationToken)
         {
+            if (!string.IsNullOrEmpty(request.MesaSignature) && !BingoMesaSignature.IsValid(configuration, request.Mesa, request.MesaSignature))
+            {
+                throw new BingoException(BingoErrorKind.Validation, "QR da mesa inválido. Leia o QR da mesa novamente.");
+            }
+
             return Ok(new { success = true, data = await service.CreateTabAsync(request, cancellationToken) });
         }
 

@@ -56,6 +56,8 @@ namespace Batuara.Application.Bingo.Models
         public bool CloseAllRequested { get; set; }
         public List<int> Mesas { get; set; } = new();
         public List<BingoMenuItemDto> Menu { get; set; } = new();
+        /// <summary>Preenchido quando o link do QR traz mesa com assinatura válida: o cliente não pode trocar.</summary>
+        public int? LockedMesa { get; set; }
     }
 
     public class BingoCreateTabRequest
@@ -63,6 +65,8 @@ namespace Batuara.Application.Bingo.Models
         public string CustomerName { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
         public int Mesa { get; set; }
+        /// <summary>Assinatura do QR de mesa; quando enviada precisa conferir com a mesa.</summary>
+        public string? MesaSignature { get; set; }
     }
 
     public class BingoCreateTabResult

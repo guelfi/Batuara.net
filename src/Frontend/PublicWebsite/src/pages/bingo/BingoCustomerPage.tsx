@@ -73,6 +73,7 @@ const CustomerForm: React.FC = () => {
   const [mesa, setMesa] = useState('');
   // mesa vinda do QR (garçom ou mesa): o cliente não pode trocar
   const [mesaLocked, setMesaLocked] = useState(false);
+  const [mesaSignature, setMesaSignature] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [checkingSaved, setCheckingSaved] = useState(true);
@@ -101,14 +102,20 @@ const CustomerForm: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const wanted = params.get('mesa');
+    const signature = params.get('s') ?? undefined;
     bingoApi
-      .getInfo()
+      .getInfo(wanted ? Number(wanted) : undefined, signature)
       .then((data) => {
         setInfo(data);
-        const wanted = new URLSearchParams(window.location.search).get('mesa');
         if (wanted && data.mesas.includes(Number(wanted))) {
           setMesa(String(Number(wanted)));
-          setMesaLocked(true);
+          // só trava quando o servidor confirma a assinatura do QR
+          if (data.lockedMesa === Number(wanted)) {
+            setMesaLocked(true);
+            setMesaSignature(signature);
+          }
         }
       })
       .catch(() => setLoadError('Não foi possível carregar as informações do bingo. Tente novamente.'));
@@ -124,7 +131,7 @@ const CustomerForm: React.FC = () => {
     setSubmitting(true);
     setError('');
     try {
-      const res = await bingoApi.createTab({ customerName: name.trim(), phone: digits, mesa: Number(mesa) });
+      const res = await bingoApi.createTab({ customerName: name.trim(), phone: digits, mesa: Number(mesa), mesaSignature: mesaLocked ? mesaSignature : undefined });
       savedTabId.set(res.tabId);
       savedProfile.set(name.trim(), digits);
       goTo(`/bingo/comanda/${res.tabId}`);

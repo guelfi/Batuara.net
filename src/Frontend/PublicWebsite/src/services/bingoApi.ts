@@ -86,8 +86,10 @@ export const undeliveredFromError = (error: any): BingoUndeliveredItem[] | null 
 export const httpStatus = (error: any): number | undefined => error?.response?.status;
 
 export const bingoApi = {
-  async getInfo(): Promise<BingoPublicInfo> {
-    const r = await http.get<ApiResponse<BingoPublicInfo>>('/bingo/public/info');
+  async getInfo(mesa?: number, signature?: string): Promise<BingoPublicInfo> {
+    const r = await http.get<ApiResponse<BingoPublicInfo>>('/bingo/public/info', {
+      params: mesa && signature ? { mesa, s: signature } : undefined,
+    });
     return r.data.data;
   },
 

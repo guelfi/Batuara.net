@@ -30,8 +30,6 @@ import { ContestAction, WaiterAccountItem, WaiterBill, WaiterPaymentMethod } fro
 
 const BIG = { minHeight: 56, fontSize: '1.1rem', fontWeight: 700 } as const;
 const POLL_MS = 4000;
-const QR_BASE_URL = 'https://www.batuara.org.br/bingo';
-const bingoQrUrl = (mesa: number) => `${QR_BASE_URL}?mesa=${mesa}`;
 
 const formatBRL = (value: number): string =>
   value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -707,19 +705,33 @@ const QrTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
   const [mesa, setMesa] = useState('');
   const [full, setFull] = useState(false);
   const [dataUrl, setDataUrl] = useState('');
+  const [qrUrl, setQrUrl] = useState('');
+  const [qrError, setQrError] = useState('');
 
   useEffect(() => {
+    setQrError('');
     if (!mesa) {
       setDataUrl('');
-      return;
+      setQrUrl('');
+      return undefined;
     }
     let cancelled = false;
-    QRCode.toDataURL(bingoQrUrl(Number(mesa)), { width: 900, margin: 2, errorCorrectionLevel: 'M' })
-      .then((u) => {
-        if (!cancelled) setDataUrl(u);
+    // o servidor devolve o link assinado: o cliente não consegue trocar a mesa
+    bingoApi
+      .getMesaQrUrl(Number(mesa))
+      .then((url) => QRCode.toDataURL(url, { width: 900, margin: 2, errorCorrectionLevel: 'M' }).then((u) => ({ url, u })))
+      .then(({ url, u }) => {
+        if (!cancelled) {
+          setQrUrl(url);
+          setDataUrl(u);
+        }
       })
       .catch(() => {
-        if (!cancelled) setDataUrl('');
+        if (!cancelled) {
+          setDataUrl('');
+          setQrUrl('');
+          setQrError('Não foi possível gerar o QR da mesa. Tente novamente.');
+        }
       });
     return () => {
       cancelled = true;
@@ -735,6 +747,7 @@ const QrTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
           </MenuItem>
         ))}
       </TextField>
+      {qrError && <Alert severity="error">{qrError}</Alert>}
       {mesa && dataUrl && (
         <Box sx={{ textAlign: 'center' }}>
           <Box
@@ -775,7 +788,7 @@ const QrTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
               sx={{ width: 'min(90vw, 70vh)', height: 'min(90vw, 70vh)' }}
             />
           )}
-          <Typography sx={{ mt: 1, fontSize: '1.1rem', wordBreak: 'break-all' }}>{bingoQrUrl(Number(mesa))}</Typography>
+          <Typography sx={{ mt: 1, fontSize: '1.1rem', wordBreak: 'break-all' }}>{qrUrl}</Typography>
           <Button
             variant="contained"
             color="inherit"

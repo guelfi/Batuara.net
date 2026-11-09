@@ -1964,6 +1964,20 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await act.Should().ThrowAsync<BingoException>();
         }
         [Fact]
+        public void MesaQr_Signature_Should_Only_Validate_For_The_Signed_Table()
+        {
+            var cfg = new FakeConfig();
+            var sig = Batuara.API.Services.BingoMesaSignature.Sign(cfg, 3);
+
+            Batuara.API.Services.BingoMesaSignature.IsValid(cfg, 3, sig).Should().BeTrue();
+            // trocar o número da mesa na URL invalida a assinatura
+            Batuara.API.Services.BingoMesaSignature.IsValid(cfg, 5, sig).Should().BeFalse();
+            Batuara.API.Services.BingoMesaSignature.IsValid(cfg, 3, "0000000000000000").Should().BeFalse();
+            Batuara.API.Services.BingoMesaSignature.IsValid(cfg, 3, null).Should().BeFalse();
+            Batuara.API.Services.BingoMesaSignature.IsValid(cfg, 3, string.Empty).Should().BeFalse();
+        }
+
+        [Fact]
         public async Task ComandaFoto_Should_List_Menu_And_Save_Manual_Tab_Without_Photo()
         {
             var f = new Fixture();

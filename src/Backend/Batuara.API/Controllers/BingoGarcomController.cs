@@ -1,4 +1,5 @@
 using Batuara.API.Filters;
+using Batuara.API.Services;
 using Batuara.Application.Bingo.Models;
 using Batuara.Application.Bingo.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -13,8 +14,16 @@ namespace Batuara.API.Controllers
     [ServiceFilter(typeof(BingoWaiterAccessFilter))]
     [EnableRateLimiting("bingo-garcom")]
     [Route("api/bingo/garcom")]
-    public class BingoGarcomController(IBingoWaiterService service) : ControllerBase
+    public class BingoGarcomController(IBingoWaiterService service, IConfiguration configuration) : ControllerBase
     {
+        /// <summary>Link assinado do QR da mesa: abre a comanda com a mesa travada para o cliente.</summary>
+        [HttpGet("mesas/{mesa:int}/qr")]
+        [BingoSkipWaiterAccess]
+        public IActionResult MesaQr(int mesa)
+            => mesa <= 0
+                ? BadRequest(new { success = false, message = "Mesa inválida." })
+                : Ok(new { success = true, data = new { url = $"https://www.batuara.org.br/bingo?mesa={mesa}&s={BingoMesaSignature.Sign(configuration, mesa)}" } });
+
         [HttpGet("me")]
         [BingoSkipWaiterAccess]
         public async Task<IActionResult> Me(CancellationToken cancellationToken)

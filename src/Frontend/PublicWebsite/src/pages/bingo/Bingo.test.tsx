@@ -86,13 +86,23 @@ test('formulário mostra a dica de voltar à comanda com o mesmo celular', async
 });
 
 test('link com ?mesa= trava a mesa; sem o parâmetro o cliente escolhe', async () => {
-  window.history.pushState({}, '', '/bingo?mesa=3');
-  api.getInfo.mockResolvedValue({ isOpen: true, closeAllRequested: false, mesas: [1, 2, 3], menu: [] });
+  // QR assinado: o servidor confirma a mesa (lockedMesa) e o cliente não pode trocar
+  window.history.pushState({}, '', '/bingo?mesa=3&s=abc123');
+  api.getInfo.mockResolvedValue({ isOpen: true, closeAllRequested: false, mesas: [1, 2, 3], menu: [], lockedMesa: 3 });
   const { unmount } = render(<BingoCustomerPage />);
   const fixed = await screen.findByDisplayValue('Mesa 3');
   expect(fixed).toHaveAttribute('readonly');
   expect(screen.getByText('Definida pelo QR da mesa.')).toBeInTheDocument();
+  expect(api.getInfo).toHaveBeenCalledWith(3, 'abc123');
   unmount();
+
+  // assinatura inválida ou link antigo sem assinatura: o servidor não confirma, o seletor continua
+  window.history.pushState({}, '', '/bingo?mesa=3&s=adulterada');
+  api.getInfo.mockResolvedValue({ isOpen: true, closeAllRequested: false, mesas: [1, 2, 3], menu: [], lockedMesa: null });
+  const second = render(<BingoCustomerPage />);
+  await screen.findByText('Já tem comanda? Informe o mesmo celular para voltar a ela.');
+  expect(screen.queryByText('Definida pelo QR da mesa.')).not.toBeInTheDocument();
+  second.unmount();
 
   window.history.pushState({}, '', '/bingo');
   render(<BingoCustomerPage />);

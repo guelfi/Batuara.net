@@ -288,6 +288,12 @@ export const bingoApi = {
   endWaiterSessions: () => apiService.post<any>(`${BASE}/garcons/encerrar-sessoes`),
 
   // ---- Garçom (autenticado pelo cookie da sessão do filho) ----
+  /** Link assinado do QR da mesa (abre a comanda com a mesa travada para o cliente). */
+  async getMesaQrUrl(mesa: number): Promise<string> {
+    const r = await apiService.get<any>(`/bingo/garcom/mesas/${mesa}/qr`);
+    const d: any = r.data?.data ?? r.data ?? {};
+    return String(d.url ?? '');
+  },
   async getWaiterStatus(): Promise<WaiterStatus> {
     const r = await apiService.get<WaiterStatus>('/bingo/garcom/me');
     const d: any = r.data ?? {};

@@ -13,9 +13,13 @@ export interface BingoPublicInfo {
   closeAllRequested: boolean;
   mesas: number[];
   menu: BingoMenuItem[];
+  /** Mesa vinda de um QR assinado: o cliente não pode trocar. */
+  lockedMesa?: number | null;
 }
 
 export interface CreateBingoTabRequest {
+  /** Assinatura do QR da mesa (quando o link veio de um QR). */
+  mesaSignature?: string;
   customerName: string;
   phone: string;
   mesa: number;
