@@ -23,8 +23,8 @@ interface Item {
 }
 
 const TOKEN_KEY = 'comanda_foto_token';
-// # | descrição | valor | × | qtd | = | total | lixeira
-const ITEM_COLS = '18px minmax(0,1fr) 50px 10px 40px 10px 58px 26px';
+// linha 1: # | descrição; linha 2: valor × qtd = total | lixeira
+const ITEM_COLS = '18px minmax(0,1fr) 10px 52px 10px 62px 26px';
 const cellSx = { '& input': { py: 0.75, px: 0.75, fontSize: 13 } } as const;
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -207,25 +207,17 @@ const ComandaFotoPage: React.FC = () => {
             <TextField size="small" label="Comanda" value={comanda} onChange={(e) => setComanda(e.target.value)} inputProps={{ inputMode: 'numeric', maxLength: 10 }} sx={{ width: 110 }} />
             <TextField size="small" fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} inputProps={{ maxLength: 40 }} />
           </Stack>
-          {items.length > 0 && (
-            <Box sx={{ display: 'grid', gridTemplateColumns: ITEM_COLS, columnGap: 0.5, alignItems: 'center', mb: 0.5, color: 'text.secondary', fontSize: 11, fontWeight: 700 }}>
-              <span>#</span>
-              <span>Descrição</span>
-              <span style={{ textAlign: 'right' }}>Valor</span>
-              <span />
-              <span style={{ textAlign: 'right' }}>Qtd</span>
-              <span />
-              <span style={{ textAlign: 'right' }}>Total</span>
-              <span />
-            </Box>
-          )}
           {items.map((it, idx) => (
-            <Box key={idx} sx={{ mb: 0.75, opacity: it.quantity === 0 ? 0.5 : 1 }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: ITEM_COLS, columnGap: 0.5, alignItems: 'center' }}>
+            <Box key={idx} sx={{ mb: 1.25, opacity: it.quantity === 0 ? 0.5 : 1 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '18px minmax(0,1fr)', columnGap: 0.5, alignItems: 'center', mb: 0.5 }}>
                 <Typography variant="caption" color="text.secondary">
                   {idx + 1}
                 </Typography>
-                <TextField size="small" multiline maxRows={3} value={it.name} error={!it.matched} sx={{ ...cellSx, '& .MuiInputBase-root': { py: 0 } }} onChange={(e) => patch(idx, { name: e.target.value, matched: false })} />
+                <TextField size="small" fullWidth value={it.name} error={!it.matched} sx={cellSx} onChange={(e) => patch(idx, { name: e.target.value, matched: false })} />
+              </Box>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '18px 1fr 52px 10px 52px 10px 62px 26px', columnGap: 0.5, alignItems: 'center' }}>
+                <span />
+                <Typography variant="caption" color="text.secondary" align="right">Valor</Typography>
                 <TextField size="small" type="number" value={it.unitPrice} sx={{ ...cellSx, '& input': { ...cellSx['& input'], textAlign: 'right' } }} onChange={(e) => patch(idx, { unitPrice: Math.max(0, Number(e.target.value)) })} />
                 <Typography variant="body2" color="text.secondary" align="center">×</Typography>
                 <TextField size="small" type="number" value={it.quantity} sx={{ ...cellSx, '& input': { ...cellSx['& input'], textAlign: 'right' } }} onChange={(e) => patch(idx, { quantity: Math.max(0, Number(e.target.value)) })} />

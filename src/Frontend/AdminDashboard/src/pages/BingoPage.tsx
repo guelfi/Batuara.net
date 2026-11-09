@@ -643,7 +643,7 @@ const LivePanel: React.FC<{
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }} justifyContent="space-between">
           {isMobile ? (
             <Stack spacing={1.5}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1 }}>
                 {[
                   { label: 'Itens pendentes', value: String(pendingCount), color: 'info.main' },
                   { label: 'Itens retirados', value: String(retrievedCount), color: 'secondary.main' },
@@ -651,26 +651,28 @@ const LivePanel: React.FC<{
                   ...(contestedCount > 0 ? [{ label: 'Em contestação', value: String(contestedCount), color: 'error.main' }] : []),
                   ...(!!panel?.codeDeliveryFailedCount ? [{ label: 'Falha de entrega', value: String(panel.codeDeliveryFailedCount), color: 'error.main' }] : []),
                 ].map((m) => (
-                  <Box key={m.label} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, px: 1.5, py: 1, minWidth: 0 }}>
+                  <Box key={m.label} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, px: 1, py: 0.75, minWidth: 0 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }}>{m.label}</Typography>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: m.color, wordBreak: 'break-word' }}>{m.value}</Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: m.color, wordBreak: 'break-word' }}>{m.value}</Typography>
                   </Box>
                 ))}
               </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>Filtrar comandas</Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, '& .MuiChip-root': { height: 36, width: '100%' } }}>
-                  <Chip {...chipFilter('open')} label={`Em aberto: ${open.length}`} />
-                  <Chip {...chipFilter('closing')} color="warning" label={`Pediram a conta: ${closing.length}`} />
-                  <Chip {...chipFilter('paid')} color="success" label={`Pagas: ${paid.length}`} />
+              <FormControl size="small" fullWidth>
+                <InputLabel id="painel-filtro">Filtrar comandas</InputLabel>
+                <Select labelId="painel-filtro" label="Filtrar comandas" value={filter ?? ''}
+                  onChange={(e) => setFilter((e.target.value || null) as TabFilter | null)}>
+                  <MenuItem value="">Todas</MenuItem>
+                  <MenuItem value="open">{`Em aberto: ${open.length}`}</MenuItem>
+                  <MenuItem value="closing">{`Pediram a conta: ${closing.length}`}</MenuItem>
+                  <MenuItem value="paid">{`Pagas: ${paid.length}`}</MenuItem>
                   {panel?.phoneVerifiedCount !== undefined && (
-                    <Chip {...chipFilter('verified')} color="success" label={`Celular confirmado: ${panel.phoneVerifiedCount}`} />
+                    <MenuItem value="verified">{`Celular confirmado: ${panel.phoneVerifiedCount}`}</MenuItem>
                   )}
                   {panel?.phoneNotVerifiedCount !== undefined && (
-                    <Chip {...chipFilter('unverified')} label={`Não confirmado: ${panel.phoneNotVerifiedCount}`} />
+                    <MenuItem value="unverified">{`Não confirmado: ${panel.phoneNotVerifiedCount}`}</MenuItem>
                   )}
-                </Box>
-              </Box>
+                </Select>
+              </FormControl>
             </Stack>
           ) : (
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap
@@ -2137,17 +2139,16 @@ const EventsTab: React.FC<{
           {events.map((ev) => (
             <Card key={ev.id} variant="outlined">
               <CardContent sx={{ '&:last-child': { pb: 1.5 }, py: 1.5 }}>
-                <Stack direction="row" alignItems="baseline" spacing={1} sx={{ minWidth: 0 }}>
-                  <Typography variant="subtitle1" fontWeight={600} sx={{ wordBreak: 'break-word' }}>{ev.name}</Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>{formatDate(ev.eventDate)}</Typography>
-                </Stack>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ my: 1 }}>
-                  <Typography variant="body2">Total vendido: <strong>{money(ev.totalSold)}</strong></Typography>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                  <Typography variant="subtitle1" fontWeight={600} sx={{ wordBreak: 'break-word', minWidth: 0 }}>{ev.name}</Typography>
                   <Stack direction="row" spacing={0.5} flexShrink={0}>
                     {ev.isTest && <Chip size="small" label="Teste" color="secondary" />}
                     <Chip size="small" color={EVENT_STATUS[ev.status].color} label={EVENT_STATUS[ev.status].label} />
                   </Stack>
                 </Stack>
+                <Typography variant="body2" sx={{ my: 1 }}>
+                  {formatDate(ev.eventDate)} · Total vendido: <strong>{money(ev.totalSold)}</strong>
+                </Typography>
                 <Box sx={{
                   display: 'flex', flexWrap: 'nowrap', justifyContent: 'center', alignItems: 'stretch', gap: 0.75,
                   '& .MuiButton-root': {
