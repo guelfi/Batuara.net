@@ -1,6 +1,7 @@
 # PRD — Comanda Digital para Pequenos Comércios (multi-tenant)
 
-> Versão 1.0 · 07/11/2026 · Origem: piloto "Bingo Beneficente" da Casa de Caridade Caboclo Batuara (07/11/2026).
+> Versão 1.1 · 09/11/2026 · Origem: piloto "Bingo Beneficente" da Casa de Caridade Caboclo Batuara (07/11/2026).
+> **v1.1:** incorpora o que o piloto ganhou depois do primeiro evento: comanda de papel por foto/digitação manual (§5.13), QR de mesa assinado, edição e suspensão de evento, forma de pagamento na comanda de papel, total pago unificado, aba "Ler Comanda" do garçom, redesenho mobile do Admin e novos aprendizados (§12).
 > Este documento descreve o produto-alvo (SaaS multi-tenant). O que já existe no piloto está marcado como **[Piloto]**; o que é novo para o produto está marcado como **[Novo]**.
 
 ---
@@ -57,13 +58,16 @@ Tenant (estabelecimento/organização) · Evento (turno de venda com data, card�
 
 ### 5.2 Eventos [Piloto → generalizado]
 
-- **RF-E1** Um tenant tem vários eventos (`Rascunho → Aberto → Encerrado`). Por padrão, **um evento aberto por vez por tenant** (configurável por plano).
+- **RF-E1** Um tenant tem vários eventos (`Rascunho → Aberto → Suspenso | Encerrado`). Por padrão, **um evento aberto por vez por tenant** (configurável por plano).
 - **RF-E2** Evento tem nome, data, cardápio, mesas, garçons escalados e formas de pagamento aceitas. **Copiar de evento anterior** (cardápio, mesas, garçons, preços) em um clique.
 - **RF-E3** Evento marcado como **teste** pode ter seus dados zerados (com confirmação por palavra digitada). Evento real **nunca** pode ser zerado (regra no servidor e na tela).
 - **RF-E4** Quantidade de mesas editável apenas em `Rascunho`; depois de iniciado, fica travada para não afetar comandas abertas.
 - **RF-E5** "Pedir fechamento geral": avisa todos os clientes com conta aberta para encerrarem.
 - **RF-E6** "Encerrar pedidos do evento": bloqueia novos pedidos; contas abertas continuam cobráveis.
 - **RF-E7** Histórico de eventos com resumo e comandas, preservado conforme a retenção do plano.
+- **RF-E8** [Piloto] **Editar evento:** nome e data podem ser alterados a qualquer momento (validação no servidor); o cabeçalho da tela mostra "Evento: {nome}", situação e a data.
+- **RF-E9** [Piloto] **Suspender pedidos** do evento (estado `Suspenso`): bloqueia novos pedidos sem encerrar o evento; contas abertas continuam cobráveis. O evento de teste é permanente: só suspende e zera, nunca encerra nem é excluído.
+- **RF-E10** [Proposta, aguardando decisão] **Cancelar evento inteiro:** só quando o evento **não tem lançamento algum** (nem comanda digital, nem comanda de papel), equivalendo a excluir um rascunho. Com lançamentos, o evento só **suspende** ou **encerra**, e o fechamento impresso é preservado. O estado `Cancelado` é final e some das listas. Motivo: cancelar um evento com vendas apagaria ou invalidaria histórico financeiro.
 
 ### 5.3 Cardápio [Piloto]
 
@@ -74,16 +78,18 @@ Tenant (estabelecimento/organização) · Evento (turno de venda com data, card�
 ### 5.4 Mesas e QR [Piloto]
 
 - **RF-M1** Mesas numeradas por evento. QR geral do evento (cliente escolhe a mesa) e **QR por mesa** (mesa já preenchida).
-- **RF-M2** Admin imprime a folha do QR (A4) ou projeta em tela cheia. A prévia na tela é compacta (controles e QR na mesma linha, centralizados, sem rolagem).
+- **RF-M2** Admin imprime a folha do QR (A4) ou projeta em tela cheia (no celular a tela cheia tem botão **Fechar** visível e respeita a área segura do aparelho). A prévia na tela é compacta (controles e QR na mesma linha, centralizados, sem rolagem).
 - **RF-M3** O garçom vê o QR da mesa assim que escolhe a mesa na lista (sem botão extra) e toca para ampliar.
 - **RF-M4** [Novo] Mesas com nome/zona (salão, varanda) e mapa simples.
+- **RF-M5** [Piloto] **QR de mesa assinado:** o link do QR traz `?mesa=N&s=<assinatura>` (HMAC do número da mesa com segredo do servidor). O cliente que abre esse link vê a mesa **fixa** ("Mesa N", definida pelo QR da mesa), sem seletor. O servidor confirma a assinatura (`lockedMesa`) e recusa a abertura de comanda cuja assinatura não confere com a mesa enviada. O QR genérico do evento (sem mesa) continua com seletor. QRs antigos, sem assinatura, abrem com seletor; é preciso gerar de novo para travar. O QR assinado é gerado pelo servidor (aba **Mesas** do garçom, antes "QR").
+- **RF-M6** [Novo] O Admin lista e imprime o QR assinado de **todas** as mesas de uma vez (hoje só a tela do garçom gera por mesa).
 
 ### 5.5 Cliente (web mobile, sem instalar) [Piloto + Novo]
 
 - **RF-CL1** Abertura da comanda: nome, celular com DDD e mesa. Aviso de privacidade visível. Se o aparelho já tem comanda aberta, vai direto a ela.
 - **RF-CL2** **[Novo no piloto final] Reabrir comanda:** cliente que já usou o serviço neste aparelho vê "Olá, {nome}! Escolha sua mesa". Nome e celular ficam guardados no aparelho; "Não sou eu" apaga. Se o celular já foi confirmado no evento, a nova comanda nasce confirmada, sem novo código.
 - **RF-CL3** **Confirmação do celular** por código de 6 dígitos via WhatsApp (template de autenticação). É **não bloqueante**: o cliente pode pedir antes de confirmar. Reenvio com limite de frequência; tentativas limitadas; selo "✓ confirmado". Existe sinalizador para tornar a confirmação obrigatória no fechamento.
-- **RF-CL4** Cardápio compacto, paginado conforme a altura da tela (linhas de altura fixa), com quantidade em cada item e barra do carrinho sempre visível. Abas **Cardápio** e **Pedido**.
+- **RF-CL4** Cardápio compacto, paginado conforme a altura da tela (linhas de altura fixa), com quantidade em cada item e barra do carrinho sempre visível. Abas **Cardápio** e **Pedido**. **[Piloto]** Campo **Buscar item…** acima da lista; a paginação passa a valer sobre o resultado filtrado.
 - **RF-CL5** Pedido: itens entram como `Pendente`. O cliente acompanha `Pendente → A caminho → Entregue`, com "Entregue às HH:mm por {primeiro nome}".
 - **RF-CL6** **Contestação:** em item entregue, "Não recebi" com observação opcional. O item vai a `Em contestação` até o garçom/admin resolver.
 - **RF-CL7** **Pedir a conta:**
@@ -106,9 +112,10 @@ Tenant (estabelecimento/organização) · Evento (turno de venda com data, card�
   - **Mudar mesa da comanda.**
   - **Cobrar** uma ou várias comandas da mesma mesa, escolhendo a forma de pagamento e o nome de quem pagou.
 - **RF-G4** **[Novo no piloto final] Aviso de conta pedida:** o contador vermelho da aba Contas mostra quantas comandas pediram a conta; a aba pisca e vibra quando chega uma nova, mesmo com outra aba aberta.
-- **RF-G5** Aba **QR:** escolhe a mesa e o QR aparece na hora; toque amplia em tela cheia com botão "Fechar" visível.
+- **RF-G5** Aba **Mesas** (antes "QR"): escolhe a mesa e o QR **assinado** aparece na hora; toque amplia em tela cheia com botão "Fechar" visível.
 - **RF-G6** **[Novo no piloto final] Conferência de saída:** abre o QR do cliente e vê tela grande verde/vermelha (ver 5.8).
 - **RF-G7** Pagamento é bloqueado enquanto houver itens não entregues ou em contestação na comanda.
+- **RF-G8** [Piloto] Aba **Ler Comanda** (entre **Mesas** e **Saída**): o mesmo fluxo da comanda de papel (§5.13), dentro do painel do garçom, com o token do evento entregue ao garçom logado. Abas na ordem: Pedidos, Contas, Mesas, Ler Comanda, Saída. Os selos numéricos das abas não podem ser cortados e os títulos ficam numa linha só.
 
 ### 5.7 Caixa, pagamento e conferência [Piloto]
 
@@ -131,12 +138,14 @@ Tenant (estabelecimento/organização) · Evento (turno de venda com data, card�
 - **RF-D1** Indicadores: Em aberto, Pediram a conta, Pagas, Itens pendentes, Itens retirados, Em contestação, Total vendido, Celular confirmado / não confirmado, Falha de entrega do código.
 - **RF-D2** Os indicadores de comandas (Em aberto, Pediram a conta, Pagas, Celular confirmado, Não confirmado) são **filtros clicáveis**: filtram as tabelas Mesas e Contas; o chip ativo fica destacado e um segundo clique remove o filtro. Os de itens e de total são informativos.
 - **RF-D3** Tabela **Mesas** (cliente, "A entregar" com **nome de quem retirou**, "Entregues", "Em contestação") e tabela **Contas** (conta pedida em destaque, celular confirmado, total e "a cobrar").
+- **RF-D1b** [Piloto] "Total vendido" do painel soma as comandas digitais **pagas** e as comandas de papel (§5.13), que só entram ao fechar a conta, portanto já pagas.
 - **RF-D4** Atualização a cada 4 s (pausada com a aba oculta). Menu lateral recolhido na tela do Bingo para ganhar espaço.
 - **RF-D5** Cardápio, Mesas, Garçons (com "visto por último" e entregas), Formas de pagamento e Resumo em abas.
 
 ### 5.10 Resumo e fechamento impresso [Piloto + Novo]
 
-- **RF-R1** Resumo do evento: total recebido, a receber, cancelados, contestados; por forma de pagamento; por garçom; por item.
+- **RF-R1** Resumo do evento: total recebido, a receber, cancelados, contestados; por forma de pagamento; por garçom; por item. **[Piloto]** O **total pago** soma digitais pagas + comandas de papel; "Em aberto" é só das comandas digitais ainda não pagas (itens digitais entram no total apenas depois de pagos). "Por forma de pagamento" mescla pagamentos digitais e comandas de papel; comandas de papel antigas, sem forma registrada, aparecem como **Não informado**.
+- **RF-R1b** [Piloto] Na lista de eventos, cada evento mostra o total vendido e o botão **Fechamento**, que abre o mesmo relatório do Resumo (com Imprimir). No celular, o botão de imprimir fechamento fica na linha do título do evento.
 - **RF-R2** **Imprimir fechamento** (A4, com opção de salvar em PDF): cabeçalho com tenant/evento/data/emissão; totais; recebido por forma de pagamento; conferência de caixa por garçom; vendas por item; **comandas não fechadas** (em destaque, com valor a receber); comandas pagas; itens cancelados e contestados com motivo; linhas de assinatura (conferido por, responsável, data).
 - **RF-R3** O fechamento traz nomes reais dos clientes enquanto não anonimizados. Depois da anonimização o relatório sai sem nomes; recomenda-se guardar o PDF antes do prazo.
 - **RF-R4** [Novo] Exportação CSV/PDF/XLSX e envio do fechamento por e-mail ao responsável.
@@ -158,13 +167,30 @@ Tenant (estabelecimento/organização) · Evento (turno de venda com data, card�
 - **RF-L4** Minimização: cliente vê só o primeiro nome do garçom; o celular nunca aparece para outros clientes; logs sem dados pessoais em texto aberto.
 - **RF-L5** Cada tenant é o **controlador** dos dados de seus clientes e a plataforma é a **operadora**; contrato e DPA padrão.
 
+### 5.13 Comanda de papel (foto e digitação manual) [Novo no piloto]
+
+Plano simples para quem ainda usa comanda impressa: o garçom ou o caixa **fotografa** a comanda de papel, o sistema lê os itens e a conta é fechada. Acesso por **token do evento** (link `/comanda-foto?t=…` ou aba **Ler Comanda** do garçom), sem login.
+
+- **RF-F1** **Leitura por IA (OCR):** a foto (reduzida no aparelho, lado maior 1400 px, JPEG) é enviada ao servidor, que extrai número da comanda, nome e itens com quantidade e valor, usando o cardápio do evento como referência. O provedor é atrás de uma interface (hoje Gemini; ver §8.5).
+- **RF-F2** **Três tentativas automáticas** (pausa de 2 s entre elas), só em falha temporária (rede, tempo esgotado, 5xx, 429). Durante a leitura aparece um **esqueleto** com o formato da tela de conferência e o texto "Lendo a comanda… tentativa N de 3". Erros que não adiantam repetir (sem permissão, foto inválida) vão direto para a falha.
+- **RF-F3** **Falha na leitura:** oferece **Tentar ler novamente** (mesma foto), **Digitar sem foto** (só depois das 3 tentativas) e **Voltar**.
+- **RF-F4** **Digitação manual:** número da comanda, nome (opcional), cardápio do evento com valor e botões (−) quantidade (+) = total por item, 10 itens por página com paginação, **busca por nome**, total geral fixo no rodapé e **item fora do cardápio** (nome e preço livres, com "+ Cardápio" para cadastrá-lo). A comanda digitada não tem foto ("Sem foto: comanda digitada manualmente").
+- **RF-F5** **Conferência:** cada item em duas linhas (descrição; abaixo valor × quantidade = total e a lixeira). Item fora do cardápio fica em vermelho com **+ Cardápio**. É sempre possível **+ Adicionar item** (mesmo com leitura bem-sucedida, a IA pode perder ou o item pode ser novo).
+- **RF-F6** **Duplicidade:** o número da comanda é normalizado; comanda já fechada no evento mostra um **card vermelho flutuante** "Comanda N já registrada (R$ x)" e bloqueia o fechamento, no servidor também. Para refazer, cancela-se a anterior.
+- **RF-F7** **Forma de pagamento obrigatória** ao tocar em **Fechar comanda** (uma escolha entre as formas ativas do tenant). O nome da forma fica gravado na comanda (instantâneo).
+- **RF-F8** **Integração aos totais:** a comanda de papel só é registrada ao fechar a conta, então entra como **paga** em: total pago do Resumo, por forma de pagamento, total do evento na lista e Painel ao vivo.
+- **RF-F9** **Cancelamento:** no evento de teste, "Descartar" sem justificativa. Em evento regular, "Cancelar" exige **justificativa** e registra quem e quando; a comanda cancelada continua visível, mas não entra nos totais.
+- **RF-F10** **Admin, "Comandas fotografadas":** lista com número, nome, data/hora, total e itens (item numa linha; abaixo valor × quantidade = total) e a linha **Forma de pagamento: {nome | Não informado}**; **Ver foto** abre a imagem (ou informa que não há foto).
+
 ## 6. Regras de negócio e estados
 
 **Comanda:** `Aberta → PediuConta → Paga`. `PediuConta → Aberta` quando o cliente desiste. `Paga` é final (reabrir = criar nova comanda).
 **Item:** `Pendente → Retirado → Entregue`; `Retirado → Pendente` (devolver); `Entregue → EmContestação → Entregue | Cancelado`; `Pendente|Retirado|Entregue → Cancelado` (garçom/admin, motivo obrigatório; cliente pode cancelar não entregues ao encerrar).
 **Valores:** `consumo = itens não cancelados`; `a pagar = itens entregues`. Pagamento exige `sem itens pendentes/retirados/contestados`.
 **Unicidade:** um celular tem no máximo **uma comanda não paga por evento**; abrir de novo devolve a existente. Depois de paga, abre-se outra.
-**Evento:** só um aberto por vez (por padrão); evento real não zera; mesas travadas após o início.
+**Evento:** só um aberto por vez (por padrão); evento real não zera; mesas travadas após o início; `Suspenso` bloqueia novos pedidos; nome e data editáveis; evento de teste é permanente.
+**Comanda de papel:** `Fechada → Cancelada` (justificativa obrigatória em evento regular; descarte livre no teste). Número único por evento entre as não canceladas. Forma de pagamento obrigatória. Total = soma de valor × quantidade; entra como paga.
+**Mesa do cliente:** definida e travada quando o link traz assinatura válida; senão o cliente escolhe.
 **Garçom:** só atua se escalado no evento aberto. Retirada registra quem pegou; entrega registra quem entregou; pagamento registra quem recebeu.
 **Concorrência:** operações de item são idempotentes e retornam `409` com mensagem clara se o estado já mudou (ex.: dois garçons retirando o mesmo item).
 
@@ -244,6 +270,7 @@ Mesmas regras da stack: IA fora do caminho crítico, sem acesso direto ao banco,
 - Resumo em linguagem natural do evento e sugestões (itens que esgotam cedo, horário de pico).
 - Alerta de anomalias (muitas contestações de um mesmo garçom, divergência de caixa).
 - Montagem do cardápio a partir de foto/planilha (OCR + IA).
+- **Já no piloto:** leitura da comanda de papel por OCR/IA (§5.13), com o cardápio do evento no contexto, itens validados contra o cardápio no servidor e totais sempre recalculados em C#. O provedor fica atrás de uma interface, para trocar sem mexer no fluxo: hoje **Gemini**. **O produto derivado planeja incluir o Kimi (Moonshot) como provedor alternativo**; o piloto do Batuara não o usa (decisão de 09/11/2026).
 Totais e conferências continuam calculados em C#.
 
 ### 8.6 Superfícies do frontend
@@ -269,11 +296,12 @@ Todas as tabelas de negócio têm `TenantId` (índice composto no início das ch
 `PaymentMethod` (tenant, nome, ordem, ativo),
 `Tab` (evento, mesa, nome, telefone, status, verificação do telefone, código/tentativas, entrega do código, lembrete, pagamento: forma, valor, quem pagou/recebeu, horário, nota; **saída: conferido em, conferido por**; criada/atualizada),
 `OrderItem` (comanda, item do cardápio, nome e preço congelados, quantidade, status, retirado por/em, entregue por/em, contestado em/nota, cancelado por/em/motivo, resolvido por/em),
+`PhotoTab` (evento, número da comanda normalizado, rótulo, itens em JSON, total, **forma de pagamento (nome, instantâneo)**, foto (opcional), criada em, **cancelamento: por/em/motivo**),
 `MessageLog` (tabela de mensagens com status de entrega e custo estimado),
 `AuditLog` (usuário, ação, entidade, antes/depois, data),
 `UsageCounter` (por tenant/mês: comandas, mensagens, eventos).
 
-**Índices e restrições importantes:** um evento aberto por tenant (índice único parcial); única comanda não paga por (tenant, evento, telefone); mesa única por (tenant, evento, número); índices por (tenant, evento, status).
+**Índices e restrições importantes:** um evento aberto por tenant (índice único parcial); única comanda não paga por (tenant, evento, telefone); número de comanda de papel único entre as não canceladas por (tenant, evento); mesa única por (tenant, evento, número); índices por (tenant, evento, status).
 
 ## 10. API (grupos de endpoints)
 
@@ -282,6 +310,10 @@ Prefixo `/api/{tenant}/...` (ou subdomínio). Respostas padronizadas `{ success,
 - **Públicos (cliente):** `GET info` · `POST comandas` · `GET comandas/{id}` · `POST comandas/{id}/itens` · `POST comandas/{id}/itens/{itemId}/contestar` · `POST comandas/{id}/encerrar` (com `cancelUndelivered`) · `POST comandas/{id}/reabrir` · `POST comandas/{id}/celular/enviar-codigo` · `POST comandas/{id}/celular/confirmar`.
 - **Equipe (garçom):** `GET me` · `GET pedidos` · `POST itens/{id}/retirar|devolver|entregar|cancelar|resolver-contestacao` · `GET formas-pagamento` · `POST comandas/{id}/mesa` · `GET contas[?todas]` · `POST contas/pagar` · `GET saida/{tabId}` · `POST saida/{tabId}/liberar`.
 - **Admin:** CRUD de eventos (+ abrir, encerrar, zerar teste, copiar de evento, fechamento geral), cardápio, mesas (+ QR), garçons (+ encerrar sessões), formas de pagamento, painel, resumo, histórico de comandas, pagamento, cancelamento e resolução de contestação, lembretes (pré-visualizar e enviar).
+- **Comanda de papel (token do evento):** `POST comanda-foto/ler` · `POST comanda-foto` (com `paymentMethodId`; `imageBase64` vazio na digitação manual) · `GET comanda-foto/cardapio` (itens ativos do evento) · `POST comanda-foto/cardapio` (cadastrar item novo) · `GET comanda-foto/formas-pagamento` · `GET comanda-foto/relatorio` · `GET comanda-foto/{id}/foto` · `DELETE comanda-foto/{id}`.
+- **Equipe (garçom), acréscimos:** `GET garcom/mesas/{n}/qr` (link assinado) · `GET garcom/comanda-foto/token`.
+- **Público, acréscimos:** `GET info?mesa=N&s=…` (devolve `lockedMesa` quando a assinatura confere) · `POST comandas` aceita `mesaSignature` e recusa assinatura que não confere com a mesa.
+- **Admin, acréscimos:** `PUT eventos/{id}` (nome e data) · `GET/DELETE/POST comandas-foto…` (lista, foto, cancelamento com justificativa).
 - **Plataforma:** tenants, planos, uso, suspensão.
 - **Webhooks:** status de mensagens do WhatsApp.
 - **Tempo real (SignalR):** hubs `team` (pedidos novos, conta pedida, mudanças de status) e `tab` (atualização da comanda do cliente).
@@ -294,13 +326,14 @@ Prefixo `/api/{tenant}/...` (ou subdomínio). Respostas padronizadas `{ success,
 - Abas **Cardápio / Pedido**, barra do carrinho fixa, "Não recebi", "Continuar pedindo", QR de saída.
 
 **Equipe:**
-- Abas **Pedidos** (badge), **Contas** (badge, filtros), **QR** (automático).
+- Abas **Pedidos** (badge), **Contas** (badge, filtros), **Mesas** (QR assinado automático), **Ler Comanda** (foto/digitação), **Saída**.
 - Tela **Conferir saída** (verde/vermelho/âmbar).
 
 **Admin:**
 - Eventos, Painel ao vivo (indicadores-filtro, Mesas, Contas), Cardápio em grade editável, Mesas (controles e QR na mesma linha, centralizados), Garçons, Formas de pagamento, Resumo com **Imprimir fechamento**.
 
-Regras de UI: mobile-first, alvos de toque ≥ 48 px, sem rolagem desnecessária, contraste alto, feedback sonoro/vibração apenas na equipe.
+**Admin no celular (iPhone):** seletor de seção no lugar das abas; cartões em vez de tabelas; listas compactas de uma linha por item (Cardápio, Formas de pagamento); botões de uma linha só e centralizados; informativos (chips) separados dos filtros (caixa de seleção "Filtrar comandas"); o desktop não muda.
+Regras de UI: mobile-first, **nenhum texto cortado** (títulos e avisos numa linha só, com fonte ajustada à largura; selos numéricos inteiros), alvos de toque ≥ 48 px, sem rolagem desnecessária, contraste alto, feedback sonoro/vibração apenas na equipe.
 
 ## 12. Aprendizados do piloto (entram como requisitos)
 
@@ -313,6 +346,12 @@ Regras de UI: mobile-first, alvos de toque ≥ 48 px, sem rolagem desnecessária
 7. **Migrations idempotentes no deploy** com guarda de divergência: toda migration nova entra no script de deploy.
 8. **Wi-Fi do local é fraco:** polling leve, pausa em segundo plano, mensagens claras de reconexão e recuperação da comanda salva.
 9. **Plano B em papel** deve existir no primeiro uso de cada tenant (tutorial de contingência).
+10. **Leitura de comanda por IA falha às vezes:** ofereça tentativas automáticas com contador, repetição manual e digitação manual como saída. Mesmo quando a leitura funciona, pode faltar item ou haver item novo; sempre permita adicionar item.
+11. **Forma de pagamento tem que ser pedida ao fechar a comanda de papel**, senão o fechamento do caixa por forma de pagamento fica incompleto. Comandas anteriores à regra ficam como "Não informado".
+12. **Total pago único:** o que a equipe vê no Painel, no Resumo e na lista de eventos deve ser o mesmo número; digital só entra depois de pago, comanda de papel entra ao fechar.
+13. **QR sem assinatura deixa o cliente trocar a mesa** pela URL ou pelo seletor; a assinatura no servidor resolve para links vindos de QR, mas QRs impressos antes precisam ser regenerados.
+14. **Texto cortado e quebra de linha** em celular geram retrabalho: medir em iPhone, usar fonte proporcional à largura e nunca ocultar selos.
+15. **Deploys seguidos se cancelam:** esperar o deploy atual terminar antes do próximo push; e o CI pode falhar por indisponibilidade do GitHub (rodar de novo antes de mexer no código).
 
 ## 13. Roadmap sugerido
 
@@ -341,6 +380,10 @@ Regras de UI: mobile-first, alvos de toque ≥ 48 px, sem rolagem desnecessária
 6. Cardápio por evento ou catálogo do tenant reaproveitado entre eventos?
 7. Pix dentro do app já na v1 ou só na fase 4?
 8. Retenção configurável por tenant ou fixa (30/90 dias)?
+9. **Cancelar evento inteiro** (RF-E10): adotar a regra proposta (só sem lançamentos; com lançamentos, suspender ou encerrar) e `Cancelado` como estado final?
+10. **Provedor de OCR:** manter Gemini, ou abstrair e oferecer Kimi (Moonshot) como alternativa? (Piloto: só Gemini. Produto derivado: prevê Kimi.)
+11. **Comanda de papel:** continua como módulo opcional por tenant ou entra no núcleo? A fila de comandas de papel precisa de login do garçom (auditoria de quem fechou) em vez de só o token do evento?
+12. **QR por mesa:** gerar para todas as mesas no Admin (RF-M6) e expirar/rotacionar a assinatura por evento?
 
 ## 15. Critérios de aceite do MVP
 
@@ -352,7 +395,9 @@ Regras de UI: mobile-first, alvos de toque ≥ 48 px, sem rolagem desnecessária
 - Anonimização automática executa nos prazos e o histórico financeiro permanece.
 - Primeira carga do cliente dentro da meta em rede lenta simulada.
 - Deploy sem indisponibilidade e migrations aplicadas de forma idempotente.
+- Comanda de papel: fotografar → (falha simulada) 3 tentativas com contador → digitar manualmente → escolher forma de pagamento → fechar; a comanda aparece no Resumo como paga, por forma de pagamento, no total do evento e no Painel.
+- Cliente que abre o QR assinado de uma mesa não consegue trocar a mesa (seletor ausente; assinatura adulterada é recusada pelo servidor).
 
 ## 16. Referências do piloto
 
-Imagens da stack adotada: `/home/guelfi/Projetos/Stack` (seção 2 ausente) · Contrato técnico detalhado do piloto: `docs/BINGO-CONTRATO.md` · Plano e histórico: `docs/PLANO-MELHORIAS.md` (PM-046 a PM-050) · Modelo de comanda em papel: `docs/comanda.jpeg`.
+Imagens da stack adotada: `/home/guelfi/Projetos/Stack` (seção 2 ausente) · Contrato técnico detalhado do piloto: `docs/BINGO-CONTRATO.md` · Plano e histórico: `docs/PLANO-MELHORIAS.md` (PM-046 a PM-050) · Modelo de comanda em papel: `docs/comanda.jpeg` · Comanda de papel (código): `ComandaFotoService`, `ComandaFotoPage` (público) e `ComandaFotoPanel` (garçom) · QR assinado: `BingoMesaSignature`.
