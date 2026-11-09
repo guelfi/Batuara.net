@@ -1,4 +1,4 @@
-# PRD — Comanda Digital para Pequenos Comércios (multi-tenant)
+# PRD — ComandaFácil: Comanda Digital e Fotografada para Pequenos Comércios (multi-tenant)
 
 > Versão 1.1 · 09/11/2026 · Origem: piloto "Bingo Beneficente" da Casa de Caridade Caboclo Batuara (07/11/2026).
 > **v1.1:** incorpora o que o piloto ganhou depois do primeiro evento: comanda de papel por foto/digitação manual (§5.13), QR de mesa assinado, edição e suspensão de evento, forma de pagamento na comanda de papel, total pago unificado, aba "Ler Comanda" do garçom, redesenho mobile do Admin e novos aprendizados (§12).
@@ -144,7 +144,7 @@ Tenant (estabelecimento/organização) · Evento (turno de venda com data, card�
 
 ### 5.10 Resumo e fechamento impresso [Piloto + Novo]
 
-- **RF-R1** Resumo do evento: total recebido, a receber, cancelados, contestados; por forma de pagamento; por garçom; por item. **[Piloto]** O **total pago** soma digitais pagas + comandas de papel; "Em aberto" é só das comandas digitais ainda não pagas (itens digitais entram no total apenas depois de pagos). "Por forma de pagamento" mescla pagamentos digitais e comandas de papel; comandas de papel antigas, sem forma registrada, aparecem como **Não informado**.
+- **RF-R1** Resumo do evento: total recebido, a receber, cancelados, contestados; por forma de pagamento; por garçom; por item. **[Piloto]** O **total pago** soma digitais pagas + comandas de papel; "Em aberto" é só das comandas digitais ainda não pagas (itens digitais entram no total apenas depois de pagos). "Por forma de pagamento" mescla pagamentos digitais e comandas de papel; comandas de papel antigas, sem forma registrada, aparecem como **Não identificado**.
 - **RF-R1b** [Piloto] Na lista de eventos, cada evento mostra o total vendido e o botão **Fechamento**, que abre o mesmo relatório do Resumo (com Imprimir). No celular, o botão de imprimir fechamento fica na linha do título do evento.
 - **RF-R2** **Imprimir fechamento** (A4, com opção de salvar em PDF): cabeçalho com tenant/evento/data/emissão; totais; recebido por forma de pagamento; conferência de caixa por garçom; vendas por item; **comandas não fechadas** (em destaque, com valor a receber); comandas pagas; itens cancelados e contestados com motivo; linhas de assinatura (conferido por, responsável, data).
 - **RF-R3** O fechamento traz nomes reais dos clientes enquanto não anonimizados. Depois da anonimização o relatório sai sem nomes; recomenda-se guardar o PDF antes do prazo.
@@ -177,10 +177,11 @@ Plano simples para quem ainda usa comanda impressa: o garçom ou o caixa **fotog
 - **RF-F4** **Digitação manual:** número da comanda, nome (opcional), cardápio do evento com valor e botões (−) quantidade (+) = total por item, 10 itens por página com paginação, **busca por nome**, total geral fixo no rodapé e **item fora do cardápio** (nome e preço livres, com "+ Cardápio" para cadastrá-lo). A comanda digitada não tem foto ("Sem foto: comanda digitada manualmente").
 - **RF-F5** **Conferência:** cada item em duas linhas (descrição; abaixo valor × quantidade = total e a lixeira). Item fora do cardápio fica em vermelho com **+ Cardápio**. É sempre possível **+ Adicionar item** (mesmo com leitura bem-sucedida, a IA pode perder ou o item pode ser novo).
 - **RF-F6** **Duplicidade:** o número da comanda é normalizado; comanda já fechada no evento mostra um **card vermelho flutuante** "Comanda N já registrada (R$ x)" e bloqueia o fechamento, no servidor também. Para refazer, cancela-se a anterior.
-- **RF-F7** **Forma de pagamento obrigatória** ao tocar em **Fechar comanda** (uma escolha entre as formas ativas do tenant). O nome da forma fica gravado na comanda (instantâneo).
+- **RF-F7** **Forma de pagamento obrigatória** ao tocar em **Fechar comanda**: uma escolha entre as formas ativas do tenant **ou** a opção **Não identificado** (quando ninguém sabe). O nome da forma fica gravado na comanda (instantâneo); "Não identificado" grava vazio e aparece assim nos relatórios.
+- **RF-F7b** **Leitura da forma de pagamento pelo OCR:** a IA procura, no fim da comanda (depois dos totais, fora da tabela de itens), o texto da forma de pagamento. O servidor compara com as formas ativas do tenant (nome exato, depois apelidos: dinheiro/espécie, pix, crédito, débito) e só aceita se houver **uma única** correspondência. A forma reconhecida vem **pré-selecionada e destacada** no diálogo; o garçom sempre confirma com um toque. Sem correspondência, nada é pré-selecionado. *(Implementado; ainda não validado com foto real.)*
 - **RF-F8** **Integração aos totais:** a comanda de papel só é registrada ao fechar a conta, então entra como **paga** em: total pago do Resumo, por forma de pagamento, total do evento na lista e Painel ao vivo.
 - **RF-F9** **Cancelamento:** no evento de teste, "Descartar" sem justificativa. Em evento regular, "Cancelar" exige **justificativa** e registra quem e quando; a comanda cancelada continua visível, mas não entra nos totais.
-- **RF-F10** **Admin, "Comandas fotografadas":** lista com número, nome, data/hora, total e itens (item numa linha; abaixo valor × quantidade = total) e a linha **Forma de pagamento: {nome | Não informado}**; **Ver foto** abre a imagem (ou informa que não há foto).
+- **RF-F10** **Admin, "Comandas fotografadas":** lista com número, nome, data/hora, total e itens (item numa linha; abaixo valor × quantidade = total) e a linha **Forma de pagamento: {nome | Não identificado}**; **Ver foto** abre a imagem (ou informa que não há foto).
 
 ## 6. Regras de negócio e estados
 
@@ -189,7 +190,7 @@ Plano simples para quem ainda usa comanda impressa: o garçom ou o caixa **fotog
 **Valores:** `consumo = itens não cancelados`; `a pagar = itens entregues`. Pagamento exige `sem itens pendentes/retirados/contestados`.
 **Unicidade:** um celular tem no máximo **uma comanda não paga por evento**; abrir de novo devolve a existente. Depois de paga, abre-se outra.
 **Evento:** só um aberto por vez (por padrão); evento real não zera; mesas travadas após o início; `Suspenso` bloqueia novos pedidos; nome e data editáveis; evento de teste é permanente.
-**Comanda de papel:** `Fechada → Cancelada` (justificativa obrigatória em evento regular; descarte livre no teste). Número único por evento entre as não canceladas. Forma de pagamento obrigatória. Total = soma de valor × quantidade; entra como paga.
+**Comanda de papel:** `Fechada → Cancelada` (justificativa obrigatória em evento regular; descarte livre no teste). Número único por evento entre as não canceladas. Forma de pagamento obrigatória (ou "Não identificado"). Total = soma de valor × quantidade; entra como paga.
 **Mesa do cliente:** definida e travada quando o link traz assinatura válida; senão o cliente escolhe.
 **Garçom:** só atua se escalado no evento aberto. Retirada registra quem pegou; entrega registra quem entregou; pagamento registra quem recebeu.
 **Concorrência:** operações de item são idempotentes e retornam `409` com mensagem clara se o estado já mudou (ex.: dois garçons retirando o mesmo item).
@@ -347,7 +348,7 @@ Regras de UI: mobile-first, **nenhum texto cortado** (títulos e avisos numa lin
 8. **Wi-Fi do local é fraco:** polling leve, pausa em segundo plano, mensagens claras de reconexão e recuperação da comanda salva.
 9. **Plano B em papel** deve existir no primeiro uso de cada tenant (tutorial de contingência).
 10. **Leitura de comanda por IA falha às vezes:** ofereça tentativas automáticas com contador, repetição manual e digitação manual como saída. Mesmo quando a leitura funciona, pode faltar item ou haver item novo; sempre permita adicionar item.
-11. **Forma de pagamento tem que ser pedida ao fechar a comanda de papel**, senão o fechamento do caixa por forma de pagamento fica incompleto. Comandas anteriores à regra ficam como "Não informado".
+11. **Forma de pagamento tem que ser pedida ao fechar a comanda de papel**, senão o fechamento do caixa por forma de pagamento fica incompleto. Comandas anteriores à regra, ou sem forma conhecida, ficam como "Não identificado". O OCR tenta ler a forma escrita no fim do papel e sugere; a pessoa confirma.
 12. **Total pago único:** o que a equipe vê no Painel, no Resumo e na lista de eventos deve ser o mesmo número; digital só entra depois de pago, comanda de papel entra ao fechar.
 13. **QR sem assinatura deixa o cliente trocar a mesa** pela URL ou pelo seletor; a assinatura no servidor resolve para links vindos de QR, mas QRs impressos antes precisam ser regenerados.
 14. **Texto cortado e quebra de linha** em celular geram retrabalho: medir em iPhone, usar fonte proporcional à largura e nunca ocultar selos.

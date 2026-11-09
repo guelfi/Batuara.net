@@ -271,6 +271,17 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 - **Data Protection:** chaves no volume Docker `batuara-dataprotection-keys` (`/app/dp-keys`).
 - **Backup:** `~/backups/batuara-orixas-umbanda-pre-unify-20261023.sql` na OCI (pré-`UnifyDescriptionFields`).
 
+### Handoff — 2026-11-09 (Comanda digital + comanda de papel)
+
+- **Agente/dev:** Claude Code (Sonnet 5.5)
+- **Branch:** `master` (último commit publicado `3d8399c`; CI, CD e health ok)
+- **Itens movidos para `done`:** comanda de papel por foto com OCR (3 tentativas, esqueleto, falha com "Tentar ler novamente"/"Digitar sem foto"/"Voltar"); digitação manual com cardápio, busca, paginação, item fora do cardápio; busca no cardápio do cliente; QR de mesa assinado (HMAC, `BingoMesaSignature`, cliente não troca a mesa); aba "Mesas" e aba "Ler Comanda" (antes de "Saída") no garçom; total vendido/pago unificado (Painel e Resumo; "Em aberto" só digital); cards mobile da comanda fotografada; cancelar evento inteiro (só sem lançamentos, nunca o de teste); forma de pagamento "Não identificado"; OCR tenta ler a forma de pagamento escrita no fim da comanda (`MatchPaymentMethod`) e pré-seleciona.
+- **Validações executadas:** `dotnet test --filter Bingo` (90 ok), `tsc --noEmit` nos dois frontends, testes do PublicWebsite (13 ok), deploy OCI verificado.
+- **Arquivos tocados:** `ComandaFoto.cs`, `ComandaFotoService.cs`, `ComandaFotoController.cs`, `BingoGarcomController.cs`, `BingoPublicController.cs`, `BingoMesaSignature.cs`, `BingoAdminService.cs`, `BingoServiceTests.cs`; PublicWebsite `pages/comandaFoto/*`, `pages/bingo/BingoCustomerPage.tsx`; AdminDashboard `components/comandaFoto/*`, `pages/BingoWaiterPage.tsx`, `pages/BingoPage.tsx`, `pages/BingoExitPage.tsx`.
+- **Não commitado / cuidado:** `docs/PRD-COMANDA-DIGITAL-MULTITENANT.md` (RF-F7/F7b e "Não identificado") e esta seção. O fluxo comanda-foto está **duplicado** no Admin (`components/comandaFoto`) e no Public (`pages/comandaFoto`): corrigir nos dois. Sem migration nova (status do evento é string). Esperar o deploy terminar antes de novo push; CI pode falhar por indisponibilidade do GitHub (rodar de novo).
+- **Próximo item sugerido:** validar o OCR da forma de pagamento com foto real e ajustar a regra 7 do prompt; depois RF-M6 (Admin lista/imprime QR assinado de todas as mesas) e unificar o fluxo duplicado.
+- **Bloqueios novos:** nenhum. Lembretes: revogar a chave Anthropic usada antes; evento real "Bingo" (07/11/2026) está Suspenso; evento "Teste" está Aberto (usar "Zerar" antes de testes reais). Produto derivado: `/home/guelfi/Projetos/ComandaFacil` (PRD e HANDOFF); Kimi só lá, Batuara fica com Gemini.
+
 ### 6.2 Template (copiar para próxima sessão)
 
 ```markdown
@@ -297,6 +308,10 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 ---
 
 ## 7. Changelog deste plano
+
+### 2026-11-09 (Bingo: comanda de papel, QR assinado, cancelar evento)
+
+- Comanda de papel (foto/manual), QR de mesa assinado, abas "Mesas" e "Ler Comanda" do garçom, total pago unificado, cancelar evento, "Não identificado" e leitura da forma de pagamento pelo OCR (detalhes no handoff de 2026-11-09, §6.1). PRD atualizado para v1.1 (+ RF-F7b).
 
 ### 2026-11-07 (ajuste do digest diário, local)
 
