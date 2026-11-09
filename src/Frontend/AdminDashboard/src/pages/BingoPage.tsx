@@ -2411,6 +2411,11 @@ const BingoPage: React.FC = () => {
           !eventsLoading && <Chip size="small" label="Sem evento atual" />
         )}
       </Stack>
+      {isMobile && current && (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: -1.5, mb: 2 }}>
+          {formatDate(current.eventDate)}
+        </Typography>
+      )}
 
       {isMobile ? (
         tab !== 0 && (
