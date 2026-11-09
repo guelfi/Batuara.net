@@ -413,7 +413,8 @@ namespace Batuara.Infrastructure.Bingo.Services
 
         public async Task<List<BingoEventDto>> GetEventsAsync(CancellationToken cancellationToken = default)
         {
-            var events = await Db.BingoEvents.ToListAsync(cancellationToken);
+            // evento cancelado e final e some das listas
+            var events = await Db.BingoEvents.Where(x => x.Status != BingoEventStatus.Cancelled).ToListAsync(cancellationToken);
             var tabs = await Db.BingoTabs.Include(x => x.Items).ToListAsync(cancellationToken);
             // comandas de papel fotografadas (nao canceladas) tambem compoem o total vendido do evento
             var photoTotals = (await Db.BingoPhotoTabs
@@ -435,7 +436,7 @@ namespace Batuara.Infrastructure.Bingo.Services
         {
             // espelho: sem origem informada, copia do ultimo evento regular (nunca do teste)
             var mirrorId = request.CopiarDeEventoId
-                ?? await Db.BingoEvents.Where(x => !x.IsTest)
+                ?? await Db.BingoEvents.Where(x => !x.IsTest && x.Status != BingoEventStatus.Cancelled)
                     .OrderByDescending(x => x.EventDate).ThenByDescending(x => x.Id)
                     .Select(x => (int?)x.Id).FirstOrDefaultAsync(cancellationToken);
 
@@ -493,6 +494,32 @@ namespace Batuara.Infrastructure.Bingo.Services
             ev.Suspend();
             await Db.SaveChangesAsync(cancellationToken);
             return ToEventDto(ev, await LoadTabsAsync(ev.Id, cancellationToken));
+        }
+
+        public async Task<BingoEventDto> CancelEventAsync(int eventId, CancellationToken cancellationToken = default)
+        {
+            var ev = await ResolveAdminEventAsync(eventId, cancellationToken);
+            if (ev.IsTest)
+            {
+                throw new BingoException(BingoErrorKind.Validation, "O evento de teste é permanente: só pode ser suspenso ou ter os dados zerados.");
+            }
+
+            if (ev.Status == BingoEventStatus.Cancelled)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "O evento já está cancelado.");
+            }
+
+            // qualquer lancamento (comanda digital ou de papel, mesmo cancelada) preserva o historico financeiro
+            if (await Db.BingoTabs.AnyAsync(x => x.EventId == ev.Id, cancellationToken)
+                || await Db.BingoPhotoTabs.AnyAsync(x => x.EventId == ev.Id, cancellationToken))
+            {
+                throw new BingoException(BingoErrorKind.Conflict,
+                    "Este evento tem lançamentos e não pode ser cancelado. Suspenda ou encerre o evento.");
+            }
+
+            ev.Cancel();
+            await Db.SaveChangesAsync(cancellationToken);
+            return ToEventDto(ev, new List<BingoTab>());
         }
 
         public async Task<BingoEventDto> UpdateEventAsync(int eventId, BingoUpdateEventRequest request, CancellationToken cancellationToken = default)

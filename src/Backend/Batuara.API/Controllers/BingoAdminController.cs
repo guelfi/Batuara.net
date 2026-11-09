@@ -170,6 +170,10 @@ namespace Batuara.API.Controllers
         public async Task<IActionResult> SuspendEvent(int id, CancellationToken ct)
             => Ok(new { success = true, data = await service.SuspendEventAsync(id, ct) });
 
+        [HttpPost("eventos/{id:int}/cancelar")]
+        public async Task<IActionResult> CancelEvent(int id, CancellationToken ct)
+            => Ok(new { success = true, data = await service.CancelEventAsync(id, ct) });
+
         [HttpPost("eventos/{id:int}/retomar")]
         public async Task<IActionResult> ResumeEvent(int id, CancellationToken ct)
             => Ok(new { success = true, data = await service.ResumeEventAsync(id, ct) });

@@ -86,6 +86,7 @@ const EVENT_STATUS: Record<BingoEvent['status'], { label: string; color: 'defaul
   Open: { label: 'Aberto', color: 'success' },
   Closed: { label: 'Encerrado', color: 'default' },
   Suspended: { label: 'Suspenso', color: 'warning' },
+  Cancelled: { label: 'Cancelado', color: 'default' },
 };
 
 const formatDate = (iso: string) => {
@@ -2100,6 +2101,22 @@ const EventsTab: React.FC<{
             notify(apiError(e, 'Não foi possível retomar o evento.'), 'error');
           }
         }}>Retomar</Button>
+      )}
+      {!ev.isTest && ev.status !== 'Cancelled' && (ev.tabsCount ?? 0) === 0 && ev.totalSold === 0 && (
+        <Button size="small" color="error" variant="outlined" onClick={() => confirm({
+          title: 'Cancelar evento',
+          text: `Cancelar "${ev.name}"? O evento não tem nenhum lançamento e sairá da lista. O cancelamento é definitivo.`,
+          confirmLabel: 'Cancelar evento',
+          onConfirm: async () => {
+            try {
+              await bingoApi.cancelEvent(ev.id);
+              notify('Evento cancelado.', 'success');
+              onChanged();
+            } catch (e: any) {
+              notify(apiError(e, 'Não foi possível cancelar o evento.'), 'error');
+            }
+          },
+        })}>Cancelar</Button>
       )}
       {!ev.isTest && (ev.status === 'Open' || ev.status === 'Suspended') && (
         <Button size="small" color="error" variant="outlined" onClick={() => confirm({

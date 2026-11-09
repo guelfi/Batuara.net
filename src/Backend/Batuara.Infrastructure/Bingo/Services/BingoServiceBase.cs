@@ -34,7 +34,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 return open;
             }
 
-            var events = await Db.BingoEvents.ToListAsync(cancellationToken);
+            var events = await Db.BingoEvents.Where(x => x.Status != BingoEventStatus.Cancelled).ToListAsync(cancellationToken);
             return events
                 .OrderBy(x => x.Status == BingoEventStatus.Draft ? 0 : 1)
                 .ThenByDescending(x => x.EventDate)

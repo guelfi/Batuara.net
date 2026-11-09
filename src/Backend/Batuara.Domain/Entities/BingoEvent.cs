@@ -64,6 +64,13 @@ namespace Batuara.Domain.Entities
             UpdateTimestamp();
         }
 
+        public void Cancel()
+        {
+            Status = BingoEventStatus.Cancelled;
+            CloseAllRequested = false;
+            UpdateTimestamp();
+        }
+
         public void Suspend()
         {
             Status = BingoEventStatus.Suspended;

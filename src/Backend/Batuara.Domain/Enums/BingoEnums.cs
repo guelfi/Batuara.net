@@ -6,7 +6,9 @@ namespace Batuara.Domain.Enums
         Open,
         Closed,
         /// <summary>Pausado: bloqueia pedidos e libera a vaga de evento aberto; pode ser retomado.</summary>
-        Suspended
+        Suspended,
+        /// <summary>Cancelado (estado final): so evento sem nenhum lancamento; some das listas.</summary>
+        Cancelled
     }
 
     public enum BingoTabStatus

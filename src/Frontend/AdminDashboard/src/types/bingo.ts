@@ -4,7 +4,7 @@ export type BingoPaymentMethod = 'Card' | 'Pix' | 'Cash';
 export type BingoTabStatus = 'Open' | 'CloseRequested' | 'Paid';
 export type BingoItemStatus = 'Pending' | 'Retrieved' | 'Delivered' | 'Contested' | 'Cancelled';
 
-export type BingoEventStatus = 'Draft' | 'Open' | 'Closed' | 'Suspended';
+export type BingoEventStatus = 'Draft' | 'Open' | 'Closed' | 'Suspended' | 'Cancelled';
 
 export interface BingoEvent {
   id: string;
@@ -14,6 +14,8 @@ export interface BingoEvent {
   isTest: boolean;
   closeAllRequested: boolean;
   totalSold: number;
+  /** Comandas digitais do evento (para decidir se o cancelamento é possível). */
+  tabsCount?: number;
 }
 
 export interface BingoMenuItem {

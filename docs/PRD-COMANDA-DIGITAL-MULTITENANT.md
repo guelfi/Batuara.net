@@ -67,7 +67,7 @@ Tenant (estabelecimento/organização) · Evento (turno de venda com data, card�
 - **RF-E7** Histórico de eventos com resumo e comandas, preservado conforme a retenção do plano.
 - **RF-E8** [Piloto] **Editar evento:** nome e data podem ser alterados a qualquer momento (validação no servidor); o cabeçalho da tela mostra "Evento: {nome}", situação e a data.
 - **RF-E9** [Piloto] **Suspender pedidos** do evento (estado `Suspenso`): bloqueia novos pedidos sem encerrar o evento; contas abertas continuam cobráveis. O evento de teste é permanente: só suspende e zera, nunca encerra nem é excluído.
-- **RF-E10** [Proposta, aguardando decisão] **Cancelar evento inteiro:** só quando o evento **não tem lançamento algum** (nem comanda digital, nem comanda de papel), equivalendo a excluir um rascunho. Com lançamentos, o evento só **suspende** ou **encerra**, e o fechamento impresso é preservado. O estado `Cancelado` é final e some das listas. Motivo: cancelar um evento com vendas apagaria ou invalidaria histórico financeiro.
+- **RF-E10** [Piloto] **Cancelar evento inteiro** (regra aprovada em 09/11/2026): só quando o evento **não tem lançamento algum** (nem comanda digital, nem comanda de papel), equivalendo a excluir um rascunho. Com lançamentos, o evento só **suspende** ou **encerra**, e o fechamento impresso é preservado. O estado `Cancelado` é final e some das listas. Motivo: cancelar um evento com vendas apagaria ou invalidaria histórico financeiro.
 
 ### 5.3 Cardápio [Piloto]
 
@@ -380,7 +380,7 @@ Regras de UI: mobile-first, **nenhum texto cortado** (títulos e avisos numa lin
 6. Cardápio por evento ou catálogo do tenant reaproveitado entre eventos?
 7. Pix dentro do app já na v1 ou só na fase 4?
 8. Retenção configurável por tenant ou fixa (30/90 dias)?
-9. **Cancelar evento inteiro** (RF-E10): adotar a regra proposta (só sem lançamentos; com lançamentos, suspender ou encerrar) e `Cancelado` como estado final?
+9. ~~Cancelar evento inteiro~~ **Decidido:** só sem lançamentos (digitais ou de papel, mesmo cancelados); com lançamentos, suspender ou encerrar; `Cancelado` é final, some das listas; evento de teste não cancela (RF-E10).
 10. **Provedor de OCR:** manter Gemini, ou abstrair e oferecer Kimi (Moonshot) como alternativa? (Piloto: só Gemini. Produto derivado: prevê Kimi.)
 11. **Comanda de papel:** continua como módulo opcional por tenant ou entra no núcleo? A fila de comandas de papel precisa de login do garçom (auditoria de quem fechou) em vez de só o token do evento?
 12. **QR por mesa:** gerar para todas as mesas no Admin (RF-M6) e expirar/rotacionar a assinatura por evento?

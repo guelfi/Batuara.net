@@ -2071,6 +2071,27 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public async Task Event_Should_Be_Cancelled_Only_Without_Entries_And_Never_The_Test_Event()
+        {
+            var f = new Fixture();
+            var future = await f.Admin.CreateEventAsync(new BingoCreateEventRequest { Name = "Futuro", EventDate = new DateTime(2027, 6, 1) });
+
+            var cancelled = await f.Admin.CancelEventAsync(future.Id);
+            cancelled.Status.Should().Be(BingoEventStatus.Cancelled);
+            (await f.Admin.GetEventsAsync()).Should().NotContain(e => e.Id == future.Id);
+            await ShouldThrowAsync(() => f.Admin.CancelEventAsync(future.Id), BingoErrorKind.Conflict);
+
+            // com lancamento (comanda digital) o evento so suspende ou encerra
+            await f.OpenEventAsync();
+            await f.NewTabAsync();
+            await ShouldThrowAsync(() => f.Admin.CancelEventAsync(1), BingoErrorKind.Conflict);
+
+            // evento de teste e permanente
+            await ShouldThrowAsync(() => f.Admin.CancelEventAsync(2), BingoErrorKind.Validation);
+            await ShouldThrowAsync(() => f.Admin.CancelEventAsync(999), BingoErrorKind.NotFound);
+        }
+
+        [Fact]
         public async Task Event_Should_Suspend_Free_The_Open_Slot_And_Resume()
         {
             var f = new Fixture();
