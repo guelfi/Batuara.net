@@ -1041,10 +1041,10 @@ const BingoWaiterPage: React.FC = () => {
       <Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.8 }}>
         Garçom{status.eventName ? ` · ${status.eventName}` : ''}
       </Typography>
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth" sx={{ mb: 2, '& .MuiTab-root': { minWidth: 0, px: 0.5, fontSize: '0.78rem' } }}>
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth" sx={{ mb: 2, '& .MuiTabs-scroller': { overflow: 'visible !important' }, '& .MuiTab-root': { minWidth: 0, px: 0.5, fontSize: '0.78rem', overflow: 'visible' } }}>
         <Tab
           label={
-            <Badge badgeContent={pendingCount(groups) + contestations.length} color="error" max={99} sx={{ '& .MuiBadge-badge': { right: -14 } }}>
+            <Badge badgeContent={pendingCount(groups) + contestations.length} color="error" max={99} sx={{ '& .MuiBadge-badge': { right: -8, top: 2 } }}>
               <span>Pedidos</span>
             </Badge>
           }
@@ -1057,7 +1057,7 @@ const BingoWaiterPage: React.FC = () => {
         />
         <Tab
           label={
-            <Badge badgeContent={billCount} color="error" max={99} sx={{ '& .MuiBadge-badge': { right: -14 } }}>
+            <Badge badgeContent={billCount} color="error" max={99} sx={{ '& .MuiBadge-badge': { right: -8, top: 2 } }}>
               <span>Contas</span>
             </Badge>
           }
