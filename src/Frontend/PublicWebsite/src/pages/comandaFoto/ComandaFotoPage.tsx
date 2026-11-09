@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import {
   Alert,
+  Snackbar,
   Box,
   Button,
   CircularProgress,
@@ -198,11 +199,11 @@ const ComandaFotoPage: React.FC = () => {
 
       {photo ? (
         <Paper sx={{ p: 2, mb: 2 }}>
-          {dup && comanda.trim() === dupFor.trim() && (
-            <Alert severity="error" sx={{ mb: 1, py: 0 }}>
-              Comanda {comanda.trim()} já fechada ({brl(dup.total)})
+          <Snackbar open={!!dup && comanda.trim() === dupFor.trim()} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ top: { xs: 16 } }}>
+            <Alert severity="error" variant="filled" sx={{ width: '100%', boxShadow: 6 }}>
+              Comanda {comanda.trim()} já registrada{dup ? ` (${brl(dup.total)})` : ''}
             </Alert>
-          )}
+          </Snackbar>
           <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
             <TextField size="small" label="Comanda" value={comanda} onChange={(e) => setComanda(e.target.value)} inputProps={{ inputMode: 'numeric', maxLength: 10 }} sx={{ width: 110 }} />
             <TextField size="small" fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} inputProps={{ maxLength: 40 }} />
