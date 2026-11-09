@@ -2669,20 +2669,23 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
                   </Box>
                   <Box sx={{ textAlign: 'right' }}>
                     <Typography fontWeight={800} color="primary">{money(comanda.total)}</Typography>
-                    {comanda.paymentMethod && <Typography variant="caption" color="text.secondary">{comanda.paymentMethod}</Typography>}
                   </Box>
                 </Stack>
                 {comanda.items?.length > 0 && (
                   <Box sx={{ mt: 1 }}>
                     <Divider sx={{ mb: 0.5 }} />
                     {comanda.items.map((it, idx) => (
-                      <Stack key={idx} direction="row" justifyContent="space-between" spacing={1} sx={{ py: 0.25 }}>
-                        <Typography variant="body2" sx={{ minWidth: 0, wordBreak: 'break-word' }}>{it.name}</Typography>
-                        <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
-                          {it.quantity} × {money(it.unitPrice)} = {money(it.quantity * it.unitPrice)}
+                      <Box key={idx} sx={{ py: 0.5 }}>
+                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>{it.name}</Typography>
+                        <Typography variant="body2" color="text.secondary" align="right" sx={{ whiteSpace: 'nowrap' }}>
+                          {money(it.unitPrice)} × {it.quantity} = {money(it.quantity * it.unitPrice)}
                         </Typography>
-                      </Stack>
+                      </Box>
                     ))}
+                    <Divider sx={{ mt: 0.5, mb: 0.75 }} />
+                    <Typography variant="body2">
+                      Forma de pagamento: <strong>{comanda.paymentMethod || 'Não informado'}</strong>
+                    </Typography>
                   </Box>
                 )}
                 <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
