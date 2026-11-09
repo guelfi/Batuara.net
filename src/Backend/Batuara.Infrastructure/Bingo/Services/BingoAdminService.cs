@@ -411,11 +411,19 @@ namespace Batuara.Infrastructure.Bingo.Services
         {
             var events = await Db.BingoEvents.ToListAsync(cancellationToken);
             var tabs = await Db.BingoTabs.Include(x => x.Items).ToListAsync(cancellationToken);
+            // comandas de papel fotografadas (nao canceladas) tambem compoem o total vendido do evento
+            var photoTotals = (await Db.BingoPhotoTabs
+                    .Where(x => x.IsActive && x.CancelledAt == null)
+                    .Select(x => new { x.EventId, x.Total })
+                    .ToListAsync(cancellationToken))
+                .GroupBy(x => x.EventId)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Total));
 
             return events
                 .OrderByDescending(x => x.EventDate)
                 .ThenByDescending(x => x.Id)
-                .Select(ev => ToEventDto(ev, tabs.Where(t => t.EventId == ev.Id).ToList()))
+                .Select(ev => ToEventDto(ev, tabs.Where(t => t.EventId == ev.Id).ToList(),
+                    photoTotals.TryGetValue(ev.Id, out var pt) ? pt : 0m))
                 .ToList();
         }
 
@@ -605,7 +613,7 @@ namespace Batuara.Infrastructure.Bingo.Services
             // Comandas de papel fotografadas entram no resumo (itens ja validados contra o cardapio ao salvar).
             var photoRows = await Db.BingoPhotoTabs
                 .Where(x => x.EventId == ev.Id && x.IsActive && x.CancelledAt == null)
-                .Select(x => new { x.Total, x.ItemsJson })
+                .Select(x => new { x.Total, x.ItemsJson, x.PaymentMethod })
                 .ToListAsync(cancellationToken);
             var photoItems = photoRows
                 .SelectMany(r => System.Text.Json.JsonSerializer.Deserialize<List<ComandaFotoItem>>(
@@ -632,8 +640,10 @@ namespace Batuara.Infrastructure.Bingo.Services
                 PhotoUnmatched = photoItems.Count(i => !i.Matched),
                 GrandTotal = paid.Sum(x => x.PaidAmount) + photoTotal,
                 ByPaymentMethod = paid
-                    .GroupBy(x => x.PaymentLabel ?? NoMethod)
-                    .Select(g => new BingoPaymentSummaryDto { Method = g.Key, Count = g.Count(), Total = g.Sum(t => t.PaidAmount) })
+                    .Select(x => (Method: x.PaymentLabel ?? NoMethod, Amount: x.PaidAmount))
+                    .Concat(photoRows.Select(r => (Method: r.PaymentMethod ?? NoMethod, Amount: r.Total)))
+                    .GroupBy(x => x.Method)
+                    .Select(g => new BingoPaymentSummaryDto { Method = g.Key, Count = g.Count(), Total = g.Sum(t => t.Amount) })
                     .OrderBy(x => x.Method)
                     .ToList(),
                 ByWaiter = paid
@@ -719,7 +729,7 @@ namespace Batuara.Infrastructure.Bingo.Services
             };
         }
 
-        private static BingoEventDto ToEventDto(BingoEvent ev, List<BingoTab> tabs)
+        private static BingoEventDto ToEventDto(BingoEvent ev, List<BingoTab> tabs, decimal photoTotal = 0m)
         {
             return new BingoEventDto
             {
@@ -732,7 +742,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 OpenedAt = ev.OpenedAt,
                 ClosedAt = ev.ClosedAt,
                 TabsCount = tabs.Count,
-                TotalSold = tabs.Where(x => x.IsPaid).Sum(x => x.PaidAmount)
+                TotalSold = tabs.Where(x => x.IsPaid).Sum(x => x.PaidAmount) + photoTotal
             };
         }
     }

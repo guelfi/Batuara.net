@@ -12,6 +12,8 @@ namespace Batuara.Domain.Entities
         public string ItemsJson { get; private set; } = "[]";
         public decimal Total { get; private set; }
         public byte[] Photo { get; private set; } = Array.Empty<byte>();
+        /// <summary>Forma de pagamento escolhida ao fechar a comanda (nome no momento do fechamento).</summary>
+        public string? PaymentMethod { get; private set; }
         public DateTime? CancelledAt { get; private set; }
         public string? CancelReason { get; private set; }
         public string? CancelledByName { get; private set; }
@@ -20,7 +22,7 @@ namespace Batuara.Domain.Entities
         {
         }
 
-        public BingoPhotoTab(int eventId, string label, string itemsJson, decimal total, byte[] photo, string? comandaNumber = null)
+        public BingoPhotoTab(int eventId, string label, string itemsJson, decimal total, byte[] photo, string? comandaNumber = null, string? paymentMethod = null)
         {
             EventId = eventId;
             Label = label.Trim();
@@ -28,6 +30,7 @@ namespace Batuara.Domain.Entities
             ItemsJson = itemsJson;
             Total = total;
             Photo = photo;
+            PaymentMethod = paymentMethod;
         }
 
         public void Discard() => SetInactive();

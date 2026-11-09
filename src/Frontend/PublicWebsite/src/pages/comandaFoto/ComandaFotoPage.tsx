@@ -7,6 +7,9 @@ import {
   Button,
   CircularProgress,
   Container,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   IconButton,
   Paper,
   Stack,
@@ -73,6 +76,8 @@ const ComandaFotoPage: React.FC = () => {
   const [nome, setNome] = useState('');
   const [dupFor, setDupFor] = useState('');
   const [dup, setDup] = useState<{ id: number; label: string; total: number; createdAt: string } | null>(null);
+  const [payMethods, setPayMethods] = useState<{ id: number; name: string }[]>([]);
+  const [payOpen, setPayOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,6 +97,8 @@ const ComandaFotoPage: React.FC = () => {
       setEventName(d?.eventName ?? 'Evento');
       setEventDate(d?.eventDate ? new Date(d.eventDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '');
       setBuild(d?.build ?? '');
+      const m = await http.get('/comanda-foto/formas-pagamento');
+      setPayMethods(m.data.data ?? []);
     } catch (e) {
       setError(errMsg(e));
     }
@@ -143,11 +150,12 @@ const ComandaFotoPage: React.FC = () => {
     }
   };
 
-  const save = async () => {
+  const save = async (paymentMethodId: number) => {
+    setPayOpen(false);
     setBusy('Fechando comanda...');
     setError(null);
     try {
-      await http.post('/comanda-foto', { comandaNumber: comanda.trim(), items: items.filter((i) => i.quantity > 0), label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), imageBase64: photo });
+      await http.post('/comanda-foto', { comandaNumber: comanda.trim(), paymentMethodId, items: items.filter((i) => i.quantity > 0), label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), imageBase64: photo });
       // Limpa tudo e volta ao estado inicial
       setPhoto(null);
       setItems([]);
@@ -252,7 +260,7 @@ const ComandaFotoPage: React.FC = () => {
             <Button fullWidth variant="outlined" onClick={() => setPhoto(null)} disabled={!!busy}>
               Descartar
             </Button>
-            <Button fullWidth variant="contained" size="large" onClick={save} disabled={!!busy || items.every((i) => i.quantity <= 0) || (!!dup && comanda.trim() === dupFor.trim())}>
+            <Button fullWidth variant="contained" size="large" onClick={() => setPayOpen(true)} disabled={!!busy || items.every((i) => i.quantity <= 0) || (!!dup && comanda.trim() === dupFor.trim())}>
               Fechar comanda
             </Button>
           </Stack>
@@ -262,6 +270,20 @@ const ComandaFotoPage: React.FC = () => {
           📷 Fotografar comanda
         </Button>
       )}
+      <Dialog open={payOpen} onClose={() => setPayOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Forma de pagamento</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1} sx={{ pt: 1 }}>
+            {payMethods.length === 0 && <Typography color="text.secondary">Nenhuma forma de pagamento ativa.</Typography>}
+            {payMethods.map((m) => (
+              <Button key={m.id} variant="outlined" size="large" onClick={() => save(m.id)}>
+                {m.name}
+              </Button>
+            ))}
+            <Button onClick={() => setPayOpen(false)}>Voltar</Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 };

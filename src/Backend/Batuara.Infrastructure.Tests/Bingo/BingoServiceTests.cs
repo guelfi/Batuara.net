@@ -1925,6 +1925,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
 
             var first = await svc.SaveAsync(new ComandaFotoSaveRequest
             {
+                PaymentMethodId = f.CashId,
                 Label = "Mesa 3",
                 ImageBase64 = photo,
                 Items = new() { new() { Name = "Água", Quantity = 2, UnitPrice = 5 }, new() { Name = "Salada", Quantity = 1, UnitPrice = 7 } }
@@ -1933,6 +1934,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
 
             await svc.SaveAsync(new ComandaFotoSaveRequest
             {
+                PaymentMethodId = f.CashId,
                 ImageBase64 = photo,
                 Items = new() { new() { Name = "água", Quantity = 1, UnitPrice = 5 } }
             }, CancellationToken.None);
@@ -1940,6 +1942,11 @@ namespace Batuara.Infrastructure.Tests.Bingo
             var report = await svc.GetReportAsync(CancellationToken.None);
             report.Count.Should().Be(2);
             report.GrandTotal.Should().Be(22m);
+            // a forma de pagamento da comanda de papel entra no resumo e no total do evento
+            var summary = await f.Admin.GetEventSummaryAsync(1);
+            summary.ByPaymentMethod.Should().ContainSingle(m => m.Method == "Dinheiro" && m.Total == 22m && m.Count == 2);
+            (await f.Admin.GetEventsAsync()).First(e => e.Id == 1).TotalSold.Should().Be(22m);
+
             report.ItemTotals.Single(i => i.Name.ToLower() == "água").Quantity.Should().Be(3);
 
             // evento regular: descartar sem justificativa e proibido; cancelar exige motivo
@@ -1966,6 +1973,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
 
             var saved = await svc.SaveAsync(new ComandaFotoSaveRequest
             {
+                PaymentMethodId = f.CashId,
                 ImageBase64 = photo,
                 Items = new()
                 {
@@ -2049,6 +2057,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
             var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), new FakeConfig(), Options.Create(new ComandaFotoOptions()));
             ComandaFotoSaveRequest Req() => new()
             {
+                PaymentMethodId = f.CashId,
                 ImageBase64 = Convert.ToBase64String(new byte[] { 1 }),
                 Items = new() { new() { Name = "Água", Quantity = 1, UnitPrice = 5 } }
             };
@@ -2097,6 +2106,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
             var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), new FakeConfig(), Options.Create(new ComandaFotoOptions()));
             var saved = await svc.SaveAsync(new ComandaFotoSaveRequest
             {
+                PaymentMethodId = f.CashId,
                 ImageBase64 = Convert.ToBase64String(new byte[] { 1 }),
                 Items = new() { new() { Name = "Água", Quantity = 1, UnitPrice = 5 } }
             }, CancellationToken.None);
@@ -2113,6 +2123,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
             ComandaFotoSaveRequest Req(string number) => new()
             {
                 ComandaNumber = number,
+                PaymentMethodId = f.CashId,
                 ImageBase64 = Convert.ToBase64String(new byte[] { 1 }),
                 Items = new() { new() { Name = "Água", Quantity = 1, UnitPrice = 5 } }
             };

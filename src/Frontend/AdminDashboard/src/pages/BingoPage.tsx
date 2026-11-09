@@ -1932,7 +1932,8 @@ const EventsTab: React.FC<{
   const [histLoading, setHistLoading] = useState(false);
   const [closing, setClosing] = useState<{ event: BingoEvent; summary: BingoSummary; tabs: BingoTab[] } | null>(null);
   const [printingId, setPrintingId] = useState<string | null>(null);
-  const endClosing = useCallback(() => setClosing(null), []);
+  const [printingReport, setPrintingReport] = useState(false);
+  const endPrint = useCallback(() => setPrintingReport(false), []);
   const printClosing = async (ev: BingoEvent) => {
     setPrintingId(ev.id);
     try {
@@ -2292,7 +2293,19 @@ const EventsTab: React.FC<{
         </DialogActions>
       </Dialog>
 
-      {closing && <ClosingReport event={closing.event} summary={closing.summary} tabs={closing.tabs} onDone={endClosing} />}
+      <Dialog open={!!closing} onClose={() => setClosing(null)} fullWidth maxWidth="md" fullScreen={isMobile}>
+        <DialogTitle>Fechamento: {closing?.event.name} ({formatDate(closing?.event.eventDate ?? '')})</DialogTitle>
+        <DialogContent>
+          {closing && <SummaryView summary={closing.summary} />}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setClosing(null)} sx={isMobile ? { minHeight: 40 } : undefined}>Fechar</Button>
+          <Button variant="contained" color="secondary" startIcon={<PrintIcon />} onClick={() => setPrintingReport(true)} sx={isMobile ? { minHeight: 40 } : undefined}>
+            Imprimir fechamento
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {printingReport && closing && <ClosingReport event={closing.event} summary={closing.summary} tabs={closing.tabs} onDone={endPrint} />}
       <Dialog open={!!history} onClose={() => setHistory(null)} fullWidth maxWidth="md" fullScreen={isMobile}>
         <DialogTitle>Histórico: {history?.name} ({formatDate(history?.eventDate ?? '')})</DialogTitle>
         <DialogContent>
@@ -2496,6 +2509,7 @@ interface PhotoTabData {
   cancelled?: boolean;
   cancelReason?: string | null;
   cancelledByName?: string | null;
+  paymentMethod?: string | null;
   id: number;
   label: string;
   total: number;
@@ -2638,7 +2652,10 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
                       })}
                     </Typography>
                   </Box>
-                  <Typography fontWeight={800} color="primary">{money(comanda.total)}</Typography>
+                  <Box sx={{ textAlign: 'right' }}>
+                    <Typography fontWeight={800} color="primary">{money(comanda.total)}</Typography>
+                    {comanda.paymentMethod && <Typography variant="caption" color="text.secondary">{comanda.paymentMethod}</Typography>}
+                  </Box>
                 </Stack>
                 {comanda.items?.length > 0 && (
                   <Box sx={{ mt: 1 }}>
@@ -2699,6 +2716,7 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
                 </TableCell>
                 <TableCell align="right">
                   <strong>{money(comanda.total)}</strong>
+                  {comanda.paymentMethod && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{comanda.paymentMethod}</Typography>}
                 </TableCell>
                 <TableCell align="center">
                   <Stack direction="row" spacing={1} justifyContent="center">

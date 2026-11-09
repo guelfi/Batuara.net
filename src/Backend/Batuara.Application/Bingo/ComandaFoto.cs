@@ -38,6 +38,7 @@ namespace Batuara.Application.Bingo.Models
     {
         public string? Label { get; set; }
         public string? ComandaNumber { get; set; }
+        public int PaymentMethodId { get; set; }
         public List<ComandaFotoItem> Items { get; set; } = new();
         public string ImageBase64 { get; set; } = string.Empty;
     }
@@ -47,6 +48,7 @@ namespace Batuara.Application.Bingo.Models
         public int Id { get; set; }
         public string Label { get; set; } = string.Empty;
         public decimal Total { get; set; }
+        public string? PaymentMethod { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool Cancelled { get; set; }
         public string? CancelReason { get; set; }
@@ -90,6 +92,7 @@ namespace Batuara.Application.Bingo.Services
         bool IsTokenValid(string? token);
         string GetAccessToken();
         Task<ComandaFotoExtractResult> ExtractAsync(ComandaFotoExtractRequest request, CancellationToken ct);
+        Task<List<BingoPaymentMethodDto>> GetPaymentMethodsAsync(CancellationToken ct);
         Task<ComandaFotoItem> RegisterMenuItemAsync(ComandaFotoMenuRequest request, CancellationToken ct);
         Task<ComandaFotoDto> SaveAsync(ComandaFotoSaveRequest request, CancellationToken ct);
         Task<ComandaFotoReport> GetReportAsync(CancellationToken ct);

@@ -176,6 +176,13 @@ namespace Batuara.Infrastructure.Bingo.Services
             return parsed;
         }
 
+        public async Task<List<BingoPaymentMethodDto>> GetPaymentMethodsAsync(CancellationToken ct)
+        {
+            var list = await Db.BingoPaymentOptions.Where(x => x.IsActive).ToListAsync(ct);
+            return list.OrderBy(x => x.SortOrder).ThenBy(x => x.Name)
+                .Select(x => new BingoPaymentMethodDto { Id = x.Id, Name = x.Name }).ToList();
+        }
+
         public async Task<ComandaFotoDto> SaveAsync(ComandaFotoSaveRequest request, CancellationToken ct)
         {
             var items = request.Items.Where(i => !string.IsNullOrWhiteSpace(i.Name) && i.Quantity > 0).ToList();
@@ -209,9 +216,12 @@ namespace Batuara.Infrastructure.Bingo.Services
                     "duplicate_comanda");
             }
 
+            var method = await Db.BingoPaymentOptions.FirstOrDefaultAsync(x => x.Id == request.PaymentMethodId && x.IsActive, ct)
+                ?? throw new BingoException(BingoErrorKind.Validation, "Escolha a forma de pagamento.");
+
             var label = (request.Label ?? string.Empty).Trim();
             var entity = new BingoPhotoTab(ev.Id, label.Length > 60 ? label[..60] : label,
-                JsonSerializer.Serialize(items, Json), total, photo, number);
+                JsonSerializer.Serialize(items, Json), total, photo, number, method.Name);
             Db.BingoPhotoTabs.Add(entity);
             await Db.SaveChangesAsync(ct);
             return ToDto(entity);
@@ -224,7 +234,7 @@ namespace Batuara.Infrastructure.Bingo.Services
             var rows = await Db.BingoPhotoTabs
                 .Where(x => x.EventId == ev.Id && x.IsActive)
                 .OrderBy(x => x.CreatedAt)
-                .Select(x => new { x.Id, x.Label, x.Total, x.CreatedAt, x.ItemsJson, x.CancelledAt, x.CancelReason, x.CancelledByName })
+                .Select(x => new { x.Id, x.Label, x.Total, x.PaymentMethod, x.CreatedAt, x.ItemsJson, x.CancelledAt, x.CancelReason, x.CancelledByName })
                 .ToListAsync(ct);
 
             var comandas = rows.Select(r => new ComandaFotoDto
@@ -232,6 +242,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 Id = r.Id,
                 Label = r.Label,
                 Total = r.Total,
+                PaymentMethod = r.PaymentMethod,
                 CreatedAt = r.CreatedAt,
                 Cancelled = r.CancelledAt != null,
                 CancelledAt = r.CancelledAt,
@@ -398,6 +409,7 @@ namespace Batuara.Infrastructure.Bingo.Services
             Id = e.Id,
             Label = e.Label,
             Total = e.Total,
+            PaymentMethod = e.PaymentMethod,
             CreatedAt = e.CreatedAt,
             Items = JsonSerializer.Deserialize<List<ComandaFotoItem>>(e.ItemsJson, Json) ?? new()
         };
