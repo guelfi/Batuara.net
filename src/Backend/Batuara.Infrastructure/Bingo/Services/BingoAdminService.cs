@@ -224,6 +224,10 @@ namespace Batuara.Infrastructure.Bingo.Services
                 .Select(i => i.RetrievedByHouseMemberId!.Value).Distinct().ToList();
             var retrieverNames = await Db.HouseMembers.Where(x => retrieverIds.Contains(x.Id))
                 .ToDictionaryAsync(x => x.Id, x => x.FullName, cancellationToken);
+            // comandas de papel fotografadas (nao canceladas) tambem compoem o total vendido do evento
+            var photoTotal = await Db.BingoPhotoTabs
+                .Where(x => x.EventId == ev.Id && x.IsActive && x.CancelledAt == null)
+                .SumAsync(x => (decimal?)x.Total, cancellationToken) ?? 0m;
 
             return new BingoPanelDto
             {
@@ -231,7 +235,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 EventName = ev.Name,
                 IsOpen = ev.IsOpen,
                 CloseAllRequested = ev.CloseAllRequested,
-                TotalSold = tabs.Where(x => x.IsPaid).Sum(x => x.PaidAmount),
+                TotalSold = tabs.Where(x => x.IsPaid).Sum(x => x.PaidAmount) + photoTotal,
                 Counts = new BingoPanelCountsDto
                 {
                     Open = tabs.Count(x => x.Status == BingoTabStatus.Open),

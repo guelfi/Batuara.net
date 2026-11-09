@@ -1,5 +1,6 @@
 import ClosingReport from '../components/bingo/ClosingReport';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Alert,
   Autocomplete,
@@ -1787,7 +1788,9 @@ const SummaryTab: React.FC<{
   notify: Notify;
   confirm: (s: ConfirmState) => void;
   onEventChanged: () => void;
-}> = ({ events, current, notify, confirm, onEventChanged }) => {
+  /** Slot do cabeçalho (celular): o botão de imprimir fechamento fica na linha do título. */
+  headerSlot?: HTMLElement | null;
+}> = ({ events, current, notify, confirm, onEventChanged, headerSlot }) => {
   const isMobile = useIsMobile();
   const [eventId, setEventId] = useState<string>(current?.id ?? '');
   const [summary, setSummary] = useState<BingoSummary | null>(null);
@@ -1864,19 +1867,27 @@ const SummaryTab: React.FC<{
             ))}
           </Select>
         </FormControl>
-        <Box sx={isMobile ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 } : { display: 'contents' }}>
-          <Button variant="outlined" onClick={showPhotoLink}>Copiar link</Button>
-          {!isMobile && (
+        {!isMobile && (
+          <Box sx={{ display: 'contents' }}>
+            <Button variant="outlined" onClick={showPhotoLink}>Copiar link</Button>
             <Button variant="contained" color="success" onClick={sendPhotoLinkWhatsApp}>
               Enviar por WhatsApp
             </Button>
+            {summary && (
+              <Button variant="contained" color="secondary" startIcon={<PrintIcon />} onClick={printClosing} disabled={preparing || loading}>
+                Imprimir fechamento
+              </Button>
+            )}
+          </Box>
+        )}
+        {isMobile && summary && headerSlot &&
+          createPortal(
+            <IconButton color="secondary" aria-label="Imprimir fechamento" title="Imprimir fechamento" onClick={printClosing} disabled={preparing || loading}
+              sx={{ bgcolor: 'secondary.main', color: 'secondary.contrastText', '&:hover': { bgcolor: 'secondary.dark' }, '&.Mui-disabled': { opacity: 0.5 } }}>
+              <PrintIcon />
+            </IconButton>,
+            headerSlot,
           )}
-          {summary && (
-            <Button variant="contained" color="secondary" startIcon={<PrintIcon />} onClick={printClosing} disabled={preparing || loading}>
-              Imprimir fechamento
-            </Button>
-          )}
-        </Box>
       </Stack>
       {photoLink && (
         <Alert severity="info">
@@ -2362,6 +2373,7 @@ const EventsTab: React.FC<{
 /* ---------- Página ---------- */
 const BingoPage: React.FC = () => {
   const [tab, setTab] = useState(0);
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [addPayOpen, setAddPayOpen] = useState(false);
   const [events, setEvents] = useState<BingoEvent[]>([]);
@@ -2423,6 +2435,7 @@ const BingoPage: React.FC = () => {
         ) : (
           !eventsLoading && <Chip size="small" label="Sem evento atual" />
         )}
+        {isMobile && <Box ref={setHeaderSlot} sx={{ ml: 'auto' }} />}
       </Stack>
       {isMobile && current && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: -1.5, mb: 2 }}>
@@ -2476,7 +2489,7 @@ const BingoPage: React.FC = () => {
             <PaymentMethodsTab notify={notify} addOpen={addPayOpen} onAddClose={() => setAddPayOpen(false)} />
           )}
           {tab === 6 && (
-            <SummaryTab events={events} current={current} notify={notify} confirm={setConfirmState} onEventChanged={loadEvents} />
+            <SummaryTab events={events} current={current} notify={notify} confirm={setConfirmState} onEventChanged={loadEvents} headerSlot={headerSlot} />
           )}
           {tab === 7 && (
             <PhotoTabsTab notify={notify} current={current} />
