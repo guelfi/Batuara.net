@@ -72,7 +72,7 @@ const ClosingReport: React.FC<Props> = ({ event, summary, tabs, onDone }) => {
         <tbody>
           <tr><td>Comandas fotografadas ({summary.photoCount})</td><td className="r"><b>{money(summary.photoTotal)}</b></td></tr>
           <tr><td><b>Total geral (digital + foto)</b></td><td className="r"><b>{money(summary.grandTotal)}</b></td></tr>
-          <tr><td>Total recebido (comandas digitais pagas)</td><td className="r"><b>{money(summary.totalSold)}</b></td></tr>
+          <tr><td>Total recebido (pago: digitais + fotografadas)</td><td className="r"><b>{money(summary.totalSold)}</b></td></tr>
           <tr><td>A receber ({unpaid.length} {unpaid.length === 1 ? 'comanda não paga' : 'comandas não pagas'})</td><td className="r"><b>{money(unpaidDue)}</b></td></tr>
           <tr><td>Itens cancelados</td><td className="r">{money(summary.cancelledTotal)}</td></tr>
           <tr><td>Itens em contestação sem resolução</td><td className="r">{summary.contestedOpen}</td></tr>

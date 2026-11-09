@@ -635,7 +635,8 @@ namespace Batuara.Infrastructure.Bingo.Services
             {
                 EventId = ev.Id,
                 EventName = ev.Name,
-                TotalSold = paid.Sum(x => x.PaidAmount),
+                // comanda por foto/manual so e registrada ao fechar a conta, entao ja entra como paga
+                TotalSold = paid.Sum(x => x.PaidAmount) + photoTotal,
                 TotalOpen = tabs.Where(x => !x.IsPaid).Sum(x => x.Total),
                 CancelledTotal = tabs.SelectMany(x => x.Items).Where(i => i.Status == BingoOrderItemStatus.Cancelled).Sum(i => i.UnitPrice * i.Quantity),
                 ContestedOpen = tabs.Where(x => !x.IsPaid).Sum(x => x.ContestedCount),

@@ -1946,6 +1946,9 @@ namespace Batuara.Infrastructure.Tests.Bingo
             var summary = await f.Admin.GetEventSummaryAsync(1);
             summary.ByPaymentMethod.Should().ContainSingle(m => m.Method == "Dinheiro" && m.Total == 22m && m.Count == 2);
             (await f.Admin.GetEventsAsync()).First(e => e.Id == 1).TotalSold.Should().Be(22m);
+            // comanda por foto ja entra como paga no Resumo
+            summary.TotalSold.Should().Be(22m);
+            summary.TotalOpen.Should().Be(0m);
             // o Painel ao vivo tambem soma as comandas por foto
             (await f.Admin.GetPanelAsync(null)).TotalSold.Should().Be(22m);
 
@@ -2030,7 +2033,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
             summary.PhotoCount.Should().Be(1);
             summary.PhotoTotal.Should().Be(20m);
             summary.PhotoUnmatched.Should().Be(1);
-            summary.GrandTotal.Should().Be(summary.TotalSold + 20m);
+            summary.GrandTotal.Should().Be(summary.TotalSold); // total pago ja inclui as comandas por foto
             summary.ByItem.Should().Contain(i => i.Name == "Água" && i.Quantity == 2);
             summary.ByItem.Should().Contain(i => i.Name.Contains("fora do cardápio"));
         }
