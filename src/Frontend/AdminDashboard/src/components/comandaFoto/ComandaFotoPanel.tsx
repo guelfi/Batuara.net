@@ -194,7 +194,7 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
 
   return (
     <Box>
-      <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 2, fontSize: '0.78rem' }}>
+      <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 2, fontSize: 'clamp(0.6rem, 2.9vw, 0.78rem)' }}>
         {[eventName, eventDate && !eventName.includes(eventDate) ? eventDate : '', 'Fotografar comanda para Fechar Conta']
           .filter(Boolean)
           .join(' - ')}
