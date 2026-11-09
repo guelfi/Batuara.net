@@ -14,8 +14,12 @@ namespace Batuara.API.Controllers
     [ServiceFilter(typeof(BingoWaiterAccessFilter))]
     [EnableRateLimiting("bingo-garcom")]
     [Route("api/bingo/garcom")]
-    public class BingoGarcomController(IBingoWaiterService service, IConfiguration configuration) : ControllerBase
+    public class BingoGarcomController(IBingoWaiterService service, IConfiguration configuration, IComandaFotoService comandaFoto) : ControllerBase
     {
+        /// <summary>Token da comanda por foto: o garçom logado usa a mesma tela de foto dentro do próprio painel.</summary>
+        [HttpGet("comanda-foto/token")]
+        public IActionResult ComandaFotoToken() => Ok(new { success = true, data = new { token = comandaFoto.GetAccessToken() } });
+
         /// <summary>Link assinado do QR da mesa: abre a comanda com a mesa travada para o cliente.</summary>
         [HttpGet("mesas/{mesa:int}/qr")]
         [BingoSkipWaiterAccess]

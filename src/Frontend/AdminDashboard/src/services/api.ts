@@ -191,6 +191,11 @@ class ApiService {
     return response.data;
   }
 
+  /** Base da API (para clientes HTTP próprios, ex.: comanda por foto com token). */
+  getBaseUrl(): string {
+    return this.api.defaults.baseURL ?? '';
+  }
+
   async post<T>(url: string, data?: any): Promise<ApiResponse<T>> {
     const response: AxiosResponse<ApiResponse<T>> = await this.api.post(url, data);
     return response.data;

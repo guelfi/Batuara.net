@@ -24,6 +24,8 @@ import QRCode from 'qrcode';
 import { useLocation, useNavigate } from 'react-router-dom';
 import QrScanner from '../components/bingo/QrScanner';
 import bingoApi from '../services/bingoApi';
+import apiService from '../services/api';
+import ComandaFotoPanel from '../components/comandaFoto/ComandaFotoPanel';
 import bingoWaiterApi, { WaiterContestation } from '../services/bingoWaiterApi';
 import { WaiterOrderGroup, WaiterStatus } from '../types/bingo';
 import { ContestAction, WaiterAccountItem, WaiterBill, WaiterPaymentMethod } from '../types/bingoWaiter';
@@ -804,6 +806,34 @@ const QrTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
   );
 };
 
+// -------------------------------------------------------------------- foto
+
+/** Comanda por foto (ou digitada) feita pelo garçom: mesmo fluxo da página pública. */
+const PhotoTab: React.FC = () => {
+  const [token, setToken] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    apiService
+      .get<any>('/bingo/garcom/comanda-foto/token')
+      .then((r) => {
+        const t = (r.data as any)?.data?.token ?? (r.data as any)?.token ?? '';
+        if (!cancelled) (t ? setToken(String(t)) : setError('Não foi possível abrir a comanda por foto.'));
+      })
+      .catch(() => {
+        if (!cancelled) setError('Não foi possível abrir a comanda por foto.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (error) return <Alert severity="error">{error}</Alert>;
+  if (!token) return <CircularProgress size={24} />;
+  return <ComandaFotoPanel token={token} />;
+};
+
 // ------------------------------------------------------------------- saída
 
 const EXIT_PATH = /bingo-saida\/([0-9a-fA-F-]{36})/;
@@ -1011,7 +1041,7 @@ const BingoWaiterPage: React.FC = () => {
       <Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.8 }}>
         Garçom{status.eventName ? ` · ${status.eventName}` : ''}
       </Typography>
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth" sx={{ mb: 2 }}>
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth" sx={{ mb: 2, '& .MuiTab-root': { minWidth: 0, px: 0.5 } }}>
         <Tab
           label={
             <Badge badgeContent={pendingCount(groups) + contestations.length} color="error" max={99} sx={{ '& .MuiBadge-badge': { right: -14 } }}>
@@ -1040,11 +1070,13 @@ const BingoWaiterPage: React.FC = () => {
         />
         <Tab label="Mesas" sx={{ minHeight: 56, fontWeight: 700 }} />
         <Tab label="Saída" sx={{ minHeight: 56, fontWeight: 700 }} />
+        <Tab label="Foto" sx={{ minHeight: 56, fontWeight: 700 }} />
       </Tabs>
       {tab === 0 && <OrdersTab groups={groups} contestations={contestations} loadError={ordersError} reload={async () => { await Promise.all([loadOrders(), loadContestations()]); }} />}
       {tab === 1 && <AccountsTab mesas={mesas} />}
       {tab === 2 && <QrTab mesas={mesas} />}
       {tab === 3 && <ExitTab />}
+      {tab === 4 && <PhotoTab />}
     </Box>
   );
 };
