@@ -6,6 +6,9 @@ import {
   Autocomplete,
   Box,
   Button,
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Card,
   CardContent,
   Chip,
@@ -33,18 +36,21 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   Tabs,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
-import { DataGrid, GridColDef, GridRenderEditCellParams, useGridApiContext } from '@mui/x-data-grid';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import {
   Add as AddIcon,
   Close as CloseIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  ExpandMore as ExpandMoreIcon,
+  PhotoCamera as PhotoCameraIcon,
   Print as PrintIcon,
   Cast as ProjectIcon,
 } from '@mui/icons-material';
@@ -579,7 +585,6 @@ const LivePanel: React.FC<{
 
   const tabs = panel?.tabs ?? [];
   const [filter, setFilter] = useState<TabFilter | null>(null);
-  const toggleFilter = (f: TabFilter) => setFilter((cur) => (cur === f ? null : f));
   const matchesFilter = (t: BingoTab) => {
     switch (filter) {
       case 'open': return t.status === 'Open';
@@ -614,13 +619,6 @@ const LivePanel: React.FC<{
   const totalSold = panel?.totalSold ?? paid.reduce((s, t) => s + t.total, 0);
   const closeAll = panel?.closeAllRequested ?? event?.closeAllRequested ?? false;
 
-  const chipFilter = (f: TabFilter) => ({
-    clickable: true,
-    onClick: () => toggleFilter(f),
-    variant: (filter === f ? 'filled' : 'outlined') as 'filled' | 'outlined',
-    sx: filter === f ? { outline: '2px solid', outlineColor: 'text.primary', outlineOffset: 1 } : undefined,
-  });
-
   const run = async (fn: () => Promise<any>, ok: string) => {
     setBusy(true);
     try {
@@ -642,7 +640,7 @@ const LivePanel: React.FC<{
     <Stack spacing={2}>
       {error && <Alert severity="error">{error}</Alert>}
       <Paper sx={{ p: 2 }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }} justifyContent="space-between">
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }} justifyContent="space-between" sx={{ flexWrap: { md: 'nowrap' } }}>
           {isMobile ? (
             <Stack spacing={1.5}>
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1 }}>
@@ -677,27 +675,38 @@ const LivePanel: React.FC<{
               </FormControl>
             </Stack>
           ) : (
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap
-            sx={isMobile ? { '& .MuiChip-root': { height: 36, maxWidth: '100%' } } : undefined}>
-            <Chip {...chipFilter('open')} label={`Em aberto: ${open.length}`} />
-            <Chip {...chipFilter('closing')} color="warning" label={`Pediram a conta: ${closing.length}`} />
-            <Chip {...chipFilter('paid')} color="success" label={`Pagas: ${paid.length}`} />
-            <Chip color="info" variant="outlined" label={`Itens pendentes: ${pendingCount}`} />
-            <Chip color="secondary" variant="outlined" label={`Itens retirados: ${retrievedCount}`} />
-            {contestedCount > 0 && <Chip color="error" label={`Em contestação: ${contestedCount}`} />}
-            <Chip color="primary" variant="outlined" label={`Total vendido: ${money(totalSold)}`} />
-            {panel?.phoneVerifiedCount !== undefined && (
-              <Chip {...chipFilter('verified')} color="success" label={`Celular confirmado: ${panel.phoneVerifiedCount}`} />
-            )}
-            {panel?.phoneNotVerifiedCount !== undefined && (
-              <Chip {...chipFilter('unverified')} label={`Não confirmado: ${panel.phoneNotVerifiedCount}`} />
-            )}
-            {!!panel?.codeDeliveryFailedCount && (
-              <Chip color="error" variant="outlined" label={`Falha de entrega: ${panel.codeDeliveryFailedCount}`} />
-            )}
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0, flex: '1 1 auto', flexWrap: 'nowrap' }}>
+            {[
+              { label: 'Itens pendentes', value: String(pendingCount), color: 'info.main' },
+              { label: 'Itens retirados', value: String(retrievedCount), color: 'secondary.main' },
+              { label: 'Total vendido', value: money(totalSold), color: 'primary.main' },
+              ...(contestedCount > 0 ? [{ label: 'Em contestação', value: String(contestedCount), color: 'error.main' }] : []),
+              ...(!!panel?.codeDeliveryFailedCount ? [{ label: 'Falha de entrega', value: String(panel.codeDeliveryFailedCount), color: 'error.main' }] : []),
+            ].map((m) => (
+              <Box key={m.label} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, px: 1.5, py: 0.75, flexShrink: 0 }}>
+                <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block', lineHeight: 1.2 }}>{m.label}</Typography>
+                <Typography variant="subtitle1" noWrap sx={{ fontWeight: 700, color: m.color, lineHeight: 1.3 }}>{m.value}</Typography>
+              </Box>
+            ))}
+            <FormControl size="small" sx={{ minWidth: 230, flexShrink: 0 }}>
+              <InputLabel id="painel-filtro-d">Filtrar comandas</InputLabel>
+              <Select labelId="painel-filtro-d" label="Filtrar comandas" value={filter ?? ''}
+                onChange={(e) => setFilter((e.target.value || null) as TabFilter | null)}>
+                <MenuItem value="">Todas</MenuItem>
+                <MenuItem value="open">{`Em aberto: ${open.length}`}</MenuItem>
+                <MenuItem value="closing">{`Pediram a conta: ${closing.length}`}</MenuItem>
+                <MenuItem value="paid">{`Pagas: ${paid.length}`}</MenuItem>
+                {panel?.phoneVerifiedCount !== undefined && (
+                  <MenuItem value="verified">{`Celular confirmado: ${panel.phoneVerifiedCount}`}</MenuItem>
+                )}
+                {panel?.phoneNotVerifiedCount !== undefined && (
+                  <MenuItem value="unverified">{`Não confirmado: ${panel.phoneNotVerifiedCount}`}</MenuItem>
+                )}
+              </Select>
+            </FormControl>
           </Stack>
           )}
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ flexShrink: 0, '& .MuiButton-root, & .MuiTypography-root': { whiteSpace: 'nowrap' } }}>
             <Stack direction="row" alignItems="center">
               <Switch
                 checked={closeAll}
@@ -906,22 +915,6 @@ const LivePanel: React.FC<{
   );
 };
 
-/* ---------- Edição de preço em célula do grid ---------- */
-const CurrencyEditCell: React.FC<GridRenderEditCellParams> = ({ id, field, value }) => {
-  const apiRef = useGridApiContext();
-  return (
-    <CurrencyField
-      autoFocus
-      fullWidth
-      size="small"
-      variant="standard"
-      value={Number(value) || 0}
-      onValueChange={(v) => apiRef.current.setEditCellValue({ id, field, value: v })}
-      sx={{ px: 1 }}
-    />
-  );
-};
-
 /* ---------- Cardápio ---------- */
 const MenuTab: React.FC<{
   notify: Notify;
@@ -1017,12 +1010,11 @@ const MenuTab: React.FC<{
   });
 
   const columns: GridColDef<BingoMenuItem>[] = [
-    { field: 'sortOrder', headerName: 'Ordem', type: 'number', width: 90, editable: true, align: 'center', headerAlign: 'center' },
-    { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180, editable: true },
+    { field: 'sortOrder', headerName: 'Ordem', type: 'number', width: 90, align: 'center', headerAlign: 'center' },
+    { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180 },
     {
-      field: 'unitPrice', headerName: 'Preço', type: 'number', width: 150, editable: true,
+      field: 'unitPrice', headerName: 'Preço', type: 'number', width: 150,
       valueFormatter: (v: number) => money(v),
-      renderEditCell: (params) => <CurrencyEditCell {...params} />,
     },
     {
       field: 'isAvailable', headerName: 'Disponível', width: 130, sortable: false,
@@ -1032,31 +1024,47 @@ const MenuTab: React.FC<{
       ),
     },
     {
-      field: 'actions', headerName: 'Ações', width: 90, sortable: false, filterable: false, align: 'center', headerAlign: 'center',
+      field: 'actions', headerName: 'Ações', width: 120, sortable: false, filterable: false, align: 'center', headerAlign: 'center',
       renderCell: (params) => (
-        <Tooltip title={params.row.isUsed ? 'Item já usado: marque como indisponível' : 'Excluir item'}>
-          <span>
-          <IconButton color="error" size="small" aria-label="Excluir item" disabled={!!params.row.isUsed} onClick={() => confirm({
-            title: 'Excluir item',
-            text: `Excluir "${params.row.name}" do cardápio?`,
-            confirmLabel: 'Excluir',
-            onConfirm: async () => {
-              try {
-                await bingoApi.deleteMenuItem(params.row.id);
-                notify('Item removido.', 'success');
-                await load();
-              } catch (e: any) {
-                notify(apiError(e, 'Não foi possível remover o item.'), 'error');
-              }
-            },
-          })}>
-            <DeleteIcon />
-          </IconButton>
-          </span>
-        </Tooltip>
+        <>
+          <Tooltip title="Editar item">
+            <IconButton color="primary" size="small" aria-label="Editar item" onClick={() => setEditing({ ...params.row })}>
+              <EditIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={params.row.isUsed ? 'Item já usado: marque como indisponível' : 'Excluir item'}>
+            <span>
+              <IconButton color="error" size="small" aria-label="Excluir item" disabled={!!params.row.isUsed} onClick={() => removeItem(params.row)}>
+                <DeleteIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </>
       ),
     },
   ];
+
+  const editDialog = (
+    <Dialog open={!!editing} onClose={() => setEditing(null)} fullScreen={isMobile} fullWidth maxWidth="xs">
+      <DialogTitle>Editar item</DialogTitle>
+      <DialogContent>
+        {editing && (
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField fullWidth label="Nome" value={editing.name} disabled={!!editing.isUsed}
+              helperText={editing.isUsed ? 'Item já usado: o nome não pode ser alterado.' : undefined}
+              onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+            <CurrencyField fullWidth label="Preço" value={editing.unitPrice} onValueChange={(v) => setEditing({ ...editing, unitPrice: v })} />
+            <TextField fullWidth label="Ordem" type="number" value={editing.sortOrder}
+              onChange={(e) => setEditing({ ...editing, sortOrder: e.target.value === '' ? ('' as any) : Number(e.target.value) })} />
+          </Stack>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setEditing(null)} sx={isMobile ? { minHeight: 40 } : undefined}>Cancelar</Button>
+        <Button variant="contained" onClick={saveEditing} sx={isMobile ? { minHeight: 40 } : undefined}>Salvar</Button>
+      </DialogActions>
+    </Dialog>
+  );
 
   if (loading) return <CircularProgress />;
   if (isMobile) {
@@ -1072,25 +1080,7 @@ const MenuTab: React.FC<{
             onDelete: () => removeItem(item), deleteDisabled: !!item.isUsed,
           }))}
         />
-        <Dialog fullScreen open={!!editing} onClose={() => setEditing(null)}>
-          <DialogTitle>Editar item</DialogTitle>
-          <DialogContent>
-            {editing && (
-              <Stack spacing={2} sx={{ mt: 1 }}>
-                <TextField fullWidth label="Nome" value={editing.name} disabled={!!editing.isUsed}
-                  helperText={editing.isUsed ? 'Item já usado: o nome não pode ser alterado.' : undefined}
-                  onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
-                <CurrencyField fullWidth label="Preço" value={editing.unitPrice} onValueChange={(v) => setEditing({ ...editing, unitPrice: v })} />
-                <TextField fullWidth label="Ordem" type="number" value={editing.sortOrder}
-                  onChange={(e) => setEditing({ ...editing, sortOrder: e.target.value === '' ? ('' as any) : Number(e.target.value) })} />
-              </Stack>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEditing(null)} sx={{ minHeight: 40 }}>Cancelar</Button>
-            <Button variant="contained" onClick={saveEditing} sx={{ minHeight: 40 }}>Salvar</Button>
-          </DialogActions>
-        </Dialog>
+        {editDialog}
         <Dialog open={addOpen} onClose={onAddClose} fullScreen>
           <DialogTitle>Adicionar item</DialogTitle>
           <DialogContent>
@@ -1113,20 +1103,21 @@ const MenuTab: React.FC<{
   }
   return (
     <Stack spacing={1}>
-      <Typography variant="body2" color="text.secondary">Dê dois cliques em uma célula para editar; Enter salva. Itens já usados em pedidos ou comandas não podem ser renomeados nem excluídos (marque como indisponível). O preço novo vale só para lançamentos futuros.</Typography>
+      <Typography variant="body2" color="text.secondary" noWrap sx={{ fontSize: 'clamp(0.68rem, 1.05vw, 0.875rem)' }}>
+        Itens já usados em pedidos ou comandas não podem ser renomeados nem excluídos; marque como indisponível. O preço novo vale só para lançamentos futuros.
+      </Typography>
       <Paper>
         <DataGrid
           rows={items}
           columns={columns}
           autoHeight
           disableRowSelectionOnClick
-          hideFooter
-          isCellEditable={(params) => !(params.field === 'name' && params.row.isUsed)}
-          processRowUpdate={processRowUpdate}
-          onProcessRowUpdateError={(e) => notify(e?.message || 'Não foi possível salvar o item.', 'error')}
+          pageSizeOptions={[10]}
+          initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
           localeText={{ noRowsLabel: 'Nenhum item no cardápio.' }}
         />
       </Paper>
+      {editDialog}
       <Dialog open={addOpen} onClose={onAddClose} fullWidth maxWidth="xs">
         <DialogTitle>Adicionar item</DialogTitle>
         <DialogContent>
@@ -1220,8 +1211,8 @@ const PaymentMethodsTab: React.FC<{ notify: Notify; addOpen: boolean; onAddClose
   };
 
   const columns: GridColDef<BingoPayMethod>[] = [
-    { field: 'sortOrder', headerName: 'Ordem', type: 'number', width: 90, editable: true, align: 'center', headerAlign: 'center' },
-    { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180, editable: true },
+    { field: 'sortOrder', headerName: 'Ordem', type: 'number', width: 90, align: 'center', headerAlign: 'center' },
+    { field: 'name', headerName: 'Nome', flex: 1, minWidth: 180 },
     {
       field: 'isActive', headerName: 'Ativa', width: 120, sortable: false,
       renderCell: (params) => (
@@ -1229,7 +1220,36 @@ const PaymentMethodsTab: React.FC<{ notify: Notify; addOpen: boolean; onAddClose
           inputProps={{ 'aria-label': 'Ativa' }} />
       ),
     },
+    {
+      field: 'actions', headerName: 'Ações', width: 100, sortable: false, filterable: false, align: 'center', headerAlign: 'center',
+      renderCell: (params) => (
+        <Tooltip title="Editar forma de pagamento">
+          <IconButton color="primary" size="small" aria-label="Editar forma de pagamento" onClick={() => setEditing({ ...params.row })}>
+            <EditIcon />
+          </IconButton>
+        </Tooltip>
+      ),
+    },
   ];
+
+  const editDialog = (
+    <Dialog open={!!editing} onClose={() => setEditing(null)} fullScreen={isMobile} fullWidth maxWidth="xs">
+      <DialogTitle>Editar forma de pagamento</DialogTitle>
+      <DialogContent>
+        {editing && (
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField fullWidth label="Nome" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+            <TextField fullWidth label="Ordem" type="number" value={editing.sortOrder}
+              onChange={(e) => setEditing({ ...editing, sortOrder: e.target.value === '' ? ('' as any) : Number(e.target.value) })} />
+          </Stack>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setEditing(null)} sx={isMobile ? { minHeight: 40 } : undefined}>Cancelar</Button>
+        <Button variant="contained" onClick={saveEditing} sx={isMobile ? { minHeight: 40 } : undefined}>Salvar</Button>
+      </DialogActions>
+    </Dialog>
+  );
 
   if (loading) return <CircularProgress />;
   if (isMobile) {
@@ -1244,22 +1264,7 @@ const PaymentMethodsTab: React.FC<{ notify: Notify; addOpen: boolean; onAddClose
             onEdit: () => setEditing({ ...m }),
           }))}
         />
-        <Dialog fullScreen open={!!editing} onClose={() => setEditing(null)}>
-          <DialogTitle>Editar forma de pagamento</DialogTitle>
-          <DialogContent>
-            {editing && (
-              <Stack spacing={2} sx={{ mt: 1 }}>
-                <TextField fullWidth label="Nome" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
-                <TextField fullWidth label="Ordem" type="number" value={editing.sortOrder}
-                  onChange={(e) => setEditing({ ...editing, sortOrder: e.target.value === '' ? ('' as any) : Number(e.target.value) })} />
-              </Stack>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEditing(null)} sx={{ minHeight: 40 }}>Cancelar</Button>
-            <Button variant="contained" onClick={saveEditing} sx={{ minHeight: 40 }}>Salvar</Button>
-          </DialogActions>
-        </Dialog>
+        {editDialog}
         <Dialog open={addOpen} onClose={onAddClose} fullScreen>
           <DialogTitle>Adicionar forma de pagamento</DialogTitle>
           <DialogContent>
@@ -1282,12 +1287,12 @@ const PaymentMethodsTab: React.FC<{ notify: Notify; addOpen: boolean; onAddClose
           columns={columns}
           autoHeight
           disableRowSelectionOnClick
-          hideFooter
-          processRowUpdate={processRowUpdate}
-          onProcessRowUpdateError={(e) => notify(e?.message || 'Não foi possível salvar.', 'error')}
+          pageSizeOptions={[10]}
+          initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
           localeText={{ noRowsLabel: 'Nenhuma forma de pagamento.' }}
         />
       </Paper>
+      {editDialog}
       <Dialog open={addOpen} onClose={onAddClose} fullWidth maxWidth="xs">
         <DialogTitle>Adicionar forma de pagamento</DialogTitle>
         <DialogContent>
@@ -1619,167 +1624,208 @@ const WaitersTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void 
 /* ---------- Resumo (conteúdo reutilizado no histórico) ---------- */
 const SummaryView: React.FC<{ summary: BingoSummary }> = ({ summary }) => {
   const isMobile = useIsMobile();
-  return (
-  <Stack spacing={2}>
-    {summary.contestedOpen > 0 && (
-      <Alert severity="warning">
-        Há {summary.contestedOpen} {summary.contestedOpen === 1 ? 'item em contestação' : 'itens em contestação'} sem resolução.
-      </Alert>
-    )}
-    {summary.photoUnmatched > 0 && (
-      <Alert severity="warning">
-        {summary.photoUnmatched} {summary.photoUnmatched === 1 ? 'item das comandas por foto está' : 'itens das comandas por foto estão'} fora do cardápio. Confira em "Comandas fotografadas".
-      </Alert>
-    )}
-    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-      <Card sx={{ flex: 1, borderColor: 'primary.main', borderWidth: 2, borderStyle: 'solid' }}><CardContent>
-        <Typography color="text.secondary">Total geral (digital + foto)</Typography>
-        <Typography variant="h4">{money(summary.grandTotal)}</Typography>
-      </CardContent></Card>
-      <Card sx={{ flex: 1 }}><CardContent>
-        <Typography color="text.secondary">Comandas por foto ({summary.photoCount})</Typography>
-        <Typography variant="h4">{money(summary.photoTotal)}</Typography>
-      </CardContent></Card>
-    </Stack>
-    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-      <Card sx={{ flex: 1 }}><CardContent>
-        <Typography color="text.secondary">Total vendido (pago)</Typography>
-        <Typography variant="h4">{money(summary.totalSold)}</Typography>
-      </CardContent></Card>
-      <Card sx={{ flex: 1 }}><CardContent>
-        <Typography color="text.secondary">Em aberto</Typography>
-        <Typography variant="h4">{money(summary.totalOpen)}</Typography>
-      </CardContent></Card>
-      <Card sx={{ flex: 1 }}><CardContent>
-        <Typography color="text.secondary">Cancelados</Typography>
-        <Typography variant="h4">{money(summary.cancelledTotal)}</Typography>
-      </CardContent></Card>
-      <Card sx={{ flex: 1 }}><CardContent>
-        <Typography color="text.secondary">Em contestação</Typography>
-        <Typography variant="h4" color={summary.contestedOpen > 0 ? 'error.main' : undefined}>{summary.contestedOpen}</Typography>
-      </CardContent></Card>
-    </Stack>
-    <Typography variant="h6">Por forma de pagamento</Typography>
-    {isMobile ? (
-    <Paper>
-      {summary.byPayment.map((l, i) => (
-        <React.Fragment key={l.label}>
-          {i > 0 && <Divider />}
-          <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ p: 1.5 }}>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography fontWeight={600}>{payLabel(l.label)}</Typography>
-              <Typography variant="caption" color="text.secondary">{l.count ?? '-'} contas</Typography>
-            </Box>
-            <Typography fontWeight={700}>{money(l.total)}</Typography>
-          </Stack>
-        </React.Fragment>
-      ))}
-      {summary.byPayment.length === 0 && <Typography sx={{ p: 1.5 }}>Sem pagamentos.</Typography>}
-    </Paper>
-    ) : (
-    <TableContainer component={Paper}>
-      <Table size="small">
-        <TableHead>
-          <TableRow><TableCell>Forma</TableCell><TableCell align="right">Contas</TableCell><TableCell align="right">Total</TableCell></TableRow>
-        </TableHead>
-        <TableBody>
-          {summary.byPayment.map((l) => (
-            <TableRow key={l.label}>
-              <TableCell>{payLabel(l.label)}</TableCell>
-              <TableCell align="right">{l.count ?? '-'}</TableCell>
-              <TableCell align="right">{money(l.total)}</TableCell>
-            </TableRow>
-          ))}
-          {summary.byPayment.length === 0 && <TableRow><TableCell colSpan={3}>Sem pagamentos.</TableCell></TableRow>}
-        </TableBody>
-      </Table>
-    </TableContainer>
-    )}
-    <Typography variant="h6">Por item</Typography>
-    {isMobile ? (
-    <Paper>
-      {summary.byItem.map((l, i) => (
-        <React.Fragment key={l.label}>
-          {i > 0 && <Divider />}
-          <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ p: 1.5 }}>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography fontWeight={600} sx={{ wordBreak: 'break-word' }}>{l.label}</Typography>
-              <Typography variant="caption" color="text.secondary">Qtd.: {l.quantity ?? '-'}</Typography>
-            </Box>
-            <Typography fontWeight={700}>{money(l.total)}</Typography>
-          </Stack>
-        </React.Fragment>
-      ))}
-      {summary.byItem.length === 0 && <Typography sx={{ p: 1.5 }}>Sem itens.</Typography>}
-    </Paper>
-    ) : (
-    <TableContainer component={Paper}>
-      <Table size="small">
-        <TableHead><TableRow><TableCell>Item</TableCell><TableCell align="right">Qtd.</TableCell><TableCell align="right">Valor</TableCell></TableRow></TableHead>
-        <TableBody>
-          {summary.byItem.map((l) => (
-            <TableRow key={l.label}>
-              <TableCell>{l.label}</TableCell>
-              <TableCell align="right">{l.quantity ?? '-'}</TableCell>
-              <TableCell align="right">{money(l.total)}</TableCell>
-            </TableRow>
-          ))}
-          {summary.byItem.length === 0 && <TableRow><TableCell colSpan={3}>Sem itens.</TableCell></TableRow>}
-        </TableBody>
-      </Table>
-    </TableContainer>
-    )}
-    <Typography variant="h6">Conferência de caixa por garçom</Typography>
-    {isMobile ? (
-    <Paper>
-      {summary.byWaiter.map((w, i) => (
-        <React.Fragment key={w.name}>
-          {i > 0 && <Divider />}
-          <Box sx={{ p: 1.5 }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
-              <Box sx={{ minWidth: 0 }}>
-                <Typography fontWeight={600} sx={{ wordBreak: 'break-word' }}>{w.name}</Typography>
-                <Typography variant="caption" color="text.secondary">{w.count} contas</Typography>
-              </Box>
-              <Typography fontWeight={700}>{money(w.total)}</Typography>
-            </Stack>
-            {w.byMethod.map((m) => (
-              <Stack key={m.method} direction="row" justifyContent="space-between" sx={{ mt: 0.5, pl: 1.5 }}>
-                <Typography variant="body2" color="text.secondary">{payLabel(m.method)}</Typography>
-                <Typography variant="body2">{money(m.total)}</Typography>
-              </Stack>
-            ))}
-          </Box>
-        </React.Fragment>
-      ))}
-      {summary.byWaiter.length === 0 && <Typography sx={{ p: 1.5 }}>Sem recebimentos.</Typography>}
-    </Paper>
-    ) : (
-    <TableContainer component={Paper}>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Garçom</TableCell>
-            <TableCell align="right">Contas</TableCell>
-            <TableCell align="right">Total</TableCell>
-            <TableCell>Por forma de pagamento</TableCell>
+
+  const alerts = (
+    <>
+      {summary.contestedOpen > 0 && (
+        <Alert severity="warning">
+          Há {summary.contestedOpen} {summary.contestedOpen === 1 ? 'item em contestação' : 'itens em contestação'} sem resolução.
+        </Alert>
+      )}
+      {summary.photoUnmatched > 0 && (
+        <Alert severity="warning">
+          {summary.photoUnmatched} {summary.photoUnmatched === 1 ? 'item das comandas por foto está' : 'itens das comandas por foto estão'} fora do cardápio. Confira em "Comandas fotografadas".
+        </Alert>
+      )}
+    </>
+  );
+
+  const kpis = [
+    { label: 'Total geral (digital + foto)', value: money(summary.grandTotal), highlight: true },
+    { label: 'Total vendido (pago)', value: money(summary.totalSold) },
+    { label: `Comandas por foto (${summary.photoCount})`, value: money(summary.photoTotal) },
+    { label: 'Em aberto', value: money(summary.totalOpen) },
+    { label: 'Cancelados', value: money(summary.cancelledTotal) },
+    { label: 'Em contestação', value: String(summary.contestedOpen), danger: summary.contestedOpen > 0 },
+  ];
+
+  const paymentRows = (
+    <Table size="small">
+      <TableHead>
+        <TableRow><TableCell>Forma</TableCell><TableCell align="right">Contas</TableCell><TableCell align="right">Total</TableCell></TableRow>
+      </TableHead>
+      <TableBody>
+        {summary.byPayment.map((l) => (
+          <TableRow key={l.label}>
+            <TableCell>{payLabel(l.label)}</TableCell>
+            <TableCell align="right">{l.count ?? '-'}</TableCell>
+            <TableCell align="right">{money(l.total)}</TableCell>
           </TableRow>
-        </TableHead>
-        <TableBody>
-          {summary.byWaiter.map((w) => (
-            <TableRow key={w.name}>
-              <TableCell>{w.name}</TableCell>
-              <TableCell align="right">{w.count}</TableCell>
-              <TableCell align="right">{money(w.total)}</TableCell>
-              <TableCell>{w.byMethod.map((m) => `${payLabel(m.method)}: ${money(m.total)}`).join(' · ') || '-'}</TableCell>
-            </TableRow>
+        ))}
+        {summary.byPayment.length === 0 && <TableRow><TableCell colSpan={3}>Sem pagamentos.</TableCell></TableRow>}
+      </TableBody>
+    </Table>
+  );
+
+  const itemRows = (sticky: boolean) => (
+    <Table size="small" stickyHeader={sticky}>
+      <TableHead><TableRow><TableCell>Item</TableCell><TableCell align="right">Qtd.</TableCell><TableCell align="right">Valor</TableCell></TableRow></TableHead>
+      <TableBody>
+        {summary.byItem.map((l) => (
+          <TableRow key={l.label}>
+            <TableCell>{l.label}</TableCell>
+            <TableCell align="right">{l.quantity ?? '-'}</TableCell>
+            <TableCell align="right">{money(l.total)}</TableCell>
+          </TableRow>
+        ))}
+        {summary.byItem.length === 0 && <TableRow><TableCell colSpan={3}>Sem itens.</TableCell></TableRow>}
+      </TableBody>
+    </Table>
+  );
+
+  const waiterRows = (
+    <Table size="small">
+      <TableHead>
+        <TableRow>
+          <TableCell>Garçom</TableCell>
+          <TableCell align="right">Contas</TableCell>
+          <TableCell align="right">Total</TableCell>
+          <TableCell>Por forma de pagamento</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {summary.byWaiter.map((w) => (
+          <TableRow key={w.name}>
+            <TableCell>{w.name}</TableCell>
+            <TableCell align="right">{w.count}</TableCell>
+            <TableCell align="right">{money(w.total)}</TableCell>
+            <TableCell>{w.byMethod.map((m) => `${payLabel(m.method)}: ${money(m.total)}`).join(' · ') || '-'}</TableCell>
+          </TableRow>
+        ))}
+        {summary.byWaiter.length === 0 && <TableRow><TableCell colSpan={4}>Sem recebimentos.</TableCell></TableRow>}
+      </TableBody>
+    </Table>
+  );
+
+  if (!isMobile) {
+    return (
+      <Stack spacing={1.5}>
+        {alerts}
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 1.5 }}>
+          {kpis.map((k) => (
+            <Paper key={k.label} sx={{
+              px: 1.5, py: 1, minWidth: 0,
+              ...(k.highlight ? { border: 2, borderColor: 'primary.main' } : {}),
+            }}>
+              <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block', lineHeight: 1.2 }}>{k.label}</Typography>
+              <Typography variant="h6" noWrap sx={{ fontWeight: 700, lineHeight: 1.3 }} color={k.danger ? 'error.main' : undefined}>{k.value}</Typography>
+            </Paper>
           ))}
-          {summary.byWaiter.length === 0 && <TableRow><TableCell colSpan={4}>Sem recebimentos.</TableCell></TableRow>}
-        </TableBody>
-      </Table>
-    </TableContainer>
-    )}
-  </Stack>
+        </Box>
+        <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: '1fr', '@media (min-width:1000px)': { gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }, alignItems: 'start' }}>
+          <Stack spacing={1.5} sx={{ minWidth: 0 }}>
+            <Paper>
+              <Typography variant="subtitle1" fontWeight={700} sx={{ px: 2, pt: 1.5 }}>Por forma de pagamento</Typography>
+              <TableContainer>{paymentRows}</TableContainer>
+            </Paper>
+            <Paper>
+              <Typography variant="subtitle1" fontWeight={700} sx={{ px: 2, pt: 1.5 }}>Conferência de caixa por garçom</Typography>
+              <TableContainer>{waiterRows}</TableContainer>
+            </Paper>
+          </Stack>
+          <Paper sx={{ minWidth: 0 }}>
+            <Typography variant="subtitle1" fontWeight={700} sx={{ px: 2, pt: 1.5 }}>Por item</Typography>
+            <TableContainer sx={{ maxHeight: 'calc(100vh - 420px)', minHeight: 200 }}>{itemRows(true)}</TableContainer>
+          </Paper>
+        </Box>
+      </Stack>
+    );
+  }
+
+  const section = (title: string, count: string, defaultExpanded: boolean, children: React.ReactNode) => (
+    <Accordion disableGutters defaultExpanded={defaultExpanded} sx={{ '&:before': { display: 'none' } }}>
+      <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 44, '& .MuiAccordionSummary-content': { my: 0.5, justifyContent: 'space-between', pr: 1 } }}>
+        <Typography fontWeight={700}>{title}</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>{count}</Typography>
+      </AccordionSummary>
+      <AccordionDetails sx={{ p: 0 }}>{children}</AccordionDetails>
+    </Accordion>
+  );
+
+  return (
+    <Stack spacing={1.5}>
+      {alerts}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}>
+        {kpis.map((k, i) => (
+          <Box key={k.label} sx={{
+            border: k.highlight ? 2 : 1, borderColor: k.highlight ? 'primary.main' : 'divider', borderRadius: 1, px: 1.25, py: 0.75, minWidth: 0, bgcolor: 'background.paper',
+            ...(i === 0 ? { gridColumn: '1 / -1' } : {}),
+          }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }}>{k.label}</Typography>
+            <Typography variant={k.highlight ? 'h6' : 'subtitle1'} sx={{ fontWeight: 700, lineHeight: 1.3, wordBreak: 'break-word' }} color={k.danger ? 'error.main' : undefined}>{k.value}</Typography>
+          </Box>
+        ))}
+      </Box>
+      {section('Por forma de pagamento', `${summary.byPayment.length}`, true, (
+        <Box>
+          {summary.byPayment.map((l, i) => (
+            <React.Fragment key={l.label}>
+              {i > 0 && <Divider />}
+              <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ px: 1.5, py: 0.75 }}>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography fontWeight={600}>{payLabel(l.label)}</Typography>
+                  <Typography variant="caption" color="text.secondary">{l.count ?? '-'} contas</Typography>
+                </Box>
+                <Typography fontWeight={700}>{money(l.total)}</Typography>
+              </Stack>
+            </React.Fragment>
+          ))}
+          {summary.byPayment.length === 0 && <Typography sx={{ p: 1.5 }}>Sem pagamentos.</Typography>}
+        </Box>
+      ))}
+      {section('Por item', `${summary.byItem.length}`, false, (
+        <Box>
+          {summary.byItem.map((l, i) => (
+            <React.Fragment key={l.label}>
+              {i > 0 && <Divider />}
+              <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ px: 1.5, py: 0.75 }}>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography fontWeight={600} sx={{ wordBreak: 'break-word' }}>{l.label}</Typography>
+                  <Typography variant="caption" color="text.secondary">Qtd.: {l.quantity ?? '-'}</Typography>
+                </Box>
+                <Typography fontWeight={700}>{money(l.total)}</Typography>
+              </Stack>
+            </React.Fragment>
+          ))}
+          {summary.byItem.length === 0 && <Typography sx={{ p: 1.5 }}>Sem itens.</Typography>}
+        </Box>
+      ))}
+      {section('Conferência de caixa por garçom', `${summary.byWaiter.length}`, false, (
+        <Box>
+          {summary.byWaiter.map((w, i) => (
+            <React.Fragment key={w.name}>
+              {i > 0 && <Divider />}
+              <Box sx={{ px: 1.5, py: 0.75 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography fontWeight={600} sx={{ wordBreak: 'break-word' }}>{w.name}</Typography>
+                    <Typography variant="caption" color="text.secondary">{w.count} contas</Typography>
+                  </Box>
+                  <Typography fontWeight={700}>{money(w.total)}</Typography>
+                </Stack>
+                {w.byMethod.map((m) => (
+                  <Stack key={m.method} direction="row" justifyContent="space-between" sx={{ mt: 0.25, pl: 1.5 }}>
+                    <Typography variant="body2" color="text.secondary">{payLabel(m.method)}</Typography>
+                    <Typography variant="body2">{money(m.total)}</Typography>
+                  </Stack>
+                ))}
+              </Box>
+            </React.Fragment>
+          ))}
+          {summary.byWaiter.length === 0 && <Typography sx={{ p: 1.5 }}>Sem recebimentos.</Typography>}
+        </Box>
+      ))}
+    </Stack>
   );
 };
 
@@ -1869,7 +1915,7 @@ const SummaryTab: React.FC<{
           </Select>
         </FormControl>
         {!isMobile && (
-          <Box sx={{ display: 'contents' }}>
+          <Stack direction="row" spacing={1.5} alignItems="center">
             <Button variant="outlined" onClick={showPhotoLink}>Copiar link</Button>
             <Button variant="contained" color="success" onClick={sendPhotoLinkWhatsApp}>
               Enviar por WhatsApp
@@ -1879,7 +1925,7 @@ const SummaryTab: React.FC<{
                 Imprimir fechamento
               </Button>
             )}
-          </Box>
+          </Stack>
         )}
         {isMobile && summary && headerSlot &&
           createPortal(
@@ -2193,28 +2239,28 @@ const EventsTab: React.FC<{
           {events.length === 0 && <Typography color="text.secondary">Nenhum evento cadastrado.</Typography>}
         </Stack>
       )}
-      {!isMobile && <TableContainer component={Paper}>
-        <Table size="small">
+      {!isMobile && <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+        <Table size="small" sx={{ minWidth: 980 }}>
           <TableHead>
             <TableRow>
               <TableCell>Nome</TableCell>
               <TableCell>Data</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell align="right">Total vendido</TableCell>
+              <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>Total vendido</TableCell>
               <TableCell />
             </TableRow>
           </TableHead>
           <TableBody>
             {events.map((ev) => (
               <TableRow key={ev.id}>
-                <TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>
                   {ev.name} {ev.isTest && <Chip size="small" label="Teste" color="secondary" sx={{ ml: 1 }} />}
                 </TableCell>
-                <TableCell>{formatDate(ev.eventDate)}</TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDate(ev.eventDate)}</TableCell>
                 <TableCell><Chip size="small" color={EVENT_STATUS[ev.status].color} label={EVENT_STATUS[ev.status].label} /></TableCell>
-                <TableCell align="right">{money(ev.totalSold)}</TableCell>
-                <TableCell align="right">
-                  <Stack direction="row" spacing={1} justifyContent="flex-end" flexWrap="wrap" useFlexGap sx={{ '& .MuiButton-root': { minWidth: 150 } }}>
+                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>{money(ev.totalSold)}</TableCell>
+                <TableCell align="right" sx={{ width: '100%' }}>
+                  <Stack direction="row" spacing={1} justifyContent="flex-end" flexWrap="nowrap" sx={{ '& .MuiButton-root': { whiteSpace: 'nowrap', flexShrink: 0 } }}>
                     {renderActions(ev)}
                   </Stack>
                 </TableCell>
@@ -2562,6 +2608,7 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
   const [loading, setLoading] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
   const [photoMissing, setPhotoMissing] = useState(false);
+  const [photoPage, setPhotoPage] = useState(0);
   useEffect(() => setPhotoMissing(false), [selectedPhoto]);
   const [cancelPhotoId, setCancelPhotoId] = useState<number | null>(null);
   const [cancelPhotoReason, setCancelPhotoReason] = useState('');
@@ -2649,16 +2696,17 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
 
   return (
     <Stack spacing={3}>
+      {isMobile ? (
       <Paper sx={{ p: 2 }}>
-        <Stack direction={isMobile ? 'column' : 'row'} justifyContent="space-between" alignItems={isMobile ? 'stretch' : 'center'} spacing={isMobile ? 1.5 : 0} sx={{ mb: 2 }}>
+        <Stack direction="column" justifyContent="space-between" alignItems="stretch" spacing={1.5} sx={{ mb: 2 }}>
           <Typography variant="h6" fontWeight={700}>
             Comandas Fotografadas — {report.eventName}
           </Typography>
-          <Button variant="contained" color="success" onClick={sendPhotoLinkWhatsApp} sx={isMobile ? { minHeight: 40 } : undefined}>
+          <Button variant="contained" color="success" onClick={sendPhotoLinkWhatsApp} sx={{ minHeight: 40 }}>
             Enviar link por WhatsApp
           </Button>
         </Stack>
-        <Stack direction={isMobile ? 'column' : 'row'} spacing={isMobile ? 0.5 : 2} alignItems="baseline">
+        <Stack direction="column" spacing={0.5} alignItems="baseline">
           <Typography variant="body1">
             <strong>{report.count}</strong> comandas
           </Typography>
@@ -2667,6 +2715,22 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
           </Typography>
         </Stack>
       </Paper>
+      ) : (
+      <Paper sx={{ px: 2, py: 1.25 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2} sx={{ flexWrap: 'nowrap' }}>
+          <Typography variant="h6" fontWeight={700} noWrap sx={{ minWidth: 0 }}>
+            Comandas Fotografadas — {report.eventName}
+          </Typography>
+          <Stack direction="row" spacing={1.5} alignItems="baseline" sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+            <Typography variant="body1"><strong>{report.count}</strong> comandas</Typography>
+            <Typography variant="h6" fontWeight={800} color="primary">Total: {money(report.grandTotal)}</Typography>
+          </Stack>
+          <Button variant="contained" color="success" onClick={sendPhotoLinkWhatsApp} sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+            Enviar link por WhatsApp
+          </Button>
+        </Stack>
+      </Paper>
+      )}
 
       {isMobile ? (
         <Stack spacing={1.5}>
@@ -2724,56 +2788,65 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
           ))}
         </Stack>
       ) : (
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>#</TableCell>
-              <TableCell>Mesa / Nome</TableCell>
-              <TableCell>Data/Hora</TableCell>
-              <TableCell align="right">Total</TableCell>
-              <TableCell align="center">Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {report.comandas.map((comanda) => (
-              <TableRow key={comanda.id}>
-                <TableCell>{comanda.id}</TableCell>
-                <TableCell>{comanda.label || '—'}</TableCell>
-                <TableCell>
-                  {new Date(comanda.createdAt).toLocaleString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </TableCell>
-                <TableCell align="right">
-                  <strong>{money(comanda.total)}</strong>
-                  {comanda.paymentMethod && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{comanda.paymentMethod}</Typography>}
-                </TableCell>
-                <TableCell align="center">
-                  <Stack direction="row" spacing={1} justifyContent="center">
-                    <Button size="small" variant="outlined" onClick={() => setSelectedPhoto(comanda.id)}>
-                      Ver Foto
-                    </Button>
-                    {comanda.cancelled ? (
-                      <Typography variant="caption" color="error">
-                        Cancelada{comanda.cancelledByName ? ` por ${comanda.cancelledByName}` : ''}: {comanda.cancelReason}
-                      </Typography>
-                    ) : (
-                      <Button size="small" color="error" onClick={() => handleDiscard(comanda.id)}>
-                        {report.isTest ? 'Descartar' : 'Cancelar'}
-                      </Button>
-                    )}
-                  </Stack>
-                </TableCell>
+      <Paper>
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>#</TableCell>
+                <TableCell>Mesa / Nome</TableCell>
+                <TableCell>Data/Hora</TableCell>
+                <TableCell>Forma de pagamento</TableCell>
+                <TableCell align="right">Total</TableCell>
+                <TableCell align="center">Ações</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {report.comandas.slice(photoPage * 10, photoPage * 10 + 10).map((comanda) => (
+                <TableRow key={comanda.id} hover>
+                  <TableCell>{comanda.id}</TableCell>
+                  <TableCell>{comanda.label || '—'}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                    {new Date(comanda.createdAt).toLocaleString('pt-BR', {
+                      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                    })}
+                  </TableCell>
+                  <TableCell>{comanda.paymentMethod || 'Não identificado'}</TableCell>
+                  <TableCell align="right"><strong>{money(comanda.total)}</strong></TableCell>
+                  <TableCell align="center">
+                    <Stack direction="row" spacing={1} justifyContent="center" alignItems="center">
+                      <Tooltip title="Ver foto">
+                        <IconButton size="small" color="primary" aria-label="Ver foto" onClick={() => setSelectedPhoto(comanda.id)}>
+                          <PhotoCameraIcon />
+                        </IconButton>
+                      </Tooltip>
+                      {comanda.cancelled ? (
+                        <Typography variant="caption" color="error">
+                          Cancelada{comanda.cancelledByName ? ` por ${comanda.cancelledByName}` : ''}: {comanda.cancelReason}
+                        </Typography>
+                      ) : (
+                        <Button size="small" color="error" onClick={() => handleDiscard(comanda.id)}>
+                          {report.isTest ? 'Descartar' : 'Cancelar'}
+                        </Button>
+                      )}
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        <TablePagination
+          component="div"
+          count={report.comandas.length}
+          page={photoPage}
+          onPageChange={(_, p) => setPhotoPage(p)}
+          rowsPerPage={10}
+          rowsPerPageOptions={[10]}
+          labelRowsPerPage=""
+          labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
+        />
+      </Paper>
       )}
 
       {report.itemTotals.length > 0 && (

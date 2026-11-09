@@ -1,7 +1,7 @@
 # PRD — ComandaFácil: Comanda Digital e Fotografada para Pequenos Comércios (multi-tenant)
 
-> Versão 1.1 · 09/11/2026 · Origem: piloto "Bingo Beneficente" da Casa de Caridade Caboclo Batuara (07/11/2026).
-> **v1.1:** incorpora o que o piloto ganhou depois do primeiro evento: comanda de papel por foto/digitação manual (§5.13), QR de mesa assinado, edição e suspensão de evento, forma de pagamento na comanda de papel, total pago unificado, aba "Ler Comanda" do garçom, redesenho mobile do Admin e novos aprendizados (§12).
+> Versão 1.2 · 09/11/2026 · Origem: piloto "Bingo Beneficente" da Casa de Caridade Caboclo Batuara (07/11/2026).
+> **v1.1:** incorpora o que o piloto ganhou depois do primeiro evento: comanda de papel por foto/digitação manual (§5.13), QR de mesa assinado, edição e suspensão de evento, forma de pagamento na comanda de papel, total pago unificado, aba "Ler Comanda" do garçom, redesenho mobile do Admin e novos aprendizados (§12). **v1.2:** seção 11 reescrita como base de UI/UX (princípios, padrões de componentes, cores, superfícies e decisões da revisão do desktop de 09/11/2026).
 > Este documento descreve o produto-alvo (SaaS multi-tenant). O que já existe no piloto está marcado como **[Piloto]**; o que é novo para o produto está marcado como **[Novo]**.
 
 ---
@@ -319,22 +319,89 @@ Prefixo `/api/{tenant}/...` (ou subdomínio). Respostas padronizadas `{ success,
 - **Webhooks:** status de mensagens do WhatsApp.
 - **Tempo real (SignalR):** hubs `team` (pedidos novos, conta pedida, mudanças de status) e `tab` (atualização da comanda do cliente).
 
-## 11. Experiência (telas)
+## 11. UI/UX (base de experiência do produto)
 
-**Cliente:**
-- Abrir comanda (ou "Olá, {nome}! Escolha sua mesa").
-- Comanda compacta: cabeçalho fixo "COMANDA · Mesa N", nome e número da comanda, selo de celular confirmado.
-- Abas **Cardápio / Pedido**, barra do carrinho fixa, "Não recebi", "Continuar pedindo", QR de saída.
+Esta seção reúne o que o piloto consolidou em interface e as decisões da revisão de telas de 09/11/2026. Vale como base para o ComandaFácil. Itens marcados **[Definido]** foram acordados na revisão e ainda não foram implementados no piloto; no produto novo já nascem assim.
 
-**Equipe:**
-- Abas **Pedidos** (badge), **Contas** (badge, filtros), **Mesas** (QR assinado automático), **Ler Comanda** (foto/digitação), **Saída**.
-- Tela **Conferir saída** (verde/vermelho/âmbar).
+### 11.1 Princípios
+1. **Mobile-first na operação** (cliente e garçom usam o celular; o administrador usa celular e computador). Cada tela tem versão de celular e de computador pensadas separadamente; **ajustar uma não muda a outra**, salvo pedido explícito.
+2. **Nenhum texto cortado ou quebrado onde se pediu uma linha:** títulos, subtítulos, avisos e botões ficam numa linha só, com a fonte ajustada à largura (tamanho fluido com mínimo e máximo), nunca com reticências no que é essencial.
+3. **Pouca rolagem:** a tela aproveita a largura (painéis, colunas, tabelas baixas) e usa paginação ou seções recolhíveis em vez de listas longas.
+4. **Informar e filtrar são coisas diferentes:** quadros de informação (somente leitura) nunca têm o mesmo visual de um filtro clicável. Filtros são **caixa de seleção**; informativos são **caixinhas** com rótulo pequeno e valor em destaque.
+5. **Um caminho só para cada ação:** edição por ícone de lápis que abre uma janela; sem edição escondida por duplo clique.
+6. **Contraste alto e estado visível:** cores com significado fixo (ver 11.3), selos numéricos nunca cortados, alvos de toque grandes.
+7. **Ação destrutiva sempre pede confirmação**, com o texto do que será afetado e se é definitivo.
+8. **Voz do produto:** português do Brasil, frases curtas e diretas, termos do cotidiano do salão ("comanda", "mesa", "fechar conta").
 
-**Admin:**
-- Eventos, Painel ao vivo (indicadores-filtro, Mesas, Contas), Cardápio em grade editável, Mesas (controles e QR na mesma linha, centralizados), Garçons, Formas de pagamento, Resumo com **Imprimir fechamento**.
+### 11.2 Padrões de componentes
+- **Informativo (indicador):** caixinha com rótulo pequeno em cima e valor em destaque embaixo; no celular, grade de 2 ou 3 colunas; no computador, faixa numa linha só.
+- **Filtro:** caixa de seleção rotulada ("Filtrar comandas") com a contagem em cada opção ("Pagas: 3") e a opção "Todas" para limpar.
+- **Lista compacta (celular):** uma linha por item, com ordem, nome, valor/estado, interruptor e ícones de ação (lápis, lixeira); texto de apoio só quando relevante ("já usado: nome travado").
+- **Tabela (computador):** linhas baixas (≈ 44 px), cabeçalho fixo, **paginação de 10 em 10** (anterior/próxima, "1–10 de N", sem seletor de quantidade), ordenação padrão pela coluna "Ordem" quando existir.
+- **Edição:** ícone de **lápis** na coluna "Ações", antes da lixeira; abre a janela "Editar …" (tela cheia no celular, janela centralizada no computador) com Cancelar e Salvar. Campo travado mostra o motivo ("Item já usado: o nome não pode ser alterado").
+- **Exclusão:** ícone de lixeira, desabilitado com dica quando houver vínculo ("Item já usado: marque como indisponível"). Onde não há exclusão (formas de pagamento), usa-se o interruptor ativo/inativo.
+- **Botões de ação por linha (eventos):** todos na mesma linha, alinhados à direita, com espaçamento regular e sem largura mínima fixa; um evento por linha. Em telas estreitas, a tabela rola na horizontal em vez de quebrar os botões.
+- **Seções recolhíveis (celular):** título + total no cabeçalho, abrem com um toque; a mais usada vem aberta.
+- **Cartão flutuante de erro/alerta:** vermelho, no topo, para bloqueios (ex.: "Comanda N já registrada (R$ x)").
+- **Esqueleto de carregamento:** com o formato da tela de destino (brilho em movimento) e o texto do progresso ("Lendo a comanda… tentativa N de 3").
+- **Botão de impressão no celular:** ícone alinhado à direita na linha do título (slot de cabeçalho), em vez de botão largo.
+- **Fotografia (ícone de câmera):** abre a foto da comanda; para comanda digitada manualmente, a janela informa "Sem foto: comanda digitada manualmente".
+- **Avisos de ajuda:** uma linha só; sem instruções que dependam de gesto escondido.
 
-**Admin no celular (iPhone):** seletor de seção no lugar das abas; cartões em vez de tabelas; listas compactas de uma linha por item (Cardápio, Formas de pagamento); botões de uma linha só e centralizados; informativos (chips) separados dos filtros (caixa de seleção "Filtrar comandas"); o desktop não muda.
-Regras de UI: mobile-first, **nenhum texto cortado** (títulos e avisos numa linha só, com fonte ajustada à largura; selos numéricos inteiros), alvos de toque ≥ 48 px, sem rolagem desnecessária, contraste alto, feedback sonoro/vibração apenas na equipe.
+### 11.3 Cores e significado
+- **Primária (azul):** ação principal, abas, total em destaque.
+- **Verde:** pago, confirmado, WhatsApp, "aberto".
+- **Âmbar/laranja:** pediram a conta, suspenso, "teste", atenção.
+- **Vermelho:** cancelar, descartar, contestação, bloqueio, falha de entrega.
+- **Cinza:** inativo, "não confirmado", texto de apoio.
+- Selos (chips) servem a **status**; nunca como filtro (ver 11.1, item 4).
+
+### 11.4 Cliente (celular, sem instalar)
+- Abrir comanda: "Olá, {nome}! Escolha sua mesa"; **mesa fixa** quando o QR é assinado ("Mesa N", sem seletor).
+- Comanda compacta: cabeçalho fixo "COMANDA · Mesa N", nome, número, selo de celular confirmado.
+- Abas **Cardápio / Pedido**, busca **"Buscar item…"** acima da lista, paginação conforme a altura da tela, quantidade em cada item, barra do carrinho sempre visível.
+- "Não recebi", "Continuar pedindo", QR de saída.
+
+### 11.5 Garçom (celular)
+- Abas na ordem: **Pedidos**, **Contas**, **Mesas**, **Ler Comanda**, **Saída**; títulos numa linha só e selos numéricos inteiros (rolagem e selo com sobra de espaço).
+- **Mesas:** escolhe a mesa e o QR assinado aparece; toque amplia em tela cheia com botão "Fechar" visível.
+- **Ler Comanda:** subtítulo "Fotografar comanda para Fechar Conta" numa linha; fluxo da comanda de papel (11.8).
+- **Saída:** tela "Conferir saída" (verde/vermelho/âmbar); texto auxiliar numa linha.
+- Feedback sonoro/vibração apenas na equipe.
+
+### 11.6 Administrador no celular (iPhone)
+- Seletor de seção no lugar das abas; cartões em vez de tabelas; listas compactas de uma linha (Cardápio, Formas de pagamento).
+- Painel ao vivo: informativos em grade + caixa de seleção "Filtrar comandas".
+- Botões de uma linha só e centralizados; alvos ≥ 48 px.
+- **[Definido] Resumo no celular:** indicadores em **grade de 2 colunas** (o "Total geral" ocupa a fileira inteira no topo) e **listas recolhíveis** ("Por forma de pagamento" aberta; "Por item" e "Conferência por garçom" fechadas); linhas mais baixas; botão de imprimir no título.
+- Comandas fotografadas: item numa linha; abaixo "valor × quantidade = total"; abaixo "Forma de pagamento: {nome | Não identificado}".
+
+### 11.7 Administrador no computador (decisões da revisão)
+| Tela | Decisão |
+|---|---|
+| **Novo evento** | Mantida como está. |
+| **Mesas** | Mantida (quantidade, Salvar, Imprimir, Projetar QR e QR na mesma linha, centralizados). |
+| **Garçons** | Mantida (busca de filho + Escalar, tabela, "Encerrar sessão dos garçons"). |
+| **Eventos** | **[Definido]** um evento por linha; todos os botões (Fechamento, Editar, Abrir/Retomar/Suspender, Cancelar, Encerrar) na mesma linha, alinhados à direita, sem largura mínima fixa e sem quebra; etiqueta "Teste" ao lado do nome; coluna de ações ocupa o espaço que sobra; abaixo de ~1100 px a tabela rola na horizontal. |
+| **Painel ao vivo** | **[Definido]** tudo na primeira linha: informativos (Itens pendentes, Itens retirados, Total vendido; "Em contestação" e "Falha de entrega" só quando houver) + caixa de seleção "Filtrar comandas" + "Pedir fechamento geral" + "Suspender pedidos do evento" (textos numa linha). Seções "Mesas" e "Contas" mantidas. |
+| **Cardápio** | **[Definido]** lápis antes da lixeira (janela "Editar item"); sem edição por duplo clique; texto de ajuda em **uma linha**: "Itens já usados em pedidos ou comandas não podem ser renomeados nem excluídos; marque como indisponível. O preço novo vale só para lançamentos futuros."; **paginação de 10 em 10**. |
+| **Formas de pagamento** | **[Definido]** mesmo padrão do Cardápio (lápis, sem duplo clique, paginação de 10); sem lixeira (usa o interruptor "Ativa"); aviso "As formas ativas aparecem para o garçom escolher ao cobrar." mantido. |
+| **Resumo** | **[Definido]** formato de painel: barra de ferramentas com **espaçamento regular entre os botões** (Copiar link, Enviar por WhatsApp, Imprimir fechamento); faixa de 6 indicadores numa linha (Total geral em destaque, Total vendido (pago), Comandas por foto, Em aberto, Cancelados, Em contestação); corpo em **duas colunas** (esquerda: "Por forma de pagamento" e "Conferência de caixa por garçom"; direita: "Por item" com rolagem interna e cabeçalho fixo); em < ~1000 px vira uma coluna; sem rolar a página em 1280 × 720. O mesmo componente serve ao histórico de eventos. |
+| **Comandas Foto** | **[Implementado no piloto]** cartão de resumo numa linha ("Comandas Fotografadas — {evento}" · "N comandas · Total" · "Enviar link por WhatsApp"); linhas baixas (≈ 44 px, cerca do dobro de registros por tela); **forma de pagamento em coluna própria** (com "Não identificado"); "Ver foto" vira **ícone de câmera** com dica; "Descartar" continua em texto vermelho; **paginação de 10 em 10**. |
+
+### 11.8 Fluxos especiais
+- **Comanda de papel:** fotografar → esqueleto com tentativa N de 3 → conferência (itens, valores, total) → escolher a forma de pagamento (sugestão do OCR destacada; "Não identificado" disponível) → Fechar comanda. Em falha: "Tentar ler novamente", "Digitar sem foto" (só após as 3 tentativas), "Voltar".
+- **Digitação manual:** número, nome opcional, cardápio com (−) quantidade (+) = total, busca, 10 por página, item fora do cardápio com "+ Cardápio", total fixo no rodapé.
+- **Fechamento impresso (A4):** ver §5.10 e RF-R2.
+
+### 11.9 Acessibilidade e desempenho
+- Contraste alto, rótulos nos controles (`aria-label` em interruptores e ícones), foco visível, alvos de toque ≥ 48 px, texto legível sem zoom.
+- Telas leves em rede móvel: paginação, imagens reduzidas no aparelho, esqueletos de carregamento.
+
+### 11.10 Regras para quem implementa
+- Ajuste de uma versão (celular/computador) não altera a outra, salvo pedido.
+- Conferir sempre em 1280 × 720 (computador) e largura de iPhone (celular) antes de entregar.
+- Componentes de fluxo repetido (ex.: comanda de papel) ficam em **um só lugar**, usado pelo Admin e pelo site público (no piloto estão duplicados; é uma dívida a não repetir).
 
 ## 12. Aprendizados do piloto (entram como requisitos)
 
