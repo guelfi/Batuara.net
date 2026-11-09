@@ -12,12 +12,14 @@ import {
   DialogTitle,
   IconButton,
   Paper,
+  Skeleton,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { resolveBaseUrl } from '../../services/api';
+import ComandaManual from './ComandaManual';
 
 interface Item {
   name: string;
@@ -60,6 +62,24 @@ const resizePhoto = (file: File): Promise<string> =>
     img.src = url;
   });
 
+const errMsg = (e: any): string => {
+  const status = e?.response?.status;
+  if (status === 401) return 'Link sem permissão. Peça o link correto ao administrador.';
+  if (e?.response?.data?.message) return e.response.data.message;
+  if (e?.code === 'ECONNABORTED') return 'A leitura demorou demais (limite do aparelho).';
+  if (status) return `O servidor demorou ou falhou ao responder (HTTP ${status}).`;
+  return 'Sem conexão com o servidor. Verifique o sinal do celular.';
+};
+
+const MAX_ATTEMPTS = 3;
+const RETRY_PAUSE_MS = 2000;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** Só vale repetir quando a falha é temporária (rede, tempo esgotado, servidor ocupado). */
+const isRetryable = (e: any) => {
+  const status = e?.response?.status;
+  return !status || status >= 500 || status === 429;
+};
+
 const ComandaFotoPage: React.FC = () => {
   const token = useRef(getToken()).current;
   const http = useRef(
@@ -80,15 +100,10 @@ const ComandaFotoPage: React.FC = () => {
   const [payOpen, setPayOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const errMsg = (e: any) => {
-    const status = e?.response?.status;
-    if (status === 401) return 'Link sem permissão. Peça o link correto ao administrador.';
-    if (e?.response?.data?.message) return e.response.data.message;
-    if (e?.code === 'ECONNABORTED') return 'A leitura demorou demais (limite do aparelho).';
-    if (status) return `O servidor demorou ou falhou ao responder (HTTP ${status}).`;
-    return 'Sem conexão com o servidor. Verifique o sinal do celular.';
-  };
+  // 0 = não está lendo; 1..3 = tentativa atual da leitura da foto
+  const [attempt, setAttempt] = useState(0);
+  const [readFailure, setReadFailure] = useState<string | null>(null);
+  const [manual, setManual] = useState(false);
 
   const loadEventName = useCallback(async () => {
     try {
@@ -108,13 +123,11 @@ const ComandaFotoPage: React.FC = () => {
     loadEventName();
   }, [loadEventName]);
 
-  const onFile = async (file?: File) => {
-    if (!file) return;
-    setError(null);
-    setBusy('Lendo a comanda...');
-    try {
-      const b64 = await resizePhoto(file);
-      setPhoto(b64);
+  const readPhoto = async (b64: string) => {
+    setReadFailure(null);
+    let lastError: unknown = null;
+    for (let n = 1; n <= MAX_ATTEMPTS; n += 1) {
+      setAttempt(n);
       try {
         const r = await http.post('/comanda-foto/ler', { imageBase64: b64, mediaType: 'image/jpeg' });
         setItems(r.data.data.items);
@@ -123,15 +136,43 @@ const ComandaFotoPage: React.FC = () => {
         setNome(String(customerName ?? ''));
         setDup(r.data.data.duplicate ?? null);
         setDupFor(String(comandaNumber ?? ''));
+        setAttempt(0);
+        return;
       } catch (e) {
-        setItems([]);
-        setError(`${errMsg(e)} Digite os itens abaixo.`);
+        lastError = e;
+        if (!isRetryable(e) || n === MAX_ATTEMPTS) break;
+        await sleep(RETRY_PAUSE_MS);
       }
+    }
+    setItems([]);
+    setAttempt(0);
+    setReadFailure(`Não foi possível processar a imagem. ${errMsg(lastError)}`);
+  };
+
+  const onFile = async (file?: File) => {
+    if (!file) return;
+    setError(null);
+    setReadFailure(null);
+    setManual(false);
+    try {
+      const b64 = await resizePhoto(file);
+      setPhoto(b64);
+      await readPhoto(b64);
     } catch {
       setError('Não consegui abrir a foto.');
-    } finally {
-      setBusy(null);
     }
+  };
+
+  const resetAll = () => {
+    setPhoto(null);
+    setItems([]);
+    setComanda('');
+    setNome('');
+    setDup(null);
+    setError(null);
+    setReadFailure(null);
+    setManual(false);
+    setAttempt(0);
   };
 
   const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
@@ -156,13 +197,7 @@ const ComandaFotoPage: React.FC = () => {
     setError(null);
     try {
       await http.post('/comanda-foto', { comandaNumber: comanda.trim(), paymentMethodId, items: items.filter((i) => i.quantity > 0), label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), imageBase64: photo });
-      // Limpa tudo e volta ao estado inicial
-      setPhoto(null);
-      setItems([]);
-      setComanda('');
-      setNome('');
-      setDup(null);
-      setError(null);
+      resetAll();
     } catch (e) {
       setError(errMsg(e));
     } finally {
@@ -205,7 +240,58 @@ const ComandaFotoPage: React.FC = () => {
         }}
       />
 
-      {photo ? (
+      {attempt > 0 ? (
+        <Paper
+          sx={{ p: 2, mb: 2, '@media (prefers-reduced-motion: reduce)': { '& .MuiSkeleton-root, & .MuiSkeleton-root::after': { animation: 'none' } } }}
+          aria-busy="true"
+        >
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+            <CircularProgress size={18} />
+            <Typography fontWeight={600}>
+              Lendo a comanda... tentativa {attempt} de {MAX_ATTEMPTS}
+            </Typography>
+          </Stack>
+          <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+            <Skeleton variant="rounded" width={110} height={40} animation="wave" />
+            <Skeleton variant="rounded" height={40} animation="wave" sx={{ flex: 1 }} />
+          </Stack>
+          {[72, 58, 84, 64, 76].map((w, i) => (
+            <Box key={i} sx={{ mb: 1.25 }}>
+              <Skeleton variant="rounded" height={32} width={`${w}%`} animation="wave" sx={{ mb: 0.5 }} />
+              <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
+                <Skeleton variant="rounded" width={52} height={24} animation="wave" />
+                <Skeleton variant="rounded" width={52} height={24} animation="wave" />
+                <Skeleton variant="rounded" width={62} height={24} animation="wave" />
+                <Skeleton variant="circular" width={22} height={22} animation="wave" />
+              </Stack>
+            </Box>
+          ))}
+          <Skeleton variant="rounded" height={32} width="60%" animation="wave" sx={{ mx: 'auto', my: 1.5 }} />
+          <Stack direction="row" spacing={1}>
+            <Skeleton variant="rounded" height={42} animation="wave" sx={{ flex: 1 }} />
+            <Skeleton variant="rounded" height={42} animation="wave" sx={{ flex: 1 }} />
+          </Stack>
+        </Paper>
+      ) : readFailure ? (
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {readFailure}
+          </Alert>
+          <Stack spacing={1}>
+            <Button fullWidth variant="contained" size="large" onClick={() => photo && readPhoto(photo)}>
+              🔄 Tentar ler novamente
+            </Button>
+            <Button fullWidth variant="outlined" size="large" onClick={() => { setReadFailure(null); setManual(true); }}>
+              ✍ Digitar sem foto
+            </Button>
+            <Button fullWidth onClick={resetAll}>
+              ← Voltar
+            </Button>
+          </Stack>
+        </Paper>
+      ) : manual ? (
+        <ComandaManual http={http} payMethods={payMethods} photo={photo} errMsg={errMsg} onBack={resetAll} onSaved={resetAll} />
+      ) : photo ? (
         <Paper sx={{ p: 2, mb: 2 }}>
           <Snackbar open={!!dup && comanda.trim() === dupFor.trim()} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ top: { xs: 16 } }}>
             <Alert severity="error" variant="filled" sx={{ width: '100%', boxShadow: 6 }}>

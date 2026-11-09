@@ -85,6 +85,21 @@ test('formulário mostra a dica de voltar à comanda com o mesmo celular', async
   expect(await screen.findByText('Já tem comanda? Informe o mesmo celular para voltar a ela.')).toBeInTheDocument();
 });
 
+test('link com ?mesa= trava a mesa; sem o parâmetro o cliente escolhe', async () => {
+  window.history.pushState({}, '', '/bingo?mesa=3');
+  api.getInfo.mockResolvedValue({ isOpen: true, closeAllRequested: false, mesas: [1, 2, 3], menu: [] });
+  const { unmount } = render(<BingoCustomerPage />);
+  const fixed = await screen.findByDisplayValue('Mesa 3');
+  expect(fixed).toHaveAttribute('readonly');
+  expect(screen.getByText('Definida pelo QR da mesa.')).toBeInTheDocument();
+  unmount();
+
+  window.history.pushState({}, '', '/bingo');
+  render(<BingoCustomerPage />);
+  await screen.findByText('Já tem comanda? Informe o mesmo celular para voltar a ela.');
+  expect(screen.queryByText('Definida pelo QR da mesa.')).not.toBeInTheDocument();
+});
+
 test('sem evento aberto mostra aviso amigável no formulário', async () => {
   window.history.pushState({}, '', '/bingo');
   api.getInfo.mockResolvedValue({ isOpen: false, closeAllRequested: false, mesas: [], menu: [] });

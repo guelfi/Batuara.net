@@ -2531,6 +2531,8 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
   const [report, setReport] = useState<PhotoTabReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
+  const [photoMissing, setPhotoMissing] = useState(false);
+  useEffect(() => setPhotoMissing(false), [selectedPhoto]);
   const [cancelPhotoId, setCancelPhotoId] = useState<number | null>(null);
   const [cancelPhotoReason, setCancelPhotoReason] = useState('');
 
@@ -2818,7 +2820,15 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
               src={photoUrl(selectedPhoto)}
               alt={`Comanda ${selectedPhoto}`}
               sx={{ width: '100%', height: 'auto' }}
+              onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                // comanda digitada manualmente não tem foto
+                e.currentTarget.style.display = 'none';
+                setPhotoMissing(true);
+              }}
             />
+          )}
+          {selectedPhoto && photoMissing && (
+            <Typography color="text.secondary">Sem foto: comanda digitada manualmente.</Typography>
           )}
         </DialogContent>
       </Dialog>

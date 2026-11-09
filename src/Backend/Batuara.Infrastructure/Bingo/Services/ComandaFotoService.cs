@@ -196,7 +196,8 @@ namespace Batuara.Infrastructure.Bingo.Services
                 throw new BingoException(BingoErrorKind.Validation, "Quantidade ou valor inválido.");
             }
 
-            var photo = ValidateImage(request.ImageBase64);
+            // Comanda digitada manualmente chega sem foto.
+            var photo = string.IsNullOrWhiteSpace(request.ImageBase64) ? Array.Empty<byte>() : ValidateImage(request.ImageBase64);
             var ev = await FindOpenEventAsync(ct)
                 ?? throw new BingoException(BingoErrorKind.Validation, "Não há evento aberto.");
             // Valida os itens contra o cardapio do evento: nome canonico quando reconhecido, senao matched=false.
@@ -225,6 +226,18 @@ namespace Batuara.Infrastructure.Bingo.Services
             Db.BingoPhotoTabs.Add(entity);
             await Db.SaveChangesAsync(ct);
             return ToDto(entity);
+        }
+
+        public async Task<List<BingoMenuItemDto>> GetMenuAsync(CancellationToken ct)
+        {
+            var ev = await FindOpenEventAsync(ct)
+                ?? throw new BingoException(BingoErrorKind.Validation, "Não há evento aberto.");
+            var items = await Db.BingoMenuItems
+                .Where(x => x.EventId == ev.Id && x.IsActive)
+                .OrderBy(x => x.SortOrder)
+                .ThenBy(x => x.Name)
+                .ToListAsync(ct);
+            return items.Select(x => new BingoMenuItemDto { Id = x.Id, Name = x.Name, UnitPrice = x.UnitPrice, IsAvailable = x.IsAvailable }).ToList();
         }
 
         public async Task<ComandaFotoReport> GetReportAsync(CancellationToken ct)

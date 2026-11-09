@@ -40,6 +40,7 @@ namespace Batuara.Application.Bingo.Models
         public string? ComandaNumber { get; set; }
         public int PaymentMethodId { get; set; }
         public List<ComandaFotoItem> Items { get; set; } = new();
+        /// <summary>Vazio quando a comanda foi digitada manualmente (sem foto).</summary>
         public string ImageBase64 { get; set; } = string.Empty;
     }
 
@@ -93,6 +94,7 @@ namespace Batuara.Application.Bingo.Services
         string GetAccessToken();
         Task<ComandaFotoExtractResult> ExtractAsync(ComandaFotoExtractRequest request, CancellationToken ct);
         Task<List<BingoPaymentMethodDto>> GetPaymentMethodsAsync(CancellationToken ct);
+        Task<List<BingoMenuItemDto>> GetMenuAsync(CancellationToken ct);
         Task<ComandaFotoItem> RegisterMenuItemAsync(ComandaFotoMenuRequest request, CancellationToken ct);
         Task<ComandaFotoDto> SaveAsync(ComandaFotoSaveRequest request, CancellationToken ct);
         Task<ComandaFotoReport> GetReportAsync(CancellationToken ct);

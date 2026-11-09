@@ -31,6 +31,11 @@ namespace Batuara.API.Controllers
         public async Task<IActionResult> GetPaymentMethods(CancellationToken ct)
             => !Allowed(null) ? Unauthorized() : Ok(new { success = true, data = await service.GetPaymentMethodsAsync(ct) });
 
+        [HttpGet("cardapio")]
+        [EnableRateLimiting("bingo-read")]
+        public async Task<IActionResult> GetMenu(CancellationToken ct)
+            => !Allowed(null) ? Unauthorized() : Ok(new { success = true, data = await service.GetMenuAsync(ct) });
+
         [HttpPost("cardapio")]
         [EnableRateLimiting("bingo-write")]
         public async Task<IActionResult> RegisterMenuItem([FromBody] ComandaFotoMenuRequest request, CancellationToken ct)

@@ -1963,6 +1963,30 @@ namespace Batuara.Infrastructure.Tests.Bingo
             var act = () => svc.ExtractAsync(new ComandaFotoExtractRequest { ImageBase64 = photo }, CancellationToken.None);
             await act.Should().ThrowAsync<BingoException>();
         }
+        [Fact]
+        public async Task ComandaFoto_Should_List_Menu_And_Save_Manual_Tab_Without_Photo()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), new FakeConfig(), Options.Create(new ComandaFotoOptions()));
+
+            var menu = await svc.GetMenuAsync(CancellationToken.None);
+            menu.Should().NotBeEmpty();
+            menu.Should().Contain(m => m.Name == "Água");
+
+            var saved = await svc.SaveAsync(new ComandaFotoSaveRequest
+            {
+                PaymentMethodId = f.CashId,
+                ComandaNumber = "77",
+                ImageBase64 = string.Empty,
+                Items = new() { new() { Name = "Água", Quantity = 2, UnitPrice = 5 }, new() { Name = "Item novo", Quantity = 1, UnitPrice = 3 } }
+            }, CancellationToken.None);
+
+            saved.Total.Should().Be(13m);
+            saved.Items.Single(i => i.Name == "Item novo").Matched.Should().BeFalse();
+            (await svc.GetPhotoAsync(saved.Id, CancellationToken.None)).Should().BeNull();
+        }
+
             [Fact]
         public async Task ComandaFoto_Should_Validate_Menu_And_Feed_Event_Summary()
         {

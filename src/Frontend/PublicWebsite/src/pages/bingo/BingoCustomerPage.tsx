@@ -35,6 +35,8 @@ const BIG_BUTTON = { minHeight: 52, fontSize: '1.05rem', fontWeight: 700 } as co
 // Cardapio: linhas de altura fixa; quantas cabem por pagina depende da altura livre da tela.
 const ROW_H = 36;
 const PAGER_H = 40;
+const SEARCH_H = 44;
+const normText = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 const TAB_PATH = /^\/bingo\/comanda\/([^/?#]+)/;
 
 export const getTabIdFromPath = (pathname: string): string | null => {
@@ -69,6 +71,8 @@ const CustomerForm: React.FC = () => {
   const [name, setName] = useState(profile?.name ?? '');
   const [phone, setPhone] = useState(profile?.phone ?? '');
   const [mesa, setMesa] = useState('');
+  // mesa vinda do QR (garçom ou mesa): o cliente não pode trocar
+  const [mesaLocked, setMesaLocked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [checkingSaved, setCheckingSaved] = useState(true);
@@ -102,7 +106,10 @@ const CustomerForm: React.FC = () => {
       .then((data) => {
         setInfo(data);
         const wanted = new URLSearchParams(window.location.search).get('mesa');
-        if (wanted && data.mesas.includes(Number(wanted))) setMesa(String(Number(wanted)));
+        if (wanted && data.mesas.includes(Number(wanted))) {
+          setMesa(String(Number(wanted)));
+          setMesaLocked(true);
+        }
       })
       .catch(() => setLoadError('Não foi possível carregar as informações do bingo. Tente novamente.'));
   }, []);
@@ -190,6 +197,9 @@ const CustomerForm: React.FC = () => {
           }
           slotProps={{ htmlInput: { inputMode: 'tel', style: { minHeight: 28 } } }}
         />)}
+        {mesaLocked ? (
+          <TextField label="Sua mesa" value={`Mesa ${mesa}`} fullWidth helperText="Definida pelo QR da mesa." slotProps={{ input: { readOnly: true }, htmlInput: { style: { minHeight: 28, fontWeight: 700 } } }} />
+        ) : (
         <TextField
           select
           label="Sua mesa"
@@ -205,6 +215,7 @@ const CustomerForm: React.FC = () => {
             </MenuItem>
           ))}
         </TextField>
+        )}
 
         <Alert severity="info" icon={false} sx={{ fontSize: '0.85rem' }}>
           Usamos seu nome e celular apenas para a comanda do bingo. Eles são apagados em até 30 dias depois do evento se a conta estiver paga. Se a conta ficar em aberto, o celular pode ser usado para um lembrete de pagamento por WhatsApp e é guardado por até 90 dias.
@@ -256,6 +267,7 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
   const [menuEl, setMenuEl] = useState<HTMLDivElement | null>(null);
   const [menuH, setMenuH] = useState(0);
   const [menuPage, setMenuPage] = useState(0);
+  const [menuSearch, setMenuSearch] = useState('');
 
   useEffect(() => {
     if (!menuEl) return undefined;
@@ -504,12 +516,14 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
   const showCartBar = activeView === 'menu' && canOrder;
 
   // Sem medida (testes/primeira renderizacao) mostra tudo; cabendo tudo, sem paginacao.
-  const menuTotal = tab.menu.length;
-  const fitsAll = menuH === 0 || menuTotal * ROW_H <= menuH;
-  const perPage = fitsAll ? Math.max(1, menuTotal) : Math.max(3, Math.floor((menuH - PAGER_H) / ROW_H));
+  const shownMenu = menuSearch.trim() ? tab.menu.filter((m) => normText(m.name).includes(normText(menuSearch.trim()))) : tab.menu;
+  const menuTotal = shownMenu.length;
+  const listH = menuH - SEARCH_H;
+  const fitsAll = menuH === 0 || menuTotal * ROW_H <= listH;
+  const perPage = fitsAll ? Math.max(1, menuTotal) : Math.max(3, Math.floor((listH - PAGER_H) / ROW_H));
   const menuPages = Math.max(1, Math.ceil(menuTotal / perPage));
   const currentPage = Math.min(menuPage, menuPages - 1);
-  const visibleMenu = tab.menu.slice(currentPage * perPage, currentPage * perPage + perPage);
+  const visibleMenu = shownMenu.slice(currentPage * perPage, currentPage * perPage + perPage);
 
   return (
     <Box
@@ -609,7 +623,24 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
 
         {activeView === 'menu' && canOrder && (
           <Box ref={setMenuEl} sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <TextField
+              size="small"
+              fullWidth
+              placeholder="Buscar item..."
+              value={menuSearch}
+              onChange={(e) => {
+                setMenuSearch(e.target.value);
+                setMenuPage(0);
+              }}
+              sx={{ flexShrink: 0, mb: 0.5, height: SEARCH_H - 4 }}
+              slotProps={{ htmlInput: { 'aria-label': 'Buscar item', style: { fontSize: 16 } } }}
+            />
             <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+              {visibleMenu.length === 0 && (
+                <Typography color="text.secondary" align="center" sx={{ py: 2 }}>
+                  Nenhum item encontrado.
+                </Typography>
+              )}
               {visibleMenu.map((m) => {
                 const qty = cart[m.id] ?? 0;
                 const already = orderedByItem[String(m.id)] ?? 0;
