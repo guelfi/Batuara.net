@@ -1025,7 +1025,7 @@ const BingoWaiterPage: React.FC = () => {
             transition: 'background-color 0.4s',
           }}
         />
-        <Tab label="QR" sx={{ minHeight: 56, fontWeight: 700 }} />
+        <Tab label="Mesas" sx={{ minHeight: 56, fontWeight: 700 }} />
         <Tab label="Saída" sx={{ minHeight: 56, fontWeight: 700 }} />
       </Tabs>
       {tab === 0 && <OrdersTab groups={groups} contestations={contestations} loadError={ordersError} reload={async () => { await Promise.all([loadOrders(), loadContestations()]); }} />}
