@@ -66,7 +66,7 @@ const BingoExitPage: React.FC = () => {
         {!ok && <Typography sx={{ mt: 1 }}>Falta receber {money(data.amountDue)}. Encaminhe ao caixa.</Typography>}
       </Box>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      <Button variant="outlined" size="large" fullWidth onClick={() => navigate('/bingo-garcom', { state: { tab: 3 } })} sx={{ minHeight: 52, fontWeight: 700, mb: 1 }}>
+      <Button variant="outlined" size="large" fullWidth onClick={() => navigate('/bingo-garcom', { state: { tab: 4 } })} sx={{ minHeight: 52, fontWeight: 700, mb: 1 }}>
         Conferir outra comanda
       </Button>
       {ok && !already && (

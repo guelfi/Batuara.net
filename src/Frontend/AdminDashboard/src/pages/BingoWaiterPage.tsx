@@ -1041,7 +1041,7 @@ const BingoWaiterPage: React.FC = () => {
       <Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.8 }}>
         Garçom{status.eventName ? ` · ${status.eventName}` : ''}
       </Typography>
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth" sx={{ mb: 2, '& .MuiTab-root': { minWidth: 0, px: 0.5 } }}>
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth" sx={{ mb: 2, '& .MuiTab-root': { minWidth: 0, px: 0.5, fontSize: '0.78rem' } }}>
         <Tab
           label={
             <Badge badgeContent={pendingCount(groups) + contestations.length} color="error" max={99} sx={{ '& .MuiBadge-badge': { right: -14 } }}>
@@ -1069,14 +1069,14 @@ const BingoWaiterPage: React.FC = () => {
           }}
         />
         <Tab label="Mesas" sx={{ minHeight: 56, fontWeight: 700 }} />
+        <Tab label="Ler Comanda" sx={{ minHeight: 56, fontWeight: 700, flexGrow: 1.8, whiteSpace: 'nowrap' }} />
         <Tab label="Saída" sx={{ minHeight: 56, fontWeight: 700 }} />
-        <Tab label="Ler Comanda" wrapped sx={{ minHeight: 56, fontWeight: 700, lineHeight: 1.15 }} />
       </Tabs>
       {tab === 0 && <OrdersTab groups={groups} contestations={contestations} loadError={ordersError} reload={async () => { await Promise.all([loadOrders(), loadContestations()]); }} />}
       {tab === 1 && <AccountsTab mesas={mesas} />}
       {tab === 2 && <QrTab mesas={mesas} />}
-      {tab === 3 && <ExitTab />}
-      {tab === 4 && <PhotoTab />}
+      {tab === 3 && <PhotoTab />}
+      {tab === 4 && <ExitTab />}
     </Box>
   );
 };
