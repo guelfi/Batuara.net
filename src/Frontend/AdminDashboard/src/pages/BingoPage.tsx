@@ -2149,8 +2149,11 @@ const EventsTab: React.FC<{
                   </Stack>
                 </Stack>
                 <Box sx={{
-                  display: 'flex', flexWrap: 'nowrap', gap: 1, overflowX: 'auto', pb: 0.5,
-                  '& .MuiButton-root': { minHeight: 36, flex: '0 0 auto', whiteSpace: 'nowrap' },
+                  display: 'flex', flexWrap: 'nowrap', justifyContent: 'center', alignItems: 'stretch', gap: 0.75,
+                  '& .MuiButton-root': {
+                    minHeight: 40, flex: '1 1 0', minWidth: 0, px: 0.5, fontSize: '0.75rem', lineHeight: 1.15, textAlign: 'center',
+                    '& .MuiButton-startIcon': { display: 'none' },
+                  },
                 }}>
                   {renderActions(ev)}
                 </Box>
