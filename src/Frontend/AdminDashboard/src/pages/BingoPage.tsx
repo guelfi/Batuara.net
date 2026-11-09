@@ -2399,11 +2399,11 @@ const BingoPage: React.FC = () => {
 
   return (
     <Box>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ mb: 2 }}>
-        <Typography variant="h4">Bingo</Typography>
+      <Stack direction={isMobile ? 'row' : { xs: 'column', sm: 'row' }} spacing={1} alignItems={isMobile ? 'center' : { sm: 'center' }} flexWrap={isMobile ? 'wrap' : undefined} useFlexGap={isMobile} sx={{ mb: 2 }}>
+        <Typography variant="h4" sx={isMobile ? { fontSize: '1.6rem' } : undefined}>Bingo</Typography>
         {current ? (
           <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="h6" color="text.secondary">{current.name}</Typography>
+            <Typography variant="h6" color="text.secondary" sx={isMobile ? { fontSize: '1rem' } : undefined}>{current.name}</Typography>
             <Chip size="small" color={EVENT_STATUS[current.status].color} label={EVENT_STATUS[current.status].label} />
             {current.isTest && <Chip size="small" color="secondary" label="Teste" />}
           </Stack>
