@@ -271,6 +271,24 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 - **Data Protection:** chaves no volume Docker `batuara-dataprotection-keys` (`/app/dp-keys`).
 - **Backup:** `~/backups/batuara-orixas-umbanda-pre-unify-20261023.sql` na OCI (pré-`UnifyDescriptionFields`).
 
+### Handoff — 2026-11-09 (noite: revisão de UI do Admin desktop e Resumo mobile)
+
+- **Agente/dev:** Claude Code (Sonnet 5.5). A sessão continua no Codex.
+- **Branch:** `master`. Commits da revisão de UI: `9759799` (revisão completa, **deploy ok**), `ee91b3d` (linhas das Comandas Foto), `5f8d79a` (Cardápio e Formas de pagamento compactos e sem paginação), `96dd50d` (título "Evento:"). Os três últimos foram enviados ao origin; **o CI/CD deles pode ainda estar rodando**: conferir `gh run list` e `https://www.batuara.org.br/api/health` antes de mexer.
+- **Itens movidos para `done`:** (só `BingoPage.tsx`, desktop, salvo onde indicado)
+  - Eventos: um evento por linha, botões na mesma linha, sem largura mínima, tabela rola na horizontal abaixo de ~1100 px.
+  - Painel ao vivo: informativos em caixinhas + caixa "Filtrar comandas" + "Pedir fechamento geral" + suspender/encerrar na 1ª linha.
+  - Cardápio e Formas de pagamento: lápis (janela "Editar …") antes da lixeira, **sem edição por duplo clique**, `DataGrid density="compact"`, **sem paginação** (decisão final do usuário; antes tinha sido 10 por página). Texto de ajuda do Cardápio numa linha.
+  - Resumo: desktop em painel (6 indicadores numa linha; duas colunas: forma de pagamento + conferência por garçom | "Por item" com rolagem interna); botões do topo com espaçamento (o `display: contents` anterior tirava o espaçamento do `Stack`). **Mobile:** grade de 2 colunas e listas recolhíveis (`Accordion`).
+  - Comandas Foto: cartão de resumo numa linha, linhas baixas (~36 px), coluna "Forma de pagamento", ícone de câmera no lugar de "Ver foto" (sempre ativo; a janela informa "sem foto"), paginação de 10 em 10 (só aqui). Coluna "#" mantida.
+  - Título da página: "Evento:" (antes "Bingo" no desktop).
+- **Telas aprovadas sem mudança:** Novo evento, Mesas, Garçons.
+- **Validações executadas:** `tsc --noEmit` e `eslint` (único aviso preexistente: `OPEN_STATUSES` não usado). CI do `9759799` e CD ok. **Não houve conferência visual local** (app exige login): o usuário valida em produção com Ctrl+Shift+R e manda prints.
+- **Arquivos tocados:** `src/Frontend/AdminDashboard/src/pages/BingoPage.tsx` (removidos `CurrencyEditCell`, `chipFilter`, `toggleFilter`), `docs/PRD-COMANDA-DIGITAL-MULTITENANT.md` (v1.2, seção 11 de UI/UX).
+- **Não commitado / cuidado:** nada pendente neste repositório. O produto derivado está em `/home/guelfi/Projetos/ComandaFacil` (PRD próprio, já na v1.3 sem referências ao Batuara; `HANDOFF.md` mantido por lá). Esperar o deploy terminar antes de novo push.
+- **Próximo item sugerido:** receber os prints do usuário com os ajustes finos (Painel ao vivo na 1ª linha em notebook, altura da coluna "Por item", botões de Eventos em janela estreita). Depois: validar o OCR da forma de pagamento com foto real; RF-M6 (QR de todas as mesas no Admin); unificar o fluxo comanda-foto duplicado.
+- **Bloqueios novos:** nenhum.
+
 ### Handoff — 2026-11-09 (Comanda digital + comanda de papel)
 
 - **Agente/dev:** Claude Code (Sonnet 5.5)
@@ -308,6 +326,10 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 ---
 
 ## 7. Changelog deste plano
+
+### 2026-11-09 (noite: revisão de UI do Admin desktop e Resumo mobile)
+
+- Eventos, Painel ao vivo, Cardápio, Formas de pagamento, Resumo e Comandas Foto reorganizados no desktop; Resumo com grade e seções recolhíveis no mobile; título "Evento:". Detalhes no handoff de 2026-11-09 (noite), §6.1.
 
 ### 2026-11-09 (Bingo: comanda de papel, QR assinado, cancelar evento)
 
