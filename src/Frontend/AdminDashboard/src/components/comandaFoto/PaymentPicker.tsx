@@ -55,6 +55,8 @@ interface Props {
   /** Formas escritas na comanda (uma ou mais); já vêm marcadas. */
   hints?: PayHint[];
   allowNotIdentified?: boolean;
+  /** Valor de cada comanda quando várias são fechadas juntas (mostrado acima do total). */
+  breakdown?: { label: string; amount: number }[];
   /** Mantido por compatibilidade: a seleção por caixas já permite marcar mais de uma forma. */
   startSplit?: boolean;
   onPick: (lines: PayLine[] | null) => void;
@@ -78,7 +80,7 @@ const initialEntries = (total: number, hints: PayHint[], suggestedPay: number | 
   return one ? [{ key: String(one), amount: fmt(total), auto: false }] : [];
 };
 
-const PaymentPicker: React.FC<Props> = ({ total, payMethods, suggestedPay = null, hints = [], allowNotIdentified = true, onPick, onBack }) => {
+const PaymentPicker: React.FC<Props> = ({ total, payMethods, suggestedPay = null, hints = [], allowNotIdentified = true, breakdown = [], onPick, onBack }) => {
   const [entries, setEntries] = useState<Entry[]>(() => initialEntries(total, hints, suggestedPay));
 
   const many = entries.length >= 2;
@@ -114,9 +116,23 @@ const PaymentPicker: React.FC<Props> = ({ total, payMethods, suggestedPay = null
   return (
     <Stack spacing={1} sx={{ pt: 1 }}>
       {payMethods.length === 0 && <Typography color="text.secondary">Nenhuma forma de pagamento ativa.</Typography>}
+      {breakdown.length > 1 && (
+        <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, px: 1.5, py: 1 }}>
+          {breakdown.map((b) => (
+            <Stack key={b.label} direction="row" justifyContent="space-between" sx={{ py: 0.25 }}>
+              <Typography variant="body2" noWrap sx={{ minWidth: 0, pr: 1 }}>{b.label}</Typography>
+              <Typography variant="body2" fontWeight={600}>{brl(b.amount)}</Typography>
+            </Stack>
+          ))}
+        </Box>
+      )}
+      <Box sx={{ textAlign: 'center', py: 0.5 }}>
+        <Typography variant="caption" color="text.secondary">{breakdown.length > 1 ? 'Total das comandas' : 'Total a pagar'}</Typography>
+        <Typography variant="h4" fontWeight={800} color="primary">{brl(total)}</Typography>
+      </Box>
       <Typography variant="body2" color="text.secondary">
         {entries.length > 0 && (suggestedPay !== null || hints.length > 0) ? 'Marcado o que foi identificado na comanda. ' : ''}
-        Total {brl(total)}. Marque uma forma, ou mais de uma se o pagamento foi dividido (a soma precisa ser igual ao total).
+        Marque a forma de pagamento. Se foi dividido, marque mais de uma: a soma precisa ser igual ao total.
       </Typography>
       {options.map((o) => {
         const entry = entries.find((e) => e.key === o.key);

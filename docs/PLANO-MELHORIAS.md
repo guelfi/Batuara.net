@@ -345,6 +345,11 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 ## 7. Changelog deste plano
 
+### 2026-11-10 (cota do Gemini resolvida e diálogo de pagamento)
+
+- **429 resolvido:** o log da produção mostrou `GenerateRequestsPerDayPerProjectPerModel-FreeTier` (cota diária do nível gratuito). O usuário ligou o faturamento no "Projeto Batuara" do AI Studio (chave `…N68g`): agora **Nível 1, pré-pago, R$ 120,00 de crédito, recarga automática desativada**. A leitura voltou a funcionar. Conferir saldo em "Gasto"/"Faturamento" antes de cada evento grande; sem saldo, a leitura por foto para.
+- Diálogo de pagamento (`PaymentPicker`): total em destaque (grande) e, com mais de uma comanda, lista com o valor de cada uma antes do total.
+
 ### 2026-11-10 (429 do Gemini e fechamento de várias comandas juntas)
 
 - **429 (quota do Gemini):** a causa foi a cota do modelo `gemini-3-flash-preview`; o usuário aumentou a cota no Google AI Studio e voltou a funcionar. **Kimi não entra** (decisão de 10/11: tentar primeiro a cota). No código: o servidor tenta de novo (até 3 chamadas, espera de 2–5 s, respeita `Retry-After`) em 429/5xx, e a mensagem distingue "limite de uso" (`ocr_quota`) de "serviço instável".

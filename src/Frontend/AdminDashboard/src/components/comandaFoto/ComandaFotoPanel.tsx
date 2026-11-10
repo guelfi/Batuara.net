@@ -433,6 +433,7 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
           ) : (
           <PaymentPicker
             total={grandTotal}
+            breakdown={[...queue.map((q) => ({ label: `Comanda ${q.comanda}${q.nome ? ` - ${q.nome}` : ''}`, amount: q.total })), ...(hasCurrent ? [{ label: `Comanda ${comanda.trim()}${nome.trim() ? ` - ${nome.trim()}` : ''}`, amount: total }] : [])]}
             payMethods={payMethods}
             suggestedPay={queue.length > 0 ? null : suggestedPay}
             hints={queue.length > 0 ? [] : payHints}
