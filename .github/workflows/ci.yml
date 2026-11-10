@@ -162,6 +162,12 @@ jobs:
         run: npm ci --legacy-peer-deps
         working-directory: src/Frontend/AdminDashboard
 
+      - name: Test
+        run: npm test -- --watchAll=false
+        working-directory: src/Frontend/AdminDashboard
+        env:
+          CI: true
+
       - name: Build
         run: npm run build
         working-directory: src/Frontend/AdminDashboard

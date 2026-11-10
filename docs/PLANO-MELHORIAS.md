@@ -339,6 +339,10 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 ## 7. Changelog deste plano
 
+### 2026-11-10 (teste do Admin consertado e no CI)
+
+- `EventsPage.mobile.test.tsx` não rodava: `TextEncoder` ausente no Jest do `react-scripts` 5 (x-data-grid) e módulos ES (`date-fns`, `@mui/x-*`) sem transpilar. Corrigido com polyfill em `setupTests.ts` e `jest.transformIgnorePatterns` no `package.json` do Admin; 2 testes passam. O job `build-admin-dashboard` do CI agora roda `npm test` antes do build.
+
 ### 2026-11-10 (Bingos como aba de Agenda e Eventos)
 
 - O item **Bingo** saiu do menu lateral. `/agenda` ganhou as abas **Bingos** (`?aba=bingos`, a `BingoPage`) e **Bazares** (`?aba=bazares`, só um aviso "em breve"). `/bingo` redireciona para `/agenda?aba=bingos`. Nas duas abas o menu lateral recolhe sozinho e volta ao sair (`AdminLayout`), e o conteúdo usa a largura toda. No celular as abas rolam na horizontal. O garçom (`/bingo-garcom`) não muda. O teste preexistente `EventsPage.mobile.test.tsx` falha com `TextEncoder is not defined` (já falhava antes).

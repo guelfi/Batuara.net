@@ -62,5 +62,10 @@
   },
   "overrides": {
     "shell-quote": ">=1.8.4"
+  },
+  "jest": {
+    "transformIgnorePatterns": [
+      "node_modules/(?!(date-fns|@mui/x-date-pickers|@mui/x-data-grid|@mui/x-internals)/)"
+    ]
   }
 }

@@ -20,3 +20,8 @@ class ResizeObserverMock {
     removeEventListener: () => {},
     dispatchEvent: () => false,
   }));
+
+// o Jest do react-scripts 5 nao traz TextEncoder (usado pelo x-data-grid)
+import { TextDecoder, TextEncoder } from 'util';
+(globalThis as any).TextEncoder = (globalThis as any).TextEncoder || TextEncoder;
+(globalThis as any).TextDecoder = (globalThis as any).TextDecoder || TextDecoder;
