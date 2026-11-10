@@ -79,6 +79,8 @@ import { HouseMember } from '../types';
 
 const BINGO_URL = 'https://www.batuara.org.br/bingo';
 const POLL_MS = 4000;
+// Resumo e Comandas Foto: atualização automática a cada 10 s (só com a aba visível)
+const REFRESH_MS = 10000;
 
 type TabFilter = 'open' | 'closing' | 'paid' | 'verified' | 'unverified';
 
@@ -1916,18 +1918,28 @@ const SummaryTab: React.FC<{
     if (!eventId && current) setEventId(current.id);
   }, [current, eventId]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (silent = false) => {
     if (!eventId) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       setSummary(await bingoApi.getEventSummary(eventId));
     } catch (e: any) {
-      notify(apiError(e, 'Não foi possível carregar o resumo.'), 'error');
+      if (!silent) notify(apiError(e, 'Não foi possível carregar o resumo.'), 'error');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [eventId, notify]);
-  useEffect(() => { load(); }, [load]);
+  // atualiza sozinho (sem piscar) para acompanhar os fechamentos em tempo real
+  useEffect(() => {
+    load();
+    const refresh = () => { if (!document.hidden) load(true); };
+    const t = window.setInterval(refresh, REFRESH_MS);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.clearInterval(t);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [load]);
 
   const [photoLink, setPhotoLink] = useState('');
   const showPhotoLink = async () => {
@@ -2670,21 +2682,31 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
   const [cancelPhotoId, setCancelPhotoId] = useState<number | null>(null);
   const [cancelPhotoReason, setCancelPhotoReason] = useState('');
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (silent = false) => {
     if (!current) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const r = await apiService.get<any>('/bingo/admin/comandas-foto');
       // apiService ja devolve {success,data}: o relatorio esta em r.data
       setReport(r.data?.comandas ? r.data : r.data?.data ?? null);
     } catch (e: any) {
-      notify(apiError(e, 'Não foi possível carregar as comandas fotografadas.'), 'error');
+      if (!silent) notify(apiError(e, 'Não foi possível carregar as comandas fotografadas.'), 'error');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [current, notify]);
 
-  useEffect(() => { load(); }, [load]);
+  // atualiza sozinho (sem piscar) para acompanhar os fechamentos em tempo real
+  useEffect(() => {
+    load();
+    const refresh = () => { if (!document.hidden) load(true); };
+    const t = window.setInterval(refresh, REFRESH_MS);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.clearInterval(t);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [load]);
 
   const confirmCancelPhoto = async () => {
     const id = cancelPhotoId;

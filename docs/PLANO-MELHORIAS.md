@@ -345,6 +345,10 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 ## 7. Changelog deste plano
 
+### 2026-11-10 (atualização automática do Resumo e das Comandas Foto)
+
+- `Resumo` e `Comandas Foto` (Admin, `BingoPage.tsx`) recarregam sozinhos a cada 10 s (`REFRESH_MS`) e ao voltar para a aba do navegador, sem spinner nem mensagens de erro nas atualizações automáticas (`load(silent)`). O Painel ao vivo já atualizava a cada 4 s e Garçons a cada 15 s.
+
 ### 2026-11-10 (correções do lote e da confirmação de itens)
 
 - **HTTP 413 no lote:** o `server` de `www.batuara.org.br` no `nginx-proxy` da OCI (`/var/www/nginx/nginx.conf`, compartilhado com outros projetos) não define `client_max_body_size`, então vale o padrão de 1 MB; duas fotos de ~700 KB estouram. Mitigação no app: as fotos que vão no lote são reduzidas (lado maior 1000 px, JPEG 0,6). **Feito em 10/11 (aprovado pelo usuário):** `client_max_body_size 20m;` no `server` de `www.batuara.org.br` em `/var/www/nginx/nginx.conf` na OCI, com backup `nginx.conf.bak-20261110-batuara-body`, `nginx -t` ok e `nginx -s reload`; a mudança **não é versionada** no repositório (refazer se o arquivo for regenerado). Cabe o lote de até 10 comandas.
