@@ -1728,6 +1728,58 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public async Task ComandaFoto_Should_Close_Several_Tabs_Together_Keeping_Each_Separate()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), new FakeConfig(), Options.Create(new ComandaFotoOptions()));
+            ComandaFotoBatchEntry Tab(string n, decimal price) => new() { ComandaNumber = n, Label = $"Comanda {n}", Items = new() { new() { Name = "Água", Quantity = 1, UnitPrice = price } } };
+
+            // soma diferente do total das duas: recusa e nada e salvo
+            var wrong = () => svc.SaveBatchAsync(new ComandaFotoBatchRequest
+            {
+                Comandas = new() { Tab("73", 48m), Tab("70", 48m) },
+                Payments = new() { new() { PaymentMethodId = f.CashId, Amount = 90m } }
+            }, CancellationToken.None);
+            await wrong.Should().ThrowAsync<BingoException>();
+            f.Db.BingoPhotoTabs.Count().Should().Be(0);
+
+            // mesmo numero duas vezes no lote: recusa
+            var dup = () => svc.SaveBatchAsync(new ComandaFotoBatchRequest
+            {
+                Comandas = new() { Tab("73", 48m), Tab("73", 48m) },
+                Payments = new() { new() { PaymentMethodId = f.CashId, Amount = 96m } }
+            }, CancellationToken.None);
+            await dup.Should().ThrowAsync<BingoException>();
+
+            // R$ 96 em Pix 60 + Dinheiro 36: cada comanda fica separada e recebe sua parte, em ordem
+            var result = await svc.SaveBatchAsync(new ComandaFotoBatchRequest
+            {
+                Comandas = new() { Tab("73", 48m), Tab("70", 48m) },
+                Payments = new() { new() { PaymentMethodId = f.PixId, Amount = 60m }, new() { PaymentMethodId = f.CashId, Amount = 36m } }
+            }, CancellationToken.None);
+            result.Comandas.Should().HaveCount(2);
+            result.Comandas[0].PaymentMethod.Should().Be("Pix"); // a 1a leva R$ 48 do Pix
+            result.Comandas[0].Payments.Should().BeNull();
+            result.Comandas[1].PaymentMethod.Should().Be("Pix + Dinheiro");
+            result.Comandas[1].Payments!.Sum(p => p.Amount).Should().Be(48m);
+
+            var summary = await f.Admin.GetEventSummaryAsync(1);
+            summary.ByPaymentMethod.Single(m => m.Method == "Pix").Total.Should().Be(60m);
+            summary.ByPaymentMethod.Single(m => m.Method == "Dinheiro").Total.Should().Be(36m);
+            summary.PhotoCount.Should().Be(2);
+
+            // uma das comandas ja fechada: o lote inteiro e recusado
+            var again = () => svc.SaveBatchAsync(new ComandaFotoBatchRequest
+            {
+                Comandas = new() { Tab("70", 48m), Tab("71", 10m) },
+                PaymentMethodId = f.CashId
+            }, CancellationToken.None);
+            await again.Should().ThrowAsync<BingoException>();
+            f.Db.BingoPhotoTabs.Count().Should().Be(2);
+        }
+
+        [Fact]
         public async Task Pay_Should_Split_Among_Methods_And_Require_The_Sum_To_Match()
         {
             var f = new Fixture();

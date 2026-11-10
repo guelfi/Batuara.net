@@ -68,6 +68,30 @@ namespace Batuara.Application.Bingo.Models
         public string ImageBase64 { get; set; } = string.Empty;
     }
 
+    /// <summary>Uma comanda de papel dentro de um fechamento em lote (cada uma segue separada: numero, itens, foto e total proprios).</summary>
+    public class ComandaFotoBatchEntry
+    {
+        public string? Label { get; set; }
+        public string? ComandaNumber { get; set; }
+        public List<ComandaFotoItem> Items { get; set; } = new();
+        public string ImageBase64 { get; set; } = string.Empty;
+    }
+
+    /// <summary>Varias comandas pagas juntas: um unico pagamento (uma ou mais formas) cuja soma cobre o total das comandas.</summary>
+    public class ComandaFotoBatchRequest
+    {
+        public List<ComandaFotoBatchEntry> Comandas { get; set; } = new();
+        public int PaymentMethodId { get; set; }
+        public bool PaymentNotIdentified { get; set; }
+        public List<BingoPaymentLineDto>? Payments { get; set; }
+    }
+
+    public class ComandaFotoBatchResult
+    {
+        public List<ComandaFotoDto> Comandas { get; set; } = new();
+        public List<ComandaFotoItem>? AddedToMenu { get; set; }
+    }
+
     public class ComandaFotoDto
     {
         public int Id { get; set; }
@@ -125,6 +149,7 @@ namespace Batuara.Application.Bingo.Services
         Task<List<BingoMenuItemDto>> GetMenuAsync(CancellationToken ct);
         Task<ComandaFotoItem> RegisterMenuItemAsync(ComandaFotoMenuRequest request, CancellationToken ct);
         Task<ComandaFotoDto> SaveAsync(ComandaFotoSaveRequest request, CancellationToken ct);
+        Task<ComandaFotoBatchResult> SaveBatchAsync(ComandaFotoBatchRequest request, CancellationToken ct);
         Task<ComandaFotoReport> GetReportAsync(CancellationToken ct);
         Task<(byte[] Data, string ContentType)?> GetPhotoAsync(int id, CancellationToken ct);
         Task DiscardAsync(int id, CancellationToken ct);

@@ -339,6 +339,12 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 ## 7. Changelog deste plano
 
+### 2026-11-10 (429 do Gemini e fechamento de várias comandas juntas)
+
+- **429 (quota do Gemini):** a causa foi a cota do modelo `gemini-3-flash-preview`; o usuário aumentou a cota no Google AI Studio e voltou a funcionar. **Kimi não entra** (decisão de 10/11: tentar primeiro a cota). No código: o servidor tenta de novo (até 3 chamadas, espera de 2–5 s, respeita `Retry-After`) em 429/5xx, e a mensagem distingue "limite de uso" (`ocr_quota`) de "serviço instável".
+- **Várias comandas, um fechamento:** `POST /api/comanda-foto/lote` (`SaveBatchAsync`, tudo ou nada, até 10 comandas): cada comanda segue separada (número, itens, foto, total), o pagamento é único (uma ou mais formas; soma = total geral) e repartido em ordem entre elas (`BingoPaymentSplit.Allocate`); número repetido no lote ou já fechado recusa tudo. `SaveAsync` virou o caso de 1 comanda do mesmo código. Front (foto, celular e Admin): botão "+ Outra comanda no mesmo pagamento", lista "Comandas para fechar juntas" com remover, "Fechar N comandas". Fora do lote: digitação manual (`ComandaManual`) ainda fecha uma por vez. 96 testes de backend.
+- **Caso real:** comanda 73 (Luana) com item de ajuste de R$ 48 estava errada; era a 70 (Prof Lu) também paga por ela. Correção: cancelar a 73 no Dashboard e relançar 73 + 70 juntas pelo lote. Conferir no Cardápio se o item de ajuste virou "(confirmar)" e excluir.
+
 ### 2026-11-10 (teste do Admin consertado e no CI)
 
 - `EventsPage.mobile.test.tsx` não rodava: `TextEncoder` ausente no Jest do `react-scripts` 5 (x-data-grid) e módulos ES (`date-fns`, `@mui/x-*`) sem transpilar. Corrigido com polyfill em `setupTests.ts` e `jest.transformIgnorePatterns` no `package.json` do Admin; 2 testes passam. O job `build-admin-dashboard` do CI agora roda `npm test` antes do build.

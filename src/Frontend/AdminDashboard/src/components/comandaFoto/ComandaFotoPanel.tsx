@@ -88,6 +88,8 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
   const [payMethods, setPayMethods] = useState<{ id: number; name: string }[]>([]);
   const [payOpen, setPayOpen] = useState(false);
   const [payHints, setPayHints] = useState<PayHint[]>([]);
+  // comandas já lidas que serão fechadas juntas no mesmo pagamento (cada uma continua separada)
+  const [queue, setQueue] = useState<{ comanda: string; nome: string; items: Item[]; photo: string; total: number }[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // 0 = não está lendo; 1..3 = tentativa atual da leitura da foto
@@ -164,7 +166,7 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
     }
   };
 
-  const resetAll = () => {
+  const resetCurrent = () => {
     setPhoto(null);
     setItems([]);
     setComanda('');
@@ -177,10 +179,28 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
     setSuggestedPay(null);
     setPayHints([]);
   };
+  const resetAll = () => {
+    resetCurrent();
+    setQueue([]);
+  };
 
   const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
   // sem consumo: nada a pagar, entao nao ha forma de pagamento
   const noConsumption = total <= 0;
+  const queueTotal = queue.reduce((s2, q) => s2 + q.total, 0);
+  const hasCurrent = !!photo && !manual;
+  const grandTotal = queueTotal + (hasCurrent ? total : 0);
+  const grandNoConsumption = grandTotal <= 0;
+
+  const addToQueue = () => {
+    const number = comanda.trim();
+    if (queue.some((q) => q.comanda === number)) {
+      setError(`A comanda ${number} já está nesta lista.`);
+      return;
+    }
+    setQueue((l) => [...l, { comanda: number, nome: nome.trim(), items: items.filter((i) => i.quantity > 0), photo: photo as string, total }]);
+    resetCurrent();
+  };
   const patch = (idx: number, p: Partial<Item>) => setItems((l) => l.map((it, i) => (i === idx ? { ...it, ...p } : it)));
 
   const registerItem = async (idx: number) => {
@@ -200,10 +220,21 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
     setPayOpen(false);
     setBusy('Fechando comanda...');
     setError(null);
+    const labelOf = (c: string, n: string) => [c && `Comanda ${c}`, n].filter(Boolean).join(' - ').slice(0, 60);
     try {
-      const r = await http.post('/comanda-foto', { comandaNumber: comanda.trim(), ...payBody(lines), items: items.filter((i) => i.quantity > 0), label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), imageBase64: photo });
-      resetAll();
-      noticeAdded(r.data?.data?.addedToMenu);
+      if (queue.length === 0) {
+        const r = await http.post('/comanda-foto', { comandaNumber: comanda.trim(), ...payBody(lines), items: items.filter((i) => i.quantity > 0), label: labelOf(comanda.trim(), nome.trim()), imageBase64: photo });
+        resetAll();
+        noticeAdded(r.data?.data?.addedToMenu);
+      } else {
+        const all = [...queue, ...(hasCurrent ? [{ comanda: comanda.trim(), nome: nome.trim(), items: items.filter((i) => i.quantity > 0), photo: photo as string, total }] : [])];
+        const r = await http.post('/comanda-foto/lote', {
+          ...payBody(lines),
+          comandas: all.map((c) => ({ comandaNumber: c.comanda, label: labelOf(c.comanda, c.nome), items: c.items, imageBase64: c.photo })),
+        });
+        resetAll();
+        noticeAdded(r.data?.data?.addedToMenu);
+      }
     } catch (e) {
       setError(errMsg(e));
     } finally {
@@ -248,6 +279,24 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
         }}
       />
 
+      {queue.length > 0 && !manual && attempt === 0 && !readFailure && (
+        <Paper variant="outlined" sx={{ p: 1.5, mb: 2 }}>
+          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+            Comandas para fechar juntas ({queue.length})
+          </Typography>
+          {queue.map((q, i) => (
+            <Stack key={q.comanda} direction="row" alignItems="center" spacing={1} sx={{ py: 0.25 }}>
+              <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }} noWrap>
+                Comanda {q.comanda}{q.nome ? ` - ${q.nome}` : ''}
+              </Typography>
+              <Typography variant="body2" fontWeight={700}>{brl(q.total)}</Typography>
+              <Button size="small" color="error" sx={{ minWidth: 0, px: 1 }} disabled={!!busy} onClick={() => setQueue((l) => l.filter((_, k) => k !== i))}>
+                Remover
+              </Button>
+            </Stack>
+          ))}
+        </Paper>
+      )}
       {attempt > 0 ? (
         <Paper
           sx={{ p: 2, mb: 2, '@media (prefers-reduced-motion: reduce)': { '& .MuiSkeleton-root, & .MuiSkeleton-root::after': { animation: 'none' } } }}
@@ -292,13 +341,13 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
             <Button fullWidth variant="outlined" size="large" onClick={() => { setReadFailure(null); setManual(true); }}>
               ✍ Digitar sem foto
             </Button>
-            <Button fullWidth onClick={resetAll}>
+            <Button fullWidth onClick={resetCurrent}>
               ← Voltar
             </Button>
           </Stack>
         </Paper>
       ) : manual ? (
-        <ComandaManual http={http} payMethods={payMethods} photo={photo} errMsg={errMsg} onBack={resetAll} onSaved={(a) => { resetAll(); noticeAdded(a); }} />
+        <ComandaManual http={http} payMethods={payMethods} photo={photo} errMsg={errMsg} onBack={resetCurrent} onSaved={(a) => { resetCurrent(); noticeAdded(a); }} />
       ) : photo ? (
         <Paper sx={{ p: 2, mb: 2 }}>
           <Snackbar open={!!dup && comanda.trim() === dupFor.trim()} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ top: { xs: 16 } }}>
@@ -355,19 +404,27 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
               Descartar
             </Button>
             <Button fullWidth variant="contained" size="large" onClick={() => setPayOpen(true)} disabled={!!busy || !comanda.trim() || (!!dup && comanda.trim() === dupFor.trim())}>
-              {noConsumption ? 'Encerrar sem consumo' : 'Fechar comanda'}
+              {queue.length > 0 ? `Fechar ${queue.length + 1} comandas` : noConsumption ? 'Encerrar sem consumo' : 'Fechar comanda'}
             </Button>
           </Stack>
+          <Button fullWidth variant="text" sx={{ mt: 1 }} onClick={addToQueue} disabled={!!busy || !comanda.trim() || (!!dup && comanda.trim() === dupFor.trim())}>
+            + Outra comanda no mesmo pagamento
+          </Button>
         </Paper>
       ) : (
         <Button fullWidth variant="contained" size="large" sx={{ py: 2 }} disabled={!!busy} onClick={() => fileRef.current?.click()}>
-          📷 Fotografar comanda
+          📷 {queue.length > 0 ? 'Fotografar outra comanda' : 'Fotografar comanda'}
+        </Button>
+      )}
+      {queue.length > 0 && !photo && !manual && attempt === 0 && !readFailure && (
+        <Button fullWidth variant="contained" color="success" size="large" sx={{ mt: 1 }} disabled={!!busy} onClick={() => setPayOpen(true)}>
+          Fechar {queue.length} {queue.length === 1 ? 'comanda' : 'comandas'} — {brl(queueTotal)}
         </Button>
       )}
       <Dialog open={payOpen} onClose={() => setPayOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>{noConsumption ? 'Encerrar sem consumo?' : 'Forma de pagamento'}</DialogTitle>
+        <DialogTitle>{grandNoConsumption ? 'Encerrar sem consumo?' : queue.length > 0 ? `Pagamento de ${queue.length + (hasCurrent ? 1 : 0)} comandas` : 'Forma de pagamento'}</DialogTitle>
         <DialogContent>
-          {noConsumption ? (
+          {grandNoConsumption ? (
             <Stack spacing={1} sx={{ pt: 1 }}>
               <Typography color="text.secondary">Comanda sem consumo: não há forma de pagamento. O número fica registrado para não ser lançado de novo.</Typography>
               <Button variant="contained" size="large" onClick={() => save(null)}>Encerrar sem consumo</Button>
@@ -375,10 +432,10 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
             </Stack>
           ) : (
           <PaymentPicker
-            total={total}
+            total={grandTotal}
             payMethods={payMethods}
-            suggestedPay={suggestedPay}
-            hints={payHints}
+            suggestedPay={queue.length > 0 ? null : suggestedPay}
+            hints={queue.length > 0 ? [] : payHints}
             onPick={save}
             onBack={() => setPayOpen(false)}
           />

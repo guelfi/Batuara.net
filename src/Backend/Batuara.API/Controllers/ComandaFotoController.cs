@@ -26,6 +26,12 @@ namespace Batuara.API.Controllers
         public async Task<IActionResult> Save([FromBody] ComandaFotoSaveRequest request, CancellationToken ct)
             => !Allowed(null) ? Unauthorized() : Ok(new { success = true, data = await service.SaveAsync(request, ct) });
 
+        /// <summary>Varias comandas pagas juntas: cada uma fica separada, com um unico pagamento (uma ou mais formas).</summary>
+        [HttpPost("lote")]
+        [EnableRateLimiting("bingo-write")]
+        public async Task<IActionResult> SaveBatch([FromBody] ComandaFotoBatchRequest request, CancellationToken ct)
+            => !Allowed(null) ? Unauthorized() : Ok(new { success = true, data = await service.SaveBatchAsync(request, ct) });
+
         [HttpGet("formas-pagamento")]
         [EnableRateLimiting("bingo-read")]
         public async Task<IActionResult> GetPaymentMethods(CancellationToken ct)

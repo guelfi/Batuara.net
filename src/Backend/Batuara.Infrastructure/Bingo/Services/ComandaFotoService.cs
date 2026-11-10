@@ -109,39 +109,61 @@ namespace Batuara.Infrastructure.Bingo.Services
             var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
             Console.WriteLine($"[ComandaFoto] Chamando Google Gemini API - Modelo: {model}");
             
-            using var message = new HttpRequestMessage(HttpMethod.Post, url)
-            {
-                Content = JsonContent.Create(body)
-            };
-
             var sw = System.Diagnostics.Stopwatch.StartNew();
             HttpResponseMessage response;
-            try
+            string raw;
+            // 429 (limite de uso) e 5xx sao passageiros: ate 2 novas tentativas, com espera curta (o proxy corta em 60 s)
+            for (var attempt = 1; ; attempt++)
             {
-                response = await http.SendAsync(message, ct);
-            }
-            catch (TaskCanceledException ex)
-            {
-                Console.WriteLine($"[ComandaFoto] Timeout ao chamar API do Google: {ex.Message}");
+                using var message = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = JsonContent.Create(body)
+                };
+                try
+                {
+                    response = await http.SendAsync(message, ct);
+                }
+                catch (TaskCanceledException ex)
+                {
+                    Console.WriteLine($"[ComandaFoto] Timeout ao chamar API do Google: {ex.Message}");
+                    throw new BingoException(BingoErrorKind.Validation,
+                        "A leitura da foto demorou muito. Tente com uma foto menor ou com melhor iluminação.", "ocr_timeout");
+                }
+                catch (HttpRequestException ex)
+                {
+                    Console.WriteLine($"[ComandaFoto] Erro de conexão com API do Google: {ex.Message}");
+                    throw new BingoException(BingoErrorKind.Validation,
+                        "Não foi possível conectar ao serviço de leitura. Tente novamente.", "ocr_connection_failed");
+                }
+
+                raw = await response.Content.ReadAsStringAsync(ct);
+                if (response.IsSuccessStatusCode)
+                {
+                    break;
+                }
+
+                var status = (int)response.StatusCode;
+                Console.WriteLine($"[ComandaFoto] Google Gemini API error (tentativa {attempt}): {response.StatusCode} - {raw}");
+                var transient = status == 429 || status >= 500;
+                if (transient && attempt < 3)
+                {
+                    var wait = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(2 * attempt);
+                    await Task.Delay(wait > TimeSpan.FromSeconds(5) ? TimeSpan.FromSeconds(5) : wait, ct);
+                    continue;
+                }
+
+                if (status == 429)
+                {
+                    throw new BingoException(BingoErrorKind.Validation,
+                        "O serviço de leitura atingiu o limite de uso. Aguarde um minuto e tente de novo, ou digite os itens.", "ocr_quota");
+                }
+
                 throw new BingoException(BingoErrorKind.Validation,
-                    "A leitura da foto demorou muito. Tente com uma foto menor ou com melhor iluminação.", "ocr_timeout");
-            }
-            catch (HttpRequestException ex)
-            {
-                Console.WriteLine($"[ComandaFoto] Erro de conexão com API do Google: {ex.Message}");
-                throw new BingoException(BingoErrorKind.Validation,
-                    "Não foi possível conectar ao serviço de leitura. Tente novamente.", "ocr_connection_failed");
+                    transient
+                        ? "O serviço de leitura está instável. Tente de novo em instantes ou digite os itens."
+                        : "Não consegui ler a foto agora. Tente de novo ou digite os itens.", "ocr_failed");
             }
 
-            var raw = await response.Content.ReadAsStringAsync(ct);
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorMsg = $"[ComandaFoto] Google Gemini API error: {response.StatusCode} - {raw}";
-                Console.WriteLine(errorMsg);
-                throw new BingoException(BingoErrorKind.Validation,
-                    "Não consegui ler a foto agora. Tente de novo ou digite os itens.", "ocr_failed");
-            }
-            
             Console.WriteLine($"[ComandaFoto] API respondeu com sucesso em {sw.ElapsedMilliseconds} ms");
 
             string text;
@@ -211,84 +233,134 @@ namespace Batuara.Infrastructure.Bingo.Services
 
         public async Task<ComandaFotoDto> SaveAsync(ComandaFotoSaveRequest request, CancellationToken ct)
         {
-            var items = request.Items.Where(i => !string.IsNullOrWhiteSpace(i.Name) && i.Quantity > 0).ToList();
-            // Comanda sem consumo (nenhum item) e valida: guarda o numero para nao ser lancada de novo.
-            if (items.Count == 0 && string.IsNullOrWhiteSpace(request.ComandaNumber))
+            var result = await SaveBatchAsync(new ComandaFotoBatchRequest
             {
-                throw new BingoException(BingoErrorKind.Validation, "Informe o número da comanda.");
+                Comandas = new() { new() { Label = request.Label, ComandaNumber = request.ComandaNumber, Items = request.Items, ImageBase64 = request.ImageBase64 } },
+                PaymentMethodId = request.PaymentMethodId,
+                PaymentNotIdentified = request.PaymentNotIdentified,
+                Payments = request.Payments,
+            }, ct);
+            var dto = result.Comandas[0];
+            dto.AddedToMenu = result.AddedToMenu;
+            return dto;
+        }
+
+        /// <summary>Salva uma ou mais comandas de uma vez (tudo ou nada). Cada comanda fica separada; o pagamento e unico e e repartido em ordem entre elas.</summary>
+        public async Task<ComandaFotoBatchResult> SaveBatchAsync(ComandaFotoBatchRequest request, CancellationToken ct)
+        {
+            if (request.Comandas.Count == 0 || request.Comandas.Count > 10)
+            {
+                throw new BingoException(BingoErrorKind.Validation, "Informe de 1 a 10 comandas.");
             }
 
-            if (items.Any(i => i.UnitPrice < 0 || i.Quantity > 500))
-            {
-                throw new BingoException(BingoErrorKind.Validation, "Quantidade ou valor inválido.");
-            }
-
-            // Comanda digitada manualmente chega sem foto.
-            var photo = string.IsNullOrWhiteSpace(request.ImageBase64) ? Array.Empty<byte>() : ValidateImage(request.ImageBase64);
             var ev = await FindOpenEventAsync(ct)
                 ?? throw new BingoException(BingoErrorKind.Validation, "Não há evento aberto.");
-            // Valida os itens contra o cardapio do evento: nome canonico quando reconhecido, senao matched=false.
             var menuItems = await Db.BingoMenuItems.Where(x => x.EventId == ev.Id && x.IsActive).ToListAsync(ct);
-            ValidateAgainstMenu(items, menuItems.Select(m => m.Name));
-            // Item novo (com valor) entra no cardapio do evento; nome parecido com um existente fica para o usuario decidir.
-            var added = new List<ComandaFotoItem>();
             var nextSort = menuItems.Count == 0 ? 1 : menuItems.Max(m => m.SortOrder) + 1;
-            foreach (var item in items.Where(i => !i.Matched && i.UnitPrice > 0 && i.Name.Length <= 150))
+            var added = new List<ComandaFotoItem>();
+            var prepared = new List<(ComandaFotoBatchEntry Entry, List<ComandaFotoItem> Items, decimal Total, string? Number, byte[] Photo)>();
+            var seenNumbers = new HashSet<string>();
+
+            foreach (var entry in request.Comandas)
             {
-                var key = Normalize(item.Name);
-                var known = menuItems.Select(m => StripConfirm(m.Name));
-                if (known.Any(n => IsSimilarName(Normalize(n), key)))
+                var items = entry.Items.Where(i => !string.IsNullOrWhiteSpace(i.Name) && i.Quantity > 0).ToList();
+                // Comanda sem consumo (nenhum item) e valida: guarda o numero para nao ser lancada de novo.
+                if (items.Count == 0 && string.IsNullOrWhiteSpace(entry.ComandaNumber))
                 {
-                    continue;
+                    throw new BingoException(BingoErrorKind.Validation, "Informe o número da comanda.");
                 }
 
-                // "(confirmar)": o Admin revisa o nome e o valor no Cardapio e tira a marca
-                var created = new BingoMenuItem(ev.Id, item.Name + ConfirmSuffix, item.UnitPrice, true, nextSort++);
-                Db.BingoMenuItems.Add(created);
-                menuItems.Add(created);
-                added.Add(new ComandaFotoItem { Name = item.Name, Quantity = 1, UnitPrice = created.UnitPrice, Matched = true });
-                item.Matched = true;
+                if (items.Any(i => i.UnitPrice < 0 || i.Quantity > 500))
+                {
+                    throw new BingoException(BingoErrorKind.Validation, "Quantidade ou valor inválido.");
+                }
+
+                // Comanda digitada manualmente chega sem foto.
+                var photo = string.IsNullOrWhiteSpace(entry.ImageBase64) ? Array.Empty<byte>() : ValidateImage(entry.ImageBase64);
+                ValidateAgainstMenu(items, menuItems.Select(m => m.Name));
+                // Item novo (com valor) entra no cardapio do evento; nome parecido com um existente fica para o usuario decidir.
+                foreach (var item in items.Where(i => !i.Matched && i.UnitPrice > 0 && i.Name.Length <= 150))
+                {
+                    var key = Normalize(item.Name);
+                    if (menuItems.Select(m => StripConfirm(m.Name)).Any(n => IsSimilarName(Normalize(n), key)))
+                    {
+                        continue;
+                    }
+
+                    // "(confirmar)": o Admin revisa o nome e o valor no Cardapio e tira a marca
+                    var created = new BingoMenuItem(ev.Id, item.Name + ConfirmSuffix, item.UnitPrice, true, nextSort++);
+                    Db.BingoMenuItems.Add(created);
+                    menuItems.Add(created);
+                    added.Add(new ComandaFotoItem { Name = item.Name, Quantity = 1, UnitPrice = created.UnitPrice, Matched = true });
+                    item.Matched = true;
+                }
+
+                // itens repetidos na mesma comanda com o nome ja criado acima tambem passam a reconhecidos
+                ValidateAgainstMenu(items, menuItems.Select(m => m.Name));
+
+                var number = NormalizeNumber(entry.ComandaNumber);
+                if (number != null && !seenNumbers.Add(number))
+                {
+                    throw new BingoException(BingoErrorKind.Validation, $"A comanda {number} aparece mais de uma vez neste fechamento.");
+                }
+
+                var existing = await FindDuplicateAsync(ev.Id, number, ct);
+                if (existing != null)
+                {
+                    throw new BingoException(BingoErrorKind.Conflict,
+                        $"A comanda {number} já foi fechada às {existing.CreatedAt.AddHours(-3):HH:mm} (R$ {existing.Total:0.00}). Se foi engano, a anterior precisa ser cancelada (em evento regular, pelo administrador no Dashboard) antes de fechar de novo.",
+                        "duplicate_comanda");
+                }
+
+                prepared.Add((entry, items, SumTotal(items), number, photo));
             }
 
-            // itens repetidos na mesma comanda com o nome ja criado acima tambem passam a reconhecidos
-            ValidateAgainstMenu(items, menuItems.Select(m => m.Name));
-
-            var total = SumTotal(items);
-            var number = NormalizeNumber(request.ComandaNumber);
-            var existing = await FindDuplicateAsync(ev.Id, number, ct);
-            if (existing != null)
+            // pagamento unico para todas as comandas: sem consumo (total zero) nao tem forma de pagamento
+            var grandTotal = prepared.Sum(p => p.Total);
+            var perComanda = prepared.Select(_ => ((string? Name, string? Json))(null, null)).ToList();
+            if (grandTotal > 0 && request.Payments is { Count: > 0 })
             {
-                throw new BingoException(BingoErrorKind.Conflict,
-                    $"A comanda {number} já foi fechada às {existing.CreatedAt.AddHours(-3):HH:mm} (R$ {existing.Total:0.00}). Se foi engano, a anterior precisa ser cancelada (em evento regular, pelo administrador no Dashboard) antes de fechar de novo.",
-                    "duplicate_comanda");
-            }
-
-            string? methodName = null;
-            string? paymentsJson = null;
-            // sem consumo (total zero) nao tem forma de pagamento
-            if (total > 0 && request.Payments is { Count: > 0 })
-            {
-                // pagamento em uma ou mais formas: a soma tem que ser igual ao total
                 var active = await Db.BingoPaymentOptions.Where(x => x.IsActive).ToDictionaryAsync(x => x.Id, x => x.Name, ct);
-                var parts = BingoPaymentSplit.Build(request.Payments, active, total);
-                methodName = BingoPaymentPart.Label(parts);
-                paymentsJson = parts.Count > 1 ? BingoPaymentPart.Serialize(parts) : null;
+                var parts = BingoPaymentSplit.Build(request.Payments, active, grandTotal);
+                var allocated = BingoPaymentSplit.Allocate(parts, prepared.Select(p => p.Total).ToList());
+                for (var i = 0; i < prepared.Count; i++)
+                {
+                    if (prepared[i].Total > 0)
+                    {
+                        perComanda[i] = (BingoPaymentPart.Label(allocated[i]), allocated[i].Count > 1 ? BingoPaymentPart.Serialize(allocated[i]) : null);
+                    }
+                }
             }
-            else if (total > 0 && !request.PaymentNotIdentified)
+            else if (grandTotal > 0 && !request.PaymentNotIdentified)
             {
                 var method = await Db.BingoPaymentOptions.FirstOrDefaultAsync(x => x.Id == request.PaymentMethodId && x.IsActive, ct)
                     ?? throw new BingoException(BingoErrorKind.Validation, "Escolha a forma de pagamento.");
-                methodName = method.Name;
+                for (var i = 0; i < prepared.Count; i++)
+                {
+                    if (prepared[i].Total > 0)
+                    {
+                        perComanda[i] = (method.Name, null);
+                    }
+                }
             }
 
-            var label = (request.Label ?? string.Empty).Trim();
-            var entity = new BingoPhotoTab(ev.Id, label.Length > 60 ? label[..60] : label,
-                JsonSerializer.Serialize(items, Json), total, photo, number, methodName, paymentsJson);
-            Db.BingoPhotoTabs.Add(entity);
+            var entities = new List<BingoPhotoTab>();
+            for (var i = 0; i < prepared.Count; i++)
+            {
+                var p = prepared[i];
+                var label = (p.Entry.Label ?? string.Empty).Trim();
+                var entity = new BingoPhotoTab(ev.Id, label.Length > 60 ? label[..60] : label,
+                    JsonSerializer.Serialize(p.Items, Json), p.Total, p.Photo, p.Number, perComanda[i].Item1, perComanda[i].Item2);
+                Db.BingoPhotoTabs.Add(entity);
+                entities.Add(entity);
+            }
+
             await Db.SaveChangesAsync(ct);
-            var dto = ToDto(entity);
-            dto.AddedToMenu = added.Count > 0 ? added : null;
-            return dto;
+            return new ComandaFotoBatchResult
+            {
+                Comandas = entities.Select(ToDto).ToList(),
+                AddedToMenu = added.Count > 0 ? added : null,
+            };
         }
 
         public async Task<List<BingoMenuItemDto>> GetMenuAsync(CancellationToken ct)
