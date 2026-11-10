@@ -2725,14 +2725,39 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
     }
   };
 
+  const [photoQr, setPhotoQr] = useState<{ link: string; img: string } | null>(null);
+  const showPhotoQr = async () => {
+    try {
+      const link = await fetchPhotoLink();
+      const img = await QRCode.toDataURL(link, { width: 720, margin: 2, errorCorrectionLevel: 'M' });
+      setPhotoQr({ link, img });
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível gerar o QR Code.'), 'error');
+    }
+  };
+
   const linkButtons = (
-    <Stack direction="row" spacing={1} sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+    <Stack direction="row" spacing={1} useFlexGap flexWrap={isMobile ? 'wrap' : 'nowrap'} justifyContent={isMobile ? 'center' : 'flex-start'} sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
       <Button size="small" variant="outlined" onClick={copyPhotoLink}>Copiar link</Button>
       <Button size="small" variant="contained" color="success" onClick={sendPhotoLinkWhatsApp}>Enviar link WhatsApp</Button>
+      <Button size="small" variant="outlined" onClick={showPhotoQr}>QR Code</Button>
     </Stack>
   );
-  const linkPreview = photoLink && (
-    <Alert severity="info"><Typography variant="body2" sx={{ wordBreak: 'break-all' }}>{photoLink}</Typography></Alert>
+  const linkPreview = (
+    <>
+      {photoLink && <Alert severity="info"><Typography variant="body2" sx={{ wordBreak: 'break-all' }}>{photoLink}</Typography></Alert>}
+      <Dialog open={!!photoQr} onClose={() => setPhotoQr(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>QR Code — Comanda por Foto</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1} alignItems="center">
+            {photoQr && <Box component="img" src={photoQr.img} alt="QR Code para fotografar comandas" sx={{ width: '100%', maxWidth: 320 }} />}
+            <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-all', textAlign: 'center' }}>{photoQr?.link}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>Aponte a câmera do celular para abrir a tela de fotografar comandas do evento em andamento.</Typography>
+          </Stack>
+        </DialogContent>
+        <DialogActions><Button onClick={() => setPhotoQr(null)}>Fechar</Button></DialogActions>
+      </Dialog>
+    </>
   );
 
   if (!current) {
