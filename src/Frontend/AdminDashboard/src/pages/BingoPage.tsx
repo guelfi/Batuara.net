@@ -1112,8 +1112,8 @@ const MenuTab: React.FC<{
           columns={columns}
           autoHeight
           disableRowSelectionOnClick
-          pageSizeOptions={[10]}
-          initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
+          density="compact"
+          hideFooter
           localeText={{ noRowsLabel: 'Nenhum item no cardápio.' }}
         />
       </Paper>
@@ -1287,8 +1287,8 @@ const PaymentMethodsTab: React.FC<{ notify: Notify; addOpen: boolean; onAddClose
           columns={columns}
           autoHeight
           disableRowSelectionOnClick
-          pageSizeOptions={[10]}
-          initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
+          density="compact"
+          hideFooter
           localeText={{ noRowsLabel: 'Nenhuma forma de pagamento.' }}
         />
       </Paper>
