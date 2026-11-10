@@ -62,6 +62,22 @@ const errMsg = (e: any): string => {
 
 const MAX_ATTEMPTS = 3;
 const RETRY_PAUSE_MS = 2000;
+/** Reduz mais a foto das comandas que vão juntas no mesmo envio (o proxy aceita ~1 MB por requisição). */
+const shrinkPhoto = (b64: string): Promise<string> =>
+  new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 1000 / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
+    };
+    img.onerror = () => resolve(b64);
+    img.src = `data:image/jpeg;base64,${b64}`;
+  });
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Só vale repetir quando a falha é temporária (rede, tempo esgotado, servidor ocupado). */
 const isRetryable = (e: any) => {
@@ -192,13 +208,14 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
   const grandTotal = queueTotal + (hasCurrent ? total : 0);
   const grandNoConsumption = grandTotal <= 0;
 
-  const addToQueue = () => {
+  const addToQueue = async () => {
     const number = comanda.trim();
     if (queue.some((q) => q.comanda === number)) {
       setError(`A comanda ${number} já está nesta lista.`);
       return;
     }
-    setQueue((l) => [...l, { comanda: number, nome: nome.trim(), items: items.filter((i) => i.quantity > 0), photo: photo as string, total }]);
+    const small = await shrinkPhoto(photo as string);
+    setQueue((l) => [...l, { comanda: number, nome: nome.trim(), items: items.filter((i) => i.quantity > 0), photo: small, total }]);
     resetCurrent();
   };
   const patch = (idx: number, p: Partial<Item>) => setItems((l) => l.map((it, i) => (i === idx ? { ...it, ...p } : it)));
@@ -227,7 +244,7 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
         resetAll();
         noticeAdded(r.data?.data?.addedToMenu);
       } else {
-        const all = [...queue, ...(hasCurrent ? [{ comanda: comanda.trim(), nome: nome.trim(), items: items.filter((i) => i.quantity > 0), photo: photo as string, total }] : [])];
+        const all = [...queue, ...(hasCurrent ? [{ comanda: comanda.trim(), nome: nome.trim(), items: items.filter((i) => i.quantity > 0), photo: await shrinkPhoto(photo as string), total }] : [])];
         const r = await http.post('/comanda-foto/lote', {
           ...payBody(lines),
           comandas: all.map((c) => ({ comandaNumber: c.comanda, label: labelOf(c.comanda, c.nome), items: c.items, imageBase64: c.photo })),

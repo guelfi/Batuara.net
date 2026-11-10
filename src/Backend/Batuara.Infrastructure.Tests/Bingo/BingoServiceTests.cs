@@ -1780,6 +1780,36 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public async Task ComandaFoto_Should_Never_Store_Confirm_Mark_And_Allow_Confirming_Used_Item()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), new FakeConfig(), Options.Create(new ComandaFotoOptions()));
+
+            await svc.SaveAsync(new ComandaFotoSaveRequest
+            {
+                PaymentMethodId = f.CashId, ComandaNumber = "1",
+                Items = new() { new() { Name = "Batida", Quantity = 1, UnitPrice = 10 } }
+            }, CancellationToken.None);
+
+            // a leitura (ou a tela) devolve o nome do cardapio com a marca: nao cria duplicado e a comanda guarda sem a marca
+            var second = await svc.SaveAsync(new ComandaFotoSaveRequest
+            {
+                PaymentMethodId = f.CashId, ComandaNumber = "2",
+                Items = new() { new() { Name = "Batida (confirmar) (confirmar)", Quantity = 1, UnitPrice = 10 } }
+            }, CancellationToken.None);
+            second.AddedToMenu.Should().BeNull();
+            second.Items.Single().Name.Should().Be("Batida");
+            f.Db.BingoMenuItems.Count(m => m.Name.StartsWith("Batida")).Should().Be(1);
+            (await svc.GetMenuAsync(CancellationToken.None)).Should().Contain(m => m.Name == "Batida");
+
+            // item ja usado em comandas: confirmar (tirar a marca) continua permitido
+            var item = f.Db.BingoMenuItems.Single(m => m.Name == "Batida (confirmar)");
+            var updated = await f.Admin.UpdateMenuItemAsync(item.Id, new BingoMenuItemRequest { Name = "Batida", UnitPrice = 10, IsAvailable = true, SortOrder = item.SortOrder });
+            updated.Name.Should().Be("Batida");
+        }
+
+        [Fact]
         public async Task Pay_Should_Split_Among_Methods_And_Require_The_Sum_To_Match()
         {
             var f = new Fixture();

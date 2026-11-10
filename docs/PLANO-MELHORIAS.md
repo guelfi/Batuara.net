@@ -345,6 +345,11 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 ## 7. Changelog deste plano
 
+### 2026-11-10 (correções do lote e da confirmação de itens)
+
+- **HTTP 413 no lote:** o `server` de `www.batuara.org.br` no `nginx-proxy` da OCI (`/var/www/nginx/nginx.conf`, compartilhado com outros projetos) não define `client_max_body_size`, então vale o padrão de 1 MB; duas fotos de ~700 KB estouram. Mitigação no app: as fotos que vão no lote são reduzidas (lado maior 1000 px, JPEG 0,6). **Pendente (infra, aguarda aprovação do usuário):** `client_max_body_size 20m;` nesse `server` + `nginx -t` + reload; a mudança não é versionada no repositório.
+- **409 ao confirmar item do Cardápio:** o prompt da leitura listava o cardápio com "(confirmar)" e o modelo devolvia o nome com a marca, que era gravado na comanda (e criava "X (confirmar) (confirmar)"), travando o item como "já usado". Agora o prompt e a lista da comanda usam o nome sem a marca, `StripConfirm` remove todas as marcas, o servidor limpa o nome dos itens ao salvar e **tirar a marca é sempre permitido**. Itens duplicados com marca dupla já existentes no Cardápio podem ser excluídos à mão. 97 testes de backend.
+
 ### 2026-11-10 (cota do Gemini resolvida e diálogo de pagamento)
 
 - **429 resolvido:** o log da produção mostrou `GenerateRequestsPerDayPerProjectPerModel-FreeTier` (cota diária do nível gratuito). O usuário ligou o faturamento no "Projeto Batuara" do AI Studio (chave `…N68g`): agora **Nível 1, pré-pago, R$ 120,00 de crédito, recarga automática desativada**. A leitura voltou a funcionar. Conferir saldo em "Gasto"/"Faturamento" antes de cada evento grande; sem saldo, a leitura por foto para.

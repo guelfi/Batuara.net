@@ -59,7 +59,10 @@ namespace Batuara.Infrastructure.Bingo.Services
         {
             var item = await FindMenuItemAsync(id, cancellationToken);
             var used = (await GetUsedItemNamesAsync(cancellationToken)).Contains(NormalizeName(item.Name));
-            if (used && !string.Equals(item.Name, (request.Name ?? string.Empty).Trim(), StringComparison.Ordinal))
+            var newName = (request.Name ?? string.Empty).Trim();
+            // confirmar um item criado por comanda (tirar o "(confirmar)") e sempre permitido
+            var confirming = string.Equals(newName, ComandaFotoService.StripConfirm(item.Name), StringComparison.Ordinal) && newName.Length > 0;
+            if (used && !confirming && !string.Equals(item.Name, newName, StringComparison.Ordinal))
             {
                 throw new BingoException(BingoErrorKind.Conflict,
                     "Este item já foi usado em pedidos ou comandas: o nome não pode ser alterado. O preço novo vale só para lançamentos futuros.",

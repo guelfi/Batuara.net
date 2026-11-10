@@ -57,7 +57,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 .Where(x => x.EventId == ev.Id && x.IsActive)
                 .OrderBy(x => x.SortOrder)
                 .ToListAsync(ct);
-            var menuText = string.Join("\n", menu.Select(m => $"- {m.Name} = R$ {m.UnitPrice:0.00}"));
+            var menuText = string.Join("\n", menu.Select(m => $"- {StripConfirm(m.Name)} = R$ {m.UnitPrice:0.00}"));
             var payOptions = await Db.BingoPaymentOptions.Where(x => x.IsActive).OrderBy(x => x.SortOrder).ThenBy(x => x.Name).ToListAsync(ct);
             var payText = string.Join(", ", payOptions.Select(m => $"\"{m.Name}\""));
 
@@ -264,6 +264,12 @@ namespace Batuara.Infrastructure.Bingo.Services
             foreach (var entry in request.Comandas)
             {
                 var items = entry.Items.Where(i => !string.IsNullOrWhiteSpace(i.Name) && i.Quantity > 0).ToList();
+                // a marca "(confirmar)" e so do cardapio: nunca entra no nome do item da comanda
+                foreach (var it in items)
+                {
+                    it.Name = StripConfirm(it.Name);
+                }
+
                 // Comanda sem consumo (nenhum item) e valida: guarda o numero para nao ser lancada de novo.
                 if (items.Count == 0 && string.IsNullOrWhiteSpace(entry.ComandaNumber))
                 {
@@ -372,7 +378,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 .OrderBy(x => x.SortOrder)
                 .ThenBy(x => x.Name)
                 .ToListAsync(ct);
-            return items.Select(x => new BingoMenuItemDto { Id = x.Id, Name = x.Name, UnitPrice = x.UnitPrice, IsAvailable = x.IsAvailable }).ToList();
+            return items.Select(x => new BingoMenuItemDto { Id = x.Id, Name = StripConfirm(x.Name), UnitPrice = x.UnitPrice, IsAvailable = x.IsAvailable }).ToList();
         }
 
         public async Task<ComandaFotoReport> GetReportAsync(CancellationToken ct)
@@ -554,7 +560,7 @@ namespace Batuara.Infrastructure.Bingo.Services
         public const string ConfirmSuffix = " (confirmar)";
 
         internal static string StripConfirm(string name)
-            => System.Text.RegularExpressions.Regex.Replace(name, @"\s*\(confirmar\)\s*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+            => System.Text.RegularExpressions.Regex.Replace(name, @"(\s*\(confirmar\))+\s*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
 
         /// <summary>Nomes iguais ou a uma letra (ou duas, em nomes longos) de distancia: provavel erro de leitura.</summary>
         internal static bool IsSimilarName(string a, string b)
