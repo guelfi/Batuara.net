@@ -1,3 +1,4 @@
+import PaymentPicker, { PayLine } from '../components/comandaFoto/PaymentPicker';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
@@ -275,6 +276,7 @@ const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
   const [selected, setSelected] = useState<string[]>([]);
   const [methods, setMethods] = useState<WaiterPaymentMethod[]>([]);
   const [methodId, setMethodId] = useState<number | null>(null);
+  const [splitOpen, setSplitOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -336,13 +338,14 @@ const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
   const toggleExpanded = (id: string) =>
     setExpanded((ex) => (ex.includes(id) ? ex.filter((x) => x !== id) : [...ex, id]));
 
-  const pay = async () => {
-    if ((methodId === null && !noConsumption) || selected.length === 0) return;
+  const pay = async (payments?: PayLine[]) => {
+    if ((!payments && methodId === null && !noConsumption) || selected.length === 0) return;
     setBusy(true);
     setError('');
     try {
-      await bingoWaiterApi.payTabs(selected, noConsumption ? null : methodId);
+      await bingoWaiterApi.payTabs(selected, payments || noConsumption ? null : methodId, payments);
       setOk(noConsumption ? 'Comanda encerrada sem consumo.' : `Pagamento registrado (${formatBRL(selectedDue)}).`);
+      setSplitOpen(false);
       setSelected([]);
       setMethodId(null);
       setConfirm(false);
@@ -601,6 +604,11 @@ const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
               {methods.length === 0 && <Typography variant="body2">Nenhuma forma de pagamento ativa.</Typography>}
             </Stack>
             )}
+            {!noConsumption && methods.length > 0 && (
+              <Button variant="text" sx={{ mb: 1 }} disabled={busy || (!!blockReason && blockReason !== 'Escolha a forma de pagamento.')} onClick={() => setSplitOpen(true)}>
+                Dividir pagamento
+              </Button>
+            )}
             {blockReason && (
               <Typography role="status" variant="body2" sx={{ color: 'warning.main', fontWeight: 600, mb: 1 }}>
                 {blockReason}
@@ -620,6 +628,20 @@ const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
         </Paper>
       )}
 
+      <Dialog open={splitOpen} onClose={() => setSplitOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Dividir pagamento</DialogTitle>
+        <DialogContent>
+          <PaymentPicker
+            total={selectedDue}
+            payMethods={methods}
+            allowNotIdentified={false}
+            startSplit
+            onPick={(lines) => lines && pay(lines)}
+            onBack={() => setSplitOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={confirm} onClose={() => setConfirm(false)}>
         <DialogTitle>{noConsumption ? 'Encerrar sem consumo?' : 'Confirmar pagamento?'}</DialogTitle>
         <DialogContent>
@@ -631,7 +653,7 @@ const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button sx={{ minHeight: 48 }} onClick={() => setConfirm(false)}>Voltar</Button>
-          <Button variant="contained" color="success" sx={{ minHeight: 48 }} disabled={busy} onClick={pay}>
+          <Button variant="contained" color="success" sx={{ minHeight: 48 }} disabled={busy} onClick={() => pay()}>
             Confirmar
           </Button>
         </DialogActions>

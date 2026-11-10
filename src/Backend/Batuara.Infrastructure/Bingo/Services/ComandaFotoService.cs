@@ -63,7 +63,7 @@ namespace Batuara.Infrastructure.Bingo.Services
 
             var prompt =
                 "Foto de uma comanda de bingo de uma casa de caridade: tabela impressa com os itens do cardápio e marcações feitas à mão. " +
-                "Devolva SOMENTE JSON: {\"customerName\":string,\"comandaNumber\":string,\"paymentMethod\":string,\"items\":[{\"name\":string,\"quantity\":number,\"unitPrice\":number,\"matched\":boolean}],\"notes\":string}.\n" +
+                "Devolva SOMENTE JSON: {\"customerName\":string,\"comandaNumber\":string,\"payments\":[{\"method\":string,\"amount\":number}],\"items\":[{\"name\":string,\"quantity\":number,\"unitPrice\":number,\"matched\":boolean}],\"notes\":string}.\n" +
                 "customerName = nome escrito à mão no alto da comanda, acima da tabela (canto superior esquerdo); comandaNumber = número da comanda escrito à mão no canto superior direito, acima da coluna TOTAL. Se não houver, use string vazia.\n" +
                 "Cardápio oficial:\n" + menuText + "\n" +
                 "REGRAS: 1) O consumo é marcado SOMENTE na coluna QUANTIDADE (tracinhos, números ou riscos à direita do VALOR UNITÁRIO). Linhas sem marca nessa coluna NÃO entram. " +
@@ -72,7 +72,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 "4) name = nome exato do cardápio, matched=true. " +
                 "5) Linha manuscrita fora do cardápio (ex.: 'Batidas'): inclua só se tiver marca na coluna QUANTIDADE, com o preço escrito e matched=false; sem marca, ignore. " +
                 "6) Ignore linhas riscadas. " +
-                "7) paymentMethod = forma de pagamento escrita ou marcada à mão, normalmente no FINAL da comanda, depois da linha dos totais e FORA da tabela de itens. Formas possíveis: " + payText + ". Devolva exatamente um desses nomes; se não houver nada escrito ou marcado, string vazia. Não deduza nem invente. " +
+                "7) payments = formas de pagamento escritas ou marcadas à mão, normalmente no FINAL da comanda, depois da linha dos totais e FORA da tabela de itens. Formas possíveis: " + payText + ". Uma comanda pode ser paga em MAIS DE UMA forma (ex.: 'deb. 300,00' e 'din. 136,00'): devolva um objeto por forma escrita, com method = exatamente um desses nomes e amount = o valor escrito junto dela (número; 0 se não houver valor). Se não houver nada escrito ou marcado, lista vazia. Não deduza nem invente. " +
                 "Em notes, avise se a foto estiver ilegível ou cortada.";
 
             // Google Gemini API request format
@@ -175,7 +175,28 @@ namespace Batuara.Infrastructure.Bingo.Services
             // Conferencia real no backend: nao confia no "matched" do modelo.
             ValidateAgainstMenu(parsed.Items, menu.Select(m => m.Name));
             parsed.Total = SumTotal(parsed.Items);
-            parsed.PaymentMethodId = MatchPaymentMethod(parsed.PaymentMethod, payOptions.Select(m => (m.Id, m.Name)));
+            var payPairs = payOptions.Select(m => (m.Id, m.Name)).ToList();
+            foreach (var h in parsed.Payments)
+            {
+                h.PaymentMethodId = MatchPaymentMethod(h.Method, payPairs);
+                if (h.Amount is <= 0)
+                {
+                    h.Amount = null;
+                }
+            }
+
+            parsed.Payments = parsed.Payments.Where(h => !string.IsNullOrWhiteSpace(h.Method)).ToList();
+            // compatibilidade: uma forma so continua preenchendo os campos antigos
+            if (parsed.Payments.Count == 1)
+            {
+                parsed.PaymentMethod = parsed.Payments[0].Method;
+                parsed.PaymentMethodId = parsed.Payments[0].PaymentMethodId;
+            }
+            else
+            {
+                parsed.PaymentMethod = null;
+                parsed.PaymentMethodId = null;
+            }
             var dup = await FindDuplicateAsync(ev.Id, NormalizeNumber(parsed.ComandaNumber), ct);
             parsed.Duplicate = dup == null ? null : new ComandaFotoDuplicate { Id = dup.Id, Label = dup.Label, Total = dup.Total, CreatedAt = dup.CreatedAt };
             return parsed;
@@ -224,8 +245,17 @@ namespace Batuara.Infrastructure.Bingo.Services
             }
 
             string? methodName = null;
+            string? paymentsJson = null;
             // sem consumo (total zero) nao tem forma de pagamento
-            if (total > 0 && !request.PaymentNotIdentified)
+            if (total > 0 && request.Payments is { Count: > 0 })
+            {
+                // pagamento em uma ou mais formas: a soma tem que ser igual ao total
+                var active = await Db.BingoPaymentOptions.Where(x => x.IsActive).ToDictionaryAsync(x => x.Id, x => x.Name, ct);
+                var parts = BingoPaymentSplit.Build(request.Payments, active, total);
+                methodName = BingoPaymentPart.Label(parts);
+                paymentsJson = parts.Count > 1 ? BingoPaymentPart.Serialize(parts) : null;
+            }
+            else if (total > 0 && !request.PaymentNotIdentified)
             {
                 var method = await Db.BingoPaymentOptions.FirstOrDefaultAsync(x => x.Id == request.PaymentMethodId && x.IsActive, ct)
                     ?? throw new BingoException(BingoErrorKind.Validation, "Escolha a forma de pagamento.");
@@ -234,7 +264,7 @@ namespace Batuara.Infrastructure.Bingo.Services
 
             var label = (request.Label ?? string.Empty).Trim();
             var entity = new BingoPhotoTab(ev.Id, label.Length > 60 ? label[..60] : label,
-                JsonSerializer.Serialize(items, Json), total, photo, number, methodName);
+                JsonSerializer.Serialize(items, Json), total, photo, number, methodName, paymentsJson);
             Db.BingoPhotoTabs.Add(entity);
             await Db.SaveChangesAsync(ct);
             return ToDto(entity);
@@ -259,7 +289,7 @@ namespace Batuara.Infrastructure.Bingo.Services
             var rows = await Db.BingoPhotoTabs
                 .Where(x => x.EventId == ev.Id && x.IsActive)
                 .OrderBy(x => x.CreatedAt)
-                .Select(x => new { x.Id, x.Label, x.Total, x.PaymentMethod, x.CreatedAt, x.ItemsJson, x.CancelledAt, x.CancelReason, x.CancelledByName })
+                .Select(x => new { x.Id, x.Label, x.Total, x.PaymentMethod, x.PaymentsJson, x.CreatedAt, x.ItemsJson, x.CancelledAt, x.CancelReason, x.CancelledByName })
                 .ToListAsync(ct);
 
             var comandas = rows.Select(r => new ComandaFotoDto
@@ -268,6 +298,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 Label = r.Label,
                 Total = r.Total,
                 PaymentMethod = r.PaymentMethod,
+                Payments = SplitDto(r.PaymentsJson),
                 CreatedAt = r.CreatedAt,
                 Cancelled = r.CancelledAt != null,
                 CancelledAt = r.CancelledAt,
@@ -463,12 +494,21 @@ namespace Batuara.Infrastructure.Bingo.Services
         private static decimal SumTotal(IEnumerable<ComandaFotoItem> items)
             => items.Sum(i => i.Quantity * i.UnitPrice);
 
+        private static List<ComandaFotoPaymentPartDto>? SplitDto(string? paymentsJson)
+        {
+            var parts = BingoPaymentPart.Parse(paymentsJson);
+            return parts.Count > 1
+                ? parts.Select(p => new ComandaFotoPaymentPartDto { Method = p.Method, Amount = p.Amount }).ToList()
+                : null;
+        }
+
         private static ComandaFotoDto ToDto(BingoPhotoTab e) => new()
         {
             Id = e.Id,
             Label = e.Label,
             Total = e.Total,
             PaymentMethod = e.PaymentMethod,
+            Payments = SplitDto(e.PaymentsJson),
             CreatedAt = e.CreatedAt,
             Items = JsonSerializer.Deserialize<List<ComandaFotoItem>>(e.ItemsJson, Json) ?? new()
         };

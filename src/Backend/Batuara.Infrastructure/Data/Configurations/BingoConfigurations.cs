@@ -198,6 +198,7 @@ namespace Batuara.Infrastructure.Data.Configurations
                     value => value == null ? null : Enum.Parse<BingoPaymentMethod>(value))
                 .HasMaxLength(20);
             builder.Property(x => x.PaymentMethodName).HasMaxLength(60);
+            builder.Property(x => x.PaymentsJson);
             builder.Property(x => x.PaidByName).HasMaxLength(150);
             builder.Property(x => x.PaidNote).HasMaxLength(200);
             builder.Property(x => x.ExitCheckedByName).HasMaxLength(150);
@@ -288,6 +289,7 @@ namespace Batuara.Infrastructure.Data.Configurations
             builder.Property(x => x.Label).IsRequired().HasMaxLength(60);
             builder.Property(x => x.ComandaNumber).HasMaxLength(10);
             builder.Property(x => x.PaymentMethod).HasMaxLength(60);
+            builder.Property(x => x.PaymentsJson);
             builder.Property(x => x.CancelReason).HasMaxLength(200);
             builder.Property(x => x.CancelledByName).HasMaxLength(150);
             builder.Property(x => x.ItemsJson).IsRequired();

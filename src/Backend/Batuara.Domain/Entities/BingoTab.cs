@@ -14,6 +14,8 @@ namespace Batuara.Domain.Entities
         public BingoTabStatus Status { get; private set; } = BingoTabStatus.Open;
         public BingoPaymentMethod? PaymentMethod { get; private set; }
         public int? PaymentMethodId { get; private set; }
+        /// <summary>Partes do pagamento quando foi dividido em mais de uma forma (json de BingoPaymentPart); nulo no pagamento por forma unica.</summary>
+        public string? PaymentsJson { get; private set; }
         public string? PaymentMethodName { get; private set; }
         public string? PaidByName { get; private set; }
         public string? PaidNote { get; private set; }
@@ -125,6 +127,25 @@ namespace Batuara.Domain.Entities
             PaidByHouseMemberId = paidByHouseMemberId;
             Touch();
         }
+
+        /// <summary>Pagamento em uma ou mais formas (a soma das partes e o valor a pagar da comanda).</summary>
+        public void MarkPaidSplit(IReadOnlyList<BingoPaymentPart> parts, string paidByName, int? paidByHouseMemberId, string? note, DateTime utcNow)
+        {
+            Status = BingoTabStatus.Paid;
+            PaymentMethodId = parts.Count == 1 ? parts[0].MethodId : null;
+            PaymentMethodName = BingoPaymentPart.Label(parts);
+            PaymentsJson = parts.Count > 1 ? BingoPaymentPart.Serialize(parts) : null;
+            PaidByName = paidByName;
+            PaidNote = note;
+            AmountPaid = AmountDue;
+            PaidAt = utcNow;
+            PaidByHouseMemberId = paidByHouseMemberId;
+            Touch();
+        }
+
+        /// <summary>Partes do pagamento (vazio quando nao pago ou sem consumo).</summary>
+        public List<BingoPaymentPart> GetPaymentParts()
+            => IsPaid ? BingoPaymentPart.FromStored(PaymentsJson, PaymentLabel, PaymentMethodId, PaidAmount) : new List<BingoPaymentPart>();
 
         public void Anonymize(string initials)
         {

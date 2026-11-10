@@ -1,3 +1,4 @@
+import PaymentPicker, { PayLine, payBody } from './PaymentPicker';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AxiosInstance } from 'axios';
 import {
@@ -128,7 +129,7 @@ const ComandaManual: React.FC<Props> = ({ http, payMethods, photo, errMsg, onBac
     }
   };
 
-  const save = async (paymentMethodId: number | null) => {
+  const save = async (lines: PayLine[] | null) => {
     setPayOpen(false);
     setBusy('Fechando comanda...');
     setError(null);
@@ -139,8 +140,7 @@ const ComandaManual: React.FC<Props> = ({ http, payMethods, photo, errMsg, onBac
     try {
       await http.post('/comanda-foto', {
         comandaNumber: comanda.trim(),
-        paymentMethodId: paymentMethodId ?? 0,
-        paymentNotIdentified: paymentMethodId === null,
+        ...payBody(lines),
         items,
         label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60),
         imageBase64: photo ?? '',
@@ -340,18 +340,7 @@ const ComandaManual: React.FC<Props> = ({ http, payMethods, photo, errMsg, onBac
               <Button onClick={() => setPayOpen(false)}>Voltar</Button>
             </Stack>
           ) : (
-          <Stack spacing={1} sx={{ pt: 1 }}>
-            {payMethods.length === 0 && <Typography color="text.secondary">Nenhuma forma de pagamento ativa.</Typography>}
-            {payMethods.map((m) => (
-              <Button key={m.id} variant="outlined" size="large" onClick={() => save(m.id)}>
-                {m.name}
-              </Button>
-            ))}
-            <Button variant="outlined" size="large" color="inherit" onClick={() => save(null)}>
-              Não identificado
-            </Button>
-            <Button onClick={() => setPayOpen(false)}>Voltar</Button>
-          </Stack>
+          <PaymentPicker total={total} payMethods={payMethods} onPick={save} onBack={() => setPayOpen(false)} />
           )}
         </DialogContent>
       </Dialog>

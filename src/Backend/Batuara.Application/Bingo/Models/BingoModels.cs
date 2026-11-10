@@ -318,6 +318,15 @@ namespace Batuara.Application.Bingo.Models
         public List<Guid> TabIds { get; set; } = new();
         /// <summary>Obrigatória, exceto quando o valor a pagar é R$ 0,00 (comanda sem consumo).</summary>
         public int? PaymentMethodId { get; set; }
+        /// <summary>Pagamento dividido em mais de uma forma; a soma precisa ser igual ao valor a pagar. Tem prioridade sobre PaymentMethodId.</summary>
+        public List<BingoPaymentLineDto>? Payments { get; set; }
+    }
+
+    /// <summary>Uma parte do pagamento: forma (nulo = "Não identificado") e valor.</summary>
+    public class BingoPaymentLineDto
+    {
+        public int? PaymentMethodId { get; set; }
+        public decimal Amount { get; set; }
     }
 
     public class BingoAdminPayRequest : BingoPayRequest

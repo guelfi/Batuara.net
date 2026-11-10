@@ -1,3 +1,4 @@
+import PaymentPicker, { PayLine } from '../components/comandaFoto/PaymentPicker';
 import ClosingReport from '../components/bingo/ClosingReport';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -86,6 +87,12 @@ const apiError = (e: any, fallback: string) =>
 
 const PAY_LABEL: Record<string, string> = { Card: 'Cartão', Pix: 'Pix', Cash: 'Dinheiro' };
 const payLabel = (m?: string | null, noConsumption = false) => (m ? PAY_LABEL[m] ?? m : noConsumption ? 'Sem consumo' : '-');
+
+const photoPayLabel = (c: { total: number; paymentMethod?: string | null; payments?: { method?: string | null; amount: number }[] | null }) =>
+  c.payments && c.payments.length > 0
+    ? c.payments.map((p) => `${p.method || 'Não identificado'} ${money(p.amount)}`).join(' + ')
+    : c.paymentMethod || (c.total === 0 ? 'Sem consumo' : 'Não identificado');
+
 
 const EVENT_STATUS: Record<BingoEvent['status'], { label: string; color: 'default' | 'success' | 'warning' }> = {
   Draft: { label: 'Rascunho', color: 'warning' },
@@ -199,6 +206,7 @@ const CashierDialog: React.FC<{
   const [selected, setSelected] = useState<string[]>([tab.tabId]);
   const [methods, setMethods] = useState<BingoPayMethod[]>([]);
   const [methodId, setMethodId] = useState<number | ''>('');
+  const [splitOpen, setSplitOpen] = useState(false);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
@@ -298,12 +306,13 @@ const CashierDialog: React.FC<{
       action === 'Cancel' ? 'Item cancelado.' : 'Entrega confirmada.');
   };
 
-  const pay = async () => {
-    if (methodId === '' && totalDue > 0) return;
+  const pay = async (split?: PayLine[]) => {
+    if (!split && methodId === '' && totalDue > 0) return;
     setBusy(true);
     setPayError(null);
     try {
-      const r = await bingoApi.payTabsAdmin(selected, noConsumption || methodId === '' ? null : methodId, note.trim() || undefined);
+      const r = await bingoApi.payTabsAdmin(selected, split || noConsumption || methodId === '' ? null : methodId, note.trim() || undefined, split);
+      setSplitOpen(false);
       notify(`${r.paidCount} ${r.paidCount === 1 ? 'conta paga' : 'contas pagas'}: ${money(r.total)}.`, 'success');
       onChanged();
       onClose();
@@ -475,11 +484,16 @@ const CashierDialog: React.FC<{
             </Select>
           </FormControl>
         )}
+        {!noConsumption && methods.length > 0 && (
+          <Button variant="outlined" disabled={busy || (!!blockReason && blockReason !== 'Escolha a forma de pagamento.')} onClick={() => setSplitOpen(true)} sx={isMobile ? { minHeight: 44 } : undefined}>
+            Dividir pagamento
+          </Button>
+        )}
         <TextField size="small" label="Observação (opcional)" value={note} onChange={(e) => setNote(e.target.value)}
           inputProps={{ maxLength: 200 }} sx={{ minWidth: isMobile ? 0 : 220 }} />
         <Tooltip title={blockReason}>
           <span>
-            <Button variant="contained" color="success" disabled={busy || !!blockReason} onClick={pay}
+            <Button variant="contained" color="success" disabled={busy || !!blockReason} onClick={() => pay()}
               fullWidth={isMobile} sx={isMobile ? { minHeight: 44 } : undefined}>
               {noConsumption ? 'Encerrar sem consumo' : 'Registrar pagamento'}
             </Button>
@@ -494,6 +508,20 @@ const CashierDialog: React.FC<{
           <Typography variant="body2" color="error" sx={{ width: '100%', textAlign: isMobile ? 'left' : 'right' }}>{blockReason}</Typography>
         )}
       </DialogActions>
+
+      <Dialog open={splitOpen} onClose={() => setSplitOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Dividir pagamento</DialogTitle>
+        <DialogContent>
+          <PaymentPicker
+            total={totalDue}
+            payMethods={methods}
+            allowNotIdentified={false}
+            startSplit
+            onPick={(lines) => lines && pay(lines)}
+            onBack={() => setSplitOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={cancelTabOpen} onClose={() => setCancelTabOpen(false)} fullWidth maxWidth="xs">
         <DialogTitle>Cancelar comanda</DialogTitle>
@@ -2590,6 +2618,8 @@ interface PhotoTabData {
   cancelReason?: string | null;
   cancelledByName?: string | null;
   paymentMethod?: string | null;
+  /** Quando o pagamento foi dividido em mais de uma forma. */
+  payments?: { method?: string | null; amount: number }[] | null;
   id: number;
   label: string;
   total: number;
@@ -2795,7 +2825,7 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
                     ))}
                     <Divider sx={{ mt: 0.5, mb: 0.75 }} />
                     <Typography variant="body2">
-                      Forma de pagamento: <strong>{comanda.paymentMethod || (comanda.total === 0 ? 'Sem consumo' : 'Não identificado')}</strong>
+                      Forma de pagamento: <strong>{photoPayLabel(comanda)}</strong>
                     </Typography>
                   </Box>
                 )}
@@ -2841,7 +2871,7 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
                       day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
                     })}
                   </TableCell>
-                  <TableCell>{comanda.paymentMethod || (comanda.total === 0 ? 'Sem consumo' : 'Não identificado')}</TableCell>
+                  <TableCell>{photoPayLabel(comanda)}</TableCell>
                   <TableCell align="right"><strong>{money(comanda.total)}</strong></TableCell>
                   <TableCell align="center">
                     <Stack direction="row" spacing={1} justifyContent="center" alignItems="center">

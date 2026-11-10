@@ -306,7 +306,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 .Include(x => x.Items)
                 .Where(x => x.EventId == ev.Id && ids.Contains(x.Id))
                 .ToListAsync(cancellationToken);
-            return await PayCoreAsync(tabs, ids, request.PaymentMethodId, await GetMemberNameAsync(houseMemberId, cancellationToken), houseMemberId, null, cancellationToken);
+            return await PayCoreAsync(tabs, ids, request.PaymentMethodId, request.Payments, await GetMemberNameAsync(houseMemberId, cancellationToken), houseMemberId, null, cancellationToken);
         }
 
         private async Task<Domain.Entities.BingoEvent> RequireOpenEventAsync(CancellationToken cancellationToken)

@@ -362,6 +362,9 @@ apply_migration "20261108214923_AddBingoPhotoTabCancel" \
 apply_migration "20261109045803_AddBingoPhotoTabPaymentMethod" \
     "ALTER TABLE batuara.\"BingoPhotoTabs\" ADD COLUMN IF NOT EXISTS \"PaymentMethod\" character varying(60) NULL;"
 
+apply_migration "20261110021005_AddBingoSplitPayments" \
+    "ALTER TABLE batuara.\"BingoTabs\" ADD COLUMN IF NOT EXISTS \"PaymentsJson\" text NULL; ALTER TABLE batuara.\"BingoPhotoTabs\" ADD COLUMN IF NOT EXISTS \"PaymentsJson\" text NULL;"
+
 # --- Guarda de drift: toda migration do codigo precisa estar no historico do banco ---
 # Impede que uma migration nova seja esquecida nesta lista (o app nao migra no startup:
 # DB_APPLY_MIGRATIONS_ON_STARTUP=false) e o deploy siga com schema defasado.

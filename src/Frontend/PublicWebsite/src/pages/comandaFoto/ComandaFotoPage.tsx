@@ -18,6 +18,7 @@ import {
   Typography,
 } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import PaymentPicker, { PayHint, PayLine, payBody } from './PaymentPicker';
 import { resolveBaseUrl } from '../../services/api';
 import ComandaManual from './ComandaManual';
 
@@ -98,6 +99,7 @@ const ComandaFotoPage: React.FC = () => {
   const [dup, setDup] = useState<{ id: number; label: string; total: number; createdAt: string } | null>(null);
   const [payMethods, setPayMethods] = useState<{ id: number; name: string }[]>([]);
   const [payOpen, setPayOpen] = useState(false);
+  const [payHints, setPayHints] = useState<PayHint[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // 0 = não está lendo; 1..3 = tentativa atual da leitura da foto
@@ -140,6 +142,7 @@ const ComandaFotoPage: React.FC = () => {
         setDup(r.data.data.duplicate ?? null);
         setDupFor(String(comandaNumber ?? ''));
         setSuggestedPay(r.data.data.paymentMethodId ?? null);
+        setPayHints(((r.data.data.payments ?? []) as any[]).map((h) => ({ paymentMethodId: h.paymentMethodId ?? null, amount: h.amount ?? null })));
         setAttempt(0);
         return;
       } catch (e) {
@@ -178,6 +181,7 @@ const ComandaFotoPage: React.FC = () => {
     setManual(false);
     setAttempt(0);
     setSuggestedPay(null);
+    setPayHints([]);
   };
 
   const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
@@ -198,12 +202,12 @@ const ComandaFotoPage: React.FC = () => {
     }
   };
 
-  const save = async (paymentMethodId: number | null) => {
+  const save = async (lines: PayLine[] | null) => {
     setPayOpen(false);
     setBusy('Fechando comanda...');
     setError(null);
     try {
-      await http.post('/comanda-foto', { comandaNumber: comanda.trim(), paymentMethodId: paymentMethodId ?? 0, paymentNotIdentified: paymentMethodId === null, items: items.filter((i) => i.quantity > 0), label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), imageBase64: photo });
+      await http.post('/comanda-foto', { comandaNumber: comanda.trim(), ...payBody(lines), items: items.filter((i) => i.quantity > 0), label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), imageBase64: photo });
       resetAll();
     } catch (e) {
       setError(errMsg(e));
@@ -373,23 +377,14 @@ const ComandaFotoPage: React.FC = () => {
               <Button onClick={() => setPayOpen(false)}>Voltar</Button>
             </Stack>
           ) : (
-          <Stack spacing={1} sx={{ pt: 1 }}>
-            {payMethods.length === 0 && <Typography color="text.secondary">Nenhuma forma de pagamento ativa.</Typography>}
-            {suggestedPay !== null && (
-              <Typography variant="body2" color="text.secondary">
-                Identificado na comanda: confirme ou escolha outra.
-              </Typography>
-            )}
-            {payMethods.map((m) => (
-              <Button key={m.id} variant={m.id === suggestedPay ? 'contained' : 'outlined'} size="large" onClick={() => save(m.id)}>
-                {m.name}
-              </Button>
-            ))}
-            <Button variant="outlined" size="large" color="inherit" onClick={() => save(null)}>
-              Não identificado
-            </Button>
-            <Button onClick={() => setPayOpen(false)}>Voltar</Button>
-          </Stack>
+          <PaymentPicker
+            total={total}
+            payMethods={payMethods}
+            suggestedPay={suggestedPay}
+            hints={payHints}
+            onPick={save}
+            onBack={() => setPayOpen(false)}
+          />
           )}
         </DialogContent>
       </Dialog>

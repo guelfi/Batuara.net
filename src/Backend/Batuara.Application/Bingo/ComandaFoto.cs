@@ -33,9 +33,25 @@ namespace Batuara.Application.Bingo.Models
         public string? PaymentMethod { get; set; }
         /// <summary>Forma de pagamento cadastrada que combina com o texto lido (null quando não identificada).</summary>
         public int? PaymentMethodId { get; set; }
+        /// <summary>Formas de pagamento escritas na comanda (uma ou mais), com o valor quando a IA o leu.</summary>
+        public List<ComandaFotoPaymentHint> Payments { get; set; } = new();
         public List<ComandaFotoItem> Items { get; set; } = new();
         public decimal Total { get; set; }
         public string? Notes { get; set; }
+    }
+
+    public class ComandaFotoPaymentHint
+    {
+        /// <summary>Texto da forma como a IA leu.</summary>
+        public string? Method { get; set; }
+        public int? PaymentMethodId { get; set; }
+        public decimal? Amount { get; set; }
+    }
+
+    public class ComandaFotoPaymentPartDto
+    {
+        public string? Method { get; set; }
+        public decimal Amount { get; set; }
     }
 
     public class ComandaFotoSaveRequest
@@ -45,6 +61,8 @@ namespace Batuara.Application.Bingo.Models
         public int PaymentMethodId { get; set; }
         /// <summary>Quando a forma de pagamento não é conhecida: guarda sem forma (exibida como "Não identificado").</summary>
         public bool PaymentNotIdentified { get; set; }
+        /// <summary>Pagamento dividido em mais de uma forma; a soma precisa ser igual ao total. Tem prioridade sobre PaymentMethodId.</summary>
+        public List<BingoPaymentLineDto>? Payments { get; set; }
         public List<ComandaFotoItem> Items { get; set; } = new();
         /// <summary>Vazio quando a comanda foi digitada manualmente (sem foto).</summary>
         public string ImageBase64 { get; set; } = string.Empty;
@@ -56,6 +74,8 @@ namespace Batuara.Application.Bingo.Models
         public string Label { get; set; } = string.Empty;
         public decimal Total { get; set; }
         public string? PaymentMethod { get; set; }
+        /// <summary>Preenchido quando o pagamento foi dividido em mais de uma forma.</summary>
+        public List<ComandaFotoPaymentPartDto>? Payments { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool Cancelled { get; set; }
         public string? CancelReason { get; set; }

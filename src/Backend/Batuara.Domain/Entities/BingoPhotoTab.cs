@@ -14,6 +14,8 @@ namespace Batuara.Domain.Entities
         public byte[] Photo { get; private set; } = Array.Empty<byte>();
         /// <summary>Forma de pagamento escolhida ao fechar a comanda (nome no momento do fechamento).</summary>
         public string? PaymentMethod { get; private set; }
+        /// <summary>Partes do pagamento quando dividido em mais de uma forma (json de BingoPaymentPart); nulo na forma unica.</summary>
+        public string? PaymentsJson { get; private set; }
         public DateTime? CancelledAt { get; private set; }
         public string? CancelReason { get; private set; }
         public string? CancelledByName { get; private set; }
@@ -22,7 +24,7 @@ namespace Batuara.Domain.Entities
         {
         }
 
-        public BingoPhotoTab(int eventId, string label, string itemsJson, decimal total, byte[] photo, string? comandaNumber = null, string? paymentMethod = null)
+        public BingoPhotoTab(int eventId, string label, string itemsJson, decimal total, byte[] photo, string? comandaNumber = null, string? paymentMethod = null, string? paymentsJson = null)
         {
             EventId = eventId;
             Label = label.Trim();
@@ -31,7 +33,11 @@ namespace Batuara.Domain.Entities
             Total = total;
             Photo = photo;
             PaymentMethod = paymentMethod;
+            PaymentsJson = paymentsJson;
         }
+
+        public List<BingoPaymentPart> GetPaymentParts()
+            => BingoPaymentPart.FromStored(PaymentsJson, PaymentMethod, null, Total);
 
         public void Discard() => SetInactive();
 

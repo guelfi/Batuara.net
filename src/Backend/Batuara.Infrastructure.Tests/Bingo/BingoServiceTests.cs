@@ -1698,6 +1698,84 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public async Task Pay_Should_Split_Among_Methods_And_Require_The_Sum_To_Match()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiter = await f.ScheduleWaiterAsync();
+            var a = await f.NewTabAsync("11999990021", 8, "Ana");
+            var b = await f.NewTabAsync("11999990022", 8, "Bia");
+            await f.OrderAsync(a.TabId, "Água", 2);   // R$ 10
+            await f.OrderAsync(b.TabId, "Água", 3);   // R$ 15
+            await f.DeliverAllAsync(a.TabId);
+            await f.DeliverAllAsync(b.TabId);
+            var both = new List<Guid> { a.TabId, b.TabId };
+
+            // a soma tem que bater com o total (25)
+            await ShouldThrowAsync(() => f.Waiter.PayAsync(waiter, new BingoPayRequest
+            {
+                TabIds = both,
+                Payments = new() { new() { PaymentMethodId = f.CashId, Amount = 10m }, new() { PaymentMethodId = f.PixId, Amount = 10m } }
+            }), BingoErrorKind.Validation);
+            await ShouldThrowAsync(() => f.Waiter.PayAsync(waiter, new BingoPayRequest
+            {
+                TabIds = both,
+                Payments = new() { new() { PaymentMethodId = f.CashId, Amount = 0m }, new() { PaymentMethodId = f.PixId, Amount = 25m } }
+            }), BingoErrorKind.Validation);
+
+            // duas pessoas pagando em formas diferentes: 12 em dinheiro e 13 no Pix
+            var result = await f.Waiter.PayAsync(waiter, new BingoPayRequest
+            {
+                TabIds = both,
+                Payments = new() { new() { PaymentMethodId = f.CashId, Amount = 12m }, new() { PaymentMethodId = f.PixId, Amount = 13m } }
+            });
+            result.PaidCount.Should().Be(2);
+            result.Total.Should().Be(25m);
+
+            var summary = await f.Admin.GetEventSummaryAsync(1);
+            summary.TotalSold.Should().Be(25m);
+            summary.ByPaymentMethod.Single(m => m.Method == "Dinheiro").Total.Should().Be(12m);
+            summary.ByPaymentMethod.Single(m => m.Method == "Pix").Total.Should().Be(13m);
+            summary.ByPaymentMethod.Sum(m => m.Total).Should().Be(25m);
+            summary.ByWaiter.Single().ByMethod.Sum(m => m.Total).Should().Be(25m);
+        }
+
+        [Fact]
+        public async Task ComandaFoto_Should_Save_Split_Payment_And_Feed_Summary_By_Method()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), new FakeConfig(), Options.Create(new ComandaFotoOptions()));
+            var items = new List<ComandaFotoItem> { new() { Name = "Água", Quantity = 1, UnitPrice = 436m } };
+
+            // soma diferente do total: recusa
+            var wrong = () => svc.SaveAsync(new ComandaFotoSaveRequest
+            {
+                ComandaNumber = "69", Items = items,
+                Payments = new() { new() { PaymentMethodId = f.CashId, Amount = 300m }, new() { PaymentMethodId = f.PixId, Amount = 100m } }
+            }, CancellationToken.None);
+            await wrong.Should().ThrowAsync<BingoException>();
+
+            // debito 300 + dinheiro 136 (uma das partes pode ser "nao identificado")
+            var saved = await svc.SaveAsync(new ComandaFotoSaveRequest
+            {
+                ComandaNumber = "69", Items = items,
+                Payments = new() { new() { PaymentMethodId = f.PixId, Amount = 300m }, new() { PaymentMethodId = null, Amount = 136m } }
+            }, CancellationToken.None);
+            saved.Total.Should().Be(436m);
+            saved.PaymentMethod.Should().Be("Pix + Não identificado");
+            saved.Payments.Should().HaveCount(2);
+
+            var summary = await f.Admin.GetEventSummaryAsync(1);
+            summary.ByPaymentMethod.Single(m => m.Method == "Pix").Total.Should().Be(300m);
+            summary.ByPaymentMethod.Single(m => m.Method == "Não identificado").Total.Should().Be(136m);
+            summary.TotalSold.Should().Be(436m);
+
+            var report = await svc.GetReportAsync(CancellationToken.None);
+            report.Comandas.Single().Payments.Should().HaveCount(2);
+        }
+
+        [Fact]
         public async Task Pay_Should_Validate_Method_Table_And_Block_Pending_Items()
         {
             var f = new Fixture();

@@ -766,6 +766,9 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
 
+                    b.Property<string>("PaymentsJson")
+                        .HasColumnType("text");
+
                     b.Property<byte[]>("Photo")
                         .IsRequired()
                         .HasColumnType("bytea");
@@ -866,6 +869,9 @@ namespace Batuara.Infrastructure.Data.Migrations
                     b.Property<string>("PaymentMethodName")
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
+
+                    b.Property<string>("PaymentsJson")
+                        .HasColumnType("text");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(20)

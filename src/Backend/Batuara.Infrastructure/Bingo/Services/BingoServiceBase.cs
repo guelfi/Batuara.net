@@ -235,7 +235,7 @@ namespace Batuara.Infrastructure.Bingo.Services
             await Db.SaveChangesAsync(cancellationToken);
         }
 
-        protected async Task<BingoPayResult> PayCoreAsync(List<BingoTab> tabs, List<Guid> ids, int? paymentMethodId, string paidByName, int? paidByHouseMemberId, string? note, CancellationToken cancellationToken)
+        protected async Task<BingoPayResult> PayCoreAsync(List<BingoTab> tabs, List<Guid> ids, int? paymentMethodId, List<BingoPaymentLineDto>? payments, string paidByName, int? paidByHouseMemberId, string? note, CancellationToken cancellationToken)
         {
             if (ids.Count == 0)
             {
@@ -277,18 +277,19 @@ namespace Batuara.Infrastructure.Bingo.Services
             }
 
             // Sem consumo (nada a pagar) nao tem forma de pagamento; com valor a pagar ela e obrigatoria.
-            BingoPaymentOption? method = null;
-            if (paymentMethodId is null)
+            // O pagamento pode ser dividido em varias formas: a soma tem que ser igual ao valor a pagar.
+            var totalDue = tabs.Sum(x => x.AmountDue);
+            List<List<BingoPaymentPart>>? perTab = null;
+            if (totalDue > 0)
             {
-                if (tabs.Any(x => x.AmountDue > 0))
-                {
-                    throw new BingoException(BingoErrorKind.Validation, "Escolha a forma de pagamento.");
-                }
-            }
-            else
-            {
-                method = await Db.BingoPaymentOptions.FirstOrDefaultAsync(x => x.Id == paymentMethodId && x.IsActive, cancellationToken)
-                    ?? throw new BingoException(BingoErrorKind.Validation, "Forma de pagamento inválida ou inativa.");
+                var lines = payments is { Count: > 0 }
+                    ? payments
+                    : paymentMethodId is int single
+                        ? new List<BingoPaymentLineDto> { new() { PaymentMethodId = single, Amount = totalDue } }
+                        : throw new BingoException(BingoErrorKind.Validation, "Escolha a forma de pagamento.");
+                var active = await Db.BingoPaymentOptions.Where(x => x.IsActive).ToDictionaryAsync(x => x.Id, x => x.Name, cancellationToken);
+                var parts = BingoPaymentSplit.Build(lines, active, totalDue);
+                perTab = BingoPaymentSplit.Allocate(parts, tabs.Select(x => x.AmountDue).ToList());
             }
 
             var trimmedNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
@@ -298,9 +299,16 @@ namespace Batuara.Infrastructure.Bingo.Services
             }
 
             var now = DateTime.UtcNow;
-            foreach (var tab in tabs)
+            for (var i = 0; i < tabs.Count; i++)
             {
-                tab.MarkPaid(method?.Id, method?.Name, paidByName, paidByHouseMemberId, trimmedNote, now);
+                if (perTab is null || perTab[i].Count == 0)
+                {
+                    tabs[i].MarkPaid(null, null, paidByName, paidByHouseMemberId, trimmedNote, now);
+                }
+                else
+                {
+                    tabs[i].MarkPaidSplit(perTab[i], paidByName, paidByHouseMemberId, trimmedNote, now);
+                }
             }
 
             await Db.SaveChangesAsync(cancellationToken);
