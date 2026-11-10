@@ -2790,7 +2790,7 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
       ) : (
       <Paper>
         <TableContainer>
-          <Table size="small">
+          <Table size="small" sx={{ '& .MuiTableCell-root': { py: 0.25 }, '& .MuiTableBody-root .MuiTableRow-root': { height: 36 } }}>
             <TableHead>
               <TableRow>
                 <TableCell>#</TableCell>
@@ -2816,8 +2816,8 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
                   <TableCell align="center">
                     <Stack direction="row" spacing={1} justifyContent="center" alignItems="center">
                       <Tooltip title="Ver foto">
-                        <IconButton size="small" color="primary" aria-label="Ver foto" onClick={() => setSelectedPhoto(comanda.id)}>
-                          <PhotoCameraIcon />
+                        <IconButton size="small" color="primary" aria-label="Ver foto" sx={{ p: 0.25 }} onClick={() => setSelectedPhoto(comanda.id)}>
+                          <PhotoCameraIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                       {comanda.cancelled ? (
@@ -2825,7 +2825,7 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
                           Cancelada{comanda.cancelledByName ? ` por ${comanda.cancelledByName}` : ''}: {comanda.cancelReason}
                         </Typography>
                       ) : (
-                        <Button size="small" color="error" onClick={() => handleDiscard(comanda.id)}>
+                        <Button size="small" color="error" sx={{ py: 0, minHeight: 24 }} onClick={() => handleDiscard(comanda.id)}>
                           {report.isTest ? 'Descartar' : 'Cancelar'}
                         </Button>
                       )}
@@ -2845,6 +2845,7 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
           rowsPerPageOptions={[10]}
           labelRowsPerPage=""
           labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
+          sx={{ '& .MuiToolbar-root': { minHeight: 40 } }}
         />
       </Paper>
       )}
