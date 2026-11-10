@@ -672,8 +672,10 @@ namespace Batuara.Infrastructure.Bingo.Services
                 PhotoUnmatched = photoItems.Count(i => !i.Matched),
                 GrandTotal = paid.Sum(x => x.PaidAmount) + photoTotal,
                 ByPaymentMethod = paid
+                    // comanda sem consumo (R$ 0,00 e sem forma) nao entra em "por forma de pagamento"
+                    .Where(x => x.PaidAmount > 0 || x.PaymentLabel != null)
                     .Select(x => (Method: x.PaymentLabel ?? NoMethod, Amount: x.PaidAmount))
-                    .Concat(photoRows.Select(r => (Method: r.PaymentMethod ?? NoMethod, Amount: r.Total)))
+                    .Concat(photoRows.Where(r => r.Total > 0 || r.PaymentMethod != null).Select(r => (Method: r.PaymentMethod ?? NoMethod, Amount: r.Total)))
                     .GroupBy(x => x.Method)
                     .Select(g => new BingoPaymentSummaryDto { Method = g.Key, Count = g.Count(), Total = g.Sum(t => t.Amount) })
                     .OrderBy(x => x.Method)
@@ -685,7 +687,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                         Name = g.Key,
                         Count = g.Count(),
                         Total = g.Sum(t => t.PaidAmount),
-                        ByMethod = g.GroupBy(t => t.PaymentLabel ?? NoMethod)
+                        ByMethod = g.Where(t => t.PaidAmount > 0 || t.PaymentLabel != null).GroupBy(t => t.PaymentLabel ?? NoMethod)
                             .Select(m => new BingoMethodTotalDto { Method = m.Key, Total = m.Sum(t => t.PaidAmount) })
                             .OrderBy(m => m.Method)
                             .ToList()

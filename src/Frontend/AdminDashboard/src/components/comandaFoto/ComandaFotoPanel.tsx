@@ -168,6 +168,8 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
   };
 
   const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
+  // sem consumo: nada a pagar, entao nao ha forma de pagamento
+  const noConsumption = total <= 0;
   const patch = (idx: number, p: Partial<Item>) => setItems((l) => l.map((it, i) => (i === idx ? { ...it, ...p } : it)));
 
   const registerItem = async (idx: number) => {
@@ -335,8 +337,8 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
             <Button fullWidth variant="outlined" onClick={() => setPhoto(null)} disabled={!!busy}>
               Descartar
             </Button>
-            <Button fullWidth variant="contained" size="large" onClick={() => setPayOpen(true)} disabled={!!busy || items.every((i) => i.quantity <= 0) || (!!dup && comanda.trim() === dupFor.trim())}>
-              Fechar comanda
+            <Button fullWidth variant="contained" size="large" onClick={() => setPayOpen(true)} disabled={!!busy || !comanda.trim() || (!!dup && comanda.trim() === dupFor.trim())}>
+              {noConsumption ? 'Encerrar sem consumo' : 'Fechar comanda'}
             </Button>
           </Stack>
         </Paper>
@@ -346,8 +348,15 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
         </Button>
       )}
       <Dialog open={payOpen} onClose={() => setPayOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Forma de pagamento</DialogTitle>
+        <DialogTitle>{noConsumption ? 'Encerrar sem consumo?' : 'Forma de pagamento'}</DialogTitle>
         <DialogContent>
+          {noConsumption ? (
+            <Stack spacing={1} sx={{ pt: 1 }}>
+              <Typography color="text.secondary">Comanda sem consumo: não há forma de pagamento. O número fica registrado para não ser lançado de novo.</Typography>
+              <Button variant="contained" size="large" onClick={() => save(null)}>Encerrar sem consumo</Button>
+              <Button onClick={() => setPayOpen(false)}>Voltar</Button>
+            </Stack>
+          ) : (
           <Stack spacing={1} sx={{ pt: 1 }}>
             {payMethods.length === 0 && <Typography color="text.secondary">Nenhuma forma de pagamento ativa.</Typography>}
             {suggestedPay !== null && (
@@ -365,6 +374,7 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
             </Button>
             <Button onClick={() => setPayOpen(false)}>Voltar</Button>
           </Stack>
+          )}
         </DialogContent>
       </Dialog>
     </Box>

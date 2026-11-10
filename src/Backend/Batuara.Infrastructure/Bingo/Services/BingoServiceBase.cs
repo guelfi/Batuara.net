@@ -235,15 +235,12 @@ namespace Batuara.Infrastructure.Bingo.Services
             await Db.SaveChangesAsync(cancellationToken);
         }
 
-        protected async Task<BingoPayResult> PayCoreAsync(List<BingoTab> tabs, List<Guid> ids, int paymentMethodId, string paidByName, int? paidByHouseMemberId, string? note, CancellationToken cancellationToken)
+        protected async Task<BingoPayResult> PayCoreAsync(List<BingoTab> tabs, List<Guid> ids, int? paymentMethodId, string paidByName, int? paidByHouseMemberId, string? note, CancellationToken cancellationToken)
         {
             if (ids.Count == 0)
             {
                 throw new BingoException(BingoErrorKind.Validation, "Selecione ao menos uma comanda.");
             }
-
-            var method = await Db.BingoPaymentOptions.FirstOrDefaultAsync(x => x.Id == paymentMethodId && x.IsActive, cancellationToken)
-                ?? throw new BingoException(BingoErrorKind.Validation, "Forma de pagamento inválida ou inativa.");
 
             if (tabs.Count != ids.Count)
             {
@@ -279,6 +276,21 @@ namespace Batuara.Infrastructure.Bingo.Services
                     });
             }
 
+            // Sem consumo (nada a pagar) nao tem forma de pagamento; com valor a pagar ela e obrigatoria.
+            BingoPaymentOption? method = null;
+            if (paymentMethodId is null)
+            {
+                if (tabs.Any(x => x.AmountDue > 0))
+                {
+                    throw new BingoException(BingoErrorKind.Validation, "Escolha a forma de pagamento.");
+                }
+            }
+            else
+            {
+                method = await Db.BingoPaymentOptions.FirstOrDefaultAsync(x => x.Id == paymentMethodId && x.IsActive, cancellationToken)
+                    ?? throw new BingoException(BingoErrorKind.Validation, "Forma de pagamento inválida ou inativa.");
+            }
+
             var trimmedNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
             if (trimmedNote != null && trimmedNote.Length > 200)
             {
@@ -288,7 +300,7 @@ namespace Batuara.Infrastructure.Bingo.Services
             var now = DateTime.UtcNow;
             foreach (var tab in tabs)
             {
-                tab.MarkPaid(method.Id, method.Name, paidByName, paidByHouseMemberId, trimmedNote, now);
+                tab.MarkPaid(method?.Id, method?.Name, paidByName, paidByHouseMemberId, trimmedNote, now);
             }
 
             await Db.SaveChangesAsync(cancellationToken);

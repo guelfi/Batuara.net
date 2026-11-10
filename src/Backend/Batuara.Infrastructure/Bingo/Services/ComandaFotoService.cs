@@ -191,9 +191,10 @@ namespace Batuara.Infrastructure.Bingo.Services
         public async Task<ComandaFotoDto> SaveAsync(ComandaFotoSaveRequest request, CancellationToken ct)
         {
             var items = request.Items.Where(i => !string.IsNullOrWhiteSpace(i.Name) && i.Quantity > 0).ToList();
-            if (items.Count == 0)
+            // Comanda sem consumo (nenhum item) e valida: guarda o numero para nao ser lancada de novo.
+            if (items.Count == 0 && string.IsNullOrWhiteSpace(request.ComandaNumber))
             {
-                throw new BingoException(BingoErrorKind.Validation, "Informe ao menos um item.");
+                throw new BingoException(BingoErrorKind.Validation, "Informe o número da comanda.");
             }
 
             if (items.Any(i => i.UnitPrice < 0 || i.Quantity > 500))
@@ -223,7 +224,8 @@ namespace Batuara.Infrastructure.Bingo.Services
             }
 
             string? methodName = null;
-            if (!request.PaymentNotIdentified)
+            // sem consumo (total zero) nao tem forma de pagamento
+            if (total > 0 && !request.PaymentNotIdentified)
             {
                 var method = await Db.BingoPaymentOptions.FirstOrDefaultAsync(x => x.Id == request.PaymentMethodId && x.IsActive, ct)
                     ?? throw new BingoException(BingoErrorKind.Validation, "Escolha a forma de pagamento.");

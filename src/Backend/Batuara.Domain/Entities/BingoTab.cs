@@ -113,7 +113,7 @@ namespace Batuara.Domain.Entities
             }
         }
 
-        public void MarkPaid(int paymentMethodId, string paymentMethodName, string paidByName, int? paidByHouseMemberId, string? note, DateTime utcNow)
+        public void MarkPaid(int? paymentMethodId, string? paymentMethodName, string paidByName, int? paidByHouseMemberId, string? note, DateTime utcNow)
         {
             Status = BingoTabStatus.Paid;
             PaymentMethodId = paymentMethodId;

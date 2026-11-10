@@ -316,7 +316,8 @@ namespace Batuara.Application.Bingo.Models
     public class BingoPayRequest
     {
         public List<Guid> TabIds { get; set; } = new();
-        public int PaymentMethodId { get; set; }
+        /// <summary>Obrigatória, exceto quando o valor a pagar é R$ 0,00 (comanda sem consumo).</summary>
+        public int? PaymentMethodId { get; set; }
     }
 
     public class BingoAdminPayRequest : BingoPayRequest

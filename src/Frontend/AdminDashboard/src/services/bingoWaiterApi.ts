@@ -120,8 +120,8 @@ const bingoWaiterApi = {
   resolveContest: (itemId: string, action: ContestAction, note?: string) =>
     apiService.post<any>(`/bingo/garcom/itens/${itemId}/resolver-contestacao`, note ? { action, note } : { action }),
 
-  payTabs: (tabIds: string[], paymentMethodId: number) =>
-    apiService.post<any>('/bingo/garcom/comandas/pagar', { tabIds, paymentMethodId }),
+  payTabs: (tabIds: string[], paymentMethodId: number | null) =>
+    apiService.post<any>('/bingo/garcom/comandas/pagar', paymentMethodId === null ? { tabIds } : { tabIds, paymentMethodId }),
 };
 
 export default bingoWaiterApi;

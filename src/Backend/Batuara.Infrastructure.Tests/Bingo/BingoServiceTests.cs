@@ -1646,6 +1646,58 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public async Task Pay_Should_Not_Require_Payment_Method_When_Nothing_Is_Due()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var waiter = await f.ScheduleWaiterAsync();
+            var empty = await f.NewTabAsync("11999990011", 6, "Sem consumo");
+            var withItems = await f.NewTabAsync("11999990012", 7, "Com consumo");
+            await f.OrderAsync(withItems.TabId, "Água", 2);
+            await f.DeliverAllAsync(withItems.TabId);
+
+            // com valor a pagar a forma continua obrigatoria
+            await ShouldThrowAsync(() => f.Waiter.PayAsync(waiter, new BingoPayRequest { TabIds = new List<Guid> { withItems.TabId } }), BingoErrorKind.Validation);
+
+            // sem consumo: fecha sem forma de pagamento
+            var result = await f.Waiter.PayAsync(waiter, new BingoPayRequest { TabIds = new List<Guid> { empty.TabId } });
+            result.PaidCount.Should().Be(1);
+            result.Total.Should().Be(0m);
+            await f.Waiter.PayAsync(waiter, new BingoPayRequest { TabIds = new List<Guid> { withItems.TabId }, PaymentMethodId = f.PixId });
+
+            // a comanda sem consumo nao aparece em "por forma de pagamento"
+            var summary = await f.Admin.GetEventSummaryAsync(1);
+            summary.ByPaymentMethod.Should().ContainSingle().Which.Method.Should().Be("Pix");
+            summary.ByPaymentMethod.Single().Count.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task ComandaFoto_Should_Save_Empty_Tab_Without_Payment_Method()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), new FakeConfig(), Options.Create(new ComandaFotoOptions()));
+
+            // sem itens e sem numero: nao ha o que controlar
+            var noNumber = () => svc.SaveAsync(new ComandaFotoSaveRequest { Items = new() }, CancellationToken.None);
+            await noNumber.Should().ThrowAsync<BingoException>();
+
+            // sem consumo: guarda o numero com total zero e sem forma de pagamento
+            var saved = await svc.SaveAsync(new ComandaFotoSaveRequest { ComandaNumber = "90", Items = new() }, CancellationToken.None);
+            saved.Total.Should().Be(0m);
+            saved.PaymentMethod.Should().BeNull();
+
+            // o numero fica controlado: nao deixa lancar de novo
+            var again = () => svc.SaveAsync(new ComandaFotoSaveRequest { ComandaNumber = "90", Items = new() }, CancellationToken.None);
+            await again.Should().ThrowAsync<BingoException>();
+
+            // nao entra em "por forma de pagamento" nem soma no total
+            var summary = await f.Admin.GetEventSummaryAsync(1);
+            summary.ByPaymentMethod.Should().BeEmpty();
+            summary.PhotoTotal.Should().Be(0m);
+        }
+
+        [Fact]
         public async Task Pay_Should_Validate_Method_Table_And_Block_Pending_Items()
         {
             var f = new Fixture();

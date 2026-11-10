@@ -365,8 +365,8 @@ export const bingoApi = {
   resolveContest: (itemId: string, action: 'ConfirmDelivered' | 'Cancel', note?: string) =>
     apiService.post<any>(`${BASE}/itens/${itemId}/resolver-contestacao`, { action, ...(note ? { note } : {}) }),
   deliverItemAdmin: (itemId: string) => apiService.post<any>(`${BASE}/itens/${itemId}/entregar`),
-  async payTabsAdmin(tabIds: string[], paymentMethodId: number, note?: string): Promise<{ paidCount: number; total: number }> {
-    const r = await apiService.post<any>(`${BASE}/comandas/pagar`, { tabIds, paymentMethodId, ...(note ? { note } : {}) });
+  async payTabsAdmin(tabIds: string[], paymentMethodId: number | null, note?: string): Promise<{ paidCount: number; total: number }> {
+    const r = await apiService.post<any>(`${BASE}/comandas/pagar`, { tabIds, ...(paymentMethodId !== null ? { paymentMethodId } : {}), ...(note ? { note } : {}) });
     return { paidCount: num(r.data?.paidCount), total: num(r.data?.total) };
   },
 

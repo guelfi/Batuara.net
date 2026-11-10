@@ -85,7 +85,7 @@ const apiError = (e: any, fallback: string) =>
   e?.response?.data?.message || e?.response?.data?.errors?.join(' ') || e?.message || fallback;
 
 const PAY_LABEL: Record<string, string> = { Card: 'Cartão', Pix: 'Pix', Cash: 'Dinheiro' };
-const payLabel = (m?: string | null) => (m ? PAY_LABEL[m] ?? m : '-');
+const payLabel = (m?: string | null, noConsumption = false) => (m ? PAY_LABEL[m] ?? m : noConsumption ? 'Sem consumo' : '-');
 
 const EVENT_STATUS: Record<BingoEvent['status'], { label: string; color: 'default' | 'success' | 'warning' }> = {
   Draft: { label: 'Rascunho', color: 'warning' },
@@ -243,7 +243,9 @@ const CashierDialog: React.FC<{
     if (undelivered) parts.push(`${undelivered} ${undelivered === 1 ? 'item não entregue' : 'itens não entregues'}`);
     if (contested) parts.push(`${contested} ${contested === 1 ? 'item em contestação' : 'itens em contestação'}`);
     blockReason = `Resolva antes de cobrar: ${parts.join(' e ')}.`;
-  } else if (methodId === '') blockReason = 'Escolha a forma de pagamento.';
+  } else if (methodId === '' && totalDue > 0) blockReason = 'Escolha a forma de pagamento.';
+  // sem consumo (nada a cobrar) nao tem forma de pagamento
+  const noConsumption = chosen.length > 0 && totalDue === 0;
 
   const act = async (fn: () => Promise<any>, ok: string) => {
     setBusy(true);
@@ -297,11 +299,11 @@ const CashierDialog: React.FC<{
   };
 
   const pay = async () => {
-    if (methodId === '') return;
+    if (methodId === '' && totalDue > 0) return;
     setBusy(true);
     setPayError(null);
     try {
-      const r = await bingoApi.payTabsAdmin(selected, methodId, note.trim() || undefined);
+      const r = await bingoApi.payTabsAdmin(selected, noConsumption || methodId === '' ? null : methodId, note.trim() || undefined);
       notify(`${r.paidCount} ${r.paidCount === 1 ? 'conta paga' : 'contas pagas'}: ${money(r.total)}.`, 'success');
       onChanged();
       onClose();
@@ -464,20 +466,22 @@ const CashierDialog: React.FC<{
         }}
       >
         <Typography variant="h6" sx={{ mr: 'auto' }}>Total a cobrar: {money(totalDue)}</Typography>
-        <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 200 }}>
-          <InputLabel id="caixa-forma">Forma de pagamento</InputLabel>
-          <Select labelId="caixa-forma" label="Forma de pagamento" value={methodId}
-            onChange={(e) => setMethodId(e.target.value === ('' as any) ? '' : Number(e.target.value))}>
-            {methods.map((m) => <MenuItem key={m.id} value={m.id}>{m.name}</MenuItem>)}
-          </Select>
-        </FormControl>
+        {!noConsumption && (
+          <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 200 }}>
+            <InputLabel id="caixa-forma">Forma de pagamento</InputLabel>
+            <Select labelId="caixa-forma" label="Forma de pagamento" value={methodId}
+              onChange={(e) => setMethodId(e.target.value === ('' as any) ? '' : Number(e.target.value))}>
+              {methods.map((m) => <MenuItem key={m.id} value={m.id}>{m.name}</MenuItem>)}
+            </Select>
+          </FormControl>
+        )}
         <TextField size="small" label="Observação (opcional)" value={note} onChange={(e) => setNote(e.target.value)}
           inputProps={{ maxLength: 200 }} sx={{ minWidth: isMobile ? 0 : 220 }} />
         <Tooltip title={blockReason}>
           <span>
             <Button variant="contained" color="success" disabled={busy || !!blockReason} onClick={pay}
               fullWidth={isMobile} sx={isMobile ? { minHeight: 44 } : undefined}>
-              Registrar pagamento
+              {noConsumption ? 'Encerrar sem consumo' : 'Registrar pagamento'}
             </Button>
           </span>
         </Tooltip>
@@ -840,7 +844,7 @@ const LivePanel: React.FC<{
                 </Box>
               </Stack>
               <Typography variant="body2" sx={{ mt: 0.5 }}>
-                {t.status === 'Paid' ? `Paga (${payLabel(t.paymentMethod)}${t.paidByName ? `, ${t.paidByName}` : ''})`
+                {t.status === 'Paid' ? `Paga (${payLabel(t.paymentMethod, t.total === 0)}${t.paidByName ? `, ${t.paidByName}` : ''})`
                   : t.status === 'CloseRequested' ? 'Pediu para encerrar' : 'Aberta'}
               </Typography>
               <Box sx={{ mt: 0.5 }}><PhoneBadge tab={t} /></Box>
@@ -872,7 +876,7 @@ const LivePanel: React.FC<{
                 <TableCell>{t.mesa}</TableCell>
                 <TableCell>{t.customerName}</TableCell>
                 <TableCell>
-                  {t.status === 'Paid' ? `Paga (${payLabel(t.paymentMethod)}${t.paidByName ? `, ${t.paidByName}` : ''})`
+                  {t.status === 'Paid' ? `Paga (${payLabel(t.paymentMethod, t.total === 0)}${t.paidByName ? `, ${t.paidByName}` : ''})`
                     : t.status === 'CloseRequested' ? 'Pediu para encerrar' : 'Aberta'}
                 </TableCell>
                 <TableCell><PhoneBadge tab={t} /></TableCell>
@@ -2404,7 +2408,7 @@ const EventsTab: React.FC<{
                           <TableCell>{t.customerName}</TableCell>
                           <TableCell>{t.items.map((i) => `${i.quantity}x ${i.name}`).join(', ')}</TableCell>
                           <TableCell>{t.status === 'Paid'
-                            ? `Paga (${payLabel(t.paymentMethod)}${t.paidByName ? `, por ${t.paidByName}` : ''})`
+                            ? `Paga (${payLabel(t.paymentMethod, t.total === 0)}${t.paidByName ? `, por ${t.paidByName}` : ''})`
                             : 'Não paga'}</TableCell>
                           <TableCell>
                             <PhoneBadge tab={t} />
@@ -2791,7 +2795,7 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
                     ))}
                     <Divider sx={{ mt: 0.5, mb: 0.75 }} />
                     <Typography variant="body2">
-                      Forma de pagamento: <strong>{comanda.paymentMethod || 'Não identificado'}</strong>
+                      Forma de pagamento: <strong>{comanda.paymentMethod || (comanda.total === 0 ? 'Sem consumo' : 'Não identificado')}</strong>
                     </Typography>
                   </Box>
                 )}
@@ -2837,7 +2841,7 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
                       day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
                     })}
                   </TableCell>
-                  <TableCell>{comanda.paymentMethod || 'Não identificado'}</TableCell>
+                  <TableCell>{comanda.paymentMethod || (comanda.total === 0 ? 'Sem consumo' : 'Não identificado')}</TableCell>
                   <TableCell align="right"><strong>{money(comanda.total)}</strong></TableCell>
                   <TableCell align="center">
                     <Stack direction="row" spacing={1} justifyContent="center" alignItems="center">

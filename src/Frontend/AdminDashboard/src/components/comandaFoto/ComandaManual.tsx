@@ -96,6 +96,8 @@ const ComandaManual: React.FC<Props> = ({ http, payMethods, photo, errMsg, onBac
   const menuTotal = menu.reduce((s, m) => s + (qty[m.id] ?? 0) * m.unitPrice, 0);
   const extrasTotal = extras.reduce((s, e) => s + e.quantity * e.unitPrice, 0);
   const total = menuTotal + extrasTotal;
+  // sem consumo: nada a pagar, entao nao ha forma de pagamento
+  const noConsumption = total <= 0;
   const count = menu.reduce((s, m) => s + (qty[m.id] ?? 0), 0) + extras.reduce((s, e) => s + e.quantity, 0);
 
   const addExtra = () => {
@@ -150,7 +152,7 @@ const ComandaManual: React.FC<Props> = ({ http, payMethods, photo, errMsg, onBac
     }
   };
 
-  const canClose = !busy && count > 0 && comanda.trim().length > 0;
+  const canClose = !busy && comanda.trim().length > 0;
 
   return (
     <Paper sx={{ p: 2, mb: 2, pb: 0 }}>
@@ -302,7 +304,7 @@ const ComandaManual: React.FC<Props> = ({ http, payMethods, photo, errMsg, onBac
             Voltar
           </Button>
           <Button fullWidth variant="contained" size="large" onClick={() => setPayOpen(true)} disabled={!canClose}>
-            Fechar comanda
+            {noConsumption ? 'Encerrar sem consumo' : 'Fechar comanda'}
           </Button>
         </Stack>
         {count > 0 && comanda.trim().length === 0 && (
@@ -329,8 +331,15 @@ const ComandaManual: React.FC<Props> = ({ http, payMethods, photo, errMsg, onBac
       </Dialog>
 
       <Dialog open={payOpen} onClose={() => setPayOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Forma de pagamento</DialogTitle>
+        <DialogTitle>{noConsumption ? 'Encerrar sem consumo?' : 'Forma de pagamento'}</DialogTitle>
         <DialogContent>
+          {noConsumption ? (
+            <Stack spacing={1} sx={{ pt: 1 }}>
+              <Typography color="text.secondary">Comanda sem consumo: não há forma de pagamento. O número fica registrado para não ser lançado de novo.</Typography>
+              <Button variant="contained" size="large" onClick={() => save(null)}>Encerrar sem consumo</Button>
+              <Button onClick={() => setPayOpen(false)}>Voltar</Button>
+            </Stack>
+          ) : (
           <Stack spacing={1} sx={{ pt: 1 }}>
             {payMethods.length === 0 && <Typography color="text.secondary">Nenhuma forma de pagamento ativa.</Typography>}
             {payMethods.map((m) => (
@@ -343,6 +352,7 @@ const ComandaManual: React.FC<Props> = ({ http, payMethods, photo, errMsg, onBac
             </Button>
             <Button onClick={() => setPayOpen(false)}>Voltar</Button>
           </Stack>
+          )}
         </DialogContent>
       </Dialog>
     </Paper>

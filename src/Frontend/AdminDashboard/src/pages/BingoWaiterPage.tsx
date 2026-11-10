@@ -316,8 +316,10 @@ const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
   const selectedDue = selectedAccounts.reduce((s, a) => s + a.amountDue, 0);
   const blockedUndelivered = selectedAccounts.reduce((s, a) => s + a.undeliveredCount, 0);
   const blockedContested = selectedAccounts.reduce((s, a) => s + a.contestedCount, 0);
+  // sem consumo (nada a cobrar) nao tem forma de pagamento
+  const noConsumption = selectedAccounts.length > 0 && selectedDue === 0;
   const blockReason =
-    methodId === null
+    methodId === null && !noConsumption
       ? 'Escolha a forma de pagamento.'
       : blockedUndelivered > 0 || blockedContested > 0
         ? [
@@ -335,12 +337,12 @@ const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
     setExpanded((ex) => (ex.includes(id) ? ex.filter((x) => x !== id) : [...ex, id]));
 
   const pay = async () => {
-    if (methodId === null || selected.length === 0) return;
+    if ((methodId === null && !noConsumption) || selected.length === 0) return;
     setBusy(true);
     setError('');
     try {
-      await bingoWaiterApi.payTabs(selected, methodId);
-      setOk(`Pagamento registrado (${formatBRL(selectedDue)}).`);
+      await bingoWaiterApi.payTabs(selected, noConsumption ? null : methodId);
+      setOk(noConsumption ? 'Comanda encerrada sem consumo.' : `Pagamento registrado (${formatBRL(selectedDue)}).`);
       setSelected([]);
       setMethodId(null);
       setConfirm(false);
@@ -582,6 +584,7 @@ const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
             <Typography sx={{ fontWeight: 700, mb: 1 }}>
               Mesa {selectedMesa} · {selected.length} comanda(s) · {formatBRL(selectedDue)}
             </Typography>
+            {!noConsumption && (
             <Stack direction="row" useFlexGap flexWrap="wrap" spacing={1} role="radiogroup" aria-label="Forma de pagamento" sx={{ mb: 1 }}>
               {methods.map((m) => (
                 <Chip
@@ -597,6 +600,7 @@ const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
               ))}
               {methods.length === 0 && <Typography variant="body2">Nenhuma forma de pagamento ativa.</Typography>}
             </Stack>
+            )}
             {blockReason && (
               <Typography role="status" variant="body2" sx={{ color: 'warning.main', fontWeight: 600, mb: 1 }}>
                 {blockReason}
@@ -610,17 +614,19 @@ const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
               disabled={!!blockReason || busy}
               onClick={() => setConfirm(true)}
             >
-              Cobrar
+              {noConsumption ? 'Encerrar sem consumo' : 'Cobrar'}
             </Button>
           </Box>
         </Paper>
       )}
 
       <Dialog open={confirm} onClose={() => setConfirm(false)}>
-        <DialogTitle>Confirmar pagamento?</DialogTitle>
+        <DialogTitle>{noConsumption ? 'Encerrar sem consumo?' : 'Confirmar pagamento?'}</DialogTitle>
         <DialogContent>
           <Typography>
-            Mesa {selectedMesa}: {formatBRL(selectedDue)} em {methodName}.
+            {noConsumption
+              ? `Mesa ${selectedMesa}: nada a cobrar. A comanda será encerrada sem forma de pagamento.`
+              : `Mesa ${selectedMesa}: ${formatBRL(selectedDue)} em ${methodName}.`}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>

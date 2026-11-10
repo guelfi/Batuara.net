@@ -19,7 +19,7 @@ const EVENT_LABEL: Record<string, string> = { Draft: 'Rascunho', Open: 'Aberto',
 const PAY_LABEL: Record<string, string> = {
   Cash: 'Dinheiro', Pix: 'Pix', CreditCard: 'Cartão de crédito', DebitCard: 'Cartão de débito', Card: 'Cartão',
 };
-const payLabel = (m?: string | null) => (m ? PAY_LABEL[m] ?? m : '-');
+const payLabel = (m?: string | null, noConsumption = false) => (m ? PAY_LABEL[m] ?? m : noConsumption ? 'Sem consumo' : '-');
 const mesaKey = (t: BingoTab) => String(t.mesa);
 const byMesa = (a: BingoTab, b: BingoTab) => mesaKey(a).localeCompare(mesaKey(b), 'pt-BR', { numeric: true });
 
@@ -136,7 +136,7 @@ const ClosingReport: React.FC<Props> = ({ event, summary, tabs, onDone }) => {
         <tbody>
           {paid.map((t) => (
             <tr key={t.tabId}>
-              <td>{t.mesa}</td><td>{t.customerName}</td><td>{payLabel(t.paymentMethod)}</td>
+              <td>{t.mesa}</td><td>{t.customerName}</td><td>{payLabel(t.paymentMethod, t.total === 0)}</td>
               <td>{t.paidByName || 'Não informado'}</td><td className="r">{money(t.amountDue)}</td>
             </tr>
           ))}
