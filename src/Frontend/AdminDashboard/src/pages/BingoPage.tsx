@@ -2664,10 +2664,25 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
     }
   };
 
+  const [photoLink, setPhotoLink] = useState('');
+  const fetchPhotoLink = async () => {
+    const r = await apiService.get<any>('/comanda-foto/token');
+    return `https://www.batuara.org.br/comanda-foto?t=${r.data?.data?.token ?? r.data?.token}`;
+  };
+
+  const copyPhotoLink = async () => {
+    try {
+      const link = await fetchPhotoLink();
+      setPhotoLink(link);
+      try { await navigator.clipboard.writeText(link); notify('Link copiado.', 'success'); } catch { /* o link fica visível na tela */ }
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível gerar o link.'), 'error');
+    }
+  };
+
   const sendPhotoLinkWhatsApp = async () => {
     try {
-      const r = await apiService.get<any>('/comanda-foto/token');
-      const link = `https://www.batuara.org.br/comanda-foto?t=${r.data?.data?.token ?? r.data?.token}`;
+      const link = await fetchPhotoLink();
       const message = `*Fechamento de Comanda por Foto*\n\nLink para fechar comandas fotografando:\n${link}\n\nBasta abrir no celular e fotografar cada comanda de papel.`;
       window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
       notify('Abrindo WhatsApp...', 'success');
@@ -2675,6 +2690,16 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
       notify(apiError(e, 'Não foi possível gerar o link.'), 'error');
     }
   };
+
+  const linkButtons = (
+    <Stack direction="row" spacing={1} sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+      <Button size="small" variant="outlined" onClick={copyPhotoLink}>Copiar link</Button>
+      <Button size="small" variant="contained" color="success" onClick={sendPhotoLinkWhatsApp}>Enviar link WhatsApp</Button>
+    </Stack>
+  );
+  const linkPreview = photoLink && (
+    <Alert severity="info"><Typography variant="body2" sx={{ wordBreak: 'break-all' }}>{photoLink}</Typography></Alert>
+  );
 
   if (!current) {
     return <Alert severity="info">Não há evento atual. Abra um evento na aba Eventos.</Alert>;
@@ -2686,9 +2711,13 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
 
   if (!report || report.count === 0) {
     return (
-      <Alert severity="info">
-        Nenhuma comanda fotografada neste evento. As comandas de papel fotografadas aparecerão aqui.
-      </Alert>
+      <Stack spacing={1.5}>
+        <Stack direction="row" justifyContent={isMobile ? 'center' : 'flex-start'}>{linkButtons}</Stack>
+        {linkPreview}
+        <Alert severity="info">
+          Nenhuma comanda fotografada neste evento. As comandas de papel fotografadas aparecerão aqui.
+        </Alert>
+      </Stack>
     );
   }
 
@@ -2702,9 +2731,7 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
           <Typography variant="h6" fontWeight={700}>
             Comandas Fotografadas — {report.eventName}
           </Typography>
-          <Button variant="contained" color="success" onClick={sendPhotoLinkWhatsApp} sx={{ minHeight: 40 }}>
-            Enviar link por WhatsApp
-          </Button>
+          <Stack direction="row" justifyContent="center">{linkButtons}</Stack>
         </Stack>
         <Stack direction="column" spacing={0.5} alignItems="baseline">
           <Typography variant="body1">
@@ -2725,12 +2752,11 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
             <Typography variant="body1"><strong>{report.count}</strong> comandas</Typography>
             <Typography variant="h6" fontWeight={800} color="primary">Total: {money(report.grandTotal)}</Typography>
           </Stack>
-          <Button variant="contained" color="success" onClick={sendPhotoLinkWhatsApp} sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
-            Enviar link por WhatsApp
-          </Button>
+          {linkButtons}
         </Stack>
       </Paper>
       )}
+      {linkPreview}
 
       {isMobile ? (
         <Stack spacing={1.5}>
