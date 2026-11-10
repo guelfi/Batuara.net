@@ -274,7 +274,7 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 ### Handoff — 2026-11-09 (noite: revisão de UI do Admin desktop e Resumo mobile)
 
 - **Agente/dev:** Claude Code (Sonnet 5.5). A sessão continua no Codex.
-- **Branch:** `master`. Commits da revisão de UI: `9759799` (revisão completa, **deploy ok**), `ee91b3d` (linhas das Comandas Foto), `5f8d79a` (Cardápio e Formas de pagamento compactos e sem paginação), `96dd50d` (título "Evento:"). Também enviados: `f92c2a5` (botões do link em Comandas Foto) e `0b9d4f6` (comanda sem consumo). **Todos com CI/CD verdes e health 200** (último: `e5cfa55`, pagamento dividido, com a migração `AddBingoSplitPayments` aplicada; o 1º CI falhou só no Docker Build por falha de rede ao baixar pacotes e passou na reexecução). **Pesquisa em aberto (sem implementação):** cobrança pelo celular — Pix via API de Pedidos do PagBank (QR + webhook) e cartão via PlugPag (app nativo + Bluetooth) ou SDK Smart; aguardando do usuário o modelo da maquininha, a conta PagBank (CNPJ) e se vale só para o Batuara ou também para o ComandaFácil.
+- **Branch:** `master`. Commits da revisão de UI: `9759799` (revisão completa, **deploy ok**), `ee91b3d` (linhas das Comandas Foto), `5f8d79a` (Cardápio e Formas de pagamento compactos e sem paginação), `96dd50d` (título "Evento:"). Também enviados: `f92c2a5` (botões do link em Comandas Foto) e `0b9d4f6` (comanda sem consumo). **Todos com CI/CD verdes e health 200** (último: `e5cfa55`, pagamento dividido, com a migração `AddBingoSplitPayments` aplicada; o 1º CI falhou só no Docker Build por falha de rede ao baixar pacotes e passou na reexecução). **Pesquisa em aberto (sem implementação):** cobrança pelo celular — Pix via API de Pedidos do PagBank (QR + webhook) e cartão via PlugPag (app nativo + Bluetooth) ou SDK Smart; respostas do usuário em 10/11: a conta PagBank do Batuara recebe Pix, débito e crédito; vale para Batuara **e** ComandaFácil; modelo da maquininha a confirmar com o Douglas; CNPJ será passado depois; o usuário tem maquininha e conta PagSeguro/PagBank pessoais a reativar para testes com o celular dele. Operadoras a comparar além do PagBank: Mercado Pago/Livre (Point, Tap to Pay), Stone, PicPay e InfinitePay (todas oferecem "celular como maquininha"). Ver bloco **Cobrança pelo celular — pesquisa com operadoras** logo abaixo.
 - **Itens movidos para `done`:** (só `BingoPage.tsx`, desktop, salvo onde indicado)
   - Eventos: um evento por linha, botões na mesma linha, sem largura mínima, tabela rola na horizontal abaixo de ~1100 px.
   - Painel ao vivo: informativos em caixinhas + caixa "Filtrar comandas" + "Pedir fechamento geral" + suspender/encerrar na 1ª linha.
@@ -293,6 +293,13 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 - **Não commitado / cuidado:** nada pendente neste repositório. O produto derivado está em `/home/guelfi/Projetos/ComandaFacil` (PRD próprio, já na v1.3 sem referências ao Batuara; `HANDOFF.md` mantido por lá). Esperar o deploy terminar antes de novo push.
 - **Próximo item sugerido:** receber os prints do usuário com os ajustes finos (Painel ao vivo na 1ª linha em notebook, altura da coluna "Por item", botões de Eventos em janela estreita). Depois: validar o OCR da forma de pagamento com foto real; RF-M6 (QR de todas as mesas no Admin); unificar o fluxo comanda-foto duplicado.
 - **Bloqueios novos:** nenhum.
+
+### Cobrança pelo celular — pesquisa com operadoras (10/11/2026, **nada implementado**)
+
+- **Objetivo:** depois de escolher a forma, gerar a cobrança no celular: Pix com QR Code e confirmação real do banco; débito/crédito na maquininha ou no próprio celular. Vale para Batuara e ComandaFácil. Pagamento dividido (várias formas) casa com um Pix por parcela.
+- **Pix (caminho mais simples, funciona em web):** PagBank API de Pedidos (QR Code com expiração, um QR por pedido, webhook de confirmação; exige chave Pix ativa; evitar `arrangements: PAGBANK`). Alternativas com Pix + webhook: Efí, Asaas, Mercado Pago. Desenho necessário: pedido por parcela, webhook com verificação de assinatura, idempotência, expiração, estorno.
+- **Cartão:** PagBank PlugPag (app nativo Android/iOS fala por Bluetooth com Moderninha Pro/WiFi; sem caminho web direto confirmado) e Moderninha Smart (SDK Android próprio). "Celular como maquininha" (tap to pay) existe em Mercado Pago, Stone, PicPay e InfinitePay; precisa avaliar API/SDK aberto e se há integração com sistema próprio (muitos só funcionam no app deles, sem retorno ao sistema).
+- **Próximos passos propostos (aguardam aprovação):** (1) Pix com PagBank em sandbox + webhook; (2) testar com a conta PagSeguro do usuário reativada; (3) cartão: confirmar modelo da maquininha e comparar SDKs das outras operadoras; (4) desenho técnico único para Batuara e ComandaFácil. Nenhuma credencial de operadora foi pedida ou gravada.
 
 ### Handoff — 2026-11-09 (Comanda digital + comanda de papel)
 
@@ -331,6 +338,10 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 ---
 
 ## 7. Changelog deste plano
+
+### 2026-11-10 (seleção de formas de pagamento por caixas)
+
+- `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
 
 ### 2026-11-09 (noite: revisão de UI do Admin desktop e Resumo mobile)
 
