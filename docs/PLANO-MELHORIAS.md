@@ -339,6 +339,10 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 ## 7. Changelog deste plano
 
+### 2026-11-10 (Bingos como aba de Agenda e Eventos)
+
+- O item **Bingo** saiu do menu lateral. `/agenda` ganhou as abas **Bingos** (`?aba=bingos`, a `BingoPage`) e **Bazares** (`?aba=bazares`, só um aviso "em breve"). `/bingo` redireciona para `/agenda?aba=bingos`. Nas duas abas o menu lateral recolhe sozinho e volta ao sair (`AdminLayout`), e o conteúdo usa a largura toda. No celular as abas rolam na horizontal. O garçom (`/bingo-garcom`) não muda. O teste preexistente `EventsPage.mobile.test.tsx` falha com `TextEncoder is not defined` (já falhava antes).
+
 ### 2026-11-10 (itens novos da comanda entram no cardápio; QR da Comanda Foto)
 
 - Botão **QR Code** em Comandas Foto (Admin): abre o QR do link `comanda-foto?t=<token>` (o token é global e a tela grava no evento aberto).

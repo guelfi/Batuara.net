@@ -20,7 +20,6 @@ import SpiritualContentPage from './pages/SpiritualContentPage';
 import ProfilePage from './pages/UnifiedProfilePage';
 import ContactMessagesPage from './pages/ContactMessagesPage';
 import UsersPage from './pages/UsersPage';
-import BingoPage from './pages/BingoPage';
 import BingoWaiterPage from './pages/BingoWaiterPage';
 import BingoExitPage from './pages/BingoExitPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
@@ -81,7 +80,7 @@ function App() {
                         <Route path="/location" element={<ProtectedRoute requiredRole={UserRole.Editor}><LocationPage /></ProtectedRoute>} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/users" element={<ProtectedRoute requiredRole={UserRole.Admin}><UsersPage /></ProtectedRoute>} />
-                        <Route path="/bingo" element={<ProtectedRoute requiredRole={UserRole.Admin}><BingoPage /></ProtectedRoute>} />
+                        <Route path="/bingo" element={<Navigate to="/agenda?aba=bingos" replace />} />
                         <Route path="/bingo-garcom" element={<ProtectedRoute requiredRole={UserRole.Member}><BingoWaiterPage /></ProtectedRoute>} />
                         <Route path="/bingo-saida/:tabId" element={<ProtectedRoute requiredRole={UserRole.Member}><BingoExitPage /></ProtectedRoute>} />
                         <Route path="/member-profile" element={<Navigate to="/profile" replace />} />

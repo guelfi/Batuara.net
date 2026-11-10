@@ -26,7 +26,6 @@ import {
   People as PeopleIcon,
   AccountCircle as ProfileIcon,
   LocationOn as LocationIcon,
-  Casino as BingoIcon,
   DeliveryDining as WaiterIcon,
   Favorite as FavoriteIcon,
   MenuBook as HistoryIcon,
@@ -130,7 +129,6 @@ const navigationItems: NavigationItem[] = [
   { text: 'Filhos da Casa', icon: <PeopleIcon />, path: '/members', requiredRole: UserRole.Admin },
   { text: 'Doações e Contato', icon: <DonationIcon />, path: '/donations-contact', requiredRole: UserRole.Admin },
   { text: 'Contato e Mensagens', icon: <MessagesIcon />, path: '/contact-messages', requiredRole: UserRole.Admin },
-  { text: 'Bingo', icon: <BingoIcon />, path: '/bingo', requiredRole: UserRole.Admin },
   { text: 'Localização', icon: <LocationIcon />, path: '/location', requiredRole: UserRole.Editor },
   { text: 'Usuários', icon: <UsersIcon />, path: '/users', requiredRole: UserRole.Admin },
   {
@@ -181,8 +179,9 @@ const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
   const firstNavItemRef = useRef<HTMLDivElement | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
 
-  // Telas largas como o Bingo recolhem o menu lateral ao entrar e o restauram ao sair.
-  const inBingoPage = location.pathname === '/bingo' || location.pathname.startsWith('/bingo/');
+  // Abas largas (Bingos e Bazares, em Agenda e Eventos) recolhem o menu lateral ao entrar e o restauram ao sair.
+  const aba = new URLSearchParams(location.search).get('aba');
+  const inBingoPage = location.pathname === '/agenda' && (aba === 'bingos' || aba === 'bazares');
   const autoCollapsedRef = useRef(false);
   useEffect(() => {
     if (inBingoPage) {
