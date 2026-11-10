@@ -50,6 +50,7 @@ import {
   Close as CloseIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  CheckCircleOutline as CheckCircleOutlineIcon,
   ExpandMore as ExpandMoreIcon,
   PhotoCamera as PhotoCameraIcon,
   Print as PrintIcon,
@@ -948,6 +949,10 @@ const LivePanel: React.FC<{
 };
 
 /* ---------- Cardápio ---------- */
+/** Item criado sozinho a partir de uma comanda de papel: o nome vem com "(confirmar)" até o Admin revisar. */
+const CONFIRM_RE = /\s*\(confirmar\)\s*$/i;
+const needsConfirm = (name: string) => CONFIRM_RE.test(name);
+
 const MenuTab: React.FC<{
   notify: Notify;
   confirm: (s: ConfirmState) => void;
@@ -984,6 +989,14 @@ const MenuTab: React.FC<{
     notify('Item salvo.', 'success');
     setItems((prev) => prev.map((i) => (i.id === next.id ? next : i)));
     return next;
+  };
+
+  const confirmItem = async (item: BingoMenuItem) => {
+    try {
+      await processRowUpdate({ ...item, name: item.name.replace(CONFIRM_RE, '') }, item);
+    } catch (e: any) {
+      notify(e?.message || apiError(e, 'Não foi possível confirmar o item.'), 'error');
+    }
   };
 
   const toggle = async (item: BingoMenuItem, value: boolean) => {
@@ -1056,9 +1069,16 @@ const MenuTab: React.FC<{
       ),
     },
     {
-      field: 'actions', headerName: 'Ações', width: 120, sortable: false, filterable: false, align: 'center', headerAlign: 'center',
+      field: 'actions', headerName: 'Ações', width: 160, sortable: false, filterable: false, align: 'center', headerAlign: 'center',
       renderCell: (params) => (
         <>
+          {needsConfirm(params.row.name) && (
+            <Tooltip title="Confirmar item (tira a marca)">
+              <IconButton color="success" size="small" aria-label="Confirmar item" onClick={() => confirmItem(params.row)}>
+                <CheckCircleOutlineIcon />
+              </IconButton>
+            </Tooltip>
+          )}
           <Tooltip title="Editar item">
             <IconButton color="primary" size="small" aria-label="Editar item" onClick={() => setEditing({ ...params.row })}>
               <EditIcon />
@@ -1110,6 +1130,7 @@ const MenuTab: React.FC<{
             checked: item.isAvailable, onToggle: (c) => toggle(item, c),
             onEdit: () => setEditing({ ...item }),
             onDelete: () => removeItem(item), deleteDisabled: !!item.isUsed,
+            warn: needsConfirm(item.name), onConfirm: needsConfirm(item.name) ? () => confirmItem(item) : undefined,
           }))}
         />
         {editDialog}
@@ -1136,7 +1157,7 @@ const MenuTab: React.FC<{
   return (
     <Stack spacing={1}>
       <Typography variant="body2" color="text.secondary" noWrap sx={{ fontSize: 'clamp(0.68rem, 1.05vw, 0.875rem)' }}>
-        Itens já usados em pedidos ou comandas não podem ser renomeados nem excluídos; marque como indisponível. O preço novo vale só para lançamentos futuros.
+        Itens já usados não podem ser renomeados nem excluídos; marque como indisponível. Em vermelho: criados por uma comanda, aguardando confirmação.
       </Typography>
       <Paper>
         <DataGrid
@@ -1146,6 +1167,8 @@ const MenuTab: React.FC<{
           disableRowSelectionOnClick
           density="compact"
           hideFooter
+          getRowClassName={(p) => (needsConfirm(p.row.name) ? 'row-confirmar' : '')}
+          sx={{ '& .row-confirmar': { bgcolor: '#fff8d6', color: 'error.main', '&:hover': { bgcolor: '#fff3b8' } } }}
           localeText={{ noRowsLabel: 'Nenhum item no cardápio.' }}
         />
       </Paper>

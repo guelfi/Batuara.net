@@ -1698,6 +1698,36 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public async Task ComandaFoto_Should_Add_Unknown_Item_To_Menu_With_Confirm_Mark_Without_Duplicates()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), new FakeConfig(), Options.Create(new ComandaFotoOptions()));
+
+            var first = await svc.SaveAsync(new ComandaFotoSaveRequest
+            {
+                PaymentMethodId = f.CashId,
+                ComandaNumber = "1",
+                Items = new() { new() { Name = "Batida", Quantity = 2, UnitPrice = 15 } }
+            }, CancellationToken.None);
+            first.AddedToMenu.Should().ContainSingle(a => a.Name == "Batida");
+            first.Items.Single().Name.Should().Be("Batida"); // a comanda nao leva a marca
+
+            // mesmo nome (ou parecido) nao cria de novo, nem com a marca "(confirmar)" no cardapio
+            var second = await svc.SaveAsync(new ComandaFotoSaveRequest
+            {
+                PaymentMethodId = f.CashId,
+                ComandaNumber = "2",
+                Items = new() { new() { Name = "batida", Quantity = 1, UnitPrice = 15 }, new() { Name = "Batidaa", Quantity = 1, UnitPrice = 15 } }
+            }, CancellationToken.None);
+            second.AddedToMenu.Should().BeNull();
+            second.Items.First().Name.Should().Be("Batida");
+            second.Items.First().Matched.Should().BeTrue();
+            second.Items.Last().Matched.Should().BeFalse(); // parecido: o usuario decide
+            f.Db.BingoMenuItems.Count(m => m.Name.StartsWith("Batida")).Should().Be(1);
+        }
+
+        [Fact]
         public async Task Pay_Should_Split_Among_Methods_And_Require_The_Sum_To_Match()
         {
             var f = new Fixture();
@@ -2152,7 +2182,10 @@ namespace Batuara.Infrastructure.Tests.Bingo
             }, CancellationToken.None);
 
             saved.Total.Should().Be(13m);
-            saved.Items.Single(i => i.Name == "Item novo").Matched.Should().BeFalse();
+            // item fora do cardapio com valor entra no cardapio do evento marcado "(confirmar)"
+            saved.Items.Single(i => i.Name == "Item novo").Matched.Should().BeTrue();
+            saved.AddedToMenu.Should().ContainSingle(a => a.Name == "Item novo" && a.UnitPrice == 3m);
+            f.Db.BingoMenuItems.Should().Contain(m => m.Name == "Item novo (confirmar)" && m.UnitPrice == 3m);
             (await svc.GetPhotoAsync(saved.Id, CancellationToken.None)).Should().BeNull();
 
             // forma de pagamento desconhecida: guarda sem forma e o resumo mostra "Não identificado"
@@ -2190,17 +2223,18 @@ namespace Batuara.Infrastructure.Tests.Bingo
                 Items = new()
                 {
                     new() { Name = "  agua ", Quantity = 2, UnitPrice = 5 },
-                    new() { Name = "Batidas", Quantity = 1, UnitPrice = 10 }
+                    new() { Name = "Batidas", Quantity = 1, UnitPrice = 0 }
                 }
             }, CancellationToken.None);
 
             saved.Items.Single(i => i.Quantity == 2).Name.Should().Be("Água");
             saved.Items.Single(i => i.Quantity == 2).Matched.Should().BeTrue();
+            // sem valor nao ha o que cadastrar: continua fora do cardapio
             saved.Items.Single(i => i.Name == "Batidas").Matched.Should().BeFalse();
 
             var summary = await f.Admin.GetEventSummaryAsync(eventId, CancellationToken.None);
             summary.PhotoCount.Should().Be(1);
-            summary.PhotoTotal.Should().Be(20m);
+            summary.PhotoTotal.Should().Be(10m);
             summary.PhotoUnmatched.Should().Be(1);
             summary.GrandTotal.Should().Be(summary.TotalSold); // total pago ja inclui as comandas por foto
             summary.ByItem.Should().Contain(i => i.Name == "Água" && i.Quantity == 2);

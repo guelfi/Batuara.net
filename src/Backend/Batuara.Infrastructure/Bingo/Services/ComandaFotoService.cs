@@ -228,11 +228,30 @@ namespace Batuara.Infrastructure.Bingo.Services
             var ev = await FindOpenEventAsync(ct)
                 ?? throw new BingoException(BingoErrorKind.Validation, "Não há evento aberto.");
             // Valida os itens contra o cardapio do evento: nome canonico quando reconhecido, senao matched=false.
-            var menuNames = await Db.BingoMenuItems
-                .Where(x => x.EventId == ev.Id && x.IsActive)
-                .Select(x => x.Name)
-                .ToListAsync(ct);
-            ValidateAgainstMenu(items, menuNames);
+            var menuItems = await Db.BingoMenuItems.Where(x => x.EventId == ev.Id && x.IsActive).ToListAsync(ct);
+            ValidateAgainstMenu(items, menuItems.Select(m => m.Name));
+            // Item novo (com valor) entra no cardapio do evento; nome parecido com um existente fica para o usuario decidir.
+            var added = new List<ComandaFotoItem>();
+            var nextSort = menuItems.Count == 0 ? 1 : menuItems.Max(m => m.SortOrder) + 1;
+            foreach (var item in items.Where(i => !i.Matched && i.UnitPrice > 0 && i.Name.Length <= 150))
+            {
+                var key = Normalize(item.Name);
+                var known = menuItems.Select(m => StripConfirm(m.Name));
+                if (known.Any(n => IsSimilarName(Normalize(n), key)))
+                {
+                    continue;
+                }
+
+                // "(confirmar)": o Admin revisa o nome e o valor no Cardapio e tira a marca
+                var created = new BingoMenuItem(ev.Id, item.Name + ConfirmSuffix, item.UnitPrice, true, nextSort++);
+                Db.BingoMenuItems.Add(created);
+                menuItems.Add(created);
+                added.Add(new ComandaFotoItem { Name = item.Name, Quantity = 1, UnitPrice = created.UnitPrice, Matched = true });
+                item.Matched = true;
+            }
+
+            // itens repetidos na mesma comanda com o nome ja criado acima tambem passam a reconhecidos
+            ValidateAgainstMenu(items, menuItems.Select(m => m.Name));
 
             var total = SumTotal(items);
             var number = NormalizeNumber(request.ComandaNumber);
@@ -267,7 +286,9 @@ namespace Batuara.Infrastructure.Bingo.Services
                 JsonSerializer.Serialize(items, Json), total, photo, number, methodName, paymentsJson);
             Db.BingoPhotoTabs.Add(entity);
             await Db.SaveChangesAsync(ct);
-            return ToDto(entity);
+            var dto = ToDto(entity);
+            dto.AddedToMenu = added.Count > 0 ? added : null;
+            return dto;
         }
 
         public async Task<List<BingoMenuItemDto>> GetMenuAsync(CancellationToken ct)
@@ -381,7 +402,8 @@ namespace Batuara.Infrastructure.Bingo.Services
 
         private static void ValidateAgainstMenu(IEnumerable<ComandaFotoItem> items, IEnumerable<string> menuNames)
         {
-            var byKey = menuNames.GroupBy(Normalize).ToDictionary(g => g.Key, g => g.First());
+            // o nome gravado na comanda nunca leva a marca "(confirmar)": o relatorio por item nao se parte quando o Admin confirma
+            var byKey = menuNames.Select(StripConfirm).GroupBy(Normalize).ToDictionary(g => g.Key, g => g.First());
             foreach (var item in items)
             {
                 if (byKey.TryGetValue(Normalize(item.Name), out var canonical))
@@ -414,7 +436,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 ?? throw new BingoException(BingoErrorKind.Validation, "Não há evento aberto.");
             var existing = await Db.BingoMenuItems.Where(x => x.EventId == ev.Id && x.IsActive).ToListAsync(ct);
             var key = Normalize(name);
-            var found = existing.FirstOrDefault(m => Normalize(m.Name) == key);
+            var found = existing.FirstOrDefault(m => Normalize(StripConfirm(m.Name)) == key);
             if (found == null)
             {
                 found = new BingoMenuItem(ev.Id, name, request.UnitPrice, true, (existing.Count == 0 ? 0 : existing.Max(m => m.SortOrder)) + 1);
@@ -422,7 +444,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 await Db.SaveChangesAsync(ct);
             }
 
-            return new ComandaFotoItem { Name = found.Name, Quantity = 1, UnitPrice = request.UnitPrice, Matched = true };
+            return new ComandaFotoItem { Name = StripConfirm(found.Name), Quantity = 1, UnitPrice = request.UnitPrice, Matched = true };
         }
 
         private static string? NormalizeNumber(string? raw)
@@ -455,6 +477,42 @@ namespace Batuara.Infrastructure.Bingo.Services
         }
 
         private static string Normalize(string value) => NormalizeName(value);
+
+        /// <summary>Marca no nome do item criado sozinho a partir de uma comanda, ate o Admin confirmar.</summary>
+        public const string ConfirmSuffix = " (confirmar)";
+
+        internal static string StripConfirm(string name)
+            => System.Text.RegularExpressions.Regex.Replace(name, @"\s*\(confirmar\)\s*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+
+        /// <summary>Nomes iguais ou a uma letra (ou duas, em nomes longos) de distancia: provavel erro de leitura.</summary>
+        internal static bool IsSimilarName(string a, string b)
+        {
+            if (a == b)
+            {
+                return true;
+            }
+
+            var max = Math.Max(a.Length, b.Length) >= 10 ? 2 : 1;
+            if (Math.Abs(a.Length - b.Length) > max)
+            {
+                return false;
+            }
+
+            var prev = Enumerable.Range(0, b.Length + 1).ToArray();
+            for (var i = 1; i <= a.Length; i++)
+            {
+                var cur = new int[b.Length + 1];
+                cur[0] = i;
+                for (var j = 1; j <= b.Length; j++)
+                {
+                    cur[j] = Math.Min(Math.Min(cur[j - 1] + 1, prev[j] + 1), prev[j - 1] + (a[i - 1] == b[j - 1] ? 0 : 1));
+                }
+
+                prev = cur;
+            }
+
+            return prev[b.Length] <= max;
+        }
 
         /// <summary>
         /// Liga o texto lido na comanda a uma forma de pagamento cadastrada (sem acento/caixa; aceita variações

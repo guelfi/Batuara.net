@@ -170,6 +170,13 @@ const ComandaFotoPage: React.FC = () => {
     }
   };
 
+  const [addedNotice, setAddedNotice] = useState<string | null>(null);
+  const noticeAdded = (added?: { name: string; unitPrice: number }[]) => {
+    if (added && added.length > 0) {
+      setAddedNotice(`Entrou no cardápio (confirmar no Admin): ${added.map((a) => `${a.name} (${brl(a.unitPrice)})`).join(', ')}`);
+    }
+  };
+
   const resetAll = () => {
     setPhoto(null);
     setItems([]);
@@ -207,8 +214,9 @@ const ComandaFotoPage: React.FC = () => {
     setBusy('Fechando comanda...');
     setError(null);
     try {
-      await http.post('/comanda-foto', { comandaNumber: comanda.trim(), ...payBody(lines), items: items.filter((i) => i.quantity > 0), label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), imageBase64: photo });
+      const r = await http.post('/comanda-foto', { comandaNumber: comanda.trim(), ...payBody(lines), items: items.filter((i) => i.quantity > 0), label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), imageBase64: photo });
       resetAll();
+      noticeAdded(r.data?.data?.addedToMenu);
     } catch (e) {
       setError(errMsg(e));
     } finally {
@@ -218,6 +226,11 @@ const ComandaFotoPage: React.FC = () => {
 
   return (
     <Container maxWidth="sm" sx={{ py: 2 }}>
+      <Snackbar open={!!addedNotice} autoHideDuration={9000} onClose={() => setAddedNotice(null)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ top: { xs: 16 } }}>
+        <Alert severity="info" variant="filled" onClose={() => setAddedNotice(null)} sx={{ width: '100%', boxShadow: 6 }}>
+          {addedNotice}
+        </Alert>
+      </Snackbar>
       <Typography variant="h5" fontWeight={700}>
         Fechamento Comanda{build && ` - ${build}`}
       </Typography>
@@ -301,7 +314,7 @@ const ComandaFotoPage: React.FC = () => {
           </Stack>
         </Paper>
       ) : manual ? (
-        <ComandaManual http={http} payMethods={payMethods} photo={photo} errMsg={errMsg} onBack={resetAll} onSaved={resetAll} />
+        <ComandaManual http={http} payMethods={payMethods} photo={photo} errMsg={errMsg} onBack={resetAll} onSaved={(a) => { resetAll(); noticeAdded(a); }} />
       ) : photo ? (
         <Paper sx={{ p: 2, mb: 2 }}>
           <Snackbar open={!!dup && comanda.trim() === dupFor.trim()} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ top: { xs: 16 } }}>

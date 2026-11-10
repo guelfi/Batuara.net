@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Pagination, Paper, Stack, Switch, TextField, Typography } from '@mui/material';
-import { Delete as DeleteIcon, Edit as EditIcon, MoreVert as MoreVertIcon } from '@mui/icons-material';
+import { CheckCircleOutline as ConfirmIcon, Delete as DeleteIcon, Edit as EditIcon, MoreVert as MoreVertIcon } from '@mui/icons-material';
 
 export interface CompactRow {
   id: string;
@@ -13,6 +13,9 @@ export interface CompactRow {
   onEdit: () => void;
   onDelete?: () => void;
   deleteDisabled?: boolean;
+  /** Item a revisar: texto vermelho e fundo amarelado; "Confirmar" aparece no menu. */
+  warn?: boolean;
+  onConfirm?: () => void;
 }
 
 const PAGE_SIZE = 10;
@@ -43,10 +46,11 @@ const CompactRowList: React.FC<{ rows: CompactRow[]; emptyText: string }> = ({ r
           <Box key={r.id} sx={{
             display: 'grid', gridTemplateColumns: '22px minmax(0,1fr) auto auto 36px', columnGap: 0.75, alignItems: 'center',
             px: 1, py: 0.5, minHeight: 48, borderTop: i === 0 ? 0 : 1, borderColor: 'divider',
+            ...(r.warn ? { bgcolor: '#fff8d6', color: 'error.main' } : {}),
           }}>
             <Typography variant="caption" color="text.secondary">{r.order}</Typography>
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="body2" sx={{ fontWeight: 600, wordBreak: 'break-word', lineHeight: 1.25 }}>{r.name}</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 600, wordBreak: 'break-word', lineHeight: 1.25, color: r.warn ? 'error.main' : undefined }}>{r.name}</Typography>
               {r.note && <Typography variant="caption" color="text.secondary">{r.note}</Typography>}
             </Box>
             <Typography variant="body2" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{r.trailing ?? ''}</Typography>
@@ -62,6 +66,12 @@ const CompactRowList: React.FC<{ rows: CompactRow[]; emptyText: string }> = ({ r
         <Pagination count={pages} page={page} onChange={(_, p) => setPage(p)} size="small" sx={{ alignSelf: 'center' }} />
       )}
       <Menu anchorEl={menu?.el} open={!!menu} onClose={() => setMenu(null)}>
+        {menu?.row.onConfirm && (
+          <MenuItem onClick={() => { const r = menu.row; setMenu(null); r.onConfirm!(); }}>
+            <ListItemIcon><ConfirmIcon fontSize="small" color="success" /></ListItemIcon>
+            <ListItemText>Confirmar</ListItemText>
+          </MenuItem>
+        )}
         <MenuItem onClick={() => { const r = menu!.row; setMenu(null); r.onEdit(); }}>
           <ListItemIcon><EditIcon fontSize="small" /></ListItemIcon>
           <ListItemText>Editar</ListItemText>

@@ -157,6 +157,13 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
     }
   };
 
+  const [addedNotice, setAddedNotice] = useState<string | null>(null);
+  const noticeAdded = (added?: { name: string; unitPrice: number }[]) => {
+    if (added && added.length > 0) {
+      setAddedNotice(`Entrou no cardápio (confirmar no Admin): ${added.map((a) => `${a.name} (${brl(a.unitPrice)})`).join(', ')}`);
+    }
+  };
+
   const resetAll = () => {
     setPhoto(null);
     setItems([]);
@@ -194,8 +201,9 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
     setBusy('Fechando comanda...');
     setError(null);
     try {
-      await http.post('/comanda-foto', { comandaNumber: comanda.trim(), ...payBody(lines), items: items.filter((i) => i.quantity > 0), label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), imageBase64: photo });
+      const r = await http.post('/comanda-foto', { comandaNumber: comanda.trim(), ...payBody(lines), items: items.filter((i) => i.quantity > 0), label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60), imageBase64: photo });
       resetAll();
+      noticeAdded(r.data?.data?.addedToMenu);
     } catch (e) {
       setError(errMsg(e));
     } finally {
@@ -205,6 +213,11 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
 
   return (
     <Box>
+      <Snackbar open={!!addedNotice} autoHideDuration={9000} onClose={() => setAddedNotice(null)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ top: { xs: 16 } }}>
+        <Alert severity="info" variant="filled" onClose={() => setAddedNotice(null)} sx={{ width: '100%', boxShadow: 6 }}>
+          {addedNotice}
+        </Alert>
+      </Snackbar>
       <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 2, fontSize: 'clamp(0.6rem, 2.9vw, 0.78rem)' }}>
         {[eventName, eventDate && !eventName.includes(eventDate) ? eventDate : '', 'Fotografar comanda para Fechar Conta']
           .filter(Boolean)
@@ -285,7 +298,7 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
           </Stack>
         </Paper>
       ) : manual ? (
-        <ComandaManual http={http} payMethods={payMethods} photo={photo} errMsg={errMsg} onBack={resetAll} onSaved={resetAll} />
+        <ComandaManual http={http} payMethods={payMethods} photo={photo} errMsg={errMsg} onBack={resetAll} onSaved={(a) => { resetAll(); noticeAdded(a); }} />
       ) : photo ? (
         <Paper sx={{ p: 2, mb: 2 }}>
           <Snackbar open={!!dup && comanda.trim() === dupFor.trim()} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ top: { xs: 16 } }}>

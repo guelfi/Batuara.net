@@ -44,7 +44,7 @@ interface Props {
   photo: string | null;
   errMsg: (e: unknown) => string;
   onBack: () => void;
-  onSaved: () => void;
+  onSaved: (added?: { name: string; unitPrice: number }[]) => void;
 }
 
 const PAGE_SIZE = 10;
@@ -138,14 +138,14 @@ const ComandaManual: React.FC<Props> = ({ http, payMethods, photo, errMsg, onBac
       ...extras.filter((e) => e.quantity > 0).map((e) => ({ ...e, matched: false })),
     ];
     try {
-      await http.post('/comanda-foto', {
+      const r = await http.post('/comanda-foto', {
         comandaNumber: comanda.trim(),
         ...payBody(lines),
         items,
         label: [comanda.trim() && `Comanda ${comanda.trim()}`, nome.trim()].filter(Boolean).join(' - ').slice(0, 60),
         imageBase64: photo ?? '',
       });
-      onSaved();
+      onSaved(r.data?.data?.addedToMenu);
     } catch (e) {
       setError(errMsg(e));
       setBusy(null);

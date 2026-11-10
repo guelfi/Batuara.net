@@ -82,6 +82,8 @@ namespace Batuara.Application.Bingo.Models
         public string? CancelledByName { get; set; }
         public DateTime? CancelledAt { get; set; }
         public List<ComandaFotoItem> Items { get; set; } = new();
+        /// <summary>Itens fora do cardápio que entraram nele ao salvar a comanda (nome e valor unitário).</summary>
+        public List<ComandaFotoItem>? AddedToMenu { get; set; }
     }
 
     public class ComandaFotoReport

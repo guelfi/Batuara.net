@@ -339,6 +339,11 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 ## 7. Changelog deste plano
 
+### 2026-11-10 (itens novos da comanda entram no cardápio; QR da Comanda Foto)
+
+- Botão **QR Code** em Comandas Foto (Admin): abre o QR do link `comanda-foto?t=<token>` (o token é global e a tela grava no evento aberto).
+- Ao salvar comanda de papel (foto ou manual), item fora do cardápio com valor > 0 é criado no cardápio do evento aberto com o nome **"<nome> (confirmar)"** (disponível). A comanda guarda o nome sem a marca (`StripConfirm`), então o relatório por item não se parte. Nome igual ou parecido (distância de edição ≤ 1; ≤ 2 em nomes longos) a um item existente não cria: fica "Fora do cardápio" para o usuário decidir. `ComandaFotoDto.AddedToMenu` traz o que foi criado; as 4 telas mostram um aviso. No Admin, Cardápio mostra esses itens em **vermelho com fundo amarelado** até o Admin confirmar (ícone de confirmar tira a marca, ou editar o nome). Limite: depois de confirmado/renomeado, o item fica travado por já estar usado. Sem migração. 95 testes de backend.
+
 ### 2026-11-10 (seleção de formas de pagamento por caixas)
 
 - `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
