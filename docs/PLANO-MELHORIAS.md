@@ -274,7 +274,7 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 ### Handoff — 2026-11-09 (noite: revisão de UI do Admin desktop e Resumo mobile)
 
 - **Agente/dev:** Claude Code (Sonnet 5.5). A sessão continua no Codex.
-- **Branch:** `master`. Commits da revisão de UI: `9759799` (revisão completa, **deploy ok**), `ee91b3d` (linhas das Comandas Foto), `5f8d79a` (Cardápio e Formas de pagamento compactos e sem paginação), `96dd50d` (título "Evento:"). Os três últimos foram enviados ao origin; **o CI/CD deles pode ainda estar rodando**: conferir `gh run list` e `https://www.batuara.org.br/api/health` antes de mexer.
+- **Branch:** `master`. Commits da revisão de UI: `9759799` (revisão completa, **deploy ok**), `ee91b3d` (linhas das Comandas Foto), `5f8d79a` (Cardápio e Formas de pagamento compactos e sem paginação), `96dd50d` (título "Evento:"). Também enviados: `f92c2a5` (botões do link em Comandas Foto) e `0b9d4f6` (comanda sem consumo). **Todos com CI/CD verdes e health 200** (último: `0b9d4f6`).
 - **Itens movidos para `done`:** (só `BingoPage.tsx`, desktop, salvo onde indicado)
   - Eventos: um evento por linha, botões na mesma linha, sem largura mínima, tabela rola na horizontal abaixo de ~1100 px.
   - Painel ao vivo: informativos em caixinhas + caixa "Filtrar comandas" + "Pedir fechamento geral" + suspender/encerrar na 1ª linha.
@@ -283,6 +283,7 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
   - Comandas Foto: cartão de resumo numa linha, linhas baixas (~36 px), coluna "Forma de pagamento", ícone de câmera no lugar de "Ver foto" (sempre ativo; a janela informa "sem foto"), paginação de 10 em 10 (só aqui). Coluna "#" mantida.
   - Título da página: "Evento:" (antes "Bingo" no desktop).
   - **Comanda sem consumo não tem forma de pagamento** (digital e de papel): garçom/Admin veem "Encerrar sem consumo" quando o valor a pagar é R$ 0,00; `PayCoreAsync` aceita `PaymentMethodId` nulo só se nada é devido; comanda de papel sem itens é registrada com total 0 (exige o número) e fica fora de "por forma de pagamento"; listas mostram "Sem consumo". 2 testes novos (92 no total).
+  - **Limite conhecido (diferença para o PRD v1.5 do ComandaFácil):** no piloto, total zero = "Sem consumo"; **não** distingue "cortesia" (itens com preço zero) de ausência de consumo, e a foto sem itens só exige confirmação humana na tela (sem tipo de encerramento gravado). Pendências de entrega continuam bloqueando o encerramento nos dois fluxos.
   - Botões "Copiar link" e "Enviar link WhatsApp" na tela Comandas Foto (também sem comandas).
 - **Telas aprovadas sem mudança:** Novo evento, Mesas, Garçons.
 - **Validações executadas:** `tsc --noEmit` e `eslint` (único aviso preexistente: `OPEN_STATUSES` não usado). CI do `9759799` e CD ok. **Não houve conferência visual local** (app exige login): o usuário valida em produção com Ctrl+Shift+R e manda prints.
