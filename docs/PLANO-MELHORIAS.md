@@ -140,6 +140,7 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 8. **PM-030, PM-033, PM-034, PM-035** — Evolução de produto
 9. **PM-025** — SSH hardening OCI *(fases 1–4 feitas; falta fechar a 22)*
 10. **PM-031** — MFA (TOTP)
+11. **Melhoria futura (produto, sem PM ainda)** — Cobrança pelo celular (Pix com confirmação automática; cartão por "toque para pagar"). Pesquisa e plano em §6.1, bloco *Cobrança pelo celular*. Aguarda aprovação para começar pelo Pix.
 
 ### Encerrados / sem ação
 
@@ -299,7 +300,12 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 - **Objetivo:** depois de escolher a forma, gerar a cobrança no celular: Pix com QR Code e confirmação real do banco; débito/crédito na maquininha ou no próprio celular. Vale para Batuara e ComandaFácil. Pagamento dividido (várias formas) casa com um Pix por parcela.
 - **Pix (caminho mais simples, funciona em web):** PagBank API de Pedidos (QR Code com expiração, um QR por pedido, webhook de confirmação; exige chave Pix ativa; evitar `arrangements: PAGBANK`). Alternativas com Pix + webhook: Efí, Asaas, Mercado Pago. Desenho necessário: pedido por parcela, webhook com verificação de assinatura, idempotência, expiração, estorno.
 - **Cartão:** PagBank PlugPag (app nativo Android/iOS fala por Bluetooth com Moderninha Pro/WiFi; sem caminho web direto confirmado) e Moderninha Smart (SDK Android próprio). "Celular como maquininha" (tap to pay) existe em Mercado Pago, Stone, PicPay e InfinitePay; precisa avaliar API/SDK aberto e se há integração com sistema próprio (muitos só funcionam no app deles, sem retorno ao sistema).
-- **Próximos passos propostos (aguardam aprovação):** (1) Pix com PagBank em sandbox + webhook; (2) testar com a conta PagSeguro do usuário reativada; (3) cartão: confirmar modelo da maquininha e comparar SDKs das outras operadoras; (4) desenho técnico único para Batuara e ComandaFácil. Nenhuma credencial de operadora foi pedida ou gravada.
+- **Pesquisa técnica de 10/11 (toque para pagar / NFC):** o celular lê o cartão pelo NFC e quem processa é o app/SDK certificado da operadora; o nosso sistema só pede a cobrança e recebe o resultado.
+  - **PagBank Tap On** (`developer.pagbank.com.br/docs/tap-on`): Android 11+, NFC ativo, app **PagBank Tap On** instalado e conta PagBank do vendedor; o app de terceiros chama o Tap On por **`Intent`** (`TapOnPaymentData`) e recebe `TransactionResult` em `onActivityResult`; estorno por `TapOnVoidPaymentData`. iOS 17.4+ com framework embarcada e entitlement "Tap to Pay on iPhone". **Exige parceria aprovada** (formulário, avaliação comercial e PLD) e `appKey` de produção; taxas padrão, sem negociação; limites de valor e formas (débito/crédito/Pix) não informados na página. **Web não é suportada:** precisa de app Android nativo de apoio (casca do nosso site) para receber o resultado. PlugPag é só para maquininhas físicas por Bluetooth.
+  - **Mercado Pago:** o Point Tap é produto de lojista; **não achei integração pública para apps de terceiros** (pode ser restrita; confirmar com o suporte). Existe a **API de Orders + Point** (Smart 1/2, Pro 2): o servidor cria o pedido e a maquininha Point o carrega sozinha. Funciona da web, mas exige leitor Point, não o celular.
+  - **Stone, PicPay, InfinitePay:** ainda não pesquisados em detalhe.
+  - **Comparativo:** PagBank Tap On = celular, só com app Android de apoio + parceria; Mercado Pago Point + Orders = leitor físico, web ok; Pix (PagBank ou outro com webhook) = celular do cliente, web ok, sem app nativo.
+- **Próximos passos propostos (aguardam aprovação):** (1) Pix com PagBank em sandbox + webhook (o primeiro a fazer: dá para a web); (1b) o usuário solicita a parceria do Tap On à PagBank com a conta da Casa (a aprovação demora); (2) testar com a conta PagSeguro do usuário reativada; (3) cartão: confirmar modelo da maquininha e comparar SDKs das outras operadoras; (4) desenho técnico único para Batuara e ComandaFácil. Nenhuma credencial de operadora foi pedida ou gravada.
 
 ### Handoff — 2026-11-09 (Comanda digital + comanda de papel)
 
