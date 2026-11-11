@@ -136,6 +136,19 @@ interface ConfirmState {
 }
 
 /* ---------- Confirmação (com palavra obrigatória opcional) ---------- */
+// No celular abre o app do WhatsApp direto (escolhe o contato); se não abrir, cai no wa.me. No computador, wa.me.
+const openWhatsApp = (message: string, mobile: boolean) => {
+  const text = encodeURIComponent(message);
+  if (!mobile) {
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+    return;
+  }
+  window.location.href = `whatsapp://send?text=${text}`;
+  window.setTimeout(() => {
+    if (document.visibilityState === 'visible') window.location.href = `https://wa.me/?text=${text}`;
+  }, 1500);
+};
+
 const ConfirmDialog: React.FC<{ state: ConfirmState | null; onClose: () => void }> = ({ state, onClose }) => {
   const [word, setWord] = useState('');
   const [busy, setBusy] = useState(false);
@@ -1958,7 +1971,7 @@ const SummaryTab: React.FC<{
       const r = await apiService.get<any>('/comanda-foto/token');
       const link = `https://www.batuara.org.br/comanda-foto?t=${r.data?.data?.token ?? r.data?.token}`;
       const message = `*Fechamento de Comanda por Foto*\n\nLink para fechar comandas fotografando:\n${link}\n\nBasta abrir no celular e fotografar cada comanda de papel.`;
-      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+      openWhatsApp(message, isMobile);
     } catch (e: any) {
       notify(apiError(e, 'Não foi possível gerar o link.'), 'error');
     }
@@ -2763,7 +2776,7 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
     try {
       const link = await fetchPhotoLink();
       const message = `*Fechamento de Comanda por Foto*\n\nLink para fechar comandas fotografando:\n${link}\n\nBasta abrir no celular e fotografar cada comanda de papel.`;
-      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+      openWhatsApp(message, isMobile);
       notify('Abrindo WhatsApp...', 'success');
     } catch (e: any) {
       notify(apiError(e, 'Não foi possível gerar o link.'), 'error');
