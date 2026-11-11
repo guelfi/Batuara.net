@@ -9,6 +9,7 @@ const path = require('path');
 const ALLOWLIST = new Set([
   'src/jest-runtime.d.ts', // declaracao de tipos ambiente, nunca importada
   'src/components/member/MemberContributionSection.tsx', // referencia da PM-048 (docs/PLANO-MELHORIAS.md)
+  'src/_shared/comandaFoto/MenuPagedCarousel.tsx', // codigo compartilhado (src/Frontend/shared): so a comanda digital do PublicWebsite usa; no AdminDashboard a copia gerada fica sem import
 ]);
 
 const EXTS = ['.ts', '.tsx', '.js', '.jsx', '.json', '.css'];
