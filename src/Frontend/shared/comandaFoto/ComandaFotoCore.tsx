@@ -207,6 +207,8 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     setReadFailure(null);
     try {
       const b64 = await resizePhoto(file);
+      // foto nova = comanda nova: nada da leitura anterior pode seguir junto, nem se esta leitura falhar
+      clearDraft();
       setPhoto(b64);
       await readPhoto(b64);
     } catch {
@@ -220,6 +222,18 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     }
   };
 
+  /** Limpa tudo o que é da comanda atual, menos a foto. */
+  const clearDraft = () => {
+    setQty({});
+    setExtras([]);
+    setSearch('');
+    setComanda('');
+    setNome('');
+    setDup(null);
+    setDupFor('');
+    setSuggestedPay(null);
+    setPayHints([]);
+  };
   const resetCurrent = () => {
     setPhoto(null);
     setQty({});

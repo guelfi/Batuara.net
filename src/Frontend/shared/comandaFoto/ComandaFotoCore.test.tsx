@@ -85,3 +85,54 @@ test('descartar volta a comanda ao estado inicial', async () => {
   expect(screen.queryByText(/Na comanda/)).not.toBeInTheDocument();
   expect(screen.getByLabelText('Quantidade de Salada')).toHaveTextContent('0');
 });
+
+describe('foto nova com leitura falhando', () => {
+  const realImage = global.Image;
+  const realCreate = URL.createObjectURL;
+  const realRevoke = URL.revokeObjectURL;
+  const realGetContext = HTMLCanvasElement.prototype.getContext;
+  const realToDataURL = HTMLCanvasElement.prototype.toDataURL;
+
+  beforeEach(() => {
+    URL.createObjectURL = jest.fn(() => 'blob:foto');
+    URL.revokeObjectURL = jest.fn();
+    HTMLCanvasElement.prototype.getContext = jest.fn(() => ({ drawImage: jest.fn() })) as any;
+    HTMLCanvasElement.prototype.toDataURL = jest.fn(() => 'data:image/jpeg;base64,AAAA');
+    (global as any).Image = class {
+      width = 100;
+      height = 100;
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_v: string) {
+        setTimeout(() => this.onload?.(), 0);
+      }
+    };
+  });
+
+  afterEach(() => {
+    global.Image = realImage;
+    URL.createObjectURL = realCreate;
+    URL.revokeObjectURL = realRevoke;
+    HTMLCanvasElement.prototype.getContext = realGetContext;
+    HTMLCanvasElement.prototype.toDataURL = realToDataURL;
+  });
+
+  test('não carrega itens, número nem nome da comanda anterior', async () => {
+    await renderCore();
+    fireEvent.click(screen.getByLabelText('Mais Água'));
+    fireEvent.change(screen.getByLabelText(/^Comanda/), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText(/^Nome do cliente/), { target: { value: 'Maria' } });
+
+    mockPost.mockRejectedValueOnce({ response: { status: 400, data: { message: 'Foto ilegível' } } });
+    const file = new File(['x'], 'comanda.jpg', { type: 'image/jpeg' });
+    fireEvent.change(screen.getByTestId('comanda-file'), { target: { files: [file] } });
+
+    fireEvent.click(await screen.findByRole('button', { name: /Digitar sem ler a foto/ }));
+
+    expect(screen.queryByText(/Na comanda/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Quantidade de Água')).toHaveTextContent('0');
+    expect(screen.getByLabelText(/^Comanda/)).toHaveValue('');
+    expect(screen.getByLabelText(/^Nome do cliente/)).toHaveValue('');
+    expect(screen.getByText(/Foto anexada/)).toBeInTheDocument();
+  });
+});
