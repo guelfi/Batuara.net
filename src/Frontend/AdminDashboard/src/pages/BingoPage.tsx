@@ -2781,11 +2781,12 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
     }
   };
 
+  const linkBtnSx = isMobile ? { flex: '1 1 0', minWidth: 0, px: 0.5, fontSize: '0.72rem', whiteSpace: 'nowrap' } : undefined;
   const linkButtons = (
-    <Stack direction="row" spacing={1} useFlexGap flexWrap={isMobile ? 'wrap' : 'nowrap'} justifyContent={isMobile ? 'center' : 'flex-start'} sx={{ flexShrink: isMobile ? 1 : 0, maxWidth: '100%', whiteSpace: 'nowrap' }}>
-      <Button size="small" variant="outlined" onClick={copyPhotoLink}>Copiar link</Button>
-      <Button size="small" variant="contained" color="success" onClick={sendPhotoLinkWhatsApp}>Enviar link WhatsApp</Button>
-      <Button size="small" variant="outlined" onClick={showPhotoQr}>QR Code</Button>
+    <Stack direction="row" spacing={1} useFlexGap flexWrap="nowrap" justifyContent={isMobile ? 'center' : 'flex-start'} sx={{ flexShrink: isMobile ? 1 : 0, width: isMobile ? '100%' : undefined, whiteSpace: 'nowrap' }}>
+      <Button size="small" variant="outlined" onClick={copyPhotoLink} sx={linkBtnSx}>Copiar link</Button>
+      <Button size="small" variant="contained" color="success" onClick={sendPhotoLinkWhatsApp} sx={linkBtnSx}>{isMobile ? 'WhatsApp' : 'Enviar link WhatsApp'}</Button>
+      <Button size="small" variant="outlined" onClick={showPhotoQr} sx={linkBtnSx}>QR Code</Button>
     </Stack>
   );
   const linkPreview = (
