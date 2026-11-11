@@ -39,6 +39,9 @@ test('tela inicial: botão de foto, número, nome e cardápio já preenchido', a
   expect(screen.getByLabelText(/^Nome do cliente/)).toBeInTheDocument();
   expect(screen.getByRole('group', { name: 'Água' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Fechar comanda sem lançamentos' })).toBeDisabled();
+  // Descartar só vale depois de uma tentativa de leitura por foto
+  expect(screen.getByRole('button', { name: 'Descartar' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: '+ Outra comanda para pagamento' })).toBeInTheDocument();
 });
 
 test('fechar sem lançamentos exige número e nome, e o atalho Não identificado preenche o nome', async () => {
@@ -78,12 +81,16 @@ test('lançar item direto no cardápio mostra a faixa Na comanda e passa ao fech
   expect(screen.getByRole('button', { name: 'Fechar comanda' })).toBeEnabled();
 });
 
-test('descartar volta a comanda ao estado inicial', async () => {
+test('Descartar fica desabilitado enquanto não houve foto, mesmo com itens lançados', async () => {
   await renderCore();
   fireEvent.click(screen.getByLabelText('Mais Salada'));
-  fireEvent.click(screen.getByRole('button', { name: 'Descartar' }));
-  expect(screen.queryByText(/Na comanda/)).not.toBeInTheDocument();
-  expect(screen.getByLabelText('Quantidade de Salada')).toHaveTextContent('0');
+  expect(screen.getByRole('button', { name: 'Descartar' })).toBeDisabled();
+});
+
+test('o atalho Não identificado some depois de usado', async () => {
+  await renderCore();
+  fireEvent.click(screen.getByRole('button', { name: 'Não identificado' }));
+  expect(screen.queryByRole('button', { name: 'Não identificado' })).not.toBeInTheDocument();
 });
 
 describe('foto nova com leitura falhando', () => {
@@ -134,5 +141,12 @@ describe('foto nova com leitura falhando', () => {
     expect(screen.getByLabelText(/^Comanda/)).toHaveValue('');
     expect(screen.getByLabelText(/^Nome do cliente/)).toHaveValue('');
     expect(screen.getByText(/Foto anexada/)).toBeInTheDocument();
+
+    // com foto anexada, Descartar fica habilitado e volta a comanda ao estado inicial
+    const discard = screen.getByRole('button', { name: 'Descartar' });
+    expect(discard).toBeEnabled();
+    fireEvent.click(discard);
+    expect(screen.queryByText(/Foto anexada/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Descartar' })).toBeDisabled();
   });
 });

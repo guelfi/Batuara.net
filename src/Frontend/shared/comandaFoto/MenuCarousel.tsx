@@ -124,7 +124,7 @@ const MenuCarousel: React.FC<MenuCarouselProps> = ({ items, qty, onChange, label
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                minHeight: 116,
+                minHeight: 104,
                 bgcolor: 'background.paper',
               }}
             >
