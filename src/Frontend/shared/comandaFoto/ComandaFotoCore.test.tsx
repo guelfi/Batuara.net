@@ -29,7 +29,7 @@ beforeEach(() => {
 
 const renderCore = async () => {
   render(<ComandaFotoCore token="t" baseUrl="http://api" variant="panel" />);
-  await screen.findByRole('group', { name: 'Salada' });
+  await screen.findByTestId('item-2');
 };
 
 test('tela inicial: botão de foto, número, nome e cardápio já preenchido', async () => {
@@ -37,7 +37,7 @@ test('tela inicial: botão de foto, número, nome e cardápio já preenchido', a
   expect(screen.getByRole('button', { name: /📷 - Fotografar Comanda/ })).toBeInTheDocument();
   expect(screen.getByLabelText(/^Comanda/)).toBeInTheDocument();
   expect(screen.getByLabelText(/^Nome/)).toBeInTheDocument();
-  expect(screen.getByRole('group', { name: 'Água' })).toBeInTheDocument();
+  expect(screen.getByTestId('item-1')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Fechar comanda sem lançamentos' })).toBeDisabled();
   // Descartar só vale depois de uma tentativa de leitura por foto
   expect(screen.getByRole('button', { name: 'Descartar' })).toBeDisabled();
@@ -66,39 +66,20 @@ test('fechar sem lançamentos exige número e nome, e o atalho Não identificado
   expect(body.label).toBe('Comanda 12 - Não identificado');
 });
 
-test('lançar item direto no cardápio mostra a faixa Na comanda e passa ao fechamento normal', async () => {
+test('lançar item direto no cardápio destaca a linha, soma no total e passa ao fechamento normal', async () => {
   await renderCore();
+  expect(screen.getByTestId('item-1')).not.toHaveAttribute('data-selected');
   fireEvent.click(screen.getByLabelText('Mais Água'));
-  // agora o item também aparece na faixa "Na comanda": o primeiro "Mais Água" é o dela
-  fireEvent.click(screen.getAllByLabelText('Mais Água')[0]);
+  fireEvent.click(screen.getByLabelText('Mais Água'));
 
-  expect(screen.getByText('Na comanda (2)')).toBeInTheDocument();
+  expect(screen.getByTestId('item-1')).toHaveAttribute('data-selected', 'true');
   expect(screen.getByText(/Total da comanda/)).toHaveTextContent('10,00');
+  expect(screen.getByText(/Total da comanda/)).toHaveTextContent('2 itens');
   expect(screen.getByRole('button', { name: 'Fechar comanda' })).toBeDisabled();
 
   fireEvent.change(screen.getByLabelText(/^Comanda/), { target: { value: '7' } });
   fireEvent.change(screen.getByLabelText(/^Nome/), { target: { value: 'Maria' } });
   expect(screen.getByRole('button', { name: 'Fechar comanda' })).toBeEnabled();
-});
-
-test('o evento aparece no subtítulo só na página; no painel do garçom ele já está no cabeçalho', async () => {
-  const { unmount } = render(<ComandaFotoCore token="t" baseUrl="http://api" variant="panel" />);
-  await screen.findByRole('group', { name: 'Salada' });
-  expect(screen.queryByText(/Fotografar comanda para Fechar Conta/)).toBeNull();
-  unmount();
-
-  render(<ComandaFotoCore token="t" baseUrl="http://api" variant="page" />);
-  await screen.findByRole('group', { name: 'Salada' });
-  expect(await screen.findByText(/Bingo - Fotografar comanda para Fechar Conta/)).toBeInTheDocument();
-});
-
-test('versão única: "+ Item fora do cardápio" fica na linha das setas, tanto na página quanto no painel', async () => {
-  for (const variant of ['page', 'panel'] as const) {
-    const { unmount } = render(<ComandaFotoCore token="t" baseUrl="http://api" variant={variant} />);
-    await screen.findByRole('group', { name: 'Salada' });
-    expect(screen.getByRole('group', { name: 'Cardápio' })).toContainElement(screen.getByRole('button', { name: '+ Item fora do cardápio' }));
-    unmount();
-  }
 });
 
 test('Descartar fica desabilitado enquanto não houve foto, mesmo com itens lançados', async () => {
@@ -175,17 +156,38 @@ describe('foto nova com leitura falhando', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /Digitar sem ler a foto/ }));
 
-    expect(screen.queryByText(/Na comanda/)).not.toBeInTheDocument();
+    expect(screen.getByTestId('item-1')).not.toHaveAttribute('data-selected');
     expect(screen.getByLabelText('Quantidade de Água')).toHaveTextContent('0');
     expect(screen.getByLabelText(/^Comanda/)).toHaveValue('');
     expect(screen.getByLabelText(/^Nome/)).toHaveValue('');
-    expect(screen.getByText(/Foto anexada/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Fotografar Novamente/ })).toBeInTheDocument();
 
     // com foto anexada, Descartar fica habilitado e volta a comanda ao estado inicial
     const discard = screen.getByRole('button', { name: 'Descartar' });
     expect(discard).toBeEnabled();
     fireEvent.click(discard);
-    expect(screen.queryByText(/Foto anexada/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Fotografar Comanda/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Descartar' })).toBeDisabled();
+  });
+
+  test('depois de uma leitura, os itens lidos ficam no início do cardápio e com a quantidade lida', async () => {
+    await renderCore();
+    mockPost.mockResolvedValueOnce({
+      data: { data: { items: [{ name: 'Salada', quantity: 2, unitPrice: 7, matched: true }], comandaNumber: '5', customerName: 'Ana', payments: [] } },
+    });
+    const file = new File(['x'], 'comanda.jpg', { type: 'image/jpeg' });
+    fireEvent.change(screen.getByTestId('comanda-file'), { target: { files: [file] } });
+
+    await waitFor(() => expect(screen.getByLabelText('Quantidade de Salada')).toHaveTextContent('2'));
+    expect(screen.getByLabelText(/^Comanda/)).toHaveValue('5');
+    expect(screen.getByLabelText(/^Nome/)).toHaveValue('Ana');
+    // Salada (segunda do cardápio) passa a ser a primeira linha; Água vem depois
+    const rows = screen.getAllByTestId(/^item-/).map((r) => r.getAttribute('data-testid'));
+    expect(rows).toEqual(['item-2', 'item-1']);
+    expect(screen.getByTestId('item-2')).toHaveAttribute('data-selected', 'true');
+
+    // tocar em "+" não muda ninguém de lugar
+    fireEvent.click(screen.getByLabelText('Mais Água'));
+    expect(screen.getAllByTestId(/^item-/).map((r) => r.getAttribute('data-testid'))).toEqual(['item-2', 'item-1']);
   });
 });

@@ -66,3 +66,24 @@ test('sem itens avisa que nada foi encontrado', () => {
   render(<MenuPagedCarousel items={[]} qty={{}} onChange={() => undefined} />);
   expect(screen.getByText('Nenhum item encontrado.')).toBeInTheDocument();
 });
+
+test('controles embaixo, com ação à esquerda, e indicador curto', () => {
+  render(
+    <MenuPagedCarousel
+      items={make(4)}
+      qty={{}}
+      onChange={() => undefined}
+      controlsPosition="bottom"
+      footerStart={<button type="button">+ Item fora do cardápio</button>}
+    />,
+  );
+  const group = screen.getByRole('group', { name: 'Cardápio' });
+  expect(group).toContainElement(screen.getByRole('button', { name: '+ Item fora do cardápio' }));
+  expect(screen.getByText('1–4/4')).toBeInTheDocument();
+});
+
+test('destaca só as linhas com quantidade quando pedido', () => {
+  render(<MenuPagedCarousel items={make(3)} qty={{ m2: 1 }} onChange={() => undefined} highlightSelected testIdPrefix="row-" />);
+  expect(screen.getByTestId('row-m2')).toHaveAttribute('data-selected', 'true');
+  expect(screen.getByTestId('row-m1')).not.toHaveAttribute('data-selected');
+});

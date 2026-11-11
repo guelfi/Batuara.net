@@ -23,7 +23,8 @@ import ClearIcon from '@mui/icons-material/Clear';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import SearchIcon from '@mui/icons-material/Search';
 import PaymentPicker, { PayHint, PayLine, payBody } from './PaymentPicker';
-import MenuCarousel, { CARD_GAP, CARD_MIN_H, CAROUSEL_HEADER_H, QtyControls } from './MenuCarousel';
+import MenuPagedCarousel from './MenuPagedCarousel';
+import { QtyControls } from './CarouselParts';
 import { useFillViewport } from './useFillViewport';
 import { ExtraItem, Item, MAX_QTY, MenuItem, applyOcrItems, brl, deriveItems, norm } from './comandaUtils';
 
@@ -121,19 +122,6 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
       ...(fitHeight ? { height: fitHeight } : {}),
     },
   };
-  const [carouselEl, setCarouselEl] = useState<HTMLDivElement | null>(null);
-  const [carouselH, setCarouselH] = useState(0);
-  useEffect(() => {
-    if (!carouselEl) return undefined;
-    const measure = () => setCarouselH(carouselEl.clientHeight);
-    measure();
-    if (typeof ResizeObserver === 'undefined') return undefined;
-    const observer = new ResizeObserver(measure);
-    observer.observe(carouselEl);
-    return () => observer.disconnect();
-  }, [carouselEl]);
-  // linhas de cards que cabem na altura livre: a faixa de setas e a folga inferior ficam de fora
-  const carouselRows = carouselH > 0 ? Math.max(1, Math.min(3, Math.floor((carouselH - CAROUSEL_HEADER_H - 8 + CARD_GAP) / (CARD_MIN_H + CARD_GAP)))) : 1;
   const http = useMemo(
     () => axios.create({ baseURL: baseUrl, timeout: 95000, headers: { 'X-Comanda-Token': token } }),
     [token, baseUrl],
@@ -148,6 +136,8 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
   const menuRef = useRef<MenuItem[]>([]);
   const [menuLoading, setMenuLoading] = useState(true);
   const [qty, setQty] = useState<Record<number, number>>({});
+  // ids lidos da foto: ficam no início do cardápio até a próxima leitura ou até descartar (nada muda de lugar enquanto se digita)
+  const [pinned, setPinned] = useState<number[]>([]);
   const [extras, setExtras] = useState<ExtraItem[]>([]);
   const [search, setSearch] = useState('');
   const [extraOpen, setExtraOpen] = useState(false);
@@ -212,6 +202,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
         const applied = applyOcrItems(menuList, r.data.data.items);
         setQty(applied.qty);
         setExtras(applied.extras);
+        setPinned(Object.keys(applied.qty).map(Number));
         const { comandaNumber, customerName } = r.data.data;
         setComanda(String(comandaNumber ?? ''));
         setNome(String(customerName ?? ''));
@@ -255,6 +246,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
   /** Limpa tudo o que é da comanda atual, menos a foto. */
   const clearDraft = () => {
     setQty({});
+    setPinned([]);
     setExtras([]);
     setSearch('');
     setComanda('');
@@ -267,6 +259,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
   const resetCurrent = () => {
     setPhoto(null);
     setQty({});
+    setPinned([]);
     setExtras([]);
     setSearch('');
     setComanda('');
@@ -298,11 +291,14 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
   const identified = comanda.trim().length > 0 && nome.trim().length > 0;
   const canClose = !busy && identified && !isDuplicate;
 
+  const orderedMenu = useMemo(
+    () => (pinned.length > 0 ? [...menu.filter((m) => pinned.includes(m.id)), ...menu.filter((m) => !pinned.includes(m.id))] : menu),
+    [menu, pinned],
+  );
   const filteredMenu = useMemo(() => {
     const q = norm(search);
-    return q ? menu.filter((m) => norm(m.name).includes(q)) : menu;
-  }, [menu, search]);
-  const selectedMenu = menu.filter((m) => (qty[m.id] ?? 0) > 0);
+    return q ? orderedMenu.filter((m) => norm(m.name).includes(q)) : orderedMenu;
+  }, [orderedMenu, search]);
 
   const setItemQty = (id: number, delta: number) =>
     setQty((q) => ({ ...q, [id]: Math.max(0, Math.min(MAX_QTY, (q[id] ?? 0) + delta)) }));
@@ -491,12 +487,6 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
           <Button fullWidth variant="contained" size={roomy ? 'large' : 'medium'} sx={{ py: roomy ? 0.75 : 0.5, mb: 1, flexShrink: 0 }} disabled={!!busy} onClick={() => fileRef.current?.click()}>
             📷 - {photoLabel}
           </Button>
-          {photo && (
-            <Typography variant="caption" color="text.secondary" display="block" align="center" sx={{ mb: 1, flexShrink: 0 }}>
-              Foto anexada a esta comanda. Confira os itens abaixo.
-            </Typography>
-          )}
-
           <Stack direction="row" spacing={1} sx={{ mb: 1, flexShrink: 0 }}>
             <TextField size="small" label="Comanda" required value={comanda} onChange={(e) => setComanda(e.target.value)} inputProps={{ inputMode: 'numeric', maxLength: 10 }} sx={{ width: 132, flexShrink: 0 }} />
             <TextField
@@ -520,44 +510,31 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
             />
           </Stack>
 
-          {(selectedMenu.length > 0 || extras.length > 0) && (
-            <Box sx={{ mb: 1, flex: '0 1 auto', minHeight: 56, overflowY: 'auto' }}>
-              <Typography variant="subtitle2" fontWeight={700} sx={{ lineHeight: 1.6 }}>
-                Na comanda ({count})
+          {extras.length > 0 && (
+            <Box sx={{ mb: 1, flexShrink: 0, maxHeight: 84, overflowY: 'auto' }}>
+              <Typography variant="subtitle2" fontWeight={700} color="error" sx={{ lineHeight: 1.5 }}>
+                Fora do cardápio ({extras.length})
               </Typography>
-              {selectedMenu.map((m) => (
-                <Stack key={m.id} direction="row" alignItems="center" spacing={1} sx={{ py: 0.25, borderBottom: 1, borderColor: 'divider' }}>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="body2" fontWeight={600} noWrap title={m.name}>
-                      {m.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {brl(m.unitPrice)} × {qty[m.id]} = {brl(m.unitPrice * qty[m.id])}
-                    </Typography>
-                  </Box>
-                  <QtyControls name={m.name} quantity={qty[m.id]} onChange={(d) => setItemQty(m.id, d)} />
-                </Stack>
-              ))}
               {extras.map((e, idx) => (
-                <Box key={`${e.name}-${idx}`} sx={{ py: 0.25, borderBottom: 1, borderColor: 'divider' }}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2" fontWeight={600} noWrap title={e.name}>
-                        {e.name}
+                <Stack key={`${e.name}-${idx}`} direction="row" alignItems="center" spacing={1} sx={{ py: 0.25, borderBottom: 1, borderColor: 'divider' }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" fontWeight={600} noWrap title={e.name}>
+                      {e.name}
+                    </Typography>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Typography variant="caption" color="error" noWrap>
+                        {brl(e.unitPrice)} × {e.quantity}
                       </Typography>
-                      <Typography variant="caption" color="error">
-                        Fora do cardápio · {brl(e.unitPrice)} × {e.quantity} = {brl(e.unitPrice * e.quantity)}
-                      </Typography>
-                    </Box>
-                    <QtyControls name={e.name} quantity={e.quantity} onChange={(d) => setExtraQty(idx, d)} />
-                    <IconButton size="small" aria-label={`Remover ${e.name}`} color="error" onClick={() => setExtras((l) => l.filter((_, i) => i !== idx))} sx={{ p: 0.25 }}>
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Stack>
-                  <Button size="small" variant="outlined" disabled={!!busy || !e.name.trim() || e.unitPrice <= 0} onClick={() => registerExtra(idx)} sx={{ mt: 0.5, minWidth: 0, px: 1, py: 0, fontSize: 12 }}>
-                    + Cardápio
-                  </Button>
-                </Box>
+                      <Button size="small" variant="outlined" disabled={!!busy || !e.name.trim() || e.unitPrice <= 0} onClick={() => registerExtra(idx)} sx={{ minWidth: 0, px: 0.75, py: 0, fontSize: 11, lineHeight: 1.6, whiteSpace: 'nowrap' }}>
+                        + Cardápio
+                      </Button>
+                    </Stack>
+                  </Box>
+                  <QtyControls name={e.name} quantity={e.quantity} onChange={(d) => setExtraQty(idx, d)} />
+                  <IconButton size="small" aria-label={`Remover ${e.name}`} color="error" onClick={() => setExtras((l) => l.filter((_, i) => i !== idx))} sx={{ p: 0.25 }}>
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Stack>
               ))}
             </Box>
           )}
@@ -584,13 +561,23 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
               ) : undefined,
             }}
           />
-          <Box ref={setCarouselEl} sx={{ flex: '1 1 0', minHeight: CARD_MIN_H + CAROUSEL_HEADER_H, overflow: 'hidden' }}>
+          <Box sx={{ flex: '1 1 0', minHeight: 150, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             {menuLoading ? (
               <Stack alignItems="center" sx={{ py: 3 }}>
                 <CircularProgress size={24} />
               </Stack>
             ) : (
-              <MenuCarousel items={filteredMenu} qty={qty} onChange={setItemQty} rows={carouselRows} controlsPosition="bottom" footerStart={addExtraButton} />
+              <MenuPagedCarousel
+                items={filteredMenu}
+                qty={qty}
+                onChange={setItemQty}
+                rowHeight={40}
+                maxQty={MAX_QTY}
+                controlsPosition="bottom"
+                footerStart={addExtraButton}
+                highlightSelected
+                testIdPrefix="item-"
+              />
             )}
           </Box>
 
@@ -603,6 +590,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
               <>
                 <Typography variant="subtitle1" fontWeight={800} align="center" sx={{ mb: 0.5, lineHeight: 1.3 }}>
                   Total da comanda {brl(total)}
+                  {count > 0 && <Box component="span" sx={{ fontWeight: 400, fontSize: '0.8rem', ml: 0.75 }}>· {count} {count === 1 ? 'item' : 'itens'}</Box>}
                 </Typography>
                 <Stack direction={roomy ? 'column' : 'row'} spacing={1}>
                   <Button

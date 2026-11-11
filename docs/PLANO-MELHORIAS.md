@@ -392,6 +392,13 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 - `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
 
+### 2026-11-11 (noite: Comanda-Foto com cartões de vários itens)
+
+- A Comanda-Foto passa a usar o mesmo `MenuPagedCarousel` da comanda digital (cartões com vários itens, rolagem lateral entre cartões), com setas e "+ Item fora do cardápio" na mesma linha, embaixo. O carrossel de um cartão por item (`MenuCarousel`) foi removido; `QtyControls` e `CarouselControls` foram para `CarouselParts.tsx`.
+- A faixa "Na comanda" deixou de existir para itens do cardápio: a leitura da foto incrementa a quantidade direto na linha do item, e as linhas com quantidade ficam destacadas. Os itens lidos ficam fixados no início da lista (só depois de uma leitura, até a próxima leitura ou até descartar), para não mudar de lugar enquanto se digita. Itens fora do cardápio ficam numa seção compacta acima da busca.
+- Linhas de 40 px; o total mostra a quantidade de itens; removido o aviso "Foto anexada…" (o botão já diz "Fotografar Novamente").
+- Conferido com Playwright em 393x590, 393x760 e 393x852 com leitura simulada: sem rolagem de página e "+ Item fora do cardápio" sempre acima das ações. Pendente: conferir no aparelho.
+
 ### 2026-11-11 (noite: comanda digital com cartões de vários itens)
 
 - Na comanda digital do cliente, o cardápio deixou de ser um cartão por item: cada cartão agora é uma lista com vários itens (linhas com nome, preço e − qtd +), e o carrossel desliza entre cartões (`MenuPagedCarousel`, em `shared/comandaFoto`). Quantos itens cabem por cartão é calculado pela altura livre da tela (linhas de 48 px); o próximo cartão aparece pela borda; indicador "Itens a–b de N" e setas por cartão; busca mantida.
