@@ -392,6 +392,13 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 - `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
 
+### 2026-11-11 (noite: Comanda-Foto em uma única tela, sem rolagem, também no garçom)
+
+- Versão única do componente: ocupa exatamente a altura visível da tela (hook `useFillViewport`, com a viewport visual e o padding dos contêineres), sem rolagem de página. O carrossel mede a altura livre e escolhe de 1 a 3 linhas de cards; setas e "+ Item fora do cardápio" ficam na mesma linha, sob os cards. Em telas altas (>= 700 px) os botões de ação ficam empilhados e maiores; nas curtas, lado a lado. A faixa "Na comanda" encolhe e rola por dentro; a fila de comandas tem altura máxima.
+- Garçom: nome (menor) à esquerda e evento à direita na mesma linha, sem a palavra "Garçom"; abas mais baixas e o bloco sobe (`mt: -1`). O subtítulo do evento só aparece na página pública. O `AdminLayout` passou a usar `100dvh` como altura mínima (no iPhone `100vh` é maior que a área visível e criava rolagem).
+- Atalho "Não identificado" dentro do campo Nome (rótulo "Nome"); o campo Comanda não encolhe mais (`flexShrink: 0`), corrigindo o rótulo cortado.
+- Verificação visual local com Playwright + Chrome (viewports 393x760, 393x590, 393x852 e emulação do garçom): `pageScroll` 0 em todos. Pendente: conferir no aparelho.
+
 ### 2026-11-11 (noite: carrossel na comanda digital do cliente)
 
 - A lista paginada do cardápio da comanda digital (`BingoCustomerPage`) foi trocada pelo mesmo `MenuCarousel` da Comanda-Foto (`shared/comandaFoto`): cards com rolagem lateral, setas e indicador "Itens a–b de N", busca mantida. Como a tela tem altura fixa (sem rolagem vertical), o carrossel usa várias linhas de cards conforme a altura livre (de 1 a 4).

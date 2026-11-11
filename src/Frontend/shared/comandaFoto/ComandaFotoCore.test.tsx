@@ -36,7 +36,7 @@ test('tela inicial: botão de foto, número, nome e cardápio já preenchido', a
   await renderCore();
   expect(screen.getByRole('button', { name: /📷 - Fotografar Comanda/ })).toBeInTheDocument();
   expect(screen.getByLabelText(/^Comanda/)).toBeInTheDocument();
-  expect(screen.getByLabelText(/^Nome do cliente/)).toBeInTheDocument();
+  expect(screen.getByLabelText(/^Nome/)).toBeInTheDocument();
   expect(screen.getByRole('group', { name: 'Água' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Fechar comanda sem lançamentos' })).toBeDisabled();
   // Descartar só vale depois de uma tentativa de leitura por foto
@@ -53,7 +53,7 @@ test('fechar sem lançamentos exige número e nome, e o atalho Não identificado
   expect(screen.getByText('Informe o número da comanda e o nome do cliente.')).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('button', { name: 'Não identificado' }));
-  expect(screen.getByLabelText(/^Nome do cliente/)).toHaveValue('Não identificado');
+  expect(screen.getByLabelText(/^Nome/)).toHaveValue('Não identificado');
   expect(close).toBeEnabled();
 
   fireEvent.click(close);
@@ -77,8 +77,28 @@ test('lançar item direto no cardápio mostra a faixa Na comanda e passa ao fech
   expect(screen.getByRole('button', { name: 'Fechar comanda' })).toBeDisabled();
 
   fireEvent.change(screen.getByLabelText(/^Comanda/), { target: { value: '7' } });
-  fireEvent.change(screen.getByLabelText(/^Nome do cliente/), { target: { value: 'Maria' } });
+  fireEvent.change(screen.getByLabelText(/^Nome/), { target: { value: 'Maria' } });
   expect(screen.getByRole('button', { name: 'Fechar comanda' })).toBeEnabled();
+});
+
+test('o evento aparece no subtítulo só na página; no painel do garçom ele já está no cabeçalho', async () => {
+  const { unmount } = render(<ComandaFotoCore token="t" baseUrl="http://api" variant="panel" />);
+  await screen.findByRole('group', { name: 'Salada' });
+  expect(screen.queryByText(/Fotografar comanda para Fechar Conta/)).toBeNull();
+  unmount();
+
+  render(<ComandaFotoCore token="t" baseUrl="http://api" variant="page" />);
+  await screen.findByRole('group', { name: 'Salada' });
+  expect(await screen.findByText(/Bingo - Fotografar comanda para Fechar Conta/)).toBeInTheDocument();
+});
+
+test('versão única: "+ Item fora do cardápio" fica na linha das setas, tanto na página quanto no painel', async () => {
+  for (const variant of ['page', 'panel'] as const) {
+    const { unmount } = render(<ComandaFotoCore token="t" baseUrl="http://api" variant={variant} />);
+    await screen.findByRole('group', { name: 'Salada' });
+    expect(screen.getByRole('group', { name: 'Cardápio' })).toContainElement(screen.getByRole('button', { name: '+ Item fora do cardápio' }));
+    unmount();
+  }
 });
 
 test('Descartar fica desabilitado enquanto não houve foto, mesmo com itens lançados', async () => {
@@ -147,7 +167,7 @@ describe('foto nova com leitura falhando', () => {
     await renderCore();
     fireEvent.click(screen.getByLabelText('Mais Água'));
     fireEvent.change(screen.getByLabelText(/^Comanda/), { target: { value: '12' } });
-    fireEvent.change(screen.getByLabelText(/^Nome do cliente/), { target: { value: 'Maria' } });
+    fireEvent.change(screen.getByLabelText(/^Nome/), { target: { value: 'Maria' } });
 
     mockPost.mockRejectedValueOnce({ response: { status: 400, data: { message: 'Foto ilegível' } } });
     const file = new File(['x'], 'comanda.jpg', { type: 'image/jpeg' });
@@ -158,7 +178,7 @@ describe('foto nova com leitura falhando', () => {
     expect(screen.queryByText(/Na comanda/)).not.toBeInTheDocument();
     expect(screen.getByLabelText('Quantidade de Água')).toHaveTextContent('0');
     expect(screen.getByLabelText(/^Comanda/)).toHaveValue('');
-    expect(screen.getByLabelText(/^Nome do cliente/)).toHaveValue('');
+    expect(screen.getByLabelText(/^Nome/)).toHaveValue('');
     expect(screen.getByText(/Foto anexada/)).toBeInTheDocument();
 
     // com foto anexada, Descartar fica habilitado e volta a comanda ao estado inicial

@@ -1062,14 +1062,18 @@ const BingoWaiterPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto' }}>
-      <Typography variant="h5" component="h1" sx={{ fontWeight: 700, color: 'primary.main' }}>
-        {status.waiterName || 'Garçom'}
-      </Typography>
-      <Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.8 }}>
-        Garçom{status.eventName ? ` · ${status.eventName}` : ''}
-      </Typography>
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth" sx={{ mb: 2, '& .MuiTabs-scroller': { overflow: 'visible !important' }, '& .MuiTab-root': { minWidth: 0, px: 0.5, fontSize: '0.78rem', overflow: 'visible' } }}>
+    <Box sx={{ maxWidth: 600, mx: 'auto', mt: -1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 1, mb: 0.5 }}>
+        <Typography variant="subtitle1" component="h1" noWrap sx={{ fontWeight: 700, color: 'primary.main', minWidth: 0 }}>
+          {status.waiterName || 'Garçom'}
+        </Typography>
+        {status.eventName && (
+          <Typography variant="body2" noWrap sx={{ opacity: 0.8, flexShrink: 0, maxWidth: '50%' }}>
+            {status.eventName}
+          </Typography>
+        )}
+      </Box>
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth" sx={{ mb: 0.5, minHeight: 40, '& .MuiTabs-scroller': { overflow: 'visible !important' }, '& .MuiTab-root': { minWidth: 0, px: 0.5, fontSize: '0.78rem', overflow: 'visible' } }}>
         <Tab
           label={
             <Badge badgeContent={pendingCount(groups) + contestations.length} color="error" max={99} sx={{ '& .MuiBadge-badge': { right: -8, top: 2 } }}>
@@ -1077,7 +1081,7 @@ const BingoWaiterPage: React.FC = () => {
             </Badge>
           }
           sx={{
-            minHeight: 56,
+            minHeight: 40,
             fontWeight: 700,
             bgcolor: flash ? 'warning.light' : undefined,
             transition: 'background-color 0.4s',
@@ -1090,15 +1094,15 @@ const BingoWaiterPage: React.FC = () => {
             </Badge>
           }
           sx={{
-            minHeight: 56,
+            minHeight: 40,
             fontWeight: 700,
             bgcolor: billFlash ? 'warning.light' : undefined,
             transition: 'background-color 0.4s',
           }}
         />
-        <Tab label="Mesas" sx={{ minHeight: 56, fontWeight: 700 }} />
-        <Tab label="Ler Comanda" sx={{ minHeight: 56, fontWeight: 700, flexGrow: 1.8, whiteSpace: 'nowrap' }} />
-        <Tab label="Saída" sx={{ minHeight: 56, fontWeight: 700 }} />
+        <Tab label="Mesas" sx={{ minHeight: 40, fontWeight: 700 }} />
+        <Tab label="Ler Comanda" sx={{ minHeight: 40, fontWeight: 700, flexGrow: 1.8, whiteSpace: 'nowrap' }} />
+        <Tab label="Saída" sx={{ minHeight: 40, fontWeight: 700 }} />
       </Tabs>
       {tab === 0 && <OrdersTab groups={groups} contestations={contestations} loadError={ordersError} reload={async () => { await Promise.all([loadOrders(), loadContestations()]); }} />}
       {tab === 1 && <AccountsTab mesas={mesas} />}

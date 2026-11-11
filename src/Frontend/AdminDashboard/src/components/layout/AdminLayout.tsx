@@ -458,7 +458,7 @@ const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', '@supports (height: 100dvh)': { minHeight: '100dvh' } }}>
       <AppBar
         position="fixed"
         sx={{
@@ -605,6 +605,7 @@ const AdminLayoutInner: React.FC<AdminLayoutProps> = ({ children }) => {
           p: { xs: 1.5, sm: 2, md: 3 },
           width: { md: desktopOpen ? `calc(100% - ${drawerWidth}px)` : '100%' },
           minHeight: '100vh',
+          '@supports (height: 100dvh)': { minHeight: '100dvh' },
           backgroundColor: 'background.default',
         }}
       >

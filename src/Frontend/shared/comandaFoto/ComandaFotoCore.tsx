@@ -23,7 +23,8 @@ import ClearIcon from '@mui/icons-material/Clear';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import SearchIcon from '@mui/icons-material/Search';
 import PaymentPicker, { PayHint, PayLine, payBody } from './PaymentPicker';
-import MenuCarousel, { QtyControls } from './MenuCarousel';
+import MenuCarousel, { CARD_GAP, CARD_MIN_H, CAROUSEL_HEADER_H, QtyControls } from './MenuCarousel';
+import { useFillViewport } from './useFillViewport';
 import { ExtraItem, Item, MAX_QTY, MenuItem, applyOcrItems, brl, deriveItems, norm } from './comandaUtils';
 
 const NOT_IDENTIFIED = 'Não identificado';
@@ -103,7 +104,36 @@ interface ComandaFotoCoreProps {
 const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, variant = 'page' }) => {
   const isPage = variant === 'page';
   const Root: React.ElementType = isPage ? Container : Box;
-  const rootProps = isPage ? { maxWidth: 'sm' as const, sx: { py: 2 } } : {};
+  // Uma só versão: o componente ocupa exatamente a altura visível da tela (sem rolagem de página) e o carrossel
+  // escolhe quantas linhas de cards cabem. Na página própria vale também um título; no painel do garçom, não.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const fitHeight = useFillViewport(rootRef);
+  const roomy = (fitHeight ?? 0) >= 700; // telas altas: botões de ação empilhados e maiores
+  const rootProps = {
+    ref: rootRef,
+    ...(isPage ? { maxWidth: 'sm' as const } : {}),
+    sx: {
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      boxSizing: 'border-box',
+      ...(isPage ? { py: 1 } : {}),
+      ...(fitHeight ? { height: fitHeight } : {}),
+    },
+  };
+  const [carouselEl, setCarouselEl] = useState<HTMLDivElement | null>(null);
+  const [carouselH, setCarouselH] = useState(0);
+  useEffect(() => {
+    if (!carouselEl) return undefined;
+    const measure = () => setCarouselH(carouselEl.clientHeight);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(carouselEl);
+    return () => observer.disconnect();
+  }, [carouselEl]);
+  // linhas de cards que cabem na altura livre: a faixa de setas e a folga inferior ficam de fora
+  const carouselRows = carouselH > 0 ? Math.max(1, Math.min(3, Math.floor((carouselH - CAROUSEL_HEADER_H - 8 + CARD_GAP) / (CARD_MIN_H + CARD_GAP)))) : 1;
   const http = useMemo(
     () => axios.create({ baseURL: baseUrl, timeout: 95000, headers: { 'X-Comanda-Token': token } }),
     [token, baseUrl],
@@ -342,6 +372,11 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     }
   };
 
+  const addExtraButton = (
+    <Button size="small" onClick={() => setExtraOpen(true)} disabled={!!busy} sx={{ whiteSpace: 'nowrap' }}>
+      + Item fora do cardápio
+    </Button>
+  );
   const closeLabel = queue.length > 0 ? `Fechar ${queue.length + 1} comandas` : noConsumption ? 'Fechar comanda sem lançamentos' : 'Fechar comanda';
   const reading = attempt > 0;
   const photoLabel = photo ? 'Fotografar Novamente' : queue.length > 0 ? 'Fotografar Outra Comanda' : 'Fotografar Comanda';
@@ -363,19 +398,21 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
           Fechamento Comanda{build && ` - ${build}`}
         </Typography>
       )}
-      <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 0.75, fontSize: isPage ? '0.78rem' : 'clamp(0.6rem, 2.9vw, 0.78rem)' }}>
-        {[eventName, eventDate && !eventName.includes(eventDate) ? eventDate : '', 'Fotografar comanda para Fechar Conta']
-          .filter(Boolean)
-          .join(' - ')}
-      </Typography>
+      {isPage && (
+        <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 0.75, fontSize: '0.78rem' }}>
+          {[eventName, eventDate && !eventName.includes(eventDate) ? eventDate : '', 'Fotografar comanda para Fechar Conta']
+            .filter(Boolean)
+            .join(' - ')}
+        </Typography>
+      )}
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert severity="error" sx={{ mb: 1, flexShrink: 0 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
       {busy && (
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1, flexShrink: 0 }}>
           <CircularProgress size={20} />
           <Typography>{busy}</Typography>
         </Stack>
@@ -395,7 +432,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
       />
 
       {queue.length > 0 && !reading && !readFailure && (
-        <Paper variant="outlined" sx={{ p: 1.5, mb: 2 }}>
+        <Paper variant="outlined" sx={{ p: 1.5, mb: 1, flexShrink: 0, maxHeight: 96, overflowY: 'auto' }}>
           <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
             Comandas para fechar juntas ({queue.length})
           </Typography>
@@ -450,36 +487,46 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
           </Stack>
         </Paper>
       ) : (
-        <Paper sx={{ px: 2, pt: 1.25, pb: 0, mb: 2 }}>
-          <Button fullWidth variant="contained" size="large" sx={{ py: 1, mb: 1 }} disabled={!!busy} onClick={() => fileRef.current?.click()}>
+        <Paper sx={{ px: 2, pt: 1.25, pb: 0, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+          <Button fullWidth variant="contained" size={roomy ? 'large' : 'medium'} sx={{ py: roomy ? 0.75 : 0.5, mb: 1, flexShrink: 0 }} disabled={!!busy} onClick={() => fileRef.current?.click()}>
             📷 - {photoLabel}
           </Button>
           {photo && (
-            <Typography variant="caption" color="text.secondary" display="block" align="center" sx={{ mb: 1 }}>
+            <Typography variant="caption" color="text.secondary" display="block" align="center" sx={{ mb: 1, flexShrink: 0 }}>
               Foto anexada a esta comanda. Confira os itens abaixo.
             </Typography>
           )}
 
-          <Stack direction="row" spacing={1} sx={{ mb: 0.5 }}>
-            <TextField size="small" label="Comanda" required value={comanda} onChange={(e) => setComanda(e.target.value)} inputProps={{ inputMode: 'numeric', maxLength: 10 }} sx={{ width: 132 }} />
-            <TextField size="small" fullWidth required label="Nome do cliente" value={nome} onChange={(e) => setNome(e.target.value)} inputProps={{ maxLength: 40 }} />
+          <Stack direction="row" spacing={1} sx={{ mb: 1, flexShrink: 0 }}>
+            <TextField size="small" label="Comanda" required value={comanda} onChange={(e) => setComanda(e.target.value)} inputProps={{ inputMode: 'numeric', maxLength: 10 }} sx={{ width: 132, flexShrink: 0 }} />
+            <TextField
+              size="small"
+              fullWidth
+              required
+              label="Nome"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              inputProps={{ maxLength: 40 }}
+              InputProps={{
+                // atalho só enquanto o nome está vazio: sai do caminho assim que se começa a digitar
+                endAdornment: !nome.trim() ? (
+                  <InputAdornment position="end">
+                    <Button size="small" onClick={() => setNome(NOT_IDENTIFIED)} sx={{ py: 0, px: 0.5, minWidth: 0, whiteSpace: 'nowrap', fontSize: '0.75rem' }}>
+                      {NOT_IDENTIFIED}
+                    </Button>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+            />
           </Stack>
-          {/* atalho só enquanto o nome está vazio: depois de usado, libera a linha */}
-          {!nome.trim() ? (
-            <Button size="small" sx={{ mb: 0.5, py: 0, minHeight: 28 }} onClick={() => setNome(NOT_IDENTIFIED)}>
-              {NOT_IDENTIFIED}
-            </Button>
-          ) : (
-            <Box sx={{ mb: 1 }} />
-          )}
 
           {(selectedMenu.length > 0 || extras.length > 0) && (
-            <Box sx={{ mb: 1 }}>
-              <Typography variant="subtitle2" fontWeight={700}>
+            <Box sx={{ mb: 1, flex: '0 1 auto', minHeight: 56, overflowY: 'auto' }}>
+              <Typography variant="subtitle2" fontWeight={700} sx={{ lineHeight: 1.6 }}>
                 Na comanda ({count})
               </Typography>
               {selectedMenu.map((m) => (
-                <Stack key={m.id} direction="row" alignItems="center" spacing={1} sx={{ py: 0.75, borderBottom: 1, borderColor: 'divider' }}>
+                <Stack key={m.id} direction="row" alignItems="center" spacing={1} sx={{ py: 0.25, borderBottom: 1, borderColor: 'divider' }}>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography variant="body2" fontWeight={600} noWrap title={m.name}>
                       {m.name}
@@ -492,7 +539,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
                 </Stack>
               ))}
               {extras.map((e, idx) => (
-                <Box key={`${e.name}-${idx}`} sx={{ py: 0.75, borderBottom: 1, borderColor: 'divider' }}>
+                <Box key={`${e.name}-${idx}`} sx={{ py: 0.25, borderBottom: 1, borderColor: 'divider' }}>
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography variant="body2" fontWeight={600} noWrap title={e.name}>
@@ -521,7 +568,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
             placeholder="Buscar item do cardápio..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            sx={{ mb: 1 }}
+            sx={{ mb: 1, flexShrink: 0 }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -537,18 +584,17 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
               ) : undefined,
             }}
           />
-          {menuLoading ? (
-            <Stack alignItems="center" sx={{ py: 3 }}>
-              <CircularProgress size={24} />
-            </Stack>
-          ) : (
-            <MenuCarousel items={filteredMenu} qty={qty} onChange={setItemQty} />
-          )}
-          <Button size="small" onClick={() => setExtraOpen(true)} disabled={!!busy}>
-            + Item fora do cardápio
-          </Button>
+          <Box ref={setCarouselEl} sx={{ flex: '1 1 0', minHeight: CARD_MIN_H + CAROUSEL_HEADER_H, overflow: 'hidden' }}>
+            {menuLoading ? (
+              <Stack alignItems="center" sx={{ py: 3 }}>
+                <CircularProgress size={24} />
+              </Stack>
+            ) : (
+              <MenuCarousel items={filteredMenu} qty={qty} onChange={setItemQty} rows={carouselRows} controlsPosition="bottom" footerStart={addExtraButton} />
+            )}
+          </Box>
 
-          <Box sx={{ position: 'sticky', bottom: 0, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider', mx: -2, px: 2, pt: 1, pb: 'calc(8px + env(safe-area-inset-bottom))' }}>
+          <Box sx={{ position: 'sticky', bottom: 0, mt: 'auto', flexShrink: 0, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider', mx: -2, px: 2, pt: 1, pb: 'calc(8px + env(safe-area-inset-bottom))' }}>
             {queue.length > 0 && pristine ? (
               <Button fullWidth variant="contained" color="success" size="large" disabled={!!busy} onClick={() => setPayOpen(true)}>
                 Fechar {queue.length} {queue.length === 1 ? 'comanda' : 'comandas'} — {brl(queueTotal)}
@@ -558,16 +604,35 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
                 <Typography variant="subtitle1" fontWeight={800} align="center" sx={{ mb: 0.5, lineHeight: 1.3 }}>
                   Total da comanda {brl(total)}
                 </Typography>
-                <Stack direction="row" spacing={1}>
-                  {/* só depois de fotografar (a leitura foi tentada); com comandas na fila também, para desistir da próxima sem perder a fila */}
-                  <Button variant="outlined" size="small" onClick={resetCurrent} disabled={!!busy || (!photo && queue.length === 0)} sx={{ flex: '0 0 auto', px: 1.5, whiteSpace: 'nowrap' }}>
-                    Descartar
-                  </Button>
-                  <Button fullWidth variant="contained" size="small" onClick={() => setPayOpen(true)} disabled={!canClose} sx={{ whiteSpace: 'nowrap', minWidth: 0, fontSize: '0.8125rem' }}>
+                <Stack direction={roomy ? 'column' : 'row'} spacing={1}>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    size={roomy ? 'medium' : 'small'}
+                    onClick={() => setPayOpen(true)}
+                    disabled={!canClose}
+                    sx={{ whiteSpace: 'nowrap', minWidth: 0, fontSize: '0.8125rem', order: roomy ? 1 : 2 }}
+                  >
                     {closeLabel}
                   </Button>
+                  {/* só depois de fotografar (a leitura foi tentada); com comandas na fila também, para desistir da próxima sem perder a fila */}
+                  <Button
+                    fullWidth={roomy}
+                    variant="outlined"
+                    size="small"
+                    onClick={resetCurrent}
+                    disabled={!!busy || (!photo && queue.length === 0)}
+                    sx={{ flex: roomy ? undefined : '0 0 auto', px: 1.5, whiteSpace: 'nowrap', order: roomy ? 3 : 1 }}
+                  >
+                    Descartar
+                  </Button>
+                  {!identified && roomy && (
+                    <Typography variant="caption" color="text.secondary" display="block" align="center" sx={{ order: 2, lineHeight: 1.3, mt: '4px !important' }}>
+                      Informe o número da comanda e o nome do cliente.
+                    </Typography>
+                  )}
                 </Stack>
-                {!identified && (
+                {!identified && !roomy && (
                   <Typography variant="caption" color="text.secondary" display="block" align="center" sx={{ mt: 0.5, lineHeight: 1.3 }}>
                     Informe o número da comanda e o nome do cliente.
                   </Typography>

@@ -69,6 +69,10 @@ interface MenuCarouselProps<T extends CarouselItem> {
   /** Texto extra ao lado do nome (ex.: quantidade já pedida). */
   renderBadge?: (item: T) => React.ReactNode;
   testIdPrefix?: string;
+  /** Onde ficam as setas e o indicador: acima dos cards (padrão) ou numa linha abaixo, que pode levar uma ação à esquerda. */
+  controlsPosition?: 'top' | 'bottom';
+  /** Ação exibida à esquerda da linha de controles quando `controlsPosition` é 'bottom'. */
+  footerStart?: React.ReactNode;
 }
 
 const prefersReducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -89,6 +93,8 @@ function MenuCarousel<T extends CarouselItem>({
   plusLabel,
   renderBadge,
   testIdPrefix,
+  controlsPosition = 'top',
+  footerStart,
 }: MenuCarouselProps<T>): React.ReactElement {
   const trackRef = useRef<HTMLDivElement>(null);
   const perColumn = Math.max(1, Math.floor(rows));
@@ -130,19 +136,24 @@ function MenuCarousel<T extends CarouselItem>({
     );
   }
 
+  const atBottom = controlsPosition === 'bottom';
+  const controls = (
+    <Stack direction="row" justifyContent="center" alignItems="center" spacing={atBottom ? 0.5 : 1} sx={{ height: CAROUSEL_HEADER_H, flexShrink: 0 }}>
+      <IconButton aria-label="Itens anteriores" size={atBottom ? 'small' : 'medium'} disabled={range.first <= 1} onClick={() => scrollByCards(-1)}>
+        <ChevronLeftIcon />
+      </IconButton>
+      <Typography variant="body2" fontWeight={600} aria-live="polite" aria-label={`Itens ${range.first} a ${range.last} de ${items.length}`} noWrap>
+        {atBottom ? `${range.first}–${range.last}/${items.length}` : `Itens ${range.first}–${range.last} de ${items.length}`}
+      </Typography>
+      <IconButton aria-label="Próximos itens" size={atBottom ? 'small' : 'medium'} disabled={range.last >= items.length} onClick={() => scrollByCards(1)}>
+        <ChevronRightIcon />
+      </IconButton>
+    </Stack>
+  );
+
   return (
     <Box role="group" aria-roledescription="carrossel" aria-label={label}>
-      <Stack direction="row" justifyContent="center" alignItems="center" spacing={1} sx={{ height: CAROUSEL_HEADER_H }}>
-        <IconButton aria-label="Itens anteriores" disabled={range.first <= 1} onClick={() => scrollByCards(-1)}>
-          <ChevronLeftIcon />
-        </IconButton>
-        <Typography variant="body2" fontWeight={600} aria-live="polite">
-          Itens {range.first}–{range.last} de {items.length}
-        </Typography>
-        <IconButton aria-label="Próximos itens" disabled={range.last >= items.length} onClick={() => scrollByCards(1)}>
-          <ChevronRightIcon />
-        </IconButton>
-      </Stack>
+      {!atBottom && controls}
       <Box
         ref={trackRef}
         onScroll={updateRange}
@@ -215,6 +226,12 @@ function MenuCarousel<T extends CarouselItem>({
           );
         })}
       </Box>
+      {atBottom && (
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ minHeight: CAROUSEL_HEADER_H }}>
+          <Box sx={{ flexShrink: 0 }}>{footerStart}</Box>
+          {controls}
+        </Stack>
+      )}
     </Box>
   );
 }
