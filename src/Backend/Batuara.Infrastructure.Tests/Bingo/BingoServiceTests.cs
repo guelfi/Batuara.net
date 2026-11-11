@@ -2164,6 +2164,10 @@ namespace Batuara.Infrastructure.Tests.Bingo
 
             svc.IsTokenValid(svc.GetAccessToken()).Should().BeTrue();
             svc.IsTokenValid("errado").Should().BeFalse();
+            svc.IsTokenValid(svc.GetAccessToken(TimeSpan.FromSeconds(-1))).Should().BeFalse("token expirado nao vale");
+            var valid = svc.GetAccessToken();
+            svc.IsTokenValid(valid.Split('.')[0] + ".00000000000000000000000000000000").Should().BeFalse("assinatura adulterada");
+            svc.IsTokenValid(valid.Split('.')[1]).Should().BeFalse("sem expiracao");
 
             var first = await svc.SaveAsync(new ComandaFotoSaveRequest
             {
@@ -2210,6 +2214,20 @@ namespace Batuara.Infrastructure.Tests.Bingo
             var act = () => svc.ExtractAsync(new ComandaFotoExtractRequest { ImageBase64 = photo }, CancellationToken.None);
             await act.Should().ThrowAsync<BingoException>();
         }
+        [Fact]
+        public async Task ComandaFoto_Extract_Should_Stop_At_The_Per_Event_Read_Cap_Before_Calling_Google()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            var svc = new ComandaFotoService(f.Db, new System.Net.Http.HttpClient(), new FakeConfig(),
+                Options.Create(new ComandaFotoOptions { ApiKey = "chave-de-teste", MaxReadsPerEvent = 0 }));
+            var photo = Convert.ToBase64String(new byte[] { 1, 2, 3 });
+
+            var act = () => svc.ExtractAsync(new ComandaFotoExtractRequest { ImageBase64 = photo }, CancellationToken.None);
+
+            (await act.Should().ThrowAsync<BingoException>()).Which.Kind.Should().Be(BingoErrorKind.TooManyRequests);
+        }
+
         [Fact]
         public void MesaQr_Signature_Should_Only_Validate_For_The_Signed_Table()
         {

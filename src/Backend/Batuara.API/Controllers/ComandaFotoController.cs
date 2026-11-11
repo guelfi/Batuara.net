@@ -13,50 +13,51 @@ namespace Batuara.API.Controllers
     [Route("api/comanda-foto")]
     public class ComandaFotoController(IComandaFotoService service) : ControllerBase
     {
-        private bool Allowed(string? queryToken)
-            => service.IsTokenValid(Request.Headers["X-Comanda-Token"].FirstOrDefault() ?? queryToken);
+        // Token so no header: na URL ele iria parar em historico, logs do nginx e links repassados.
+        private bool Allowed()
+            => service.IsTokenValid(Request.Headers["X-Comanda-Token"].FirstOrDefault());
 
         [HttpPost("ler")]
         [EnableRateLimiting("bingo-write")]
         public async Task<IActionResult> Extract([FromBody] ComandaFotoExtractRequest request, CancellationToken ct)
-            => !Allowed(null) ? Unauthorized() : Ok(new { success = true, data = await service.ExtractAsync(request, ct) });
+            => !Allowed() ? Unauthorized() : Ok(new { success = true, data = await service.ExtractAsync(request, ct) });
 
         [HttpPost]
         [EnableRateLimiting("bingo-write")]
         public async Task<IActionResult> Save([FromBody] ComandaFotoSaveRequest request, CancellationToken ct)
-            => !Allowed(null) ? Unauthorized() : Ok(new { success = true, data = await service.SaveAsync(request, ct) });
+            => !Allowed() ? Unauthorized() : Ok(new { success = true, data = await service.SaveAsync(request, ct) });
 
         /// <summary>Varias comandas pagas juntas: cada uma fica separada, com um unico pagamento (uma ou mais formas).</summary>
         [HttpPost("lote")]
         [EnableRateLimiting("bingo-write")]
         public async Task<IActionResult> SaveBatch([FromBody] ComandaFotoBatchRequest request, CancellationToken ct)
-            => !Allowed(null) ? Unauthorized() : Ok(new { success = true, data = await service.SaveBatchAsync(request, ct) });
+            => !Allowed() ? Unauthorized() : Ok(new { success = true, data = await service.SaveBatchAsync(request, ct) });
 
         [HttpGet("formas-pagamento")]
         [EnableRateLimiting("bingo-read")]
         public async Task<IActionResult> GetPaymentMethods(CancellationToken ct)
-            => !Allowed(null) ? Unauthorized() : Ok(new { success = true, data = await service.GetPaymentMethodsAsync(ct) });
+            => !Allowed() ? Unauthorized() : Ok(new { success = true, data = await service.GetPaymentMethodsAsync(ct) });
 
         [HttpGet("cardapio")]
         [EnableRateLimiting("bingo-read")]
         public async Task<IActionResult> GetMenu(CancellationToken ct)
-            => !Allowed(null) ? Unauthorized() : Ok(new { success = true, data = await service.GetMenuAsync(ct) });
+            => !Allowed() ? Unauthorized() : Ok(new { success = true, data = await service.GetMenuAsync(ct) });
 
         [HttpPost("cardapio")]
         [EnableRateLimiting("bingo-write")]
         public async Task<IActionResult> RegisterMenuItem([FromBody] ComandaFotoMenuRequest request, CancellationToken ct)
-            => !Allowed(null) ? Unauthorized() : Ok(new { success = true, data = await service.RegisterMenuItemAsync(request, ct) });
+            => !Allowed() ? Unauthorized() : Ok(new { success = true, data = await service.RegisterMenuItemAsync(request, ct) });
 
         [HttpGet("relatorio")]
         [EnableRateLimiting("bingo-read")]
         public async Task<IActionResult> Report(CancellationToken ct)
-            => !Allowed(null) ? Unauthorized() : Ok(new { success = true, data = await service.GetReportAsync(ct) });
+            => !Allowed() ? Unauthorized() : Ok(new { success = true, data = await service.GetReportAsync(ct) });
 
         [HttpGet("{id:int}/foto")]
         [EnableRateLimiting("bingo-read")]
-        public async Task<IActionResult> Photo(int id, [FromQuery] string? t, CancellationToken ct)
+        public async Task<IActionResult> Photo(int id, CancellationToken ct)
         {
-            if (!Allowed(t))
+            if (!Allowed())
             {
                 return Unauthorized();
             }
@@ -69,7 +70,7 @@ namespace Batuara.API.Controllers
         [EnableRateLimiting("bingo-write")]
         public async Task<IActionResult> Discard(int id, CancellationToken ct)
         {
-            if (!Allowed(null))
+            if (!Allowed())
             {
                 return Unauthorized();
             }

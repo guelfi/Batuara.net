@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
@@ -21,22 +22,39 @@ namespace Batuara.Infrastructure.Bingo.Services
         private const int MaxPhotoBytes = 3 * 1024 * 1024;
         private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-        public string GetAccessToken()
+        // Leituras (OCR) ja feitas por evento. Fica em memoria: reiniciar a API so reabre o teto, nunca o aumenta.
+        private static readonly ConcurrentDictionary<int, int> ReadsByEvent = new();
+
+        private byte[] SigningKey()
+            => Encoding.UTF8.GetBytes(configuration["JwtSettings:Secret"] ?? string.Empty);
+
+        private static string Sign(byte[] key, long expiresAt)
+            => Convert.ToHexString(HMACSHA256.HashData(key, Encoding.UTF8.GetBytes($"comanda-foto|{expiresAt}")))[..32].ToLowerInvariant();
+
+        /// <summary>Token assinado com validade: "{expiracao}.{assinatura}". Link vazado deixa de servir sozinho.</summary>
+        public string GetAccessToken(TimeSpan? lifetime = null)
         {
-            var secret = configuration["JwtSettings:Secret"] ?? string.Empty;
-            var hash = HMACSHA256.HashData(Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes("comanda-foto"));
-            return Convert.ToHexString(hash)[..20].ToLowerInvariant();
+            var validity = lifetime ?? TimeSpan.FromHours(Math.Max(1, options.Value.TokenHours));
+            var expiresAt = DateTimeOffset.UtcNow.Add(validity).ToUnixTimeSeconds();
+            return $"{expiresAt}.{Sign(SigningKey(), expiresAt)}";
         }
 
         public bool IsTokenValid(string? token)
         {
-            if (string.IsNullOrEmpty(token))
+            if (string.IsNullOrEmpty(token) || token.Length > 64)
             {
                 return false;
             }
 
-            return CryptographicOperations.FixedTimeEquals(
-                Encoding.UTF8.GetBytes(GetAccessToken()), Encoding.UTF8.GetBytes(token));
+            var parts = token.Split('.');
+            if (parts.Length != 2 || !long.TryParse(parts[0], out var expiresAt))
+            {
+                return false;
+            }
+
+            var signatureOk = CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(Sign(SigningKey(), expiresAt)), Encoding.UTF8.GetBytes(parts[1]));
+            return signatureOk && expiresAt > DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         }
 
         public async Task<ComandaFotoExtractResult> ExtractAsync(ComandaFotoExtractRequest request, CancellationToken ct)
@@ -53,6 +71,12 @@ namespace Batuara.Infrastructure.Bingo.Services
 
             var ev = await FindOpenEventAsync(ct)
                 ?? throw new BingoException(BingoErrorKind.Validation, "Não há evento aberto.");
+            if (ReadsByEvent.AddOrUpdate(ev.Id, 1, (_, n) => n + 1) > options.Value.MaxReadsPerEvent)
+            {
+                throw new BingoException(BingoErrorKind.TooManyRequests,
+                    "Limite de leituras por foto deste evento atingido. Digite os itens manualmente ou fale com o administrador.", "ocr_quota");
+            }
+
             var menu = await Db.BingoMenuItems
                 .Where(x => x.EventId == ev.Id && x.IsActive)
                 .OrderBy(x => x.SortOrder)
@@ -106,7 +130,7 @@ namespace Batuara.Infrastructure.Bingo.Services
                 }
             };
 
-            var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
+            var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent";
             Console.WriteLine($"[ComandaFoto] Chamando Google Gemini API - Modelo: {model}");
             
             var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -119,6 +143,8 @@ namespace Batuara.Infrastructure.Bingo.Services
                 {
                     Content = JsonContent.Create(body)
                 };
+                // Chave no header (nao na URL): nao aparece em logs de requisicao nem em mensagens de erro.
+                message.Headers.TryAddWithoutValidation("x-goog-api-key", apiKey);
                 try
                 {
                     response = await http.SendAsync(message, ct);

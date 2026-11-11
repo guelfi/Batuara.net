@@ -12,6 +12,9 @@ RUN npm ci --only=production
 # Copia código fonte
 COPY src/Frontend/AdminDashboard/ ./
 
+# Codigo compartilhado entre os frontends (o prebuild copia para src/_shared via ../shared/sync.js)
+COPY src/Frontend/shared /shared
+
 # Debug: Verificar estrutura copiada
 RUN echo "=== ESTRUTURA COPIADA ===" && ls -la && echo "=== PUBLIC FOLDER ===" && ls -la public/ || echo "Public folder not found"
 
@@ -19,7 +22,8 @@ RUN echo "=== ESTRUTURA COPIADA ===" && ls -la && echo "=== PUBLIC FOLDER ===" &
 ARG REACT_APP_API_URL
 ENV REACT_APP_API_URL=${REACT_APP_API_URL}
 
-# Build da aplicação
+# Build da aplicação (sem script inline no index.html: permite CSP sem 'unsafe-inline' em script-src)
+ENV INLINE_RUNTIME_CHUNK=false
 RUN npm run build
 
 # Copiar assets críticos para a raiz do build

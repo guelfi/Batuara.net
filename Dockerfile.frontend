@@ -32,10 +32,14 @@ RUN npm config set fetch-retries 5 && \
 # Copia código fonte
 COPY ${APP_PATH}/ ./
 
+# Codigo compartilhado entre os frontends (o prebuild copia para src/_shared via ../shared/sync.js)
+COPY src/Frontend/shared /shared
+
 # Debug: Verificar estrutura copiada
 RUN echo "=== ESTRUTURA COPIADA ===" && ls -la && echo "=== PUBLIC FOLDER ===" && ls -la public/ || echo "Public folder not found"
 
-# Build da aplicação
+# Build da aplicação (sem script inline no index.html: permite CSP sem 'unsafe-inline' em script-src)
+ENV INLINE_RUNTIME_CHUNK=false
 RUN npm run build
 
 # Copiar assets críticos para a raiz do build

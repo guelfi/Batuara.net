@@ -1,4 +1,4 @@
-import PaymentPicker, { PayLine } from '../components/comandaFoto/PaymentPicker';
+import PaymentPicker, { PayLine } from '../_shared/comandaFoto/PaymentPicker';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
@@ -26,7 +26,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import QrScanner from '../components/bingo/QrScanner';
 import bingoApi from '../services/bingoApi';
 import apiService from '../services/api';
-import ComandaFotoPanel from '../components/comandaFoto/ComandaFotoPanel';
+import ComandaFotoCore from '../_shared/comandaFoto/ComandaFotoCore';
 import bingoWaiterApi, { WaiterContestation } from '../services/bingoWaiterApi';
 import { WaiterOrderGroup, WaiterStatus } from '../types/bingo';
 import { ContestAction, WaiterAccountItem, WaiterBill, WaiterPaymentMethod } from '../types/bingoWaiter';
@@ -859,7 +859,7 @@ const PhotoTab: React.FC = () => {
 
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!token) return <CircularProgress size={24} />;
-  return <ComandaFotoPanel token={token} />;
+  return <ComandaFotoCore token={token} baseUrl={apiService.getBaseUrl()} variant="panel" />;
 };
 
 // ------------------------------------------------------------------- saída

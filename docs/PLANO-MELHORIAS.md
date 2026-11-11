@@ -392,6 +392,16 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 - `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
 
+### 2026-11-10 (Comanda-Foto: componente único e redução de superfície de ataque)
+
+- Componente único em `src/Frontend/shared/comandaFoto/` (antes duplicado entre PublicWebsite e AdminDashboard). `shared/sync.js` copia para `src/_shared/` de cada app (gerado, no `.gitignore`) em `prestart`/`prebuild`/`pretest`; os Dockerfiles copiam `src/Frontend/shared` para `/shared`. Quem usa o componente passa `token` e `baseUrl`; ele não lê nem guarda token.
+- Token da Comanda-Foto agora é assinado e expira (`{expiracao}.{assinatura}`, 12 h, `GoogleAI:TokenHours`); links antigos deixam de valer. Só vai no header `X-Comanda-Token` (o endpoint de foto deixou de aceitar `?t=`).
+- Link do evento usa `#t=` (fragmento, não vai ao servidor/logs); a página guarda só em `sessionStorage`, apaga o token da barra de endereço e remove o legado do `localStorage`.
+- Teto de leituras OCR por evento (`GoogleAI:MaxReadsPerEvent`, padrão 400, em memória) respondendo 429 `ocr_quota`.
+- Chave do Google enviada no header `x-goog-api-key`, não mais na URL.
+- Build com `INLINE_RUNTIME_CHUNK=false` e CSP do nginx sem `'unsafe-inline'` em `script-src` (conferir se o nginx de produção usa estes arquivos).
+- Pendente (console do Google Cloud, manual): restringir a chave à API Generative Language e ao IP do servidor, definir cota diária e alerta de orçamento.
+
 ### 2026-11-09 (noite: revisão de UI do Admin desktop e Resumo mobile)
 
 - Eventos, Painel ao vivo, Cardápio, Formas de pagamento, Resumo e Comandas Foto reorganizados no desktop; Resumo com grade e seções recolhíveis no mobile; título "Evento:". Detalhes no handoff de 2026-11-09 (noite), §6.1.

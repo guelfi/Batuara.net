@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  Container,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -18,7 +19,6 @@ import {
 } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PaymentPicker, { PayHint, PayLine, payBody } from './PaymentPicker';
-import apiService from '../../services/api';
 import ComandaManual from './ComandaManual';
 
 interface Item {
@@ -28,8 +28,6 @@ interface Item {
   matched: boolean;
 }
 
-// linha 1: # | descrição; linha 2: valor × qtd = total | lixeira
-const ITEM_COLS = '18px minmax(0,1fr) 10px 52px 10px 62px 26px';
 const cellSx = { '& input': { py: 0.75, px: 0.75, fontSize: 13 } } as const;
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -53,7 +51,7 @@ const resizePhoto = (file: File): Promise<string> =>
 
 const errMsg = (e: any): string => {
   const status = e?.response?.status;
-  if (status === 401) return 'Link sem permissão. Peça o link correto ao administrador.';
+  if (status === 401) return 'Link inválido ou expirado. Peça um link novo ao administrador.';
   if (e?.response?.data?.message) return e.response.data.message;
   if (e?.code === 'ECONNABORTED') return 'A leitura demorou demais (limite do aparelho).';
   if (status) return `O servidor demorou ou falhou ao responder (HTTP ${status}).`;
@@ -85,16 +83,28 @@ const isRetryable = (e: any) => {
   return !status || status >= 500 || status === 429;
 };
 
-/** Fotografar/digitar comandas dentro da tela do garçom (mesmo fluxo da página pública, acesso pelo token do evento). */
-const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
+interface ComandaFotoCoreProps {
+  /** Token de acesso. Quem usa o componente decide de onde ele vem; aqui ele nunca é lido nem guardado. */
+  token: string;
+  baseUrl: string;
+  /** 'page' = página própria (título e Container); 'panel' = embutido em outra tela. */
+  variant?: 'page' | 'panel';
+}
+
+/** Fotografar/digitar comandas. Fonte única usada pela página pública e pela tela do garçom (src/Frontend/shared). */
+const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, variant = 'page' }) => {
+  const isPage = variant === 'page';
+  const Root: React.ElementType = isPage ? Container : Box;
+  const rootProps = isPage ? { maxWidth: 'sm' as const, sx: { py: 2 } } : {};
   const http = useMemo(
-    () => axios.create({ baseURL: apiService.getBaseUrl(), timeout: 95000, headers: { 'X-Comanda-Token': token } }),
-    [token],
+    () => axios.create({ baseURL: baseUrl, timeout: 95000, headers: { 'X-Comanda-Token': token } }),
+    [token, baseUrl],
   );
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [eventName, setEventName] = useState<string>('');
   const [eventDate, setEventDate] = useState<string>('');
+  const [build, setBuild] = useState<string>('');
   const [photo, setPhoto] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [comanda, setComanda] = useState('');
@@ -121,7 +131,8 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
       const d = r.data.data;
       setEventName(d?.eventName ?? 'Evento');
       setEventDate(d?.eventDate ? new Date(d.eventDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '');
-            const m = await http.get('/comanda-foto/formas-pagamento');
+      setBuild(d?.build ?? '');
+      const m = await http.get('/comanda-foto/formas-pagamento');
       setPayMethods(m.data.data ?? []);
     } catch (e) {
       setError(errMsg(e));
@@ -260,13 +271,18 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
   };
 
   return (
-    <Box>
+    <Root {...rootProps}>
       <Snackbar open={!!addedNotice} autoHideDuration={9000} onClose={() => setAddedNotice(null)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ top: { xs: 16 } }}>
         <Alert severity="info" variant="filled" onClose={() => setAddedNotice(null)} sx={{ width: '100%', boxShadow: 6 }}>
           {addedNotice}
         </Alert>
       </Snackbar>
-      <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 2, fontSize: 'clamp(0.6rem, 2.9vw, 0.78rem)' }}>
+      {isPage && (
+        <Typography variant="h5" fontWeight={700}>
+          Fechamento Comanda{build && ` - ${build}`}
+        </Typography>
+      )}
+      <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 2, fontSize: isPage ? '0.78rem' : 'clamp(0.6rem, 2.9vw, 0.78rem)' }}>
         {[eventName, eventDate && !eventName.includes(eventDate) ? eventDate : '', 'Fotografar comanda para Fechar Conta']
           .filter(Boolean)
           .join(' - ')}
@@ -460,8 +476,8 @@ const ComandaFotoPanel: React.FC<{ token: string }> = ({ token }) => {
           )}
         </DialogContent>
       </Dialog>
-    </Box>
+    </Root>
   );
 };
 
-export default ComandaFotoPanel;
+export default ComandaFotoCore;

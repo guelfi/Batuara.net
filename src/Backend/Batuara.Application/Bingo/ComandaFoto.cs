@@ -133,6 +133,10 @@ namespace Batuara.Application.Bingo.Models
         public const string SectionName = "GoogleAI";
         public string ApiKey { get; set; } = string.Empty;
         public string Model { get; set; } = "gemini-3-flash-preview";
+        /// <summary>Validade do token de acesso da Comanda-Foto, em horas (o link expira sozinho).</summary>
+        public int TokenHours { get; set; } = 12;
+        /// <summary>Teto de leituras por foto (OCR) por evento: limita o gasto com o Google mesmo se o token vazar.</summary>
+        public int MaxReadsPerEvent { get; set; } = 400;
     }
 }
 
@@ -143,7 +147,7 @@ namespace Batuara.Application.Bingo.Services
     public interface IComandaFotoService
     {
         bool IsTokenValid(string? token);
-        string GetAccessToken();
+        string GetAccessToken(TimeSpan? lifetime = null);
         Task<ComandaFotoExtractResult> ExtractAsync(ComandaFotoExtractRequest request, CancellationToken ct);
         Task<List<BingoPaymentMethodDto>> GetPaymentMethodsAsync(CancellationToken ct);
         Task<List<BingoMenuItemDto>> GetMenuAsync(CancellationToken ct);

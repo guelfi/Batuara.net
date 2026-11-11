@@ -257,3 +257,6 @@ e2e/*.png
 tmp-ef/
 
 
+
+# Codigo compartilhado entre os frontends (gerado por src/Frontend/shared/sync.js)
+src/Frontend/*/src/_shared/
