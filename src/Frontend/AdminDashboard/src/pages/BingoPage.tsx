@@ -2782,7 +2782,7 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
   };
 
   const linkButtons = (
-    <Stack direction="row" spacing={1} useFlexGap flexWrap={isMobile ? 'wrap' : 'nowrap'} justifyContent={isMobile ? 'center' : 'flex-start'} sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+    <Stack direction="row" spacing={1} useFlexGap flexWrap={isMobile ? 'wrap' : 'nowrap'} justifyContent={isMobile ? 'center' : 'flex-start'} sx={{ flexShrink: isMobile ? 1 : 0, maxWidth: '100%', whiteSpace: 'nowrap' }}>
       <Button size="small" variant="outlined" onClick={copyPhotoLink}>Copiar link</Button>
       <Button size="small" variant="contained" color="success" onClick={sendPhotoLinkWhatsApp}>Enviar link WhatsApp</Button>
       <Button size="small" variant="outlined" onClick={showPhotoQr}>QR Code</Button>

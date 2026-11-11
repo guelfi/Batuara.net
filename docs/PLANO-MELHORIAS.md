@@ -290,7 +290,7 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 - **Telas aprovadas sem mudança:** Novo evento, Mesas, Garçons.
 - **Validações executadas:** `tsc --noEmit` e `eslint` (único aviso preexistente: `OPEN_STATUSES` não usado). CI do `9759799` e CD ok. **Não houve conferência visual local** (app exige login): o usuário valida em produção com Ctrl+Shift+R e manda prints.
 - **Arquivos tocados:** `src/Frontend/AdminDashboard/src/pages/BingoPage.tsx` (removidos `CurrencyEditCell`, `chipFilter`, `toggleFilter`), `docs/PRD-COMANDA-DIGITAL-MULTITENANT.md` (v1.2, seção 11 de UI/UX).
-- **PRD do ComandaFácil:** o `PRD-ComandaFacil.md` lá é mantido pela outra sessão e **não deve ser editado por esta**; mudanças vindas do Batuara entram como sugestões em `/home/guelfi/Projetos/ComandaFacil/SUGESTOES-PRD.md` (S1 sem consumo; S2 ajustes de UI/UX).
+- **PRD do ComandaFácil:** o `PRD-ComandaFacil.md` lá é mantido pela outra sessão e **não deve ser editado por esta**; mudanças vindas do Batuara entram como sugestões em `/home/guelfi/Projetos/ComandaFacil/docs/SUGESTOES-PRD.md` (S1 a S11; os documentos do ComandaFácil agora ficam em `/home/guelfi/Projetos/ComandaFacil/docs/`).
 - **Não commitado / cuidado:** nada pendente neste repositório. O produto derivado está em `/home/guelfi/Projetos/ComandaFacil` (PRD próprio, já na v1.3 sem referências ao Batuara; `HANDOFF.md` mantido por lá). Esperar o deploy terminar antes de novo push.
 - **Próximo item sugerido:** receber os prints do usuário com os ajustes finos (Painel ao vivo na 1ª linha em notebook, altura da coluna "Por item", botões de Eventos em janela estreita). Depois: validar o OCR da forma de pagamento com foto real; RF-M6 (QR de todas as mesas no Admin); unificar o fluxo comanda-foto duplicado.
 - **Bloqueios novos:** nenhum.
@@ -344,6 +344,16 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 ---
 
 ## 7. Changelog deste plano
+
+### 2026-11-10 (conferência das 82 comandas de papel contra o sistema)
+
+- **Resultado:** as 82 fotos do evento "Bingo" (07/11/2026) estão lançadas, 82 números distintos, **82 comandas ativas, R$ 6.816,00** (antes da conferência: R$ 6.853,00). Pasta única `~/Downloads/Bingo Batuara - Comandas` (`comanda-NN.jpg`, 82 arquivos; 90 e 91 = as duas sem número). A releitura das 82 fotos pelo leitor serviu só para achar o que faltava; o leitor erra totais (ignora "Batidas" escrito à mão, confunde marcas), então a verdade é a soma das marcas da coluna QUANTIDADE.
+- **Acessos usados (autorizados pelo usuário):** leitura e escrita pontual no banco de produção por SSH (`batuara-net-db`, schema `batuara`), sempre em transação e com cópia da linha antiga em arquivo local.
+- **Correções no banco:** comandas "sem identificação" (Id 26 e 27) renumeradas 1→90 e 3→91 para liberar os números reais; Clecia 33→3; Roberto Longardi B1→81; Ricardo (01) e Pedro (33) lançados pelo Comanda-Foto; comanda 18 (Beti) de R$ 194 para **R$ 157** (sem Cachorro-quente, 5 Cartelas avulsas). Comandas 70 e 73 ficam como o usuário registrou (cobradas juntas; possível erro de cobrança, diferença de R$ 7 na 70).
+- **Cardápio:** "Batida"/"Batidas" unificadas em "Batidas" em 23 comandas (o Resumo mostra uma linha só, 35 unidades); excluídos os itens "Batidas" duplicado (Id 35), "ITEM NÃO IDENTIFICADO" (34) e "DIFERENÇA DE COBRANÇA" (36). As linhas "ITEM NÃO IDENTIFICADO" (R$ 21, comanda 59) e Gorjeta (R$ 20, comanda 39) continuam nas comandas e entram no Resumo como itens normais (o resumo agrupa por **nome**, não por Id de cardápio).
+- **Regra confirmada:** valor escrito ao lado de "Batidas" é o preço; sem marca na coluna QUANTIDADE não há consumo (comandas 40, 58 e 80 ficam em R$ 0,00). As demais comandas de R$ 0,00 também são sem consumo.
+- **Botão Encerrar (evento):** bloqueia novos pedidos e o Comanda-Foto (só usa evento aberto); Resumo e Fechamento continuam; comandas digitais pagas são anonimizadas após 30 dias (não pagas, 90); reversível por "Reabrir" se não houver outro evento aberto. O evento "Teste" só suspende.
+- **ComandaFácil:** a documentação do produto foi movida para `/home/guelfi/Projetos/ComandaFacil/docs/` (PRD, HANDOFF, INFRAESTRUTURA, SUGESTOES-PRD S1 a S11). Continua valendo: não editar PRD/HANDOFF por esta sessão.
 
 ### 2026-11-10 (atualização automática do Resumo e das Comandas Foto)
 
