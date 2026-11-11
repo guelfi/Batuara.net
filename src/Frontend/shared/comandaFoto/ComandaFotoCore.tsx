@@ -451,7 +451,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
         </Paper>
       ) : (
         <Paper sx={{ p: 2, mb: 2, pb: 0 }}>
-          <Button fullWidth variant="contained" size="large" sx={{ py: 1.5, mb: 1 }} disabled={!!busy} onClick={() => fileRef.current?.click()}>
+          <Button fullWidth variant="contained" size="large" sx={{ py: 1, mb: 1 }} disabled={!!busy} onClick={() => fileRef.current?.click()}>
             📷 - {photoLabel}
           </Button>
           {photo && (
@@ -461,12 +461,17 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
           )}
 
           <Stack direction="row" spacing={1} sx={{ mb: 0.5 }}>
-            <TextField size="small" label="Comanda" required value={comanda} onChange={(e) => setComanda(e.target.value)} inputProps={{ inputMode: 'numeric', maxLength: 10 }} sx={{ width: 110 }} />
+            <TextField size="small" label="Comanda" required value={comanda} onChange={(e) => setComanda(e.target.value)} inputProps={{ inputMode: 'numeric', maxLength: 10 }} sx={{ width: 132 }} />
             <TextField size="small" fullWidth required label="Nome do cliente" value={nome} onChange={(e) => setNome(e.target.value)} inputProps={{ maxLength: 40 }} />
           </Stack>
-          <Button size="small" sx={{ mb: 1 }} disabled={nome === NOT_IDENTIFIED} onClick={() => setNome(NOT_IDENTIFIED)}>
-            {NOT_IDENTIFIED}
-          </Button>
+          {/* atalho só enquanto o nome está vazio: depois de usado, libera a linha */}
+          {!nome.trim() ? (
+            <Button size="small" sx={{ mb: 0.5, py: 0, minHeight: 28 }} onClick={() => setNome(NOT_IDENTIFIED)}>
+              {NOT_IDENTIFIED}
+            </Button>
+          ) : (
+            <Box sx={{ mb: 1 }} />
+          )}
 
           {(selectedMenu.length > 0 || extras.length > 0) && (
             <Box sx={{ mb: 1 }}>
@@ -550,24 +555,25 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
               </Button>
             ) : (
               <>
-                <Typography variant="h6" fontWeight={800} align="center" sx={{ mb: 1 }}>
+                <Typography variant="subtitle1" fontWeight={800} align="center" sx={{ mb: 0.5, lineHeight: 1.3 }}>
                   Total da comanda {brl(total)}
                 </Typography>
                 <Stack direction="row" spacing={1}>
-                  <Button fullWidth variant="outlined" onClick={resetCurrent} disabled={!!busy || pristine}>
+                  {/* só faz sentido depois de fotografar (a leitura foi tentada) */}
+                  <Button variant="outlined" size="small" onClick={resetCurrent} disabled={!!busy || !photo} sx={{ flex: '0 0 auto', px: 1.5, whiteSpace: 'nowrap' }}>
                     Descartar
                   </Button>
-                  <Button fullWidth variant="contained" size="large" onClick={() => setPayOpen(true)} disabled={!canClose}>
+                  <Button fullWidth variant="contained" size="small" onClick={() => setPayOpen(true)} disabled={!canClose} sx={{ whiteSpace: 'nowrap', minWidth: 0, fontSize: '0.8125rem' }}>
                     {closeLabel}
                   </Button>
                 </Stack>
                 {!identified && (
-                  <Typography variant="caption" color="text.secondary" display="block" align="center" sx={{ mt: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary" display="block" align="center" sx={{ mt: 0.5, lineHeight: 1.3 }}>
                     Informe o número da comanda e o nome do cliente.
                   </Typography>
                 )}
-                <Button fullWidth variant="text" sx={{ mt: 0.5 }} onClick={addToQueue} disabled={!canClose}>
-                  + Outra comanda no mesmo pagamento
+                <Button fullWidth variant="text" size="small" sx={{ mt: 0.25 }} onClick={addToQueue} disabled={!canClose}>
+                  + Outra comanda para pagamento
                 </Button>
               </>
             )}
