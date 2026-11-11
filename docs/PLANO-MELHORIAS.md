@@ -392,13 +392,19 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 - `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
 
+### 2026-11-11 (noite: carrossel na comanda digital do cliente)
+
+- A lista paginada do cardápio da comanda digital (`BingoCustomerPage`) foi trocada pelo mesmo `MenuCarousel` da Comanda-Foto (`shared/comandaFoto`): cards com rolagem lateral, setas e indicador "Itens a–b de N", busca mantida. Como a tela tem altura fixa (sem rolagem vertical), o carrossel usa várias linhas de cards conforme a altura livre (de 1 a 4).
+- `MenuCarousel` generalizado: ids em texto ou número, item esgotado ("Esgotado", sem controles), selo de já pedido "(n)", limite por item (20 na comanda digital) e rótulos de acessibilidade próprios ("Adicionar/Remover"). Altura mínima do card 112 px e nome em até 2 linhas.
+- Sem mudança de API. Push direto na `master` (sem PR).
+
 ### 2026-11-11 (Comanda-Foto: tela única com cardápio em carrossel)
 
 - Tela única: botão `📷 - Fotografar Comanda`, Número e Nome logo abaixo, faixa "Na comanda" (itens com quantidade) e cardápio em cards com rolagem lateral (`MenuCarousel`, em `shared/`) com busca. A leitura da foto preenche as quantidades no mesmo cardápio; item lido fora do cardápio fica em "Fora do cardápio". O fluxo separado "Digitar comanda" (`ComandaManual`) foi removido.
 - Número e nome obrigatórios para fechar (foto, digitada ou sem lançamentos); atalho "Não identificado". Botão "Fechar comanda sem lançamentos" quando não há itens. Fila "Outra comanda no mesmo pagamento" mantida.
 - Itens lidos pelo OCR que existem no cardápio passam a usar o preço do cardápio (antes valia o preço lido na foto).
 - Fotografar de novo substitui os itens da comanda atual. A API não mudou.
-- Pendente (entrega separada): reaproveitar `MenuCarousel` na comanda digital do cliente (`BingoCustomerPage`).
+- Reaproveitamento do `MenuCarousel` na comanda digital do cliente: feito na entrada seguinte.
 
 ### 2026-11-10 (Comanda-Foto: componente único e redução de superfície de ataque)
 

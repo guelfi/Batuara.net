@@ -10,7 +10,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  IconButton,
   MenuItem,
   Paper,
   Stack,
@@ -19,23 +18,17 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  CheckCircle as CheckCircleIcon,
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
-  Remove as RemoveIcon,
-} from '@mui/icons-material';
+import { CheckCircle as CheckCircleIcon } from '@mui/icons-material';
 import QRCode from 'qrcode';
 import { bingoApi, apiErrorMessage, httpStatus, savedProfile, savedTabId, undeliveredFromError } from '../../services/bingoApi';
 import { BingoPublicInfo, BingoTabItem, BingoTabView, BingoUndeliveredItem } from '../../types/bingo';
 import { formatBRL, useNoIndex, usePolling } from './bingoHooks';
+import MenuCarousel, { CARD_GAP, CARD_MIN_H, CAROUSEL_HEADER_H } from '../../_shared/comandaFoto/MenuCarousel';
 
 const BIG_BUTTON = { minHeight: 52, fontSize: '1.05rem', fontWeight: 700 } as const;
-// Cardapio: linhas de altura fixa; quantas cabem por pagina depende da altura livre da tela.
-const ROW_H = 36;
-const PAGER_H = 40;
+// Cardapio em carrossel de cards; quantas linhas de cards cabem depende da altura livre da tela.
 const SEARCH_H = 44;
+const MAX_PER_ITEM = 20;
 const normText = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 const TAB_PATH = /^\/bingo\/comanda\/([^/?#]+)/;
 
@@ -273,7 +266,6 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
   const [view, setView] = useState<'menu' | 'orders'>('menu');
   const [menuEl, setMenuEl] = useState<HTMLDivElement | null>(null);
   const [menuH, setMenuH] = useState(0);
-  const [menuPage, setMenuPage] = useState(0);
   const [menuSearch, setMenuSearch] = useState('');
 
   useEffect(() => {
@@ -334,7 +326,7 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
 
   const change = (id: string, delta: number) =>
     setCart((c) => {
-      const next = Math.max(0, Math.min(20, (c[id] ?? 0) + delta));
+      const next = Math.max(0, Math.min(MAX_PER_ITEM, (c[id] ?? 0) + delta));
       const copy = { ...c };
       if (next === 0) delete copy[id];
       else copy[id] = next;
@@ -511,7 +503,6 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
   const canOrder = tab.isOpen && !isPaid && !closeRequested;
 
   const activeView = canOrder ? view : 'orders';
-  const MINI_BTN = { width: 26, height: 26 } as const;
   const orderCount = tab.items.reduce((s, i) => s + i.quantity, 0);
   const cartCount = cartLines.reduce((s, l) => s + l.quantity, 0);
   const notice = (severity: 'success' | 'error' | 'info' | 'warning', text: string, bold = false) => (
@@ -522,15 +513,11 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
 
   const showCartBar = activeView === 'menu' && canOrder;
 
-  // Sem medida (testes/primeira renderizacao) mostra tudo; cabendo tudo, sem paginacao.
   const shownMenu = menuSearch.trim() ? tab.menu.filter((m) => normText(m.name).includes(normText(menuSearch.trim()))) : tab.menu;
-  const menuTotal = shownMenu.length;
-  const listH = menuH - SEARCH_H;
-  const fitsAll = menuH === 0 || menuTotal * ROW_H <= listH;
-  const perPage = fitsAll ? Math.max(1, menuTotal) : Math.max(3, Math.floor((listH - PAGER_H) / ROW_H));
-  const menuPages = Math.max(1, Math.ceil(menuTotal / perPage));
-  const currentPage = Math.min(menuPage, menuPages - 1);
-  const visibleMenu = shownMenu.slice(currentPage * perPage, currentPage * perPage + perPage);
+  // A tela tem altura fixa (sem rolagem vertical): quantas linhas de cards cabem depois da busca e da faixa de setas.
+  // Sem medida (testes/primeira renderizacao) assume 3 linhas.
+  const carouselRows =
+    menuH === 0 ? 3 : Math.max(1, Math.min(4, Math.floor((menuH - SEARCH_H - CAROUSEL_HEADER_H - 8 + CARD_GAP) / (CARD_MIN_H + CARD_GAP))));
 
   return (
     <Box
@@ -635,94 +622,30 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
               fullWidth
               placeholder="Buscar item..."
               value={menuSearch}
-              onChange={(e) => {
-                setMenuSearch(e.target.value);
-                setMenuPage(0);
-              }}
+              onChange={(e) => setMenuSearch(e.target.value)}
               sx={{ flexShrink: 0, mb: 0.5, height: SEARCH_H - 4 }}
               slotProps={{ htmlInput: { 'aria-label': 'Buscar item', style: { fontSize: 16 } } }}
             />
-            <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-              {visibleMenu.length === 0 && (
-                <Typography color="text.secondary" align="center" sx={{ py: 2 }}>
-                  Nenhum item encontrado.
-                </Typography>
-              )}
-              {visibleMenu.map((m) => {
-                const qty = cart[m.id] ?? 0;
-                const already = orderedByItem[String(m.id)] ?? 0;
-                return (
-                  <Box
-                    key={m.id}
-                    data-testid={`menu-${m.id}`}
-                    sx={{
-                      height: ROW_H,
-                      boxSizing: 'border-box',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.75,
-                      borderBottom: 1,
-                      borderColor: 'divider',
-                      opacity: m.isAvailable ? 1 : 0.5,
-                      color: m.isAvailable ? 'text.primary' : 'text.disabled',
-                    }}
-                  >
-                    <Typography noWrap sx={{ flex: 1, minWidth: 0, fontSize: '0.86rem', fontWeight: 600 }}>
-                      {m.name}
-                      {already > 0 && (
-                        <Box component="span" data-testid={`ordered-${m.id}`} sx={{ fontWeight: 400, ml: 0.5 }}>
-                          ({already})
-                        </Box>
-                      )}
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
-                      {formatBRL(m.unitPrice)}
-                    </Typography>
-                    {m.isAvailable ? (
-                      <Stack direction="row" alignItems="center" spacing={0.25} sx={{ flexShrink: 0 }}>
-                        <IconButton
-                          aria-label={`Remover ${m.name}`}
-                          onClick={() => change(m.id, -1)}
-                          disabled={qty === 0}
-                          sx={{ ...MINI_BTN, border: 1, borderColor: 'divider' }}
-                        >
-                          <RemoveIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
-                        <Typography sx={{ minWidth: 20, textAlign: 'center', fontWeight: 700, fontSize: '0.85rem' }}>{qty}</Typography>
-                        <IconButton
-                          aria-label={`Adicionar ${m.name}`}
-                          onClick={() => change(m.id, 1)}
-                          disabled={qty >= 20}
-                          sx={{ ...MINI_BTN, bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }}
-                        >
-                          <AddIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Stack>
-                    ) : (
-                      <Typography variant="caption" sx={{ fontWeight: 700, width: 78, textAlign: 'right' }}>
-                        Esgotado
-                      </Typography>
-                    )}
-                  </Box>
-                );
-              })}
+            <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }} data-testid="menu-carousel">
+              <MenuCarousel
+                items={shownMenu}
+                qty={cart}
+                onChange={change}
+                rows={carouselRows}
+                maxQty={MAX_PER_ITEM}
+                minusLabel={(name) => `Remover ${name}`}
+                plusLabel={(name) => `Adicionar ${name}`}
+                testIdPrefix="menu-"
+                renderBadge={(m) => {
+                  const already = orderedByItem[String(m.id)] ?? 0;
+                  return already > 0 ? (
+                    <Box component="span" data-testid={`ordered-${m.id}`} sx={{ fontWeight: 400, ml: 0.5 }}>
+                      ({already})
+                    </Box>
+                  ) : null;
+                }}
+              />
             </Box>
-            {menuPages > 1 && (
-              <Box
-                data-testid="menu-pager"
-                sx={{ height: PAGER_H, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}
-              >
-                <IconButton aria-label="Página anterior" size="small" disabled={currentPage === 0} onClick={() => setMenuPage(currentPage - 1)}>
-                  <ChevronLeftIcon />
-                </IconButton>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                  Página {currentPage + 1} de {menuPages}
-                </Typography>
-                <IconButton aria-label="Próxima página" size="small" disabled={currentPage >= menuPages - 1} onClick={() => setMenuPage(currentPage + 1)}>
-                  <ChevronRightIcon />
-                </IconButton>
-              </Box>
-            )}
           </Box>
         )}
 
