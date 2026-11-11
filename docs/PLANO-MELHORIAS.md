@@ -392,6 +392,12 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 - `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
 
+### 2026-11-11 (noite: comanda digital com cartões de vários itens)
+
+- Na comanda digital do cliente, o cardápio deixou de ser um cartão por item: cada cartão agora é uma lista com vários itens (linhas com nome, preço e − qtd +), e o carrossel desliza entre cartões (`MenuPagedCarousel`, em `shared/comandaFoto`). Quantos itens cabem por cartão é calculado pela altura livre da tela (linhas de 48 px); o próximo cartão aparece pela borda; indicador "Itens a–b de N" e setas por cartão; busca mantida.
+- A Comanda-Foto continua com um cartão por item (`MenuCarousel`). As setas viraram o componente `CarouselControls`, compartilhado.
+- Conferido localmente com Playwright em 393x760, 393x852 e 360x600 (sem rolagem de página). Pendente: conferir no aparelho.
+
 ### 2026-11-11 (noite: Comanda-Foto em uma única tela, sem rolagem, também no garçom)
 
 - Versão única do componente: ocupa exatamente a altura visível da tela (hook `useFillViewport`, com a viewport visual e o padding dos contêineres), sem rolagem de página. O carrossel mede a altura livre e escolhe de 1 a 3 linhas de cards; setas e "+ Item fora do cardápio" ficam na mesma linha, sob os cards. Em telas altas (>= 700 px) os botões de ação ficam empilhados e maiores; nas curtas, lado a lado. A faixa "Na comanda" encolhe e rola por dentro; a fila de comandas tem altura máxima.

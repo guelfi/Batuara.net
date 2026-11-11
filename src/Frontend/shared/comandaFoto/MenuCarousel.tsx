@@ -55,6 +55,31 @@ export const QtyControls: React.FC<QtyControlsProps> = ({ name, quantity, onChan
   </Stack>
 );
 
+interface CarouselControlsProps {
+  first: number;
+  last: number;
+  total: number;
+  /** Indicador curto ("1–6/18") e botões pequenos, para linhas apertadas. */
+  compact?: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+}
+
+/** Setas e indicador de posição dos carrosséis. */
+export const CarouselControls: React.FC<CarouselControlsProps> = ({ first, last, total, compact, onPrev, onNext }) => (
+  <Stack direction="row" justifyContent="center" alignItems="center" spacing={compact ? 0.5 : 1} sx={{ height: CAROUSEL_HEADER_H, flexShrink: 0 }}>
+    <IconButton aria-label="Itens anteriores" size={compact ? 'small' : 'medium'} disabled={first <= 1} onClick={onPrev}>
+      <ChevronLeftIcon />
+    </IconButton>
+    <Typography variant="body2" fontWeight={600} aria-live="polite" aria-label={`Itens ${first} a ${last} de ${total}`} noWrap>
+      {compact ? `${first}–${last}/${total}` : `Itens ${first}–${last} de ${total}`}
+    </Typography>
+    <IconButton aria-label="Próximos itens" size={compact ? 'small' : 'medium'} disabled={last >= total} onClick={onNext}>
+      <ChevronRightIcon />
+    </IconButton>
+  </Stack>
+);
+
 interface MenuCarouselProps<T extends CarouselItem> {
   items: T[];
   qty: QtyMap;
@@ -138,17 +163,14 @@ function MenuCarousel<T extends CarouselItem>({
 
   const atBottom = controlsPosition === 'bottom';
   const controls = (
-    <Stack direction="row" justifyContent="center" alignItems="center" spacing={atBottom ? 0.5 : 1} sx={{ height: CAROUSEL_HEADER_H, flexShrink: 0 }}>
-      <IconButton aria-label="Itens anteriores" size={atBottom ? 'small' : 'medium'} disabled={range.first <= 1} onClick={() => scrollByCards(-1)}>
-        <ChevronLeftIcon />
-      </IconButton>
-      <Typography variant="body2" fontWeight={600} aria-live="polite" aria-label={`Itens ${range.first} a ${range.last} de ${items.length}`} noWrap>
-        {atBottom ? `${range.first}–${range.last}/${items.length}` : `Itens ${range.first}–${range.last} de ${items.length}`}
-      </Typography>
-      <IconButton aria-label="Próximos itens" size={atBottom ? 'small' : 'medium'} disabled={range.last >= items.length} onClick={() => scrollByCards(1)}>
-        <ChevronRightIcon />
-      </IconButton>
-    </Stack>
+    <CarouselControls
+      first={range.first}
+      last={range.last}
+      total={items.length}
+      compact={atBottom}
+      onPrev={() => scrollByCards(-1)}
+      onNext={() => scrollByCards(1)}
+    />
   );
 
   return (

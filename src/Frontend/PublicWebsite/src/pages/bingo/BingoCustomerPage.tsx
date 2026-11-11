@@ -23,7 +23,7 @@ import QRCode from 'qrcode';
 import { bingoApi, apiErrorMessage, httpStatus, savedProfile, savedTabId, undeliveredFromError } from '../../services/bingoApi';
 import { BingoPublicInfo, BingoTabItem, BingoTabView, BingoUndeliveredItem } from '../../types/bingo';
 import { formatBRL, useNoIndex, usePolling } from './bingoHooks';
-import MenuCarousel, { CARD_GAP, CARD_MIN_H, CAROUSEL_HEADER_H } from '../../_shared/comandaFoto/MenuCarousel';
+import MenuPagedCarousel from '../../_shared/comandaFoto/MenuPagedCarousel';
 
 const BIG_BUTTON = { minHeight: 52, fontSize: '1.05rem', fontWeight: 700 } as const;
 // Cardapio em carrossel de cards; quantas linhas de cards cabem depende da altura livre da tela.
@@ -264,19 +264,8 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
   const [contestTarget, setContestTarget] = useState<BingoTabItem | null>(null);
   const [contestNote, setContestNote] = useState('');
   const [view, setView] = useState<'menu' | 'orders'>('menu');
-  const [menuEl, setMenuEl] = useState<HTMLDivElement | null>(null);
-  const [menuH, setMenuH] = useState(0);
   const [menuSearch, setMenuSearch] = useState('');
 
-  useEffect(() => {
-    if (!menuEl) return undefined;
-    const measure = () => setMenuH(menuEl.clientHeight);
-    measure();
-    if (typeof ResizeObserver === 'undefined') return undefined;
-    const observer = new ResizeObserver(measure);
-    observer.observe(menuEl);
-    return () => observer.disconnect();
-  }, [menuEl]);
   const [code, setCode] = useState('');
   const [codeBusy, setCodeBusy] = useState(false);
   const [codeMsg, setCodeMsg] = useState<{ severity: 'error' | 'success'; text: string } | null>(null);
@@ -514,10 +503,6 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
   const showCartBar = activeView === 'menu' && canOrder;
 
   const shownMenu = menuSearch.trim() ? tab.menu.filter((m) => normText(m.name).includes(normText(menuSearch.trim()))) : tab.menu;
-  // A tela tem altura fixa (sem rolagem vertical): quantas linhas de cards cabem depois da busca e da faixa de setas.
-  // Sem medida (testes/primeira renderizacao) assume 3 linhas.
-  const carouselRows =
-    menuH === 0 ? 3 : Math.max(1, Math.min(4, Math.floor((menuH - SEARCH_H - CAROUSEL_HEADER_H - 8 + CARD_GAP) / (CARD_MIN_H + CARD_GAP))));
 
   return (
     <Box
@@ -616,7 +601,7 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
         )}
 
         {activeView === 'menu' && canOrder && (
-          <Box ref={setMenuEl} sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
             <TextField
               size="small"
               fullWidth
@@ -626,12 +611,11 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
               sx={{ flexShrink: 0, mb: 0.5, height: SEARCH_H - 4 }}
               slotProps={{ htmlInput: { 'aria-label': 'Buscar item', style: { fontSize: 16 } } }}
             />
-            <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }} data-testid="menu-carousel">
-              <MenuCarousel
+            <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }} data-testid="menu-carousel">
+              <MenuPagedCarousel
                 items={shownMenu}
                 qty={cart}
                 onChange={change}
-                rows={carouselRows}
                 maxQty={MAX_PER_ITEM}
                 minusLabel={(name) => `Remover ${name}`}
                 plusLabel={(name) => `Adicionar ${name}`}
