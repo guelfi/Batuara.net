@@ -559,8 +559,8 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
                   Total da comanda {brl(total)}
                 </Typography>
                 <Stack direction="row" spacing={1}>
-                  {/* só faz sentido depois de fotografar (a leitura foi tentada) */}
-                  <Button variant="outlined" size="small" onClick={resetCurrent} disabled={!!busy || !photo} sx={{ flex: '0 0 auto', px: 1.5, whiteSpace: 'nowrap' }}>
+                  {/* só depois de fotografar (a leitura foi tentada); com comandas na fila também, para desistir da próxima sem perder a fila */}
+                  <Button variant="outlined" size="small" onClick={resetCurrent} disabled={!!busy || (!photo && queue.length === 0)} sx={{ flex: '0 0 auto', px: 1.5, whiteSpace: 'nowrap' }}>
                     Descartar
                   </Button>
                   <Button fullWidth variant="contained" size="small" onClick={() => setPayOpen(true)} disabled={!canClose} sx={{ whiteSpace: 'nowrap', minWidth: 0, fontSize: '0.8125rem' }}>

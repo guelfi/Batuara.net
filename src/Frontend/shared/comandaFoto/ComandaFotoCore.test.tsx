@@ -87,6 +87,25 @@ test('Descartar fica desabilitado enquanto não houve foto, mesmo com itens lan�
   expect(screen.getByRole('button', { name: 'Descartar' })).toBeDisabled();
 });
 
+test('com uma comanda na fila, dá para desistir da próxima e voltar a fechar a fila', async () => {
+  await renderCore();
+  fireEvent.click(screen.getByLabelText('Mais Água'));
+  fireEvent.change(screen.getByLabelText(/^Comanda/), { target: { value: '12' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Não identificado' }));
+  fireEvent.click(screen.getByRole('button', { name: '+ Outra comanda para pagamento' }));
+  await screen.findByText('Comandas para fechar juntas (1)');
+
+  // segunda comanda digitada, sem foto: Descartar precisa estar disponível por causa da fila
+  fireEvent.change(screen.getByLabelText(/^Comanda/), { target: { value: '13' } });
+  fireEvent.click(screen.getByLabelText('Mais Salada'));
+  const discard = screen.getByRole('button', { name: 'Descartar' });
+  expect(discard).toBeEnabled();
+  fireEvent.click(discard);
+
+  expect(screen.getByText('Comandas para fechar juntas (1)')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /Fechar 1 comanda/ })).toBeInTheDocument();
+});
+
 test('o atalho Não identificado some depois de usado', async () => {
   await renderCore();
   fireEvent.click(screen.getByRole('button', { name: 'Não identificado' }));
