@@ -1,4 +1,4 @@
-import PaymentPicker, { PayLine } from '../components/comandaFoto/PaymentPicker';
+import PaymentPicker, { PayLine } from '../_shared/comandaFoto/PaymentPicker';
 import ClosingReport from '../components/bingo/ClosingReport';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -1958,7 +1958,7 @@ const SummaryTab: React.FC<{
   const showPhotoLink = async () => {
     try {
       const r = await apiService.get<any>('/comanda-foto/token');
-      const link = `https://www.batuara.org.br/comanda-foto?t=${r.data?.data?.token ?? r.data?.token}`;
+      const link = `https://www.batuara.org.br/comanda-foto#t=${r.data?.data?.token ?? r.data?.token}`;
       setPhotoLink(link);
       try { await navigator.clipboard.writeText(link); notify('Link copiado.', 'success'); } catch { /* mostra na tela */ }
     } catch (e: any) {
@@ -1969,7 +1969,7 @@ const SummaryTab: React.FC<{
   const sendPhotoLinkWhatsApp = async () => {
     try {
       const r = await apiService.get<any>('/comanda-foto/token');
-      const link = `https://www.batuara.org.br/comanda-foto?t=${r.data?.data?.token ?? r.data?.token}`;
+      const link = `https://www.batuara.org.br/comanda-foto#t=${r.data?.data?.token ?? r.data?.token}`;
       const message = `*Fechamento de Comanda por Foto*\n\nLink para fechar comandas fotografando:\n${link}\n\nBasta abrir no celular e fotografar cada comanda de papel.`;
       openWhatsApp(message, isMobile);
     } catch (e: any) {
@@ -2759,7 +2759,7 @@ const PhotoTabsTab: React.FC<{ notify: Notify; current: BingoEvent | null }> = (
   const [photoLink, setPhotoLink] = useState('');
   const fetchPhotoLink = async () => {
     const r = await apiService.get<any>('/comanda-foto/token');
-    return `https://www.batuara.org.br/comanda-foto?t=${r.data?.data?.token ?? r.data?.token}`;
+    return `https://www.batuara.org.br/comanda-foto#t=${r.data?.data?.token ?? r.data?.token}`;
   };
 
   const copyPhotoLink = async () => {

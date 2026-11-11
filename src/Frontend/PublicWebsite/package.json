@@ -29,8 +29,11 @@
     "web-vitals": "^5.2.0"
   },
   "scripts": {
+    "prestart": "node ../shared/sync.js",
     "start": "react-scripts start",
+    "prebuild": "node ../shared/sync.js",
     "build": "react-scripts build",
+    "pretest": "node ../shared/sync.js",
     "test": "react-scripts test",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",

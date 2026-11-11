@@ -75,6 +75,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Sync shared frontend code
+        run: |
+          (cd src/Frontend/PublicWebsite && node ../shared/sync.js)
+          (cd src/Frontend/AdminDashboard && node ../shared/sync.js)
+
       - name: Find unused files in src/
         run: node scripts/ci/find-unused-frontend.js src/Frontend/PublicWebsite src/Frontend/AdminDashboard
 
