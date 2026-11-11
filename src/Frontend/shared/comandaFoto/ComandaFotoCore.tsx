@@ -8,28 +8,25 @@ import {
   CircularProgress,
   Container,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogTitle,
   IconButton,
+  InputAdornment,
   Paper,
   Skeleton,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
+import ClearIcon from '@mui/icons-material/Clear';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import SearchIcon from '@mui/icons-material/Search';
 import PaymentPicker, { PayHint, PayLine, payBody } from './PaymentPicker';
-import ComandaManual from './ComandaManual';
+import MenuCarousel, { QtyControls } from './MenuCarousel';
+import { ExtraItem, Item, MAX_QTY, MenuItem, applyOcrItems, brl, deriveItems, norm } from './comandaUtils';
 
-interface Item {
-  name: string;
-  quantity: number;
-  unitPrice: number;
-  matched: boolean;
-}
-
-const cellSx = { '& input': { py: 0.75, px: 0.75, fontSize: 13 } } as const;
-const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const NOT_IDENTIFIED = 'Não identificado';
 
 /** Reduz a foto no celular (lado maior 1400 px, JPEG) para subir rapido e caber no banco. */
 const resizePhoto = (file: File): Promise<string> =>
@@ -83,6 +80,14 @@ const isRetryable = (e: any) => {
   return !status || status >= 500 || status === 429;
 };
 
+interface QueuedComanda {
+  comanda: string;
+  nome: string;
+  items: Item[];
+  photo: string;
+  total: number;
+}
+
 interface ComandaFotoCoreProps {
   /** Token de acesso. Quem usa o componente decide de onde ele vem; aqui ele nunca é lido nem guardado. */
   token: string;
@@ -91,7 +96,10 @@ interface ComandaFotoCoreProps {
   variant?: 'page' | 'panel';
 }
 
-/** Fotografar/digitar comandas. Fonte única usada pela página pública e pela tela do garçom (src/Frontend/shared). */
+/**
+ * Fechar comanda: fotografar (a leitura preenche o cardápio) e/ou digitar direto no cardápio.
+ * Fonte única usada pela página pública e pela tela do garçom (src/Frontend/shared).
+ */
 const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, variant = 'page' }) => {
   const isPage = variant === 'page';
   const Root: React.ElementType = isPage ? Container : Box;
@@ -106,7 +114,15 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
   const [eventDate, setEventDate] = useState<string>('');
   const [build, setBuild] = useState<string>('');
   const [photo, setPhoto] = useState<string | null>(null);
-  const [items, setItems] = useState<Item[]>([]);
+  const [menu, setMenu] = useState<MenuItem[]>([]);
+  const menuRef = useRef<MenuItem[]>([]);
+  const [menuLoading, setMenuLoading] = useState(true);
+  const [qty, setQty] = useState<Record<number, number>>({});
+  const [extras, setExtras] = useState<ExtraItem[]>([]);
+  const [search, setSearch] = useState('');
+  const [extraOpen, setExtraOpen] = useState(false);
+  const [extraName, setExtraName] = useState('');
+  const [extraPrice, setExtraPrice] = useState('');
   const [comanda, setComanda] = useState('');
   const [nome, setNome] = useState('');
   const [dupFor, setDupFor] = useState('');
@@ -114,18 +130,26 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
   const [payMethods, setPayMethods] = useState<{ id: number; name: string }[]>([]);
   const [payOpen, setPayOpen] = useState(false);
   const [payHints, setPayHints] = useState<PayHint[]>([]);
-  // comandas já lidas que serão fechadas juntas no mesmo pagamento (cada uma continua separada)
-  const [queue, setQueue] = useState<{ comanda: string; nome: string; items: Item[]; photo: string; total: number }[]>([]);
+  // comandas já preenchidas que serão fechadas juntas no mesmo pagamento (cada uma continua separada)
+  const [queue, setQueue] = useState<QueuedComanda[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // 0 = não está lendo; 1..3 = tentativa atual da leitura da foto
   const [attempt, setAttempt] = useState(0);
   const [readFailure, setReadFailure] = useState<string | null>(null);
-  const [manual, setManual] = useState(false);
   // forma de pagamento que a IA achou escrita na comanda (pré-seleciona no diálogo)
   const [suggestedPay, setSuggestedPay] = useState<number | null>(null);
+  const [addedNotice, setAddedNotice] = useState<string | null>(null);
 
-  const loadEventName = useCallback(async () => {
+  const fetchMenu = useCallback(async (): Promise<MenuItem[]> => {
+    const r = await http.get('/comanda-foto/cardapio');
+    const list: MenuItem[] = r.data.data ?? [];
+    menuRef.current = list;
+    setMenu(list);
+    return list;
+  }, [http]);
+
+  const loadInitial = useCallback(async () => {
     try {
       const r = await http.get('/comanda-foto/relatorio');
       const d = r.data.data;
@@ -134,14 +158,17 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
       setBuild(d?.build ?? '');
       const m = await http.get('/comanda-foto/formas-pagamento');
       setPayMethods(m.data.data ?? []);
+      await fetchMenu();
     } catch (e) {
       setError(errMsg(e));
+    } finally {
+      setMenuLoading(false);
     }
-  }, [http]);
+  }, [http, fetchMenu]);
 
   useEffect(() => {
-    loadEventName();
-  }, [loadEventName]);
+    loadInitial();
+  }, [loadInitial]);
 
   const readPhoto = async (b64: string) => {
     setReadFailure(null);
@@ -151,7 +178,10 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
       setAttempt(n);
       try {
         const r = await http.post('/comanda-foto/ler', { imageBase64: b64, mediaType: 'image/jpeg' });
-        setItems(r.data.data.items);
+        const menuList = menuRef.current.length > 0 ? menuRef.current : await fetchMenu().catch(() => [] as MenuItem[]);
+        const applied = applyOcrItems(menuList, r.data.data.items);
+        setQty(applied.qty);
+        setExtras(applied.extras);
         const { comandaNumber, customerName } = r.data.data;
         setComanda(String(comandaNumber ?? ''));
         setNome(String(customerName ?? ''));
@@ -167,7 +197,6 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
         await sleep(RETRY_PAUSE_MS);
       }
     }
-    setItems([]);
     setAttempt(0);
     setReadFailure(`Não foi possível processar a imagem. ${errMsg(lastError)}`);
   };
@@ -176,7 +205,6 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     if (!file) return;
     setError(null);
     setReadFailure(null);
-    setManual(false);
     try {
       const b64 = await resizePhoto(file);
       setPhoto(b64);
@@ -186,7 +214,6 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     }
   };
 
-  const [addedNotice, setAddedNotice] = useState<string | null>(null);
   const noticeAdded = (added?: { name: string; unitPrice: number }[]) => {
     if (added && added.length > 0) {
       setAddedNotice(`Entrou no cardápio (confirmar no Admin): ${added.map((a) => `${a.name} (${brl(a.unitPrice)})`).join(', ')}`);
@@ -195,13 +222,14 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
 
   const resetCurrent = () => {
     setPhoto(null);
-    setItems([]);
+    setQty({});
+    setExtras([]);
+    setSearch('');
     setComanda('');
     setNome('');
     setDup(null);
     setError(null);
     setReadFailure(null);
-    setManual(false);
     setAttempt(0);
     setSuggestedPay(null);
     setPayHints([]);
@@ -211,13 +239,57 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     setQueue([]);
   };
 
+  const items = useMemo(() => deriveItems(menu, qty, extras), [menu, qty, extras]);
   const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
+  const count = items.reduce((s, i) => s + i.quantity, 0);
   // sem consumo: nada a pagar, entao nao ha forma de pagamento
   const noConsumption = total <= 0;
-  const queueTotal = queue.reduce((s2, q) => s2 + q.total, 0);
-  const hasCurrent = !!photo && !manual;
+  const queueTotal = queue.reduce((s, q) => s + q.total, 0);
+  // a comanda atual ainda está em branco (nada digitado, lido nem fotografado)
+  const pristine = !photo && count === 0 && !comanda.trim() && !nome.trim();
+  const hasCurrent = !pristine;
   const grandTotal = queueTotal + (hasCurrent ? total : 0);
   const grandNoConsumption = grandTotal <= 0;
+  const isDuplicate = !!dup && comanda.trim() === dupFor.trim();
+  const identified = comanda.trim().length > 0 && nome.trim().length > 0;
+  const canClose = !busy && identified && !isDuplicate;
+
+  const filteredMenu = useMemo(() => {
+    const q = norm(search);
+    return q ? menu.filter((m) => norm(m.name).includes(q)) : menu;
+  }, [menu, search]);
+  const selectedMenu = menu.filter((m) => (qty[m.id] ?? 0) > 0);
+
+  const setItemQty = (id: number, delta: number) =>
+    setQty((q) => ({ ...q, [id]: Math.max(0, Math.min(MAX_QTY, (q[id] ?? 0) + delta)) }));
+  const setExtraQty = (idx: number, delta: number) =>
+    setExtras((l) => l.map((x, i) => (i === idx ? { ...x, quantity: Math.max(1, Math.min(MAX_QTY, x.quantity + delta)) } : x)));
+
+  const addExtra = () => {
+    const price = Number(extraPrice.replace(',', '.'));
+    if (!extraName.trim() || !(price >= 0) || extraPrice.trim() === '') return;
+    setExtras((l) => [...l, { name: extraName.trim(), quantity: 1, unitPrice: price }]);
+    setExtraName('');
+    setExtraPrice('');
+    setExtraOpen(false);
+  };
+
+  const registerExtra = async (idx: number) => {
+    const it = extras[idx];
+    setBusy('Cadastrando no cardápio...');
+    try {
+      const r = await http.post('/comanda-foto/cardapio', { name: it.name, unitPrice: it.unitPrice });
+      const canonical: string = r.data.data.name;
+      const list = await fetchMenu();
+      const found = list.find((x) => norm(x.name) === norm(canonical));
+      if (found) setQty((q) => ({ ...q, [found.id]: Math.min(MAX_QTY, (q[found.id] ?? 0) + it.quantity) }));
+      setExtras((l) => l.filter((_, i) => i !== idx));
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const addToQueue = async () => {
     const number = comanda.trim();
@@ -225,23 +297,9 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
       setError(`A comanda ${number} já está nesta lista.`);
       return;
     }
-    const small = await shrinkPhoto(photo as string);
-    setQueue((l) => [...l, { comanda: number, nome: nome.trim(), items: items.filter((i) => i.quantity > 0), photo: small, total }]);
+    const small = photo ? await shrinkPhoto(photo) : '';
+    setQueue((l) => [...l, { comanda: number, nome: nome.trim(), items, photo: small, total }]);
     resetCurrent();
-  };
-  const patch = (idx: number, p: Partial<Item>) => setItems((l) => l.map((it, i) => (i === idx ? { ...it, ...p } : it)));
-
-  const registerItem = async (idx: number) => {
-    const it = items[idx];
-    setBusy('Cadastrando no cardápio...');
-    try {
-      const r = await http.post('/comanda-foto/cardapio', { name: it.name, unitPrice: it.unitPrice });
-      patch(idx, { name: r.data.data.name, matched: true });
-    } catch (e) {
-      setError(errMsg(e));
-    } finally {
-      setBusy(null);
-    }
   };
 
   const save = async (lines: PayLine[] | null) => {
@@ -251,11 +309,11 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     const labelOf = (c: string, n: string) => [c && `Comanda ${c}`, n].filter(Boolean).join(' - ').slice(0, 60);
     try {
       if (queue.length === 0) {
-        const r = await http.post('/comanda-foto', { comandaNumber: comanda.trim(), ...payBody(lines), items: items.filter((i) => i.quantity > 0), label: labelOf(comanda.trim(), nome.trim()), imageBase64: photo });
+        const r = await http.post('/comanda-foto', { comandaNumber: comanda.trim(), ...payBody(lines), items, label: labelOf(comanda.trim(), nome.trim()), imageBase64: photo ?? '' });
         resetAll();
         noticeAdded(r.data?.data?.addedToMenu);
       } else {
-        const all = [...queue, ...(hasCurrent ? [{ comanda: comanda.trim(), nome: nome.trim(), items: items.filter((i) => i.quantity > 0), photo: await shrinkPhoto(photo as string), total }] : [])];
+        const all = [...queue, ...(hasCurrent ? [{ comanda: comanda.trim(), nome: nome.trim(), items, photo: photo ? await shrinkPhoto(photo) : '', total }] : [])];
         const r = await http.post('/comanda-foto/lote', {
           ...payBody(lines),
           comandas: all.map((c) => ({ comandaNumber: c.comanda, label: labelOf(c.comanda, c.nome), items: c.items, imageBase64: c.photo })),
@@ -270,11 +328,20 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     }
   };
 
+  const closeLabel = queue.length > 0 ? `Fechar ${queue.length + 1} comandas` : noConsumption ? 'Fechar comanda sem lançamentos' : 'Fechar comanda';
+  const reading = attempt > 0;
+  const photoLabel = photo ? 'Fotografar Novamente' : queue.length > 0 ? 'Fotografar Outra Comanda' : 'Fotografar Comanda';
+
   return (
     <Root {...rootProps}>
       <Snackbar open={!!addedNotice} autoHideDuration={9000} onClose={() => setAddedNotice(null)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ top: { xs: 16 } }}>
         <Alert severity="info" variant="filled" onClose={() => setAddedNotice(null)} sx={{ width: '100%', boxShadow: 6 }}>
           {addedNotice}
+        </Alert>
+      </Snackbar>
+      <Snackbar open={isDuplicate} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ top: { xs: 16 } }}>
+        <Alert severity="error" variant="filled" sx={{ width: '100%', boxShadow: 6 }}>
+          Comanda {comanda.trim()} já registrada{dup ? ` (${brl(dup.total)})` : ''}
         </Alert>
       </Snackbar>
       {isPage && (
@@ -306,13 +373,14 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
         accept="image/*"
         capture="environment"
         hidden
+        data-testid="comanda-file"
         onChange={(e) => {
           onFile(e.target.files?.[0]);
           e.target.value = '';
         }}
       />
 
-      {queue.length > 0 && !manual && attempt === 0 && !readFailure && (
+      {queue.length > 0 && !reading && !readFailure && (
         <Paper variant="outlined" sx={{ p: 1.5, mb: 2 }}>
           <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
             Comandas para fechar juntas ({queue.length})
@@ -330,7 +398,8 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
           ))}
         </Paper>
       )}
-      {attempt > 0 ? (
+
+      {reading ? (
         <Paper
           sx={{ p: 2, mb: 2, '@media (prefers-reduced-motion: reduce)': { '& .MuiSkeleton-root, & .MuiSkeleton-root::after': { animation: 'none' } } }}
           aria-busy="true"
@@ -345,22 +414,9 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
             <Skeleton variant="rounded" width={110} height={40} animation="wave" />
             <Skeleton variant="rounded" height={40} animation="wave" sx={{ flex: 1 }} />
           </Stack>
-          {[72, 58, 84, 64, 76].map((w, i) => (
-            <Box key={i} sx={{ mb: 1.25 }}>
-              <Skeleton variant="rounded" height={32} width={`${w}%`} animation="wave" sx={{ mb: 0.5 }} />
-              <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
-                <Skeleton variant="rounded" width={52} height={24} animation="wave" />
-                <Skeleton variant="rounded" width={52} height={24} animation="wave" />
-                <Skeleton variant="rounded" width={62} height={24} animation="wave" />
-                <Skeleton variant="circular" width={22} height={22} animation="wave" />
-              </Stack>
-            </Box>
+          {[72, 58, 84].map((w, i) => (
+            <Skeleton key={i} variant="rounded" height={32} width={`${w}%`} animation="wave" sx={{ mb: 1 }} />
           ))}
-          <Skeleton variant="rounded" height={32} width="60%" animation="wave" sx={{ mx: 'auto', my: 1.5 }} />
-          <Stack direction="row" spacing={1}>
-            <Skeleton variant="rounded" height={42} animation="wave" sx={{ flex: 1 }} />
-            <Skeleton variant="rounded" height={42} animation="wave" sx={{ flex: 1 }} />
-          </Stack>
         </Paper>
       ) : readFailure ? (
         <Paper sx={{ p: 2, mb: 2 }}>
@@ -371,108 +427,175 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
             <Button fullWidth variant="contained" size="large" onClick={() => photo && readPhoto(photo)}>
               🔄 Tentar ler novamente
             </Button>
-            <Button fullWidth variant="outlined" size="large" onClick={() => { setReadFailure(null); setManual(true); }}>
-              ✍ Digitar sem foto
+            <Button fullWidth variant="outlined" size="large" onClick={() => setReadFailure(null)}>
+              ✍ Digitar sem ler a foto
             </Button>
             <Button fullWidth onClick={resetCurrent}>
               ← Voltar
             </Button>
           </Stack>
         </Paper>
-      ) : manual ? (
-        <ComandaManual http={http} payMethods={payMethods} photo={photo} errMsg={errMsg} onBack={resetCurrent} onSaved={(a) => { resetCurrent(); noticeAdded(a); }} />
-      ) : photo ? (
-        <Paper sx={{ p: 2, mb: 2 }}>
-          <Snackbar open={!!dup && comanda.trim() === dupFor.trim()} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ top: { xs: 16 } }}>
-            <Alert severity="error" variant="filled" sx={{ width: '100%', boxShadow: 6 }}>
-              Comanda {comanda.trim()} já registrada{dup ? ` (${brl(dup.total)})` : ''}
-            </Alert>
-          </Snackbar>
-          <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-            <TextField size="small" label="Comanda" value={comanda} onChange={(e) => setComanda(e.target.value)} inputProps={{ inputMode: 'numeric', maxLength: 10 }} sx={{ width: 110 }} />
-            <TextField size="small" fullWidth label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} inputProps={{ maxLength: 40 }} />
+      ) : (
+        <Paper sx={{ p: 2, mb: 2, pb: 0 }}>
+          <Button fullWidth variant="contained" size="large" sx={{ py: 1.5, mb: 1 }} disabled={!!busy} onClick={() => fileRef.current?.click()}>
+            📷 - {photoLabel}
+          </Button>
+          {photo && (
+            <Typography variant="caption" color="text.secondary" display="block" align="center" sx={{ mb: 1 }}>
+              Foto anexada a esta comanda. Confira os itens abaixo.
+            </Typography>
+          )}
+
+          <Stack direction="row" spacing={1} sx={{ mb: 0.5 }}>
+            <TextField size="small" label="Comanda" required value={comanda} onChange={(e) => setComanda(e.target.value)} inputProps={{ inputMode: 'numeric', maxLength: 10 }} sx={{ width: 110 }} />
+            <TextField size="small" fullWidth required label="Nome do cliente" value={nome} onChange={(e) => setNome(e.target.value)} inputProps={{ maxLength: 40 }} />
           </Stack>
-          {items.map((it, idx) => (
-            <Box key={idx} sx={{ mb: 1.25, opacity: it.quantity === 0 ? 0.5 : 1 }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '18px minmax(0,1fr)', columnGap: 0.5, alignItems: 'center', mb: 0.5 }}>
-                <Typography variant="caption" color="text.secondary">
-                  {idx + 1}
-                </Typography>
-                <TextField size="small" fullWidth value={it.name} error={!it.matched} sx={cellSx} onChange={(e) => patch(idx, { name: e.target.value, matched: false })} />
-              </Box>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '18px 1fr 52px 10px 52px 10px 62px 26px', columnGap: 0.5, alignItems: 'center' }}>
-                <span />
-                <Typography variant="caption" color="text.secondary" align="right">Valor</Typography>
-                <TextField size="small" type="number" value={it.unitPrice} sx={{ ...cellSx, '& input': { ...cellSx['& input'], textAlign: 'right' } }} onChange={(e) => patch(idx, { unitPrice: Math.max(0, Number(e.target.value)) })} />
-                <Typography variant="body2" color="text.secondary" align="center">×</Typography>
-                <TextField size="small" type="number" value={it.quantity} sx={{ ...cellSx, '& input': { ...cellSx['& input'], textAlign: 'right' } }} onChange={(e) => patch(idx, { quantity: Math.max(0, Number(e.target.value)) })} />
-                <Typography variant="body2" color="text.secondary" align="center">=</Typography>
-                <Typography variant="body2" fontWeight={700} align="right" sx={it.quantity === 0 ? { textDecoration: 'line-through', opacity: 0.5 } : undefined}>
-                  {(it.quantity * it.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </Typography>
-                <IconButton size="small" aria-label="Remover item" color="error" onClick={() => setItems((l) => l.filter((_, i) => i !== idx))} sx={{ p: 0.25 }}>
-                  <DeleteOutlineIcon fontSize="small" />
-                </IconButton>
-              </Box>
-              {!it.matched && (
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ pl: 3, mt: 0.25 }}>
-                  <Typography variant="caption" color="error">
-                    Fora do cardápio
-                  </Typography>
-                  <Button size="small" variant="outlined" disabled={!!busy || !it.name.trim() || it.unitPrice <= 0} onClick={() => registerItem(idx)} sx={{ whiteSpace: 'nowrap', minWidth: 0, px: 1, py: 0, fontSize: 12 }}>
+          <Button size="small" sx={{ mb: 1 }} disabled={nome === NOT_IDENTIFIED} onClick={() => setNome(NOT_IDENTIFIED)}>
+            {NOT_IDENTIFIED}
+          </Button>
+
+          {(selectedMenu.length > 0 || extras.length > 0) && (
+            <Box sx={{ mb: 1 }}>
+              <Typography variant="subtitle2" fontWeight={700}>
+                Na comanda ({count})
+              </Typography>
+              {selectedMenu.map((m) => (
+                <Stack key={m.id} direction="row" alignItems="center" spacing={1} sx={{ py: 0.75, borderBottom: 1, borderColor: 'divider' }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" fontWeight={600} noWrap title={m.name}>
+                      {m.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {brl(m.unitPrice)} × {qty[m.id]} = {brl(m.unitPrice * qty[m.id])}
+                    </Typography>
+                  </Box>
+                  <QtyControls name={m.name} quantity={qty[m.id]} onChange={(d) => setItemQty(m.id, d)} />
+                </Stack>
+              ))}
+              {extras.map((e, idx) => (
+                <Box key={`${e.name}-${idx}`} sx={{ py: 0.75, borderBottom: 1, borderColor: 'divider' }}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" fontWeight={600} noWrap title={e.name}>
+                        {e.name}
+                      </Typography>
+                      <Typography variant="caption" color="error">
+                        Fora do cardápio · {brl(e.unitPrice)} × {e.quantity} = {brl(e.unitPrice * e.quantity)}
+                      </Typography>
+                    </Box>
+                    <QtyControls name={e.name} quantity={e.quantity} onChange={(d) => setExtraQty(idx, d)} />
+                    <IconButton size="small" aria-label={`Remover ${e.name}`} color="error" onClick={() => setExtras((l) => l.filter((_, i) => i !== idx))} sx={{ p: 0.25 }}>
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                  <Button size="small" variant="outlined" disabled={!!busy || !e.name.trim() || e.unitPrice <= 0} onClick={() => registerExtra(idx)} sx={{ mt: 0.5, minWidth: 0, px: 1, py: 0, fontSize: 12 }}>
                     + Cardápio
                   </Button>
-                </Stack>
-              )}
+                </Box>
+              ))}
             </Box>
-          ))}
-          <Button size="small" onClick={() => setItems((l) => [...l, { name: '', quantity: 1, unitPrice: 0, matched: true }])}>
-            + Adicionar item
+          )}
+
+          <TextField
+            size="small"
+            fullWidth
+            placeholder="Buscar item do cardápio..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            sx={{ mb: 1 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+              endAdornment: search ? (
+                <InputAdornment position="end">
+                  <IconButton size="small" aria-label="Limpar busca" onClick={() => setSearch('')}>
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ) : undefined,
+            }}
+          />
+          {menuLoading ? (
+            <Stack alignItems="center" sx={{ py: 3 }}>
+              <CircularProgress size={24} />
+            </Stack>
+          ) : (
+            <MenuCarousel items={filteredMenu} qty={qty} onChange={setItemQty} />
+          )}
+          <Button size="small" onClick={() => setExtraOpen(true)} disabled={!!busy}>
+            + Item fora do cardápio
           </Button>
-          <Typography variant="h5" fontWeight={800} align="center" sx={{ my: 1 }}>
-            Total da comanda {brl(total)}
-          </Typography>
-          <Stack direction="row" spacing={1}>
-            <Button fullWidth variant="outlined" onClick={() => setPhoto(null)} disabled={!!busy}>
-              Descartar
-            </Button>
-            <Button fullWidth variant="contained" size="large" onClick={() => setPayOpen(true)} disabled={!!busy || !comanda.trim() || (!!dup && comanda.trim() === dupFor.trim())}>
-              {queue.length > 0 ? `Fechar ${queue.length + 1} comandas` : noConsumption ? 'Encerrar sem consumo' : 'Fechar comanda'}
-            </Button>
-          </Stack>
-          <Button fullWidth variant="text" sx={{ mt: 1 }} onClick={addToQueue} disabled={!!busy || !comanda.trim() || (!!dup && comanda.trim() === dupFor.trim())}>
-            + Outra comanda no mesmo pagamento
-          </Button>
+
+          <Box sx={{ position: 'sticky', bottom: 0, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider', mx: -2, px: 2, pt: 1, pb: 'calc(8px + env(safe-area-inset-bottom))' }}>
+            {queue.length > 0 && pristine ? (
+              <Button fullWidth variant="contained" color="success" size="large" disabled={!!busy} onClick={() => setPayOpen(true)}>
+                Fechar {queue.length} {queue.length === 1 ? 'comanda' : 'comandas'} — {brl(queueTotal)}
+              </Button>
+            ) : (
+              <>
+                <Typography variant="h6" fontWeight={800} align="center" sx={{ mb: 1 }}>
+                  Total da comanda {brl(total)}
+                </Typography>
+                <Stack direction="row" spacing={1}>
+                  <Button fullWidth variant="outlined" onClick={resetCurrent} disabled={!!busy || pristine}>
+                    Descartar
+                  </Button>
+                  <Button fullWidth variant="contained" size="large" onClick={() => setPayOpen(true)} disabled={!canClose}>
+                    {closeLabel}
+                  </Button>
+                </Stack>
+                {!identified && (
+                  <Typography variant="caption" color="text.secondary" display="block" align="center" sx={{ mt: 0.5 }}>
+                    Informe o número da comanda e o nome do cliente.
+                  </Typography>
+                )}
+                <Button fullWidth variant="text" sx={{ mt: 0.5 }} onClick={addToQueue} disabled={!canClose}>
+                  + Outra comanda no mesmo pagamento
+                </Button>
+              </>
+            )}
+          </Box>
         </Paper>
-      ) : (
-        <Button fullWidth variant="contained" size="large" sx={{ py: 2 }} disabled={!!busy} onClick={() => fileRef.current?.click()}>
-          📷 {queue.length > 0 ? 'Fotografar outra comanda' : 'Fotografar comanda'}
-        </Button>
       )}
-      {queue.length > 0 && !photo && !manual && attempt === 0 && !readFailure && (
-        <Button fullWidth variant="contained" color="success" size="large" sx={{ mt: 1 }} disabled={!!busy} onClick={() => setPayOpen(true)}>
-          Fechar {queue.length} {queue.length === 1 ? 'comanda' : 'comandas'} — {brl(queueTotal)}
-        </Button>
-      )}
+
+      <Dialog open={extraOpen} onClose={() => setExtraOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Item fora do cardápio</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5} sx={{ pt: 1 }}>
+            <TextField label="Nome do item" value={extraName} onChange={(e) => setExtraName(e.target.value)} inputProps={{ maxLength: 60 }} autoFocus fullWidth />
+            <TextField label="Valor (R$)" value={extraPrice} onChange={(e) => setExtraPrice(e.target.value)} inputProps={{ inputMode: 'decimal' }} fullWidth />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setExtraOpen(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={addExtra} disabled={!extraName.trim() || !(Number(extraPrice.replace(',', '.')) >= 0) || extraPrice.trim() === ''}>
+            Adicionar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog open={payOpen} onClose={() => setPayOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>{grandNoConsumption ? 'Encerrar sem consumo?' : queue.length > 0 ? `Pagamento de ${queue.length + (hasCurrent ? 1 : 0)} comandas` : 'Forma de pagamento'}</DialogTitle>
+        <DialogTitle>{grandNoConsumption ? 'Fechar sem lançamentos?' : queue.length > 0 ? `Pagamento de ${queue.length + (hasCurrent ? 1 : 0)} comandas` : 'Forma de pagamento'}</DialogTitle>
         <DialogContent>
           {grandNoConsumption ? (
             <Stack spacing={1} sx={{ pt: 1 }}>
               <Typography color="text.secondary">Comanda sem consumo: não há forma de pagamento. O número fica registrado para não ser lançado de novo.</Typography>
-              <Button variant="contained" size="large" onClick={() => save(null)}>Encerrar sem consumo</Button>
+              <Button variant="contained" size="large" onClick={() => save(null)}>Fechar sem lançamentos</Button>
               <Button onClick={() => setPayOpen(false)}>Voltar</Button>
             </Stack>
           ) : (
-          <PaymentPicker
-            total={grandTotal}
-            breakdown={[...queue.map((q) => ({ label: `Comanda ${q.comanda}${q.nome ? ` - ${q.nome}` : ''}`, amount: q.total })), ...(hasCurrent ? [{ label: `Comanda ${comanda.trim()}${nome.trim() ? ` - ${nome.trim()}` : ''}`, amount: total }] : [])]}
-            payMethods={payMethods}
-            suggestedPay={queue.length > 0 ? null : suggestedPay}
-            hints={queue.length > 0 ? [] : payHints}
-            onPick={save}
-            onBack={() => setPayOpen(false)}
-          />
+            <PaymentPicker
+              total={grandTotal}
+              breakdown={[...queue.map((q) => ({ label: `Comanda ${q.comanda}${q.nome ? ` - ${q.nome}` : ''}`, amount: q.total })), ...(hasCurrent ? [{ label: `Comanda ${comanda.trim()}${nome.trim() ? ` - ${nome.trim()}` : ''}`, amount: total }] : [])]}
+              payMethods={payMethods}
+              suggestedPay={queue.length > 0 ? null : suggestedPay}
+              hints={queue.length > 0 ? [] : payHints}
+              onPick={save}
+              onBack={() => setPayOpen(false)}
+            />
           )}
         </DialogContent>
       </Dialog>

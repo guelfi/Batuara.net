@@ -392,6 +392,14 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 - `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
 
+### 2026-11-11 (Comanda-Foto: tela única com cardápio em carrossel)
+
+- Tela única: botão `📷 - Fotografar Comanda`, Número e Nome logo abaixo, faixa "Na comanda" (itens com quantidade) e cardápio em cards com rolagem lateral (`MenuCarousel`, em `shared/`) com busca. A leitura da foto preenche as quantidades no mesmo cardápio; item lido fora do cardápio fica em "Fora do cardápio". O fluxo separado "Digitar comanda" (`ComandaManual`) foi removido.
+- Número e nome obrigatórios para fechar (foto, digitada ou sem lançamentos); atalho "Não identificado". Botão "Fechar comanda sem lançamentos" quando não há itens. Fila "Outra comanda no mesmo pagamento" mantida.
+- Itens lidos pelo OCR que existem no cardápio passam a usar o preço do cardápio (antes valia o preço lido na foto).
+- Fotografar de novo substitui os itens da comanda atual. A API não mudou.
+- Pendente (entrega separada): reaproveitar `MenuCarousel` na comanda digital do cliente (`BingoCustomerPage`).
+
 ### 2026-11-10 (Comanda-Foto: componente único e redução de superfície de ataque)
 
 - Componente único em `src/Frontend/shared/comandaFoto/` (antes duplicado entre PublicWebsite e AdminDashboard). `shared/sync.js` copia para `src/_shared/` de cada app (gerado, no `.gitignore`) em `prestart`/`prebuild`/`pretest`; os Dockerfiles copiam `src/Frontend/shared` para `/shared`. Quem usa o componente passa `token` e `baseUrl`; ele não lê nem guarda token.
