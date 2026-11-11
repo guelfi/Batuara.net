@@ -363,7 +363,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
           Fechamento Comanda{build && ` - ${build}`}
         </Typography>
       )}
-      <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 2, fontSize: isPage ? '0.78rem' : 'clamp(0.6rem, 2.9vw, 0.78rem)' }}>
+      <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 0.75, fontSize: isPage ? '0.78rem' : 'clamp(0.6rem, 2.9vw, 0.78rem)' }}>
         {[eventName, eventDate && !eventName.includes(eventDate) ? eventDate : '', 'Fotografar comanda para Fechar Conta']
           .filter(Boolean)
           .join(' - ')}
@@ -450,7 +450,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
           </Stack>
         </Paper>
       ) : (
-        <Paper sx={{ p: 2, mb: 2, pb: 0 }}>
+        <Paper sx={{ px: 2, pt: 1.25, pb: 0, mb: 2 }}>
           <Button fullWidth variant="contained" size="large" sx={{ py: 1, mb: 1 }} disabled={!!busy} onClick={() => fileRef.current?.click()}>
             📷 - {photoLabel}
           </Button>
@@ -572,7 +572,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
                     Informe o número da comanda e o nome do cliente.
                   </Typography>
                 )}
-                <Button fullWidth variant="text" size="small" sx={{ mt: 0.25 }} onClick={addToQueue} disabled={!canClose}>
+                <Button fullWidth variant="text" size="small" sx={{ mt: 0.25, fontWeight: 700 }} onClick={addToQueue} disabled={!canClose}>
                   + Outra comanda para pagamento
                 </Button>
               </>
