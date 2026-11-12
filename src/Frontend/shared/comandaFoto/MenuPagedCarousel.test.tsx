@@ -87,3 +87,15 @@ test('destaca só as linhas com quantidade quando pedido', () => {
   expect(screen.getByTestId('row-m2')).toHaveAttribute('data-selected', 'true');
   expect(screen.getByTestId('row-m1')).not.toHaveAttribute('data-selected');
 });
+
+test('só leitura: mostra "× quantidade" no lugar de − e +', () => {
+  render(<MenuPagedCarousel items={make(2)} qty={{ m1: 3 }} onChange={() => undefined} readOnly testIdPrefix="soma-" />);
+  expect(screen.getByTestId('soma-m1')).toHaveTextContent('× 3');
+  expect(screen.queryByLabelText('Mais Item 1')).toBeNull();
+  expect(screen.queryByLabelText('Menos Item 1')).toBeNull();
+});
+
+test('texto próprio quando não há itens', () => {
+  render(<MenuPagedCarousel items={[]} qty={{}} onChange={() => undefined} emptyText="Nenhum item lançado ainda." />);
+  expect(screen.getByText('Nenhum item lançado ainda.')).toBeInTheDocument();
+});

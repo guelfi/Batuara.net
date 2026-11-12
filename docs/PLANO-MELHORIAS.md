@@ -392,6 +392,15 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 - `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
 
+### 2026-11-12 (Comanda-Foto: lista das comandas da conta, abrir/editar cada uma e "Todas")
+
+- O painel de cima virou uma **lista vertical de todas as comandas que serão fechadas juntas**, incluindo a que está aberta (número · nome, quantidade de itens, total, lixeira), com o total da conta no título. A lista rola por dentro (3 linhas no modo compacto, 4 nas telas altas) e mantém à vista a linha da comanda aberta (`ComandaList`).
+- **Tocar numa comanda da lista abre os itens dela no cardápio** para editar; a que estava aberta volta para a lista na mesma posição (a ordem não muda). A fila agora guarda quantidades e itens de fora do cardápio de cada comanda (`QueuedComanda`), não só as linhas prontas. Não troca de comanda enquanto a atual estiver sem número ou nome.
+- **Botão "Todas"**: o card de itens passa a mostrar a **soma dos itens de todas as comandas** (só leitura, "× n"), agrupando itens de fora do cardápio por nome e preço (`aggregateDrafts`). Tocar numa comanda sai da soma.
+- O fechamento em lote, o diálogo de pagamento e o detalhamento por comanda usam a ordem da lista.
+- **Regressão corrigida (07db68c):** o tema aninhado substituía a sobrescrita de `MuiButton` do site público e os botões ficavam em MAIÚSCULAS e com o rótulo "FECHAR COMANDA SEM LANÇAMENTOS" vazando do botão no iPhone 17. Agora o tema aninhado **mantém** as sobrescritas do hospedeiro e só repõe altura mínima e padding; no modo compacto o rótulo é "Fechar sem lançamentos" e o botão corta com reticências em vez de vazar.
+- Verificado com Playwright (site público em 402x640/402x700/414x800 e AdminDashboard real em 393x700): sem rolagem de página, sem texto vazando, `textTransform: none`, linha da comanda aberta visível.
+
 ### 2026-11-11 (noite: correções vindas dos celulares: comanda de evento fechado, fila e tema do Admin)
 
 - **Comanda do cliente (QR da mesa):** o celular guardava a comanda de um evento já fechado e a tela ia direto para ela ("Pedidos do bingo fechados no momento", Cardápio desabilitado), mesmo com outro evento aberto. Agora, com a comanda guardada em evento fechado e outro evento aberto, ela é esquecida e o formulário cria uma comanda nova (`BingoCustomerPage`, `CustomerForm`). Sem evento aberto, continua indo para a comanda salva.

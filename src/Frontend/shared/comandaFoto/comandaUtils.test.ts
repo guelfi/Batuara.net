@@ -1,4 +1,4 @@
-import { MenuItem, applyOcrItems, deriveItems, norm } from './comandaUtils';
+import { MenuItem, aggregateDrafts, applyOcrItems, deriveItems, norm } from './comandaUtils';
 
 const menu: MenuItem[] = [
   { id: 1, name: 'Água', unitPrice: 5 },
@@ -49,5 +49,34 @@ describe('deriveItems', () => {
       ['Cerveja Heineken', 1, true],
       ['Batidas', 1, false],
     ]);
+  });
+});
+
+describe('aggregateDrafts', () => {
+  it('soma por item entre as comandas, na ordem do cardápio, e só traz o que tem quantidade', () => {
+    const rows = aggregateDrafts(menu, [
+      { qty: { 3: 1, 1: 2 }, extras: [] },
+      { qty: { 1: 1, 2: 0 }, extras: [] },
+    ]);
+    expect(rows.map((r) => [r.name, r.quantity])).toEqual([
+      ['Água', 3],
+      ['Cerveja Heineken', 1],
+    ]);
+  });
+
+  it('agrupa os itens de fora do cardápio por nome (sem acento/caixa) e preço, depois dos do cardápio', () => {
+    const rows = aggregateDrafts(menu, [
+      { qty: { 2: 1 }, extras: [{ name: 'Batida', quantity: 1, unitPrice: 9 }] },
+      { qty: {}, extras: [{ name: 'batida', quantity: 2, unitPrice: 9 }, { name: 'Batida', quantity: 1, unitPrice: 12 }] },
+    ]);
+    expect(rows.map((r) => [r.name, r.quantity, r.extra])).toEqual([
+      ['Salada', 1, false],
+      ['Batida', 3, true],
+      ['Batida', 1, true],
+    ]);
+  });
+
+  it('sem comandas devolve lista vazia', () => {
+    expect(aggregateDrafts(menu, [])).toEqual([]);
   });
 });

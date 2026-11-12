@@ -32,6 +32,10 @@ interface MenuPagedCarouselProps<T extends CarouselItem> {
   footerStart?: React.ReactNode;
   /** Destaca as linhas que têm quantidade. */
   highlightSelected?: boolean;
+  /** Só leitura: no lugar de − e + mostra "× quantidade" (usado na soma das comandas). */
+  readOnly?: boolean;
+  /** Texto quando não há itens. */
+  emptyText?: string;
 }
 
 /**
@@ -53,6 +57,8 @@ function MenuPagedCarousel<T extends CarouselItem>({
   controlsPosition = 'top',
   footerStart,
   highlightSelected = false,
+  readOnly = false,
+  emptyText = 'Nenhum item encontrado.',
 }: MenuPagedCarouselProps<T>): React.ReactElement {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [trackEl, setTrackEl] = useState<HTMLDivElement | null>(null);
@@ -103,7 +109,7 @@ function MenuPagedCarousel<T extends CarouselItem>({
   if (items.length === 0) {
     return (
       <Typography color="text.secondary" sx={{ py: 2 }} align="center">
-        Nenhum item encontrado.
+        {emptyText}
       </Typography>
     );
   }
@@ -189,7 +195,11 @@ function MenuPagedCarousel<T extends CarouselItem>({
                   <Typography variant="body2" sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
                     {brl(m.unitPrice)}
                   </Typography>
-                  {available ? (
+                  {readOnly ? (
+                    <Typography fontWeight={700} sx={{ minWidth: 56, textAlign: 'right' }} aria-label={`Quantidade de ${m.name}`}>
+                      × {q}
+                    </Typography>
+                  ) : available ? (
                     <QtyControls name={m.name} quantity={q} max={maxQty} minusLabel={minusLabel?.(m.name)} plusLabel={plusLabel?.(m.name)} onChange={(d) => onChange(m.id, d)} />
                   ) : (
                     <Typography variant="caption" fontWeight={700} sx={{ width: 78, textAlign: 'right' }}>

@@ -55,3 +55,40 @@ export const deriveItems = (menu: MenuItem[], qty: Record<number, number>, extra
   ...menu.filter((m) => (qty[m.id] ?? 0) > 0).map((m) => ({ name: m.name, quantity: qty[m.id], unitPrice: m.unitPrice, matched: true })),
   ...extras.filter((e) => e.quantity > 0).map((e) => ({ ...e, matched: false })),
 ];
+
+export interface DraftLike {
+  qty: Record<number, number>;
+  extras: ExtraItem[];
+}
+
+export interface AggregatedRow {
+  id: string | number;
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  /** true = item fora do cardápio (agrupado por nome e preço). */
+  extra: boolean;
+}
+
+/**
+ * Soma, por item, tudo o que foi lançado nas comandas da mesma conta: primeiro os itens do cardápio (na ordem do
+ * cardápio), depois os de fora do cardápio agrupados por nome e preço. Só entram itens com quantidade.
+ */
+export const aggregateDrafts = (menu: MenuItem[], drafts: DraftLike[]): AggregatedRow[] => {
+  const rows: AggregatedRow[] = [];
+  for (const m of menu) {
+    const quantity = drafts.reduce((s, d) => s + (d.qty[m.id] ?? 0), 0);
+    if (quantity > 0) rows.push({ id: m.id, name: m.name, unitPrice: m.unitPrice, quantity, extra: false });
+  }
+  const extras = new Map<string, AggregatedRow>();
+  for (const d of drafts) {
+    for (const e of d.extras) {
+      if (e.quantity <= 0) continue;
+      const key = `x:${norm(e.name)}|${e.unitPrice}`;
+      const found = extras.get(key);
+      if (found) found.quantity += e.quantity;
+      else extras.set(key, { id: key, name: e.name, unitPrice: e.unitPrice, quantity: e.quantity, extra: true });
+    }
+  }
+  return [...rows, ...extras.values()];
+};

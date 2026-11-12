@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 const mockGet = jest.fn();
 const mockPost = jest.fn();
@@ -107,23 +107,84 @@ test('com uma comanda na fila, dá para desistir da próxima e voltar a fechar a
   expect(screen.getByRole('button', { name: /Fechar 1 comanda/ })).toBeInTheDocument();
 });
 
-test('a fila mostra um cartão por comanda (mais de duas) e permite remover uma', async () => {
+/** Preenche a comanda aberta (número, "Não identificado" e itens) e a guarda na fila. */
+const guardarComanda = async (numero: string, itens: { label: string; vezes: number }[] = []) => {
+  fireEvent.change(screen.getByRole('textbox', { name: /^Comanda/ }), { target: { value: numero } });
+  fireEvent.click(screen.getByRole('button', { name: 'Não identificado' }));
+  for (const { label, vezes } of itens) {
+    for (let i = 0; i < vezes; i += 1) fireEvent.click(screen.getByLabelText(`Mais ${label}`));
+  }
+  fireEvent.click(screen.getByRole('button', { name: '+ Outra comanda para pagamento' }));
+  await waitFor(() => expect(screen.getByRole('textbox', { name: /^Comanda/ })).toHaveValue(''), { timeout: 4000 });
+};
+const linhasDaLista = () => within(screen.getByRole('list', { name: 'Comandas para fechar juntas' })).getAllByRole('listitem');
+
+test('a lista mostra todas as comandas da conta, inclusive a que está aberta, e permite remover uma', async () => {
   await renderCore();
-  for (const numero of ['12', '13', '14']) {
-    fireEvent.change(screen.getByRole('textbox', { name: /^Comanda/ }), { target: { value: numero } });
-    fireEvent.click(screen.getByRole('button', { name: 'Não identificado' }));
-    fireEvent.click(screen.getByRole('button', { name: '+ Outra comanda para pagamento' }));
-    await screen.findByRole('group', { name: `Comanda ${numero}` });
-  }
+  await guardarComanda('12');
+  await guardarComanda('13');
+  fireEvent.change(screen.getByRole('textbox', { name: /^Comanda/ }), { target: { value: '14' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Não identificado' }));
+
   expect(screen.getByText('Comandas para fechar juntas (3)')).toBeInTheDocument();
-  for (const numero of ['12', '13', '14']) {
-    expect(screen.getByRole('group', { name: `Comanda ${numero}` })).toBeInTheDocument();
-  }
+  expect(linhasDaLista().map((l) => l.textContent)).toEqual([
+    expect.stringContaining('12 · Não identificado'),
+    expect.stringContaining('13 · Não identificado'),
+    expect.stringContaining('14 · Não identificado'),
+  ]);
 
   fireEvent.click(screen.getByRole('button', { name: 'Remover comanda 13' }));
   expect(screen.getByText('Comandas para fechar juntas (2)')).toBeInTheDocument();
-  expect(screen.queryByRole('group', { name: 'Comanda 13' })).toBeNull();
-});
+  expect(linhasDaLista().map((l) => l.textContent?.slice(0, 2))).toEqual(['12', '14']);
+}, 20000);
+
+test('tocar numa comanda da lista abre os itens dela no cardápio e devolve a atual à lista, na mesma ordem', async () => {
+  await renderCore();
+  await guardarComanda('12', [{ label: 'Água', vezes: 2 }]);
+  await guardarComanda('13', [{ label: 'Salada', vezes: 1 }]);
+  fireEvent.change(screen.getByRole('textbox', { name: /^Comanda/ }), { target: { value: '14' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Não identificado' }));
+  fireEvent.click(screen.getByLabelText('Mais Água'));
+
+  fireEvent.click(screen.getByRole('button', { name: 'Abrir a comanda 12' }));
+
+  await waitFor(() => expect(screen.getByRole('textbox', { name: /^Comanda/ })).toHaveValue('12'), { timeout: 4000 });
+  expect(screen.getByLabelText('Quantidade de Água')).toHaveTextContent('2');
+  expect(screen.getByLabelText('Quantidade de Salada')).toHaveTextContent('0');
+  // a ordem da lista não muda: 12 (aberta), 13, 14
+  expect(linhasDaLista().map((l) => l.textContent?.slice(0, 2))).toEqual(['12', '13', '14']);
+
+  // editar a comanda aberta atualiza o total dela na lista
+  fireEvent.click(screen.getByLabelText('Mais Água'));
+  expect(linhasDaLista()[0].textContent).toContain('3 itens');
+}, 20000);
+
+test('não abre outra comanda enquanto a atual está sem número ou nome', async () => {
+  await renderCore();
+  await guardarComanda('12');
+  fireEvent.click(screen.getByLabelText('Mais Água'));
+
+  // a atual tem item, mas falta número e nome: não dá para trocar
+  fireEvent.click(screen.getByRole('button', { name: 'Abrir a comanda 12' }));
+  expect(await screen.findByText('Informe o número e o nome da comanda atual antes de abrir outra.')).toBeInTheDocument();
+  expect(screen.getByLabelText('Quantidade de Água')).toHaveTextContent('1');
+}, 20000);
+
+test('"Todas" mostra a soma dos itens de todas as comandas, só para leitura, e voltar a uma comanda sai da soma', async () => {
+  await renderCore();
+  await guardarComanda('12', [{ label: 'Água', vezes: 2 }]);
+  await guardarComanda('13', [{ label: 'Água', vezes: 1 }, { label: 'Salada', vezes: 1 }]);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Ver os itens de todas as comandas' }));
+  expect(screen.getByText('Itens de todas as comandas (soma)')).toBeInTheDocument();
+  expect(screen.getByTestId('soma-1')).toHaveTextContent('× 3');
+  expect(screen.getByTestId('soma-2')).toHaveTextContent('× 1');
+  expect(screen.queryByLabelText('Mais Água')).toBeNull();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Abrir a comanda 13' }));
+  await waitFor(() => expect(screen.queryByText('Itens de todas as comandas (soma)')).toBeNull(), { timeout: 4000 });
+  expect(screen.getByLabelText('Quantidade de Salada')).toHaveTextContent('1');
+}, 20000);
 
 test('o atalho Não identificado some depois de usado', async () => {
   await renderCore();

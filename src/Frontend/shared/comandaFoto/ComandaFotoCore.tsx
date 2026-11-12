@@ -26,8 +26,9 @@ import SearchIcon from '@mui/icons-material/Search';
 import PaymentPicker, { PayHint, PayLine, payBody } from './PaymentPicker';
 import MenuPagedCarousel from './MenuPagedCarousel';
 import { QtyControls } from './CarouselParts';
+import ComandaList, { ComandaListEntry } from './ComandaList';
 import { useFillViewport } from './useFillViewport';
-import { ExtraItem, Item, MAX_QTY, MenuItem, applyOcrItems, brl, deriveItems, norm } from './comandaUtils';
+import { ExtraItem, Item, MAX_QTY, MenuItem, aggregateDrafts, applyOcrItems, brl, deriveItems, norm } from './comandaUtils';
 
 const NOT_IDENTIFIED = 'Não identificado';
 
@@ -39,22 +40,32 @@ const BUTTON_PADDING: Record<string, Record<string, string>> = {
   contained: { small: '4px 10px', medium: '6px 16px', large: '8px 22px' },
 };
 type OwnerState = { variant?: string; size?: string };
-const isolateHostTheme = (outer: Theme): Theme =>
-  createTheme(outer, {
+type StyleFn = (props: { ownerState: OwnerState }) => object;
+const hostStyles = (host: unknown, props: { ownerState: OwnerState }): object =>
+  typeof host === 'function' ? (host as StyleFn)(props) : ((host as object | undefined) ?? {});
+const isolateHostTheme = (outer: Theme): Theme => {
+  const hostButton = outer.components?.MuiButton?.styleOverrides?.root;
+  const hostIconButton = outer.components?.MuiIconButton?.styleOverrides?.root;
+  return createTheme(outer, {
     components: {
       MuiButton: {
         styleOverrides: {
-          root: ({ ownerState }: { ownerState: OwnerState }) => ({
+          // mantém o que o tema do hospedeiro define (maiúsculas, raio, fonte) e só repõe altura mínima e padding
+          root: (props: { ownerState: OwnerState }) => ({
+            ...hostStyles(hostButton, props),
             minHeight: 0,
-            padding: (BUTTON_PADDING[String(ownerState.variant ?? 'text')] ?? BUTTON_PADDING.text)[String(ownerState.size ?? 'medium')],
+            padding: (BUTTON_PADDING[String(props.ownerState.variant ?? 'text')] ?? BUTTON_PADDING.text)[String(props.ownerState.size ?? 'medium')],
           }),
         },
       },
       MuiIconButton: {
-        styleOverrides: { root: ({ ownerState }: { ownerState: OwnerState }) => ({ padding: ownerState.size === 'small' ? 5 : 8 }) },
+        styleOverrides: {
+          root: (props: { ownerState: OwnerState }) => ({ ...hostStyles(hostIconButton, props), padding: props.ownerState.size === 'small' ? 5 : 8 }),
+        },
       },
     },
   });
+};
 
 /** Reduz a foto no celular (lado maior 1400 px, JPEG) para subir rapido e caber no banco. */
 const resizePhoto = (file: File): Promise<string> =>
@@ -108,13 +119,20 @@ const isRetryable = (e: any) => {
   return !status || status >= 500 || status === 429;
 };
 
+/** Comanda já preenchida, guardada para fechar junto; guarda quantidades e itens de fora para poder ser reaberta e editada. */
 interface QueuedComanda {
+  id: string;
   comanda: string;
   nome: string;
+  qty: Record<number, number>;
+  extras: ExtraItem[];
   items: Item[];
   photo: string;
   total: number;
 }
+
+/** Identificador da comanda que está sendo preenchida (ainda fora da fila). */
+const ACTIVE_ID = '__atual__';
 
 interface ComandaFotoCoreProps {
   /** Token de acesso. Quem usa o componente decide de onde ele vem; aqui ele nunca é lido nem guardado. */
@@ -153,7 +171,9 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     [token, baseUrl],
   );
   const fileRef = useRef<HTMLInputElement>(null);
-  const queueTrackRef = useRef<HTMLDivElement>(null);
+  const idSeq = useRef(0);
+  // true quando a foto atual já veio reduzida da fila (não reduzir de novo)
+  const photoShrunk = useRef(false);
 
   const [eventName, setEventName] = useState<string>('');
   const [eventDate, setEventDate] = useState<string>('');
@@ -179,6 +199,10 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
   const [payHints, setPayHints] = useState<PayHint[]>([]);
   // comandas já preenchidas que serão fechadas juntas no mesmo pagamento (cada uma continua separada)
   const [queue, setQueue] = useState<QueuedComanda[]>([]);
+  // posição, na lista de comandas, em que a comanda aberta no cardápio volta a ficar (null = no fim)
+  const [activeSlot, setActiveSlot] = useState<number | null>(null);
+  // true = o cardápio mostra a soma dos itens de todas as comandas (só leitura)
+  const [viewAll, setViewAll] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // 0 = não está lendo; 1..3 = tentativa atual da leitura da foto
@@ -255,6 +279,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     setReadFailure(null);
     try {
       const b64 = await resizePhoto(file);
+      photoShrunk.current = false;
       // foto nova = comanda nova: nada da leitura anterior pode seguir junto, nem se esta leitura falhar
       clearDraft();
       setPhoto(b64);
@@ -284,6 +309,8 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     setPayHints([]);
   };
   const resetCurrent = () => {
+    photoShrunk.current = false;
+    setActiveSlot(null);
     setPhoto(null);
     setQty({});
     setPinned([]);
@@ -301,13 +328,8 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
   const resetAll = () => {
     resetCurrent();
     setQueue([]);
+    setViewAll(false);
   };
-
-  // entrou uma comanda na fila: mostra a mais recente
-  useEffect(() => {
-    const el = queueTrackRef.current;
-    if (el && queue.length > 1) el.scrollTo?.({ left: el.scrollWidth, behavior: 'auto' });
-  }, [queue.length]);
 
   const items = useMemo(() => deriveItems(menu, qty, extras), [menu, qty, extras]);
   const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
@@ -323,6 +345,20 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
   const isDuplicate = !!dup && comanda.trim() === dupFor.trim();
   const identified = comanda.trim().length > 0 && nome.trim().length > 0;
   const canClose = !busy && identified && !isDuplicate;
+
+  // Todas as comandas da conta, na ordem em que serão fechadas: as guardadas e, no lugar dela, a que está aberta no cardápio
+  const slotOf = (len: number) => (activeSlot === null ? len : Math.min(activeSlot, len));
+  const entries = useMemo<ComandaListEntry[]>(() => {
+    const list: ComandaListEntry[] = queue.map((q) => ({ id: q.id, comanda: q.comanda, nome: q.nome, count: q.items.reduce((n, i) => n + i.quantity, 0), total: q.total }));
+    if (!pristine) list.splice(slotOf(list.length), 0, { id: ACTIVE_ID, comanda: comanda.trim(), nome: nome.trim(), count, total });
+    return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queue, activeSlot, pristine, comanda, nome, count, total]);
+  const showAll = viewAll && entries.length > 1;
+  const aggregated = useMemo(() => {
+    if (!showAll) return [];
+    return aggregateDrafts(menu, [...queue, ...(pristine ? [] : [{ qty, extras }])]);
+  }, [showAll, menu, queue, pristine, qty, extras]);
 
   const orderedMenu = useMemo(
     () => (pinned.length > 0 ? [...menu.filter((m) => pinned.includes(m.id)), ...menu.filter((m) => !pinned.includes(m.id))] : menu),
@@ -364,15 +400,88 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     }
   };
 
+  const nextId = () => {
+    idSeq.current += 1;
+    return `c${idSeq.current}`;
+  };
+
+  /** Foto da comanda aberta, reduzida para o envio (só reduz uma vez). */
+  const photoForQueue = async (): Promise<string> => (photo ? (photoShrunk.current ? photo : await shrinkPhoto(photo)) : '');
+
+  /** Guarda o que está aberto no cardápio como uma comanda da fila. */
+  const snapshotActive = async (): Promise<QueuedComanda> => ({
+    id: nextId(),
+    comanda: comanda.trim(),
+    nome: nome.trim(),
+    qty,
+    extras,
+    items,
+    photo: await photoForQueue(),
+    total,
+  });
+
+  /** Fila com a comanda aberta já inserida na posição dela. */
+  const withActive = (snap: QueuedComanda | null): QueuedComanda[] => {
+    if (!snap) return queue;
+    const slot = slotOf(queue.length);
+    return [...queue.slice(0, slot), snap, ...queue.slice(slot)];
+  };
+
   const addToQueue = async () => {
     const number = comanda.trim();
     if (queue.some((q) => q.comanda === number)) {
       setError(`A comanda ${number} já está nesta lista.`);
       return;
     }
-    const small = photo ? await shrinkPhoto(photo) : '';
-    setQueue((l) => [...l, { comanda: number, nome: nome.trim(), items, photo: small, total }]);
+    const snap = await snapshotActive();
+    setQueue(withActive(snap));
     resetCurrent();
+  };
+
+  /** Abre, no cardápio, os itens de uma comanda da lista; a que estava aberta volta para a fila. */
+  const selectComanda = async (id: string) => {
+    setViewAll(false);
+    if (id === ACTIVE_ID) return;
+    if (!pristine) {
+      if (!identified || isDuplicate) {
+        setError('Informe o número e o nome da comanda atual antes de abrir outra.');
+        return;
+      }
+      if (queue.some((q) => q.comanda === comanda.trim())) {
+        setError(`A comanda ${comanda.trim()} já está nesta lista.`);
+        return;
+      }
+    }
+    const merged = withActive(pristine ? null : await snapshotActive());
+    const idx = merged.findIndex((q) => q.id === id);
+    if (idx < 0) return;
+    const target = merged[idx];
+    setQueue(merged.filter((_, i) => i !== idx));
+    photoShrunk.current = !!target.photo;
+    setQty(target.qty);
+    setExtras(target.extras);
+    setComanda(target.comanda);
+    setNome(target.nome);
+    setPhoto(target.photo || null);
+    setPinned([]);
+    setSearch('');
+    setDup(null);
+    setDupFor('');
+    setSuggestedPay(null);
+    setPayHints([]);
+    setError(null);
+    setActiveSlot(idx);
+  };
+
+  const removeComanda = (id: string) => {
+    if (id === ACTIVE_ID) {
+      resetCurrent();
+      return;
+    }
+    const idx = queue.findIndex((q) => q.id === id);
+    if (idx < 0) return;
+    setQueue((l) => l.filter((q) => q.id !== id));
+    setActiveSlot((slot) => (slot !== null && idx < slot ? slot - 1 : slot));
   };
 
   const save = async (lines: PayLine[] | null) => {
@@ -386,7 +495,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
         resetAll();
         noticeAdded(r.data?.data?.addedToMenu);
       } else {
-        const all = [...queue, ...(hasCurrent ? [{ comanda: comanda.trim(), nome: nome.trim(), items, photo: photo ? await shrinkPhoto(photo) : '', total }] : [])];
+        const all = withActive(hasCurrent ? await snapshotActive() : null);
         const r = await http.post('/comanda-foto/lote', {
           ...payBody(lines),
           comandas: all.map((c) => ({ comandaNumber: c.comanda, label: labelOf(c.comanda, c.nome), items: c.items, imageBase64: c.photo })),
@@ -406,7 +515,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
       + Item fora do cardápio
     </Button>
   );
-  const closeLabel = queue.length > 0 ? `Fechar ${queue.length + 1} comandas` : noConsumption ? 'Fechar comanda sem lançamentos' : 'Fechar comanda';
+  const closeLabel = queue.length > 0 ? `Fechar ${entries.length} comandas` : noConsumption ? (roomy ? 'Fechar comanda sem lançamentos' : 'Fechar sem lançamentos') : 'Fechar comanda';
   const reading = attempt > 0;
   const photoLabel = photo ? 'Fotografar Novamente' : queue.length > 0 ? 'Fotografar Outra Comanda' : 'Fotografar Comanda';
 
@@ -462,40 +571,17 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
       />
 
       {queue.length > 0 && !reading && !readFailure && (
-        <Paper variant="outlined" sx={{ p: 1, mb: 1, flexShrink: 0 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 0.5 }}>
-            <Typography variant="subtitle2" fontWeight={700}>
-              Comandas para fechar juntas ({queue.length})
-            </Typography>
-            <Typography variant="caption" fontWeight={700}>
-              {brl(queueTotal)}
-            </Typography>
-          </Stack>
-          {/* um cartão por comanda, com rolagem lateral; a mais recente fica à vista */}
-          <Box
-            ref={queueTrackRef}
-            role="group"
-            aria-roledescription="carrossel"
-            aria-label="Comandas para fechar juntas"
-            sx={{ display: 'flex', gap: 1, overflowX: 'auto', overflowY: 'hidden', scrollSnapType: 'x mandatory', overscrollBehaviorX: 'contain', WebkitOverflowScrolling: 'touch', pb: 0.5 }}
-          >
-            {queue.map((q, i) => (
-              <Box key={q.comanda} role="group" aria-label={`Comanda ${q.comanda}`} sx={{ flex: queue.length > 1 ? '0 0 46%' : '1 1 100%', scrollSnapAlign: 'start', border: 1, borderColor: 'divider', borderRadius: 2, px: 1, py: 0.5, minWidth: 0 }}>
-                <Typography variant="body2" fontWeight={700} noWrap title={`Comanda ${q.comanda}${q.nome ? ` - ${q.nome}` : ''}`}>
-                  {q.comanda}{q.nome ? ` · ${q.nome}` : ''}
-                </Typography>
-                <Stack direction="row" alignItems="center" justifyContent="space-between">
-                  <Typography variant="body2" fontWeight={700}>
-                    {brl(q.total)}
-                  </Typography>
-                  <Button size="small" color="error" aria-label={`Remover comanda ${q.comanda}`} sx={{ minWidth: 0, px: 0.75, py: 0, fontSize: '0.75rem' }} disabled={!!busy} onClick={() => setQueue((l) => l.filter((_, k) => k !== i))}>
-                    Remover
-                  </Button>
-                </Stack>
-              </Box>
-            ))}
-          </Box>
-        </Paper>
+        <ComandaList
+          entries={entries}
+          total={grandTotal}
+          selectedId={ACTIVE_ID}
+          viewAll={showAll}
+          onSelect={selectComanda}
+          onRemove={removeComanda}
+          onToggleAll={() => setViewAll((v) => !v)}
+          maxRows={roomy ? 4 : 3}
+          disabled={!!busy}
+        />
       )}
 
       {reading ? (
@@ -591,35 +677,56 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
             </Box>
           )}
 
-          <TextField
-            size="small"
-            fullWidth
-            placeholder="Buscar item do cardápio..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            sx={{ mb: 1, flexShrink: 0 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-              endAdornment: search ? (
-                <InputAdornment position="end">
-                  <IconButton size="small" aria-label="Limpar busca" onClick={() => setSearch('')} sx={{ p: 0.5 }}>
-                    <ClearIcon fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ) : undefined,
-            }}
-          />
+          {showAll ? (
+            <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1, flexShrink: 0, minHeight: 40, display: 'flex', alignItems: 'center' }}>
+              Itens de todas as comandas (soma)
+            </Typography>
+          ) : (
+            <TextField
+              size="small"
+              fullWidth
+              placeholder="Buscar item do cardápio..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              sx={{ mb: 1, flexShrink: 0 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+                endAdornment: search ? (
+                  <InputAdornment position="end">
+                    <IconButton size="small" aria-label="Limpar busca" onClick={() => setSearch('')} sx={{ p: 0.5 }}>
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+            />
+          )}
           <Box sx={{ flex: '1 1 0', minHeight: 150, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             {menuLoading ? (
               <Stack alignItems="center" sx={{ py: 3 }}>
                 <CircularProgress size={24} />
               </Stack>
+            ) : showAll ? (
+              <MenuPagedCarousel
+                key="todas"
+                label="Itens de todas as comandas"
+                items={aggregated.map((r) => ({ id: r.id, name: r.name, unitPrice: r.unitPrice }))}
+                qty={Object.fromEntries(aggregated.map((r) => [String(r.id), r.quantity]))}
+                onChange={() => undefined}
+                rowHeight={40}
+                readOnly
+                emptyText="Nenhum item lançado ainda."
+                controlsPosition="bottom"
+                footerStart={addExtraButton}
+                testIdPrefix="soma-"
+              />
             ) : (
               <MenuPagedCarousel
+                key="comanda"
                 items={filteredMenu}
                 qty={qty}
                 onChange={setItemQty}
@@ -651,7 +758,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
                     size={roomy ? 'medium' : 'small'}
                     onClick={() => setPayOpen(true)}
                     disabled={!canClose}
-                    sx={{ whiteSpace: 'nowrap', minWidth: 0, fontSize: '0.8125rem', order: roomy ? 1 : 2 }}
+                    sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, fontSize: '0.8125rem', order: roomy ? 1 : 2 }}
                   >
                     {closeLabel}
                   </Button>
@@ -703,7 +810,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
       </Dialog>
 
       <Dialog open={payOpen} onClose={() => setPayOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>{grandNoConsumption ? 'Fechar sem lançamentos?' : queue.length > 0 ? `Pagamento de ${queue.length + (hasCurrent ? 1 : 0)} comandas` : 'Forma de pagamento'}</DialogTitle>
+        <DialogTitle>{grandNoConsumption ? 'Fechar sem lançamentos?' : queue.length > 0 ? `Pagamento de ${entries.length} comandas` : 'Forma de pagamento'}</DialogTitle>
         <DialogContent>
           {grandNoConsumption ? (
             <Stack spacing={1} sx={{ pt: 1 }}>
@@ -714,7 +821,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
           ) : (
             <PaymentPicker
               total={grandTotal}
-              breakdown={[...queue.map((q) => ({ label: `Comanda ${q.comanda}${q.nome ? ` - ${q.nome}` : ''}`, amount: q.total })), ...(hasCurrent ? [{ label: `Comanda ${comanda.trim()}${nome.trim() ? ` - ${nome.trim()}` : ''}`, amount: total }] : [])]}
+              breakdown={entries.map((e) => ({ label: `Comanda ${e.comanda}${e.nome ? ` - ${e.nome}` : ''}`, amount: e.total }))}
               payMethods={payMethods}
               suggestedPay={queue.length > 0 ? null : suggestedPay}
               hints={queue.length > 0 ? [] : payHints}
