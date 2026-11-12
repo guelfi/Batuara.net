@@ -80,13 +80,24 @@ const CustomerForm: React.FC = () => {
     }
     bingoApi
       .getTab(saved)
-      .then((tab) => {
-        if (tab.status !== 'Paid') {
-          goTo(`/bingo/comanda/${saved}`);
-        } else {
+      .then(async (tab) => {
+        if (tab.status === 'Paid') {
           savedTabId.clear();
           setCheckingSaved(false);
+          return;
         }
+        // Comanda de um evento que já fechou, com outro evento aberto agora (ex.: QR da mesa): a antiga não aceita
+        // pedidos, então esquece-a e deixa o formulário abrir uma comanda nova no evento atual. Sem evento aberto,
+        // segue para a comanda salva (consultar consumo e encerrar).
+        if (!tab.isOpen) {
+          const current = await bingoApi.getInfo().catch(() => null);
+          if (current?.isOpen) {
+            savedTabId.clear();
+            setCheckingSaved(false);
+            return;
+          }
+        }
+        goTo(`/bingo/comanda/${saved}`);
       })
       .catch((e) => {
         if (httpStatus(e) === 404 || httpStatus(e) === 400) savedTabId.clear();

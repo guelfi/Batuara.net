@@ -85,6 +85,39 @@ test('formulário mostra a dica de voltar à comanda com o mesmo celular', async
   expect(await screen.findByText('Já tem comanda? Informe o mesmo celular para voltar a ela.')).toBeInTheDocument();
 });
 
+test('comanda salva de um evento já fechado, com outro evento aberto, não bloqueia o QR: abre o formulário', async () => {
+  window.localStorage.setItem('bingo_tab_id', tabView.id);
+  window.history.pushState({}, '', '/bingo?mesa=3&s=abc123');
+  api.getTab.mockResolvedValue({ ...tabView, isOpen: false });
+  api.getInfo.mockResolvedValue({ isOpen: true, closeAllRequested: false, mesas: [1, 2, 3], menu: [], lockedMesa: 3 });
+  render(<BingoCustomerPage />);
+
+  await screen.findByRole('button', { name: /Abrir minha comanda/ });
+  expect(window.location.pathname).toBe('/bingo');
+  expect(window.localStorage.getItem('bingo_tab_id')).toBeNull();
+});
+
+test('comanda salva com evento fechado e nenhum evento aberto continua abrindo a própria comanda', async () => {
+  window.localStorage.setItem('bingo_tab_id', tabView.id);
+  window.history.pushState({}, '', '/bingo');
+  api.getTab.mockResolvedValue({ ...tabView, isOpen: false });
+  api.getInfo.mockResolvedValue({ isOpen: false, closeAllRequested: false, mesas: [], menu: [] });
+  // o jsdom não navega: troca location por um objeto com replace espionável
+  const original = window.location;
+  const replace = jest.fn();
+  // @ts-expect-error substituição só para o teste
+  delete window.location;
+  // @ts-expect-error idem
+  window.location = { ...original, pathname: '/bingo', search: '', replace };
+  try {
+    render(<BingoCustomerPage />);
+    await waitFor(() => expect(replace).toHaveBeenCalledWith(`/bingo/comanda/${tabView.id}`));
+  } finally {
+    // @ts-expect-error restaura
+    window.location = original;
+  }
+});
+
 test('link com ?mesa= trava a mesa; sem o parâmetro o cliente escolhe', async () => {
   // QR assinado: o servidor confirma a mesa (lockedMesa) e o cliente não pode trocar
   window.history.pushState({}, '', '/bingo?mesa=3&s=abc123');
