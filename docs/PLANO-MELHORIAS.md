@@ -392,6 +392,13 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 - `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
 
+### 2026-11-11 (noite: correções vindas dos celulares: comanda de evento fechado, fila e tema do Admin)
+
+- **Comanda do cliente (QR da mesa):** o celular guardava a comanda de um evento já fechado e a tela ia direto para ela ("Pedidos do bingo fechados no momento", Cardápio desabilitado), mesmo com outro evento aberto. Agora, com a comanda guardada em evento fechado e outro evento aberto, ela é esquecida e o formulário cria uma comanda nova (`BingoCustomerPage`, `CustomerForm`). Sem evento aberto, continua indo para a comanda salva.
+- **Fila de comandas na Comanda-Foto:** o painel tinha altura fixa e mostrava só a primeira; virou um carrossel com um cartão por comanda (número · nome, total, Remover), total da conta no título e a mais recente à vista. A lógica da fila já aceitava mais de duas (conferido com Playwright).
+- **Linhas sobrepostas no garçom:** o tema do Admin dá `padding: 12` a todo `IconButton` e `minHeight: 48` / `padding: 8px 16px` a todo `Button`, inflando o componente compartilhado. `QtyControls` e as setas têm tamanho fixo (32 e 36 px) e a Comanda-Foto aplica um tema aninhado (`isolateHostTheme`) que repõe os tamanhos padrão do MUI. Lição: validar o componente compartilhado também no AdminDashboard, não só no site público.
+- Conferido com Playwright rodando o AdminDashboard de verdade (login e API simulados) em 393x700 e 393x780: sem sobreposição, sem rolagem de página.
+
 ### 2026-11-11 (noite: Comanda-Foto com cartões de vários itens)
 
 - A Comanda-Foto passa a usar o mesmo `MenuPagedCarousel` da comanda digital (cartões com vários itens, rolagem lateral entre cartões), com setas e "+ Item fora do cardápio" na mesma linha, embaixo. O carrossel de um cartão por item (`MenuCarousel`) foi removido; `QtyControls` e `CarouselControls` foram para `CarouselParts.tsx`.

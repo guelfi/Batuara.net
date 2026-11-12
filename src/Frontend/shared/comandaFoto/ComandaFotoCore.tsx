@@ -19,6 +19,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { Theme, ThemeProvider, createTheme } from '@mui/material/styles';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import SearchIcon from '@mui/icons-material/Search';
@@ -29,6 +30,31 @@ import { useFillViewport } from './useFillViewport';
 import { ExtraItem, Item, MAX_QTY, MenuItem, applyOcrItems, brl, deriveItems, norm } from './comandaUtils';
 
 const NOT_IDENTIFIED = 'Não identificado';
+
+// Paddings padrão do MUI por variante e tamanho. O tema do Admin troca todos por 8px 16px e minHeight 48, o que
+// inflava botões e linhas deste componente; aqui ele volta a ter o mesmo tamanho em qualquer hospedeiro.
+const BUTTON_PADDING: Record<string, Record<string, string>> = {
+  text: { small: '4px 5px', medium: '6px 8px', large: '8px 11px' },
+  outlined: { small: '3px 9px', medium: '5px 15px', large: '7px 21px' },
+  contained: { small: '4px 10px', medium: '6px 16px', large: '8px 22px' },
+};
+type OwnerState = { variant?: string; size?: string };
+const isolateHostTheme = (outer: Theme): Theme =>
+  createTheme(outer, {
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: ({ ownerState }: { ownerState: OwnerState }) => ({
+            minHeight: 0,
+            padding: (BUTTON_PADDING[String(ownerState.variant ?? 'text')] ?? BUTTON_PADDING.text)[String(ownerState.size ?? 'medium')],
+          }),
+        },
+      },
+      MuiIconButton: {
+        styleOverrides: { root: ({ ownerState }: { ownerState: OwnerState }) => ({ padding: ownerState.size === 'small' ? 5 : 8 }) },
+      },
+    },
+  });
 
 /** Reduz a foto no celular (lado maior 1400 px, JPEG) para subir rapido e caber no banco. */
 const resizePhoto = (file: File): Promise<string> =>
@@ -127,6 +153,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     [token, baseUrl],
   );
   const fileRef = useRef<HTMLInputElement>(null);
+  const queueTrackRef = useRef<HTMLDivElement>(null);
 
   const [eventName, setEventName] = useState<string>('');
   const [eventDate, setEventDate] = useState<string>('');
@@ -276,6 +303,12 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     setQueue([]);
   };
 
+  // entrou uma comanda na fila: mostra a mais recente
+  useEffect(() => {
+    const el = queueTrackRef.current;
+    if (el && queue.length > 1) el.scrollTo?.({ left: el.scrollWidth, behavior: 'auto' });
+  }, [queue.length]);
+
   const items = useMemo(() => deriveItems(menu, qty, extras), [menu, qty, extras]);
   const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
   const count = items.reduce((s, i) => s + i.quantity, 0);
@@ -378,6 +411,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
   const photoLabel = photo ? 'Fotografar Novamente' : queue.length > 0 ? 'Fotografar Outra Comanda' : 'Fotografar Comanda';
 
   return (
+    <ThemeProvider theme={isolateHostTheme}>
     <Root {...rootProps}>
       <Snackbar open={!!addedNotice} autoHideDuration={9000} onClose={() => setAddedNotice(null)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ top: { xs: 16 } }}>
         <Alert severity="info" variant="filled" onClose={() => setAddedNotice(null)} sx={{ width: '100%', boxShadow: 6 }}>
@@ -428,21 +462,39 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
       />
 
       {queue.length > 0 && !reading && !readFailure && (
-        <Paper variant="outlined" sx={{ p: 1.5, mb: 1, flexShrink: 0, maxHeight: 96, overflowY: 'auto' }}>
-          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
-            Comandas para fechar juntas ({queue.length})
-          </Typography>
-          {queue.map((q, i) => (
-            <Stack key={q.comanda} direction="row" alignItems="center" spacing={1} sx={{ py: 0.25 }}>
-              <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }} noWrap>
-                Comanda {q.comanda}{q.nome ? ` - ${q.nome}` : ''}
-              </Typography>
-              <Typography variant="body2" fontWeight={700}>{brl(q.total)}</Typography>
-              <Button size="small" color="error" sx={{ minWidth: 0, px: 1 }} disabled={!!busy} onClick={() => setQueue((l) => l.filter((_, k) => k !== i))}>
-                Remover
-              </Button>
-            </Stack>
-          ))}
+        <Paper variant="outlined" sx={{ p: 1, mb: 1, flexShrink: 0 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 0.5 }}>
+            <Typography variant="subtitle2" fontWeight={700}>
+              Comandas para fechar juntas ({queue.length})
+            </Typography>
+            <Typography variant="caption" fontWeight={700}>
+              {brl(queueTotal)}
+            </Typography>
+          </Stack>
+          {/* um cartão por comanda, com rolagem lateral; a mais recente fica à vista */}
+          <Box
+            ref={queueTrackRef}
+            role="group"
+            aria-roledescription="carrossel"
+            aria-label="Comandas para fechar juntas"
+            sx={{ display: 'flex', gap: 1, overflowX: 'auto', overflowY: 'hidden', scrollSnapType: 'x mandatory', overscrollBehaviorX: 'contain', WebkitOverflowScrolling: 'touch', pb: 0.5 }}
+          >
+            {queue.map((q, i) => (
+              <Box key={q.comanda} role="group" aria-label={`Comanda ${q.comanda}`} sx={{ flex: queue.length > 1 ? '0 0 46%' : '1 1 100%', scrollSnapAlign: 'start', border: 1, borderColor: 'divider', borderRadius: 2, px: 1, py: 0.5, minWidth: 0 }}>
+                <Typography variant="body2" fontWeight={700} noWrap title={`Comanda ${q.comanda}${q.nome ? ` - ${q.nome}` : ''}`}>
+                  {q.comanda}{q.nome ? ` · ${q.nome}` : ''}
+                </Typography>
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                  <Typography variant="body2" fontWeight={700}>
+                    {brl(q.total)}
+                  </Typography>
+                  <Button size="small" color="error" aria-label={`Remover comanda ${q.comanda}`} sx={{ minWidth: 0, px: 0.75, py: 0, fontSize: '0.75rem' }} disabled={!!busy} onClick={() => setQueue((l) => l.filter((_, k) => k !== i))}>
+                    Remover
+                  </Button>
+                </Stack>
+              </Box>
+            ))}
+          </Box>
         </Paper>
       )}
 
@@ -554,7 +606,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
               ),
               endAdornment: search ? (
                 <InputAdornment position="end">
-                  <IconButton size="small" aria-label="Limpar busca" onClick={() => setSearch('')}>
+                  <IconButton size="small" aria-label="Limpar busca" onClick={() => setSearch('')} sx={{ p: 0.5 }}>
                     <ClearIcon fontSize="small" />
                   </IconButton>
                 </InputAdornment>
@@ -673,6 +725,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
         </DialogContent>
       </Dialog>
     </Root>
+    </ThemeProvider>
   );
 };
 

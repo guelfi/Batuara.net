@@ -35,7 +35,7 @@ const renderCore = async () => {
 test('tela inicial: botão de foto, número, nome e cardápio já preenchido', async () => {
   await renderCore();
   expect(screen.getByRole('button', { name: /📷 - Fotografar Comanda/ })).toBeInTheDocument();
-  expect(screen.getByLabelText(/^Comanda/)).toBeInTheDocument();
+  expect(screen.getByRole('textbox', { name: /^Comanda/ })).toBeInTheDocument();
   expect(screen.getByLabelText(/^Nome/)).toBeInTheDocument();
   expect(screen.getByTestId('item-1')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Fechar comanda sem lançamentos' })).toBeDisabled();
@@ -48,7 +48,7 @@ test('fechar sem lançamentos exige número e nome, e o atalho Não identificado
   await renderCore();
   const close = screen.getByRole('button', { name: 'Fechar comanda sem lançamentos' });
 
-  fireEvent.change(screen.getByLabelText(/^Comanda/), { target: { value: '12' } });
+  fireEvent.change(screen.getByRole('textbox', { name: /^Comanda/ }), { target: { value: '12' } });
   expect(close).toBeDisabled();
   expect(screen.getByText('Informe o número da comanda e o nome do cliente.')).toBeInTheDocument();
 
@@ -77,7 +77,7 @@ test('lançar item direto no cardápio destaca a linha, soma no total e passa ao
   expect(screen.getByText(/Total da comanda/)).toHaveTextContent('2 itens');
   expect(screen.getByRole('button', { name: 'Fechar comanda' })).toBeDisabled();
 
-  fireEvent.change(screen.getByLabelText(/^Comanda/), { target: { value: '7' } });
+  fireEvent.change(screen.getByRole('textbox', { name: /^Comanda/ }), { target: { value: '7' } });
   fireEvent.change(screen.getByLabelText(/^Nome/), { target: { value: 'Maria' } });
   expect(screen.getByRole('button', { name: 'Fechar comanda' })).toBeEnabled();
 });
@@ -91,13 +91,13 @@ test('Descartar fica desabilitado enquanto não houve foto, mesmo com itens lan�
 test('com uma comanda na fila, dá para desistir da próxima e voltar a fechar a fila', async () => {
   await renderCore();
   fireEvent.click(screen.getByLabelText('Mais Água'));
-  fireEvent.change(screen.getByLabelText(/^Comanda/), { target: { value: '12' } });
+  fireEvent.change(screen.getByRole('textbox', { name: /^Comanda/ }), { target: { value: '12' } });
   fireEvent.click(screen.getByRole('button', { name: 'Não identificado' }));
   fireEvent.click(screen.getByRole('button', { name: '+ Outra comanda para pagamento' }));
   await screen.findByText('Comandas para fechar juntas (1)');
 
   // segunda comanda digitada, sem foto: Descartar precisa estar disponível por causa da fila
-  fireEvent.change(screen.getByLabelText(/^Comanda/), { target: { value: '13' } });
+  fireEvent.change(screen.getByRole('textbox', { name: /^Comanda/ }), { target: { value: '13' } });
   fireEvent.click(screen.getByLabelText('Mais Salada'));
   const discard = screen.getByRole('button', { name: 'Descartar' });
   expect(discard).toBeEnabled();
@@ -105,6 +105,24 @@ test('com uma comanda na fila, dá para desistir da próxima e voltar a fechar a
 
   expect(screen.getByText('Comandas para fechar juntas (1)')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /Fechar 1 comanda/ })).toBeInTheDocument();
+});
+
+test('a fila mostra um cartão por comanda (mais de duas) e permite remover uma', async () => {
+  await renderCore();
+  for (const numero of ['12', '13', '14']) {
+    fireEvent.change(screen.getByRole('textbox', { name: /^Comanda/ }), { target: { value: numero } });
+    fireEvent.click(screen.getByRole('button', { name: 'Não identificado' }));
+    fireEvent.click(screen.getByRole('button', { name: '+ Outra comanda para pagamento' }));
+    await screen.findByRole('group', { name: `Comanda ${numero}` });
+  }
+  expect(screen.getByText('Comandas para fechar juntas (3)')).toBeInTheDocument();
+  for (const numero of ['12', '13', '14']) {
+    expect(screen.getByRole('group', { name: `Comanda ${numero}` })).toBeInTheDocument();
+  }
+
+  fireEvent.click(screen.getByRole('button', { name: 'Remover comanda 13' }));
+  expect(screen.getByText('Comandas para fechar juntas (2)')).toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'Comanda 13' })).toBeNull();
 });
 
 test('o atalho Não identificado some depois de usado', async () => {
@@ -147,7 +165,7 @@ describe('foto nova com leitura falhando', () => {
   test('não carrega itens, número nem nome da comanda anterior', async () => {
     await renderCore();
     fireEvent.click(screen.getByLabelText('Mais Água'));
-    fireEvent.change(screen.getByLabelText(/^Comanda/), { target: { value: '12' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /^Comanda/ }), { target: { value: '12' } });
     fireEvent.change(screen.getByLabelText(/^Nome/), { target: { value: 'Maria' } });
 
     mockPost.mockRejectedValueOnce({ response: { status: 400, data: { message: 'Foto ilegível' } } });
@@ -158,7 +176,7 @@ describe('foto nova com leitura falhando', () => {
 
     expect(screen.getByTestId('item-1')).not.toHaveAttribute('data-selected');
     expect(screen.getByLabelText('Quantidade de Água')).toHaveTextContent('0');
-    expect(screen.getByLabelText(/^Comanda/)).toHaveValue('');
+    expect(screen.getByRole('textbox', { name: /^Comanda/ })).toHaveValue('');
     expect(screen.getByLabelText(/^Nome/)).toHaveValue('');
     expect(screen.getByRole('button', { name: /Fotografar Novamente/ })).toBeInTheDocument();
 
@@ -179,7 +197,7 @@ describe('foto nova com leitura falhando', () => {
     fireEvent.change(screen.getByTestId('comanda-file'), { target: { files: [file] } });
 
     await waitFor(() => expect(screen.getByLabelText('Quantidade de Salada')).toHaveTextContent('2'));
-    expect(screen.getByLabelText(/^Comanda/)).toHaveValue('5');
+    expect(screen.getByRole('textbox', { name: /^Comanda/ })).toHaveValue('5');
     expect(screen.getByLabelText(/^Nome/)).toHaveValue('Ana');
     // Salada (segunda do cardápio) passa a ser a primeira linha; Água vem depois
     const rows = screen.getAllByTestId(/^item-/).map((r) => r.getAttribute('data-testid'));
