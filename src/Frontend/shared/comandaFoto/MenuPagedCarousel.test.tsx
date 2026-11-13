@@ -99,3 +99,30 @@ test('texto próprio quando não há itens', () => {
   render(<MenuPagedCarousel items={[]} qty={{}} onChange={() => undefined} emptyText="Nenhum item lançado ainda." />);
   expect(screen.getByText('Nenhum item lançado ainda.')).toBeInTheDocument();
 });
+
+describe('página do carrossel', () => {
+  const realScrollTo = HTMLElement.prototype.scrollTo;
+  afterEach(() => {
+    HTMLElement.prototype.scrollTo = realScrollTo;
+  });
+
+  test('mudar a lista ou as quantidades mantém a página; só mudar a chave (busca) volta ao início', () => {
+    const scrollTo = jest.fn();
+    HTMLElement.prototype.scrollTo = scrollTo as unknown as typeof HTMLElement.prototype.scrollTo;
+    // altura do trilho fixa: itens por cartão não dependem de quantos itens há
+    jest.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(200);
+    const base = make(5);
+    const { rerender } = render(<MenuPagedCarousel items={base} qty={{}} onChange={() => undefined} resetKey="" />);
+    scrollTo.mockClear();
+
+    // quantidade mudou e a lista é um array novo (como ao mexer num item fora do cardápio): não volta ao início
+    rerender(<MenuPagedCarousel items={[...base]} qty={{ m1: 2 }} onChange={() => undefined} resetKey="" />);
+    // item acrescentado no fim: também não
+    rerender(<MenuPagedCarousel items={[...base, { id: 'x:0', name: 'Fora', unitPrice: 9, isAvailable: true }]} qty={{ m1: 2 }} onChange={() => undefined} resetKey="" />);
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    // busca nova: volta ao primeiro cartão
+    rerender(<MenuPagedCarousel items={base} qty={{}} onChange={() => undefined} resetKey="agua" />);
+    expect(scrollTo).toHaveBeenCalledWith({ left: 0 });
+  });
+});

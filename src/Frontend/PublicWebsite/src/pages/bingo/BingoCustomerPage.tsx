@@ -624,6 +624,7 @@ const TabScreen: React.FC<{ tabId: string }> = ({ tabId }) => {
             />
             <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }} data-testid="menu-carousel">
               <MenuPagedCarousel
+                resetKey={menuSearch}
                 items={shownMenu}
                 qty={cart}
                 onChange={change}

@@ -746,6 +746,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
             ) : showAll ? (
               <MenuPagedCarousel
                 key="todas"
+                resetKey="todas"
                 label="Itens de todas as comandas"
                 items={aggregated.map((r) => ({ id: r.id, name: r.name, unitPrice: r.unitPrice }))}
                 qty={Object.fromEntries(aggregated.map((r) => [String(r.id), r.quantity]))}
@@ -761,6 +762,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
             ) : (
               <MenuPagedCarousel
                 key="comanda"
+                resetKey={search}
                 items={viewRows}
                 qty={viewQty}
                 onChange={changeRow}

@@ -40,6 +40,8 @@ interface MenuPagedCarouselProps<T extends CarouselItem> {
   compactRows?: boolean;
   /** Conteúdo extra depois dos controles de cada linha (ex.: remover um item fora do cardápio). */
   renderAfter?: (item: T) => React.ReactNode;
+  /** O carrossel volta ao primeiro cartão só quando este valor muda (ex.: o texto da busca); mudar a lista ou as quantidades mantém a página. */
+  resetKey?: string | number;
 }
 
 /**
@@ -65,6 +67,7 @@ function MenuPagedCarousel<T extends CarouselItem>({
   emptyText = 'Nenhum item encontrado.',
   compactRows = false,
   renderAfter,
+  resetKey,
 }: MenuPagedCarouselProps<T>): React.ReactElement {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [trackEl, setTrackEl] = useState<HTMLDivElement | null>(null);
@@ -98,11 +101,11 @@ function MenuPagedCarousel<T extends CarouselItem>({
     setSlide(Math.max(0, Math.min(slides - 1, Math.round(el.scrollLeft / step))));
   }, [slides]);
 
-  // nova busca ou novo tamanho: volta ao primeiro cartão
+  // nova busca ou novo tamanho: volta ao primeiro cartão. Mudar quantidades ou acrescentar/remover itens NÃO muda de página.
   useEffect(() => {
     trackRef.current?.scrollTo?.({ left: 0 });
     setSlide(0);
-  }, [items, perCard]);
+  }, [resetKey, perCard]);
 
   const goTo = (target: number) => {
     const el = trackRef.current;
