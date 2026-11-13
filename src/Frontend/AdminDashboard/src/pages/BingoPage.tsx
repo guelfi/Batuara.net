@@ -73,6 +73,7 @@ import {
   BingoReminderResult,
   BingoSummary,
   BingoTab,
+  BingoTableSetting,
   BingoWaiter,
 } from '../types/bingo';
 import { HouseMember } from '../types';
@@ -1388,10 +1389,23 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
   const [loading, setLoading] = useState(true);
   const [qr, setQr] = useState('');
   const [projecting, setProjecting] = useState(false);
+  const [settings, setSettings] = useState<BingoTableSetting[]>([]);
+  const [savedSettings, setSavedSettings] = useState<BingoTableSetting[]>([]);
+  const [allSeats, setAllSeats] = useState('4');
+  const [savingSettings, setSavingSettings] = useState(false);
   const isMobile = useIsMobile();
   const btnSx = isMobile ? { minHeight: 40 } : undefined;
+  const settingsDirty = JSON.stringify(settings) !== JSON.stringify(savedSettings);
+  const seatsInvalid = settings.some((s) => !Number.isInteger(s.lugares) || s.lugares < 1 || s.lugares > 50);
+
+  const loadSettings = useCallback(() => {
+    bingoApi.getTableSettings()
+      .then((list) => { setSettings(list); setSavedSettings(list); })
+      .catch((e) => notify(apiError(e, 'Não foi possível carregar os lugares das mesas.'), 'error'));
+  }, [notify]);
 
   useEffect(() => {
+    loadSettings();
     bingoApi.getTableCount()
       .then((n) => setCount(String(n)))
       .catch((e) => notify(apiError(e, 'Não foi possível carregar as mesas.'), 'error'))
@@ -1399,7 +1413,33 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
     QRCode.toDataURL(BINGO_URL, { width: 900, margin: 2, errorCorrectionLevel: 'M' })
       .then(setQr)
       .catch(() => notify('Não foi possível gerar o QR.', 'error'));
-  }, [notify]);
+  }, [notify, loadSettings]);
+
+  const patchSetting = (numero: number, patch: Partial<BingoTableSetting>) =>
+    setSettings((l) => l.map((s) => (s.numero === numero ? { ...s, ...patch } : s)));
+
+  const applySeatsToAll = () => {
+    const n = Number(allSeats);
+    if (!Number.isInteger(n) || n < 1 || n > 50) {
+      notify('Informe de 1 a 50 lugares.', 'error');
+      return;
+    }
+    setSettings((l) => l.map((s) => ({ ...s, lugares: n })));
+  };
+
+  const saveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const list = await bingoApi.updateTableSettings(settings);
+      setSettings(list);
+      setSavedSettings(list);
+      notify('Lugares das mesas salvos.', 'success');
+    } catch (e: any) {
+      notify(apiError(e, 'Não foi possível salvar os lugares das mesas.'), 'error');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const save = async () => {
     const q = Number(count);
@@ -1410,6 +1450,7 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
     try {
       await bingoApi.setTableCount(q);
       notify('Mesas atualizadas.', 'success');
+      loadSettings();
     } catch (e: any) {
       notify(apiError(e, 'Não foi possível salvar as mesas.'), 'error');
     }
@@ -1462,6 +1503,51 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
             Para mudar, crie um novo evento.
           </Alert>
         )}
+      </Paper>
+
+      <Paper sx={{ p: 2 }} className="bingo-no-print">
+        <Typography variant="h6">Lugares e exclusividade</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+          <b>Exclusiva</b>: um grupo só; outras comandas veem a mesa ocupada. Sem marcar, a mesa é <b>compartilhada</b>: vale quem chegar primeiro, até lotar os lugares.
+          Pode ser ajustado com o evento em andamento.
+        </Typography>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
+          <TextField
+            label="Lugares em todas"
+            type="number"
+            size="small"
+            value={allSeats}
+            onChange={(e) => setAllSeats(e.target.value)}
+            inputProps={{ min: 1, max: 50 }}
+            sx={{ width: 150 }}
+          />
+          <Button variant="outlined" onClick={applySeatsToAll} sx={btnSx}>Aplicar a todas</Button>
+        </Stack>
+        <Box sx={{ maxHeight: 380, overflowY: 'auto', pr: 0.5 }}>
+          {settings.map((s) => (
+            <Stack key={s.numero} direction="row" spacing={1.5} alignItems="center" sx={{ py: 0.5, borderBottom: 1, borderColor: 'divider' }}>
+              <Typography sx={{ width: 70, fontWeight: 700 }}>Mesa {s.numero}</Typography>
+              <TextField
+                size="small"
+                type="number"
+                label="Lugares"
+                value={Number.isNaN(s.lugares) ? '' : s.lugares}
+                onChange={(e) => patchSetting(s.numero, { lugares: e.target.value === '' ? NaN : Number(e.target.value) })}
+                inputProps={{ min: 1, max: 50, 'aria-label': `Lugares da mesa ${s.numero}` }}
+                error={!Number.isInteger(s.lugares) || s.lugares < 1 || s.lugares > 50}
+                sx={{ width: 100 }}
+              />
+              <FormControlLabel
+                control={<Checkbox checked={s.exclusiva} onChange={(e) => patchSetting(s.numero, { exclusiva: e.target.checked })} inputProps={{ 'aria-label': `Mesa ${s.numero} exclusiva` }} />}
+                label="Exclusiva"
+              />
+            </Stack>
+          ))}
+          {settings.length === 0 && <Typography color="text.secondary">Nenhuma mesa neste evento.</Typography>}
+        </Box>
+        <Button variant="contained" sx={{ mt: 1.5, ...(btnSx ?? {}) }} onClick={saveSettings} disabled={!settingsDirty || seatsInvalid || savingSettings}>
+          {savingSettings ? 'Salvando...' : 'Salvar lugares'}
+        </Button>
       </Paper>
 
       <Dialog fullScreen open={projecting} onClose={() => setProjecting(false)}>

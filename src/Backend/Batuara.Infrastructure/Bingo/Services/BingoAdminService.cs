@@ -138,6 +138,36 @@ namespace Batuara.Infrastructure.Bingo.Services
             return await BuildTablesAsync(ev.Id, cancellationToken);
         }
 
+        public async Task<BingoTablesDto> UpdateTableSettingsAsync(int? eventId, List<BingoTableSettingDto> mesas, CancellationToken cancellationToken = default)
+        {
+            var ev = await ResolveAdminEventAsync(eventId, cancellationToken);
+            if (ev.Status == BingoEventStatus.Closed || ev.Status == BingoEventStatus.Cancelled)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, "Evento encerrado ou cancelado: as mesas não podem mais ser ajustadas.");
+            }
+
+            if (mesas == null || mesas.Count == 0)
+            {
+                throw new BingoException(BingoErrorKind.Validation, "Informe ao menos uma mesa.");
+            }
+
+            var tables = await Db.BingoTables.Where(x => x.EventId == ev.Id).ToListAsync(cancellationToken);
+            foreach (var setting in mesas)
+            {
+                if (setting.Lugares < 1 || setting.Lugares > BingoTable.MaxCapacity)
+                {
+                    throw new BingoException(BingoErrorKind.Validation, $"Os lugares da mesa {setting.Numero} devem ser de 1 a {BingoTable.MaxCapacity}.");
+                }
+
+                var table = tables.FirstOrDefault(x => x.Number == setting.Numero)
+                    ?? throw new BingoException(BingoErrorKind.NotFound, $"Mesa {setting.Numero} não encontrada neste evento.");
+                table.Configure(setting.Lugares, setting.Exclusiva);
+            }
+
+            await Db.SaveChangesAsync(cancellationToken);
+            return await BuildTablesAsync(ev.Id, cancellationToken);
+        }
+
         public async Task<List<BingoAdminWaiterDto>> GetWaitersAsync(int? eventId, CancellationToken cancellationToken = default)
         {
             var ev = await ResolveAdminEventAsync(eventId, cancellationToken);
@@ -460,7 +490,7 @@ namespace Batuara.Infrastructure.Bingo.Services
 
                 await Db.SaveChangesAsync(cancellationToken);
                 Db.BingoMenuItems.AddRange(menu.Select(x => new BingoMenuItem(ev.Id, x.Name, x.UnitPrice, x.IsAvailable, x.SortOrder)));
-                Db.BingoTables.AddRange(tables.Select(x => new BingoTable(ev.Id, x.Number)));
+                Db.BingoTables.AddRange(tables.Select(x => new BingoTable(ev.Id, x.Number, x.Capacity, x.IsExclusive)));
                 Db.BingoWaiters.AddRange(waiters.Select(x => new BingoWaiter(ev.Id, x.HouseMemberId)));
             }
 
@@ -709,8 +739,13 @@ namespace Batuara.Infrastructure.Bingo.Services
 
         private async Task<BingoTablesDto> BuildTablesAsync(int eventId, CancellationToken cancellationToken)
         {
-            var numbers = await Db.BingoTables.Where(x => x.EventId == eventId).OrderBy(x => x.Number).Select(x => x.Number).ToListAsync(cancellationToken);
-            return new BingoTablesDto { Quantidade = numbers.Count, Mesas = numbers };
+            var tables = await Db.BingoTables.Where(x => x.EventId == eventId).OrderBy(x => x.Number).ToListAsync(cancellationToken);
+            return new BingoTablesDto
+            {
+                Quantidade = tables.Count,
+                Mesas = tables.Select(x => x.Number).ToList(),
+                Detalhes = tables.Select(x => new BingoTableSettingDto { Numero = x.Number, Lugares = x.Capacity, Exclusiva = x.IsExclusive }).ToList()
+            };
         }
 
         private async Task<BingoMenuItem> FindMenuItemAsync(int id, CancellationToken cancellationToken)

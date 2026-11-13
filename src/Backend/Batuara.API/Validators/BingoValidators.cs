@@ -13,6 +13,7 @@ namespace Batuara.API.Validators
                 .NotEmpty()
                 .Must(IsBrazilMobile).WithMessage("Informe um celular válido com DDD.");
             RuleFor(x => x.Mesa).InclusiveBetween(1, 999);
+            RuleFor(x => x.PartySize).InclusiveBetween(1, 20).WithMessage("Informe de 1 a 20 pessoas.");
         }
 
         private static bool IsBrazilMobile(string? phone)
@@ -77,6 +78,23 @@ namespace Batuara.API.Validators
         public BingoTablesRequestValidator()
         {
             RuleFor(x => x.Quantidade).InclusiveBetween(1, 200);
+        }
+    }
+
+    public class BingoTableSettingsRequestValidator : AbstractValidator<BingoTableSettingsRequest>
+    {
+        public BingoTableSettingsRequestValidator()
+        {
+            RuleFor(x => x.Mesas).NotEmpty().WithMessage("Informe ao menos uma mesa.");
+            RuleForEach(x => x.Mesas).ChildRules(m =>
+            {
+                m.RuleFor(t => t.Numero).InclusiveBetween(1, 999);
+                m.RuleFor(t => t.Lugares).InclusiveBetween(1, Batuara.Domain.Entities.BingoTable.MaxCapacity)
+                    .WithMessage($"Os lugares da mesa devem ser de 1 a {Batuara.Domain.Entities.BingoTable.MaxCapacity}.");
+            });
+            RuleFor(x => x.Mesas)
+                .Must(l => l.Select(t => t.Numero).Distinct().Count() == l.Count)
+                .WithMessage("Há mesas repetidas na lista.");
         }
     }
 

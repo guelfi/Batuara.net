@@ -134,6 +134,8 @@ namespace Batuara.Infrastructure.Data.Configurations
             builder.HasKey(x => x.Id);
             builder.Property(x => x.Id).ValueGeneratedOnAdd();
             builder.Property(x => x.Number).IsRequired();
+            builder.Property(x => x.Capacity).IsRequired().HasDefaultValue(BingoTable.DefaultCapacity);
+            builder.Property(x => x.IsExclusive).IsRequired().HasDefaultValue(false);
             builder.Property(x => x.CreatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
             builder.Property(x => x.UpdatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
             builder.Property(x => x.IsActive).IsRequired().HasDefaultValue(true);
@@ -151,6 +153,8 @@ namespace Batuara.Infrastructure.Data.Configurations
                         Id = (eventId - 1) * BingoSeed.TableCount + n,
                         EventId = eventId,
                         Number = n,
+                        Capacity = BingoTable.DefaultCapacity,
+                        IsExclusive = false,
                         CreatedAt = BingoSeed.SeedDate,
                         UpdatedAt = BingoSeed.SeedDate,
                         IsActive = true
@@ -199,6 +203,7 @@ namespace Batuara.Infrastructure.Data.Configurations
                 .HasMaxLength(20);
             builder.Property(x => x.PaymentMethodName).HasMaxLength(60);
             builder.Property(x => x.PaymentsJson);
+            builder.Property(x => x.PartySize).IsRequired().HasDefaultValue(1);
             builder.Property(x => x.PaidByName).HasMaxLength(150);
             builder.Property(x => x.PaidNote).HasMaxLength(200);
             builder.Property(x => x.ExitCheckedByName).HasMaxLength(150);

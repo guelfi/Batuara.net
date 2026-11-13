@@ -67,6 +67,8 @@ namespace Batuara.Application.Bingo.Models
         public int Mesa { get; set; }
         /// <summary>Assinatura do QR de mesa; quando enviada precisa conferir com a mesa.</summary>
         public string? MesaSignature { get; set; }
+        /// <summary>Quantas pessoas a comanda representa (ocupam lugares da mesa). Clientes antigos não enviam: vale 1.</summary>
+        public int PartySize { get; set; } = 1;
     }
 
     public class BingoCreateTabResult
@@ -371,6 +373,52 @@ namespace Batuara.Application.Bingo.Models
     {
         public int Quantidade { get; set; }
         public List<int> Mesas { get; set; } = new();
+        /// <summary>Configuração de cada mesa (lugares e exclusividade).</summary>
+        public List<BingoTableSettingDto> Detalhes { get; set; } = new();
+    }
+
+    public class BingoTableSettingDto
+    {
+        public int Numero { get; set; }
+        public int Lugares { get; set; }
+        /// <summary>true = exclusiva (um grupo só); false = compartilhada (vale quem chega primeiro até lotar).</summary>
+        public bool Exclusiva { get; set; }
+    }
+
+    public class BingoTableSettingsRequest
+    {
+        public List<BingoTableSettingDto> Mesas { get; set; } = new();
+    }
+
+    /// <summary>Quem está numa mesa agora (comandas não pagas).</summary>
+    public class BingoTableOccupantDto
+    {
+        public string Nome { get; set; } = string.Empty;
+        public int Pessoas { get; set; }
+    }
+
+    /// <summary>Situação de uma mesa para o garçom: lugares, ocupação e estado.</summary>
+    public class BingoTableStatusDto
+    {
+        public int Numero { get; set; }
+        public int Lugares { get; set; }
+        public bool Exclusiva { get; set; }
+        /// <summary>Pessoas nas comandas abertas da mesa.</summary>
+        public int Ocupados { get; set; }
+        /// <summary>Lugares ainda livres (0 quando lotada ou exclusiva ocupada).</summary>
+        public int Livres { get; set; }
+        public int Comandas { get; set; }
+        /// <summary>Free | HasSeats | Full | ExclusiveTaken</summary>
+        public string Estado { get; set; } = BingoTableStates.Free;
+        public List<BingoTableOccupantDto> Ocupantes { get; set; } = new();
+    }
+
+    public static class BingoTableStates
+    {
+        public const string Free = "Free";
+        public const string HasSeats = "HasSeats";
+        public const string Full = "Full";
+        public const string ExclusiveTaken = "ExclusiveTaken";
     }
 
     public class BingoTablesRequest

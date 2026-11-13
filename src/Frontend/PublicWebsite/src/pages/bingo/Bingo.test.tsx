@@ -118,6 +118,36 @@ test('comanda salva com evento fechado e nenhum evento aberto continua abrindo a
   }
 });
 
+test('formulário pergunta quantas pessoas (padrão 1) e envia o número na abertura da comanda', async () => {
+  window.history.pushState({}, '', '/bingo?mesa=3&s=abc123');
+  api.getInfo.mockResolvedValue({ isOpen: true, closeAllRequested: false, mesas: [1, 2, 3], menu: [], lockedMesa: 3 });
+  api.createTab.mockResolvedValue({ tabId: 'novo-id', reused: false });
+  const original = window.location;
+  const replace = jest.fn();
+  // @ts-expect-error substituição só para o teste (o jsdom não navega)
+  delete window.location;
+  // @ts-expect-error idem
+  window.location = { ...original, pathname: '/bingo', search: '?mesa=3&s=abc123', replace };
+  try {
+    render(<BingoCustomerPage />);
+    await screen.findByLabelText(/Seu nome/);
+    expect(screen.getByLabelText(/Quantas pessoas\?/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/Seu nome/), { target: { value: 'Marco e Rosana' } });
+    fireEvent.change(screen.getByLabelText(/Celular/), { target: { value: '11991234567' } });
+    // padrão: 1 pessoa; troca para 2
+    fireEvent.mouseDown(screen.getByLabelText(/Quantas pessoas\?/));
+    fireEvent.click(await screen.findByRole('option', { name: '2 pessoas' }));
+    fireEvent.click(screen.getByRole('button', { name: /Abrir minha comanda/ }));
+
+    await waitFor(() => expect(api.createTab).toHaveBeenCalled());
+    expect(api.createTab.mock.calls[0][0]).toMatchObject({ customerName: 'Marco e Rosana', mesa: 3, partySize: 2, mesaSignature: 'abc123' });
+  } finally {
+    // @ts-expect-error restaura
+    window.location = original;
+  }
+});
+
 test('link com ?mesa= trava a mesa; sem o parâmetro o cliente escolhe', async () => {
   // QR assinado: o servidor confirma a mesa (lockedMesa) e o cliente não pode trocar
   window.history.pushState({}, '', '/bingo?mesa=3&s=abc123');

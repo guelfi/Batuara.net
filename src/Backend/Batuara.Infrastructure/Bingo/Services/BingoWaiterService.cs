@@ -281,6 +281,22 @@ namespace Batuara.Infrastructure.Bingo.Services
             await Db.SaveChangesAsync(cancellationToken);
         }
 
+        public async Task<List<BingoTableStatusDto>> GetTablesStatusAsync(CancellationToken cancellationToken = default)
+        {
+            var ev = await RequireOpenEventAsync(cancellationToken);
+            var tables = await Db.BingoTables.Where(x => x.EventId == ev.Id).OrderBy(x => x.Number).ToListAsync(cancellationToken);
+            // comanda aberta ou com conta solicitada ocupa lugar; paga libera
+            var open = await Db.BingoTabs
+                .Where(x => x.EventId == ev.Id && x.Status != BingoTabStatus.Paid)
+                .Select(x => new { x.TableNumber, x.CustomerName, x.PartySize })
+                .ToListAsync(cancellationToken);
+            var byTable = open.GroupBy(x => x.TableNumber).ToDictionary(g => g.Key, g => g.OrderBy(x => x.CustomerName).Select(x => (x.CustomerName, x.PartySize)).ToList());
+
+            return tables
+                .Select(t => BingoTableOccupancy.Build(t, byTable.TryGetValue(t.Number, out var list) ? list : new List<(string, int)>()))
+                .ToList();
+        }
+
         public async Task<List<BingoAccountDto>> GetAccountsAsync(bool all = false, CancellationToken cancellationToken = default)
         {
             var ev = await RequireOpenEventAsync(cancellationToken);

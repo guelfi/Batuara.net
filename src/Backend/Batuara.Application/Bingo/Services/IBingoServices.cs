@@ -40,6 +40,7 @@ namespace Batuara.Application.Bingo.Services
         Task ResolveContestationAsync(int houseMemberId, int itemId, BingoResolveContestRequest request, CancellationToken cancellationToken = default);
         Task<List<BingoPaymentMethodDto>> GetPaymentMethodsAsync(CancellationToken cancellationToken = default);
         Task ChangeTableAsync(Guid tabId, int mesa, CancellationToken cancellationToken = default);
+        Task<List<BingoTableStatusDto>> GetTablesStatusAsync(CancellationToken cancellationToken = default);
         Task<List<BingoAccountDto>> GetAccountsAsync(bool all = false, CancellationToken cancellationToken = default);
         Task<List<BingoWaiterContestationDto>> GetContestationsAsync(CancellationToken cancellationToken = default);
         Task<BingoExitCheckDto> GetExitCheckByCodeAsync(string code, CancellationToken cancellationToken = default);
@@ -61,6 +62,7 @@ namespace Batuara.Application.Bingo.Services
 
         Task<BingoTablesDto> GetTablesAsync(int? eventId, CancellationToken cancellationToken = default);
         Task<BingoTablesDto> SetTablesAsync(int? eventId, int quantidade, CancellationToken cancellationToken = default);
+        Task<BingoTablesDto> UpdateTableSettingsAsync(int? eventId, List<BingoTableSettingDto> mesas, CancellationToken cancellationToken = default);
 
         Task<List<BingoAdminWaiterDto>> GetWaitersAsync(int? eventId, CancellationToken cancellationToken = default);
         Task AddWaiterAsync(int? eventId, int houseMemberId, CancellationToken cancellationToken = default);

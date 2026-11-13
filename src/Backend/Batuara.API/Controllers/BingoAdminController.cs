@@ -53,6 +53,11 @@ namespace Batuara.API.Controllers
         public async Task<IActionResult> SetTables([FromBody] BingoTablesRequest request, [FromQuery] int? eventoId, CancellationToken ct)
             => Ok(new { success = true, data = await service.SetTablesAsync(eventoId, request.Quantidade, ct) });
 
+        /// <summary>Lugares e exclusividade de cada mesa (pode ser ajustado mesmo com o evento em andamento).</summary>
+        [HttpPut("mesas/configuracao")]
+        public async Task<IActionResult> SetTableSettings([FromBody] BingoTableSettingsRequest request, [FromQuery] int? eventoId, CancellationToken ct)
+            => Ok(new { success = true, data = await service.UpdateTableSettingsAsync(eventoId, request.Mesas, ct) });
+
         [HttpGet("garcons")]
         public async Task<IActionResult> GetWaiters([FromQuery] int? eventoId, CancellationToken ct)
             => Ok(new { success = true, data = await service.GetWaitersAsync(eventoId, ct) });

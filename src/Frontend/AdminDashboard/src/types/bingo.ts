@@ -192,3 +192,11 @@ export interface WaiterAccount {
   total: number;
   status: BingoTabStatus;
 }
+
+/** Lugares e exclusividade de uma mesa (configurados pelo Admin). */
+export interface BingoTableSetting {
+  numero: number;
+  lugares: number;
+  /** true = exclusiva (um grupo só); false = compartilhada (vale quem chega primeiro até lotar). */
+  exclusiva: boolean;
+}

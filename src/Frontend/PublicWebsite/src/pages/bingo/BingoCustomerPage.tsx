@@ -64,6 +64,8 @@ const CustomerForm: React.FC = () => {
   const [name, setName] = useState(profile?.name ?? '');
   const [phone, setPhone] = useState(profile?.phone ?? '');
   const [mesa, setMesa] = useState('');
+  // quantas pessoas a comanda representa: ocupam lugares da mesa (o garçom vê se ainda há vaga)
+  const [party, setParty] = useState('1');
   // mesa vinda do QR (garçom ou mesa): o cliente não pode trocar
   const [mesaLocked, setMesaLocked] = useState(false);
   const [mesaSignature, setMesaSignature] = useState<string | undefined>();
@@ -135,7 +137,7 @@ const CustomerForm: React.FC = () => {
     setSubmitting(true);
     setError('');
     try {
-      const res = await bingoApi.createTab({ customerName: name.trim(), phone: digits, mesa: Number(mesa), mesaSignature: mesaLocked ? mesaSignature : undefined });
+      const res = await bingoApi.createTab({ customerName: name.trim(), phone: digits, mesa: Number(mesa), partySize: Number(party) || 1, mesaSignature: mesaLocked ? mesaSignature : undefined });
       savedTabId.set(res.tabId);
       savedProfile.set(name.trim(), digits);
       goTo(`/bingo/comanda/${res.tabId}`);
@@ -227,6 +229,22 @@ const CustomerForm: React.FC = () => {
           ))}
         </TextField>
         )}
+        <TextField
+          select
+          label="Quantas pessoas?"
+          value={party}
+          onChange={(e) => setParty(e.target.value)}
+          required
+          fullWidth
+          helperText="Contando com você. Ajuda a casa a saber quantos lugares sobram na mesa."
+          slotProps={{ select: { MenuProps: { PaperProps: { style: { maxHeight: 320 } } } } }}
+        >
+          {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
+            <MenuItem key={n} value={String(n)} sx={{ minHeight: 48 }}>
+              {n} {n === 1 ? 'pessoa' : 'pessoas'}
+            </MenuItem>
+          ))}
+        </TextField>
 
         <Alert severity="info" icon={false} sx={{ fontSize: '0.85rem' }}>
           Usamos seu nome e celular apenas para a comanda do bingo. Eles são apagados em até 30 dias depois do evento se a conta estiver paga. Se a conta ficar em aberto, o celular pode ser usado para um lembrete de pagamento por WhatsApp e é guardado por até 90 dias.

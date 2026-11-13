@@ -27,6 +27,7 @@ import QrScanner from '../components/bingo/QrScanner';
 import bingoApi from '../services/bingoApi';
 import apiService from '../services/api';
 import ComandaFotoCore from '../_shared/comandaFoto/ComandaFotoCore';
+import WaiterTablesStatus from '../components/bingo/WaiterTablesStatus';
 import bingoWaiterApi, { WaiterContestation } from '../services/bingoWaiterApi';
 import { WaiterOrderGroup, WaiterStatus } from '../types/bingo';
 import { ContestAction, WaiterAccountItem, WaiterBill, WaiterPaymentMethod } from '../types/bingoWaiter';
@@ -777,6 +778,8 @@ const QrTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
           </MenuItem>
         ))}
       </TextField>
+
+      <WaiterTablesStatus selected={mesa} onSelect={setMesa} />
       {qrError && <Alert severity="error">{qrError}</Alert>}
       {mesa && dataUrl && (
         <Box sx={{ textAlign: 'center' }}>

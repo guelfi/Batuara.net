@@ -20,6 +20,11 @@ namespace Batuara.API.Controllers
         [HttpGet("comanda-foto/token")]
         public IActionResult ComandaFotoToken() => Ok(new { success = true, data = new { token = comandaFoto.GetAccessToken() } });
 
+        /// <summary>Situação das mesas: lugares, quem está nelas e se há vaga (só informa; não bloqueia ninguém).</summary>
+        [HttpGet("mesas/status")]
+        public async Task<IActionResult> TablesStatus(CancellationToken cancellationToken)
+            => Ok(new { success = true, data = await service.GetTablesStatusAsync(cancellationToken) });
+
         /// <summary>Link assinado do QR da mesa: abre a comanda com a mesa travada para o cliente.</summary>
         [HttpGet("mesas/{mesa:int}/qr")]
         [BingoSkipWaiterAccess]

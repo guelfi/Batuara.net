@@ -23,6 +23,8 @@ export interface CreateBingoTabRequest {
   customerName: string;
   phone: string;
   mesa: number;
+  /** Quantas pessoas a comanda representa (ocupam lugares da mesa). */
+  partySize?: number;
 }
 
 export interface CreateBingoTabResponse {

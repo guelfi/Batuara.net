@@ -859,6 +859,11 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<int>("PartySize")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
                     b.Property<string>("PaymentMethod")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
@@ -939,6 +944,11 @@ namespace Batuara.Infrastructure.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("Capacity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(4);
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -951,6 +961,11 @@ namespace Batuara.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
+
+                    b.Property<bool>("IsExclusive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<int>("Number")
                         .HasColumnType("integer");
@@ -971,540 +986,660 @@ namespace Batuara.Infrastructure.Data.Migrations
                         new
                         {
                             Id = 1,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 1,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 2,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 2,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 3,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 3,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 4,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 4,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 5,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 5,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 6,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 6,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 7,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 7,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 8,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 8,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 9,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 9,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 10,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 10,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 11,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 11,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 12,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 12,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 13,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 13,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 14,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 14,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 15,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 15,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 16,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 16,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 17,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 17,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 18,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 18,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 19,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 19,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 20,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 20,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 21,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 21,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 22,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 22,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 23,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 23,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 24,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 24,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 25,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 25,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 26,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 26,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 27,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 27,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 28,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 28,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 29,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 29,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 30,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 1,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 30,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 31,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 1,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 32,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 2,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 33,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 3,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 34,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 4,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 35,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 5,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 36,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 6,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 37,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 7,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 38,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 8,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 39,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 9,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 40,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 10,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 41,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 11,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 42,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 12,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 43,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 13,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 44,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 14,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 45,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 15,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 46,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 16,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 47,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 17,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 48,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 18,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 49,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 19,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 50,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 20,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 51,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 21,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 52,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 22,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 53,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 23,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 54,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 24,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 55,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 25,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 56,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 26,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 57,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 27,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 58,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 28,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 59,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 29,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 60,
+                            Capacity = 4,
                             CreatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EventId = 2,
                             IsActive = true,
+                            IsExclusive = false,
                             Number = 30,
                             UpdatedAt = new DateTime(2026, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });

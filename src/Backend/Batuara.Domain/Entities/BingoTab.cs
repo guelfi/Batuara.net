@@ -9,6 +9,8 @@ namespace Batuara.Domain.Entities
         public Guid Id { get; private set; } = Guid.NewGuid();
         public int EventId { get; private set; }
         public int TableNumber { get; private set; }
+        /// <summary>Quantas pessoas a comanda representa (ocupam lugares da mesa).</summary>
+        public int PartySize { get; private set; } = 1;
         public string CustomerName { get; private set; } = string.Empty;
         public string? Phone { get; private set; }
         public BingoTabStatus Status { get; private set; } = BingoTabStatus.Open;
@@ -71,12 +73,13 @@ namespace Batuara.Domain.Entities
         {
         }
 
-        public BingoTab(int eventId, string customerName, string phone, int tableNumber)
+        public BingoTab(int eventId, string customerName, string phone, int tableNumber, int partySize = 1)
         {
             EventId = eventId;
             CustomerName = customerName.Trim();
             Phone = phone;
             TableNumber = tableNumber;
+            PartySize = Math.Max(1, partySize);
         }
 
         public void ChangeTable(int tableNumber)

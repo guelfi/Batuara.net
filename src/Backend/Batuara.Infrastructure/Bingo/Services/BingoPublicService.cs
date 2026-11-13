@@ -68,7 +68,7 @@ namespace Batuara.Infrastructure.Bingo.Services
             var reused = tab != null;
             if (tab == null)
             {
-                tab = new BingoTab(ev.Id, request.CustomerName, phone, request.Mesa);
+                tab = new BingoTab(ev.Id, request.CustomerName, phone, request.Mesa, request.PartySize);
                 Db.BingoTabs.Add(tab);
             }
 

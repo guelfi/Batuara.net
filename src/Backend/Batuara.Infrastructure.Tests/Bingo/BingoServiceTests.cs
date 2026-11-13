@@ -2509,5 +2509,139 @@ namespace Batuara.Infrastructure.Tests.Bingo
             await svc.CancelAsync(first.Id, "Fechada por engano na mesa errada", "Admin", CancellationToken.None);
             await svc.SaveAsync(Req("13"), CancellationToken.None);
         }
+
+        // ---------------- mesas: lugares, exclusividade e ocupação ----------------
+
+        [Fact]
+        public void TableOccupancy_Should_Classify_Free_Seats_Full_And_Exclusive()
+        {
+            var shared = new BingoTable(1, 3, capacity: 4, isExclusive: false);
+            var exclusive = new BingoTable(1, 4, capacity: 6, isExclusive: true);
+            var none = new List<(string, int)>();
+
+            BingoTableOccupancy.Build(shared, none).Should().BeEquivalentTo(new { Estado = BingoTableStates.Free, Livres = 4, Ocupados = 0, Comandas = 0 });
+
+            var some = BingoTableOccupancy.Build(shared, new List<(string, int)> { ("Maria", 2) });
+            some.Estado.Should().Be(BingoTableStates.HasSeats);
+            some.Livres.Should().Be(2);
+            some.Ocupados.Should().Be(2);
+
+            var full = BingoTableOccupancy.Build(shared, new List<(string, int)> { ("Maria", 2), ("João", 2) });
+            full.Estado.Should().Be(BingoTableStates.Full);
+            full.Livres.Should().Be(0);
+
+            // passou da capacidade (comandas a mais que lugares): continua lotada, sem lugares negativos
+            BingoTableOccupancy.Build(shared, new List<(string, int)> { ("A", 3), ("B", 3) }).Livres.Should().Be(0);
+
+            // exclusiva: qualquer comanda aberta a ocupa, mesmo com lugares sobrando
+            var taken = BingoTableOccupancy.Build(exclusive, new List<(string, int)> { ("Ana", 1) });
+            taken.Estado.Should().Be(BingoTableStates.ExclusiveTaken);
+            taken.Livres.Should().Be(0);
+            taken.Exclusiva.Should().BeTrue();
+            BingoTableOccupancy.Build(exclusive, none).Estado.Should().Be(BingoTableStates.Free);
+
+            // pessoas inválidas contam como 1
+            BingoTableOccupancy.Build(shared, new List<(string, int)> { ("Zero", 0) }).Ocupados.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task Waiter_TablesStatus_Should_Follow_Open_Tabs_And_Free_Seats_When_They_Are_Paid()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            await f.Admin.UpdateTableSettingsAsync(null, new List<BingoTableSettingDto>
+            {
+                new() { Numero = 1, Lugares = 4, Exclusiva = false },
+                new() { Numero = 2, Lugares = 6, Exclusiva = true }
+            });
+
+            var start = await f.Waiter.GetTablesStatusAsync();
+            start.First(x => x.Numero == 1).Estado.Should().Be(BingoTableStates.Free);
+            start.First(x => x.Numero == 1).Livres.Should().Be(4);
+            start.First(x => x.Numero == 2).Exclusiva.Should().BeTrue();
+
+            var maria = await f.Public.CreateTabAsync(new BingoCreateTabRequest { CustomerName = "Maria", Phone = "11999990001", Mesa = 1, PartySize = 2 });
+            var table1 = (await f.Waiter.GetTablesStatusAsync()).First(x => x.Numero == 1);
+            table1.Estado.Should().Be(BingoTableStates.HasSeats);
+            table1.Livres.Should().Be(2);
+            table1.Ocupantes.Should().ContainSingle().Which.Should().BeEquivalentTo(new { Nome = "Maria", Pessoas = 2 });
+
+            var joao = await f.Public.CreateTabAsync(new BingoCreateTabRequest { CustomerName = "João", Phone = "11999990002", Mesa = 1, PartySize = 2 });
+            (await f.Waiter.GetTablesStatusAsync()).First(x => x.Numero == 1).Estado.Should().Be(BingoTableStates.Full);
+
+            // a comanda de Maria é paga: abre vaga
+            await f.OrderAsync(maria.TabId, "Água", 1);
+            await f.DeliverAllAsync(maria.TabId);
+            await f.PayAdminAsync(maria.TabId);
+            var afterPay = (await f.Waiter.GetTablesStatusAsync()).First(x => x.Numero == 1);
+            afterPay.Estado.Should().Be(BingoTableStates.HasSeats);
+            afterPay.Livres.Should().Be(2);
+            afterPay.Ocupantes.Select(o => o.Nome).Should().Equal("João");
+
+            // a última sai: mesa totalmente livre
+            await f.OrderAsync(joao.TabId, "Água", 1);
+            await f.DeliverAllAsync(joao.TabId);
+            await f.PayAdminAsync(joao.TabId);
+            (await f.Waiter.GetTablesStatusAsync()).First(x => x.Numero == 1).Estado.Should().Be(BingoTableStates.Free);
+
+            // exclusiva: uma comanda ocupa a mesa toda
+            await f.Public.CreateTabAsync(new BingoCreateTabRequest { CustomerName = "Ana", Phone = "11999990003", Mesa = 2 });
+            var exclusive = (await f.Waiter.GetTablesStatusAsync()).First(x => x.Numero == 2);
+            exclusive.Estado.Should().Be(BingoTableStates.ExclusiveTaken);
+            exclusive.Livres.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task CreateTab_Should_Store_PartySize_And_Default_To_One()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+
+            var withParty = await f.Public.CreateTabAsync(new BingoCreateTabRequest { CustomerName = "Marco e Rosana", Phone = "11999990001", Mesa = 1, PartySize = 2 });
+            (await f.Db.BingoTabs.FirstAsync(x => x.Id == withParty.TabId)).PartySize.Should().Be(2);
+
+            // cliente antigo (sem o campo): vale 1 pessoa
+            var old = await f.Public.CreateTabAsync(new BingoCreateTabRequest { CustomerName = "Cliente", Phone = "11999990002", Mesa = 1 });
+            (await f.Db.BingoTabs.FirstAsync(x => x.Id == old.TabId)).PartySize.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task Admin_TableSettings_Should_Update_Validate_And_Be_Copied_To_A_New_Event()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+
+            var updated = await f.Admin.UpdateTableSettingsAsync(null, new List<BingoTableSettingDto> { new() { Numero = 5, Lugares = 8, Exclusiva = true } });
+            updated.Detalhes.First(x => x.Numero == 5).Should().BeEquivalentTo(new { Numero = 5, Lugares = 8, Exclusiva = true });
+            updated.Detalhes.First(x => x.Numero == 6).Should().BeEquivalentTo(new { Numero = 6, Lugares = 4, Exclusiva = false });
+
+            await ShouldThrowAsync(() => f.Admin.UpdateTableSettingsAsync(null, new List<BingoTableSettingDto> { new() { Numero = 5, Lugares = 0 } }), BingoErrorKind.Validation);
+            await ShouldThrowAsync(() => f.Admin.UpdateTableSettingsAsync(null, new List<BingoTableSettingDto> { new() { Numero = 5, Lugares = BingoTable.MaxCapacity + 1 } }), BingoErrorKind.Validation);
+            await ShouldThrowAsync(() => f.Admin.UpdateTableSettingsAsync(null, new List<BingoTableSettingDto> { new() { Numero = 999, Lugares = 4 } }), BingoErrorKind.NotFound);
+            await ShouldThrowAsync(() => f.Admin.UpdateTableSettingsAsync(null, new List<BingoTableSettingDto>()), BingoErrorKind.Validation);
+
+            // evento novo copiando o anterior leva a configuração das mesas
+            var copy = await f.Admin.CreateEventAsync(new BingoCreateEventRequest { Name = "Bazar", EventDate = DateTime.UtcNow.AddDays(30), CopiarDeEventoId = 1 });
+            var tables = await f.Admin.GetTablesAsync(copy.Id);
+            tables.Detalhes.First(x => x.Numero == 5).Should().BeEquivalentTo(new { Lugares = 8, Exclusiva = true });
+        }
+
+        [Fact]
+        public void Validators_Should_Reject_Invalid_PartySize_And_Table_Settings()
+        {
+            var create = new Batuara.API.Validators.BingoCreateTabRequestValidator();
+            bool Valid(int party) => create.Validate(new BingoCreateTabRequest { CustomerName = "Ana", Phone = "11999990001", Mesa = 1, PartySize = party }).IsValid;
+            Valid(0).Should().BeFalse();
+            Valid(21).Should().BeFalse();
+            Valid(1).Should().BeTrue();
+            Valid(20).Should().BeTrue();
+
+            var settings = new Batuara.API.Validators.BingoTableSettingsRequestValidator();
+            settings.Validate(new BingoTableSettingsRequest { Mesas = new() { new() { Numero = 1, Lugares = 4 } } }).IsValid.Should().BeTrue();
+            settings.Validate(new BingoTableSettingsRequest { Mesas = new() { new() { Numero = 1, Lugares = 0 } } }).IsValid.Should().BeFalse();
+            settings.Validate(new BingoTableSettingsRequest { Mesas = new() { new() { Numero = 1, Lugares = 51 } } }).IsValid.Should().BeFalse();
+            settings.Validate(new BingoTableSettingsRequest { Mesas = new() { new() { Numero = 1, Lugares = 4 }, new() { Numero = 1, Lugares = 2 } } }).IsValid.Should().BeFalse();
+            settings.Validate(new BingoTableSettingsRequest()).IsValid.Should().BeFalse();
+        }
     }
 }

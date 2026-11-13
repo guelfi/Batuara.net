@@ -1,4 +1,5 @@
 import apiService from './api';
+import { WaiterTableStatus } from '../types/bingoWaiter';
 import {
   BingoMenuItem,
   BingoEvent,
@@ -10,6 +11,7 @@ import {
   BingoSummary,
   BingoSummaryLine,
   BingoTab,
+  BingoTableSetting,
   BingoWaiter,
   BingoOrderItem,
   WaiterAccount,
@@ -274,6 +276,17 @@ export const bingoApi = {
 
   setTableCount: (quantidade: number) => apiService.put<any>(`${BASE}/mesas`, { quantidade }),
 
+  /** Lugares e exclusividade de cada mesa do evento. */
+  async getTableSettings(): Promise<BingoTableSetting[]> {
+    const r = await apiService.get<any>(`${BASE}/mesas`);
+    return asArray(r.data?.detalhes).map((m: any) => ({ numero: num(m.numero), lugares: num(m.lugares) || 4, exclusiva: !!m.exclusiva }));
+  },
+
+  async updateTableSettings(mesas: BingoTableSetting[]): Promise<BingoTableSetting[]> {
+    const r = await apiService.put<any>(`${BASE}/mesas/configuracao`, { mesas });
+    return asArray(r.data?.detalhes).map((m: any) => ({ numero: num(m.numero), lugares: num(m.lugares) || 4, exclusiva: !!m.exclusiva }));
+  },
+
   async getWaiters(): Promise<BingoWaiter[]> {
     const r = await apiService.get<any>(`${BASE}/garcons`);
     return asArray(r.data).map((w: any) => ({
@@ -299,6 +312,22 @@ export const bingoApi = {
     const r = await apiService.get<WaiterStatus>('/bingo/garcom/me');
     const d: any = r.data ?? {};
     return { isWaiter: !!d.isWaiter, eventOpen: !!d.eventOpen, eventName: d.eventName ?? null, waiterName: d.waiterName ?? null };
+  },
+
+  /** Situação de cada mesa: lugares, quem está nela e se há vaga (só informa). */
+  async getWaiterTablesStatus(): Promise<WaiterTableStatus[]> {
+    const r = await apiService.get<any>('/bingo/garcom/mesas/status');
+    const states = ['Free', 'HasSeats', 'Full', 'ExclusiveTaken'];
+    return asArray(r.data).map((t: any) => ({
+      numero: num(t.numero),
+      lugares: num(t.lugares),
+      exclusiva: !!t.exclusiva,
+      ocupados: num(t.ocupados),
+      livres: num(t.livres),
+      comandas: num(t.comandas),
+      estado: (states.includes(t.estado) ? t.estado : 'Free') as WaiterTableStatus['estado'],
+      ocupantes: asArray(t.ocupantes).map((o: any) => ({ nome: String(o.nome ?? ''), pessoas: num(o.pessoas) || 1 })),
+    }));
   },
 
   async getWaiterTables(): Promise<number[]> {

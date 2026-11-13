@@ -37,3 +37,22 @@ export interface WaiterBill {
 }
 
 export type ContestAction = 'ConfirmDelivered' | 'Cancel';
+
+/** Estado de uma mesa para o garçom. */
+export type WaiterTableState = 'Free' | 'HasSeats' | 'Full' | 'ExclusiveTaken';
+
+export interface WaiterTableOccupant {
+  nome: string;
+  pessoas: number;
+}
+
+export interface WaiterTableStatus {
+  numero: number;
+  lugares: number;
+  exclusiva: boolean;
+  ocupados: number;
+  livres: number;
+  comandas: number;
+  estado: WaiterTableState;
+  ocupantes: WaiterTableOccupant[];
+}

@@ -392,6 +392,15 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 - `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
 
+### 2026-11-13 (Bingo: controle de mesas: lugares, exclusiva e vagas ao vivo)
+
+- **Dados:** `BingoTables` ganha `Capacity` (padrão 4) e `IsExclusive`; `BingoTabs` ganha `PartySize` (padrão 1). Migration `20261113014956_AddBingoTableSeating` + `apply_migration` idempotente em `scripts/ci/deploy-rolling.sh` (colunas com default: nada a migrar nas linhas existentes). "Copiar de" evento leva a configuração das mesas.
+- **Cliente:** o formulário de abertura da comanda pergunta "Quantas pessoas?" (1 a 20, padrão 1) e envia `partySize`.
+- **Admin (aba Mesas):** "Lugares e exclusividade" por mesa (lugares 1–50, checkbox Exclusiva, "Aplicar a todas", salvar), editável com o evento em andamento (`PUT /admin/mesas/configuracao`).
+- **Garçom (aba Mesas):** grade ao vivo (atualiza a cada ~10 s) com o estado de cada mesa: **Livre**, **Com vaga** (quantos lugares livres), **Lotada** e **Exclusiva ocupada** (cadeado nas exclusivas), mais os ocupantes ao selecionar. Quando uma mesa fica livre ou abre vaga, aparece um aviso verde e a mesa pulsa por ~8 s ("Vagou!", "Abriu vaga!"). A caixa de seleção continua mostrando o QR da mesa. Endpoint `GET /garcom/mesas/status`.
+- **Regras:** ocupação = soma das pessoas das comandas `Open`/`CloseRequested` da mesa; comanda paga libera. Mesa exclusiva com qualquer comanda aberta fica ocupada; compartilhada lota quando as pessoas igualam ou passam os lugares. **Só informa o garçom: não bloqueia o cliente** (decisão do usuário).
+- Testes: 5 novos no backend (ocupação, status do garçom ao pagar, party size, configuração/validação/cópia, validadores) e 8 no Admin (`WaiterTablesStatus`), 1 no formulário do cliente. Conferido com Playwright no AdminDashboard real (393x700).
+
 ### 2026-11-12 (Comanda-Foto: topo com botões lado a lado, campos recolhidos, linhas compactas e fora do cardápio no fim)
 
 - **Topo da tela:** "📷 - Fotografar Comanda" e "+ Outra comanda" lado a lado, antes de tudo; a linha "+ Outra comanda…" do rodapé foi removida. A linha de cima da lista de comandas ("Comandas para fechar juntas (n)", total e "Todas") também saiu: o **total das comandas** (soma da conta, com a quantidade de comandas) fica embaixo, junto de Fechar e Descartar, e o botão **"Todas"** passou para perto da busca, no card de itens.
