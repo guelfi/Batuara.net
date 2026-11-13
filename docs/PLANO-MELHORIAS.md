@@ -398,6 +398,7 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 - **Formas de pagamento:** aviso em uma linha; linhas sem nota têm 44 px, cabendo 4–5 por cartão.
 - **Painel ao vivo (celular):** "Total vendido" ao lado de "Filtrar comandas"; botões Suspender/Encerrar/Abrir pedidos saíram do painel (ficam na aba Eventos: Suspender/Reabrir). "Fechamento" (Eventos) é o relatório de fechamento; "Pedir fechamento geral" (Painel) é o aviso para os clientes fecharem comandas, funções distintas.
 - **Garçons (celular):** Escalar ao lado do filho; aviso em uma linha; Remover virou só a lixeira ao lado do chip "Conectado".
+- **Resumo (celular):** a caixa "Evento" ficou na mesma linha da caixa de seção (portal para o slot ao lado do seletor).
 
 ### 2026-11-13 (Admin do Bingo no celular: configurar mesas e cardápio em cards paginados)
 

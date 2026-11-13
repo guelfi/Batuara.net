@@ -1979,7 +1979,8 @@ const SummaryTab: React.FC<{
   onEventChanged: () => void;
   /** Slot do cabeçalho (celular): o botão de imprimir fechamento fica na linha do título. */
   headerSlot?: HTMLElement | null;
-}> = ({ events, current, notify, confirm, onEventChanged, headerSlot }) => {
+  navSlot?: HTMLElement | null;
+}> = ({ events, current, notify, confirm, onEventChanged, headerSlot, navSlot }) => {
   const isMobile = useIsMobile();
   const [eventId, setEventId] = useState<string>(current?.id ?? '');
   const [summary, setSummary] = useState<BingoSummary | null>(null);
@@ -2056,7 +2057,20 @@ const SummaryTab: React.FC<{
     <Stack spacing={2}>
       <Stack direction={isMobile ? 'column' : 'row'} spacing={2} alignItems={isMobile ? 'stretch' : 'center'} flexWrap="wrap"
         sx={isMobile ? { '& .MuiButton-root': { minHeight: 40 } } : undefined}>
-        <FormControl sx={{ minWidth: isMobile ? 0 : 300 }} fullWidth={isMobile}>
+        {isMobile && navSlot ? createPortal(
+        <FormControl size={isMobile ? 'small' : 'medium'} sx={{ minWidth: isMobile ? 0 : 300 }} fullWidth={isMobile}>
+            <InputLabel id="sum-ev">Evento</InputLabel>
+            <Select labelId="sum-ev" label="Evento" value={eventId} onChange={(e) => setEventId(e.target.value)}>
+              {events.map((e) => (
+                <MenuItem key={e.id} value={e.id}>
+                  {e.name} - {formatDate(e.eventDate)} ({EVENT_STATUS[e.status].label})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>,
+          navSlot,
+        ) : (
+        <FormControl size={isMobile ? 'small' : 'medium'} sx={{ minWidth: isMobile ? 0 : 300 }} fullWidth={isMobile}>
           <InputLabel id="sum-ev">Evento</InputLabel>
           <Select labelId="sum-ev" label="Evento" value={eventId} onChange={(e) => setEventId(e.target.value)}>
             {events.map((e) => (
@@ -2066,6 +2080,7 @@ const SummaryTab: React.FC<{
             ))}
           </Select>
         </FormControl>
+        )}
         {!isMobile && (
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Button variant="outlined" onClick={showPhotoLink}>Copiar link</Button>
@@ -2589,6 +2604,7 @@ const EventsTab: React.FC<{
 const BingoPage: React.FC = () => {
   const [tab, setTab] = useState(0);
   const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
+  const [navSlot, setNavSlot] = useState<HTMLElement | null>(null);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [addPayOpen, setAddPayOpen] = useState(false);
   const [configTablesOpen, setConfigTablesOpen] = useState(false);
@@ -2663,6 +2679,7 @@ const BingoPage: React.FC = () => {
         tab !== 0 && (
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
             {navSelect}
+            {tab === 6 && <Box ref={setNavSlot} sx={{ flex: 1, minWidth: 0 }} />}
             {tab === 2 && (
               <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddMenuOpen(true)} sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>Adicionar</Button>
             )}
@@ -2711,7 +2728,7 @@ const BingoPage: React.FC = () => {
             <PaymentMethodsTab notify={notify} addOpen={addPayOpen} onAddClose={() => setAddPayOpen(false)} />
           )}
           {tab === 6 && (
-            <SummaryTab events={events} current={current} notify={notify} confirm={setConfirmState} onEventChanged={loadEvents} headerSlot={headerSlot} />
+            <SummaryTab events={events} current={current} notify={notify} confirm={setConfirmState} onEventChanged={loadEvents} headerSlot={headerSlot} navSlot={navSlot} />
           )}
           {tab === 7 && (
             <PhotoTabsTab notify={notify} current={current} />
