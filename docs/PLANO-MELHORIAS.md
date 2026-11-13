@@ -392,6 +392,11 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 - `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
 
+### 2026-11-13 (Abrir comanda respeita os lugares da mesa)
+
+- **Problema:** o cliente informou 5 pessoas numa mesa de 4 lugares e a comanda abriu (o servidor só validava 1–20 pessoas).
+- **Regra (servidor, `BingoPublicService.CreateTabAsync`):** ao abrir comanda nova, recusa (409) se a mesa é exclusiva e já está ocupada, se está lotada ou se o grupo é maior que os lugares livres (comandas não pagas contam). Mensagem para o cliente, ex.: "A mesa 3 tem só 1 lugar livre. Informe menos pessoas ou escolha outra mesa." Quem reabre comanda existente (mesmo celular) não é afetado. Teste novo: 172 backend passando.
+
 ### 2026-11-13 (Admin no celular: ajustes de Mesas, Formas, Painel e Garçons)
 
 - **Mesas:** campo "Mesas" menor com Salvar/Imprimir/Projetar QR na mesma linha; texto explicativo menor; QR ocupa o espaço livre (`useFillViewport` ganhou o parâmetro `trigger` para remedir após o carregamento).

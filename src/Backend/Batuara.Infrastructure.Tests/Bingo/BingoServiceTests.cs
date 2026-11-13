@@ -2592,6 +2592,30 @@ namespace Batuara.Infrastructure.Tests.Bingo
         }
 
         [Fact]
+        public async Task CreateTab_Should_Reject_Party_Larger_Than_Free_Seats_And_Taken_Exclusive_Tables()
+        {
+            var f = new Fixture();
+            await f.OpenEventAsync();
+            await f.Admin.UpdateTableSettingsAsync(null, new List<BingoTableSettingDto>
+            {
+                new() { Numero = 1, Lugares = 4, Exclusiva = false },
+                new() { Numero = 2, Lugares = 6, Exclusiva = true }
+            });
+
+            var tooMany = async () => await f.Public.CreateTabAsync(new BingoCreateTabRequest { CustomerName = "Grupo", Phone = "11999990001", Mesa = 1, PartySize = 5 });
+            (await tooMany.Should().ThrowAsync<BingoException>()).Which.Message.Should().Contain("4 lugares livres");
+
+            await f.Public.CreateTabAsync(new BingoCreateTabRequest { CustomerName = "Maria", Phone = "11999990002", Mesa = 1, PartySize = 3 });
+            var noRoom = async () => await f.Public.CreateTabAsync(new BingoCreateTabRequest { CustomerName = "Dupla", Phone = "11999990003", Mesa = 1, PartySize = 2 });
+            (await noRoom.Should().ThrowAsync<BingoException>()).Which.Message.Should().Contain("1 lugar livre");
+            await f.Public.CreateTabAsync(new BingoCreateTabRequest { CustomerName = "Solo", Phone = "11999990004", Mesa = 1, PartySize = 1 });
+
+            await f.Public.CreateTabAsync(new BingoCreateTabRequest { CustomerName = "Ana", Phone = "11999990005", Mesa = 2, PartySize = 2 });
+            var taken = async () => await f.Public.CreateTabAsync(new BingoCreateTabRequest { CustomerName = "Rui", Phone = "11999990006", Mesa = 2 });
+            (await taken.Should().ThrowAsync<BingoException>()).Which.Message.Should().Contain("exclusiva");
+        }
+
+        [Fact]
         public async Task CreateTab_Should_Store_PartySize_And_Default_To_One()
         {
             var f = new Fixture();

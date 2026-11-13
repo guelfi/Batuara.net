@@ -58,16 +58,15 @@ namespace Batuara.Infrastructure.Bingo.Services
                 throw new BingoException(BingoErrorKind.Validation, "Informe o seu nome.");
             }
 
-            if (!await Db.BingoTables.AnyAsync(x => x.EventId == ev.Id && x.Number == request.Mesa, cancellationToken))
-            {
-                throw new BingoException(BingoErrorKind.Validation, "Mesa inválida.");
-            }
+            var table = await Db.BingoTables.FirstOrDefaultAsync(x => x.EventId == ev.Id && x.Number == request.Mesa, cancellationToken)
+                ?? throw new BingoException(BingoErrorKind.Validation, "Mesa inválida.");
 
             var tab = await Db.BingoTabs.FirstOrDefaultAsync(
                 x => x.EventId == ev.Id && x.Phone == phone && x.Status != BingoTabStatus.Paid, cancellationToken);
             var reused = tab != null;
             if (tab == null)
             {
+                await EnsureTableHasRoomAsync(ev.Id, table, request.PartySize, cancellationToken);
                 tab = new BingoTab(ev.Id, request.CustomerName, phone, request.Mesa, request.PartySize);
                 Db.BingoTabs.Add(tab);
             }
@@ -91,6 +90,29 @@ namespace Batuara.Infrastructure.Bingo.Services
             }
 
             return new BingoCreateTabResult { TabId = tab.Id, Reused = reused };
+        }
+
+        /// <summary>Impede abrir comanda em mesa exclusiva ocupada ou com menos lugares livres que o grupo.</summary>
+        private async Task EnsureTableHasRoomAsync(int eventId, BingoTable table, int partySize, CancellationToken cancellationToken)
+        {
+            var open = await Db.BingoTabs
+                .Where(x => x.EventId == eventId && x.TableNumber == table.Number && x.Status != BingoTabStatus.Paid)
+                .Select(x => new { x.CustomerName, x.PartySize })
+                .ToListAsync(cancellationToken);
+            var status = BingoTableOccupancy.Build(table, open.Select(x => (x.CustomerName, x.PartySize)).ToList());
+            var people = Math.Max(1, partySize);
+            if (status.Estado == BingoTableStates.ExclusiveTaken)
+            {
+                throw new BingoException(BingoErrorKind.Conflict, $"A mesa {table.Number} é exclusiva e já está ocupada. Escolha outra mesa.");
+            }
+
+            if (people > status.Livres)
+            {
+                var msg = status.Livres == 0
+                    ? $"A mesa {table.Number} está lotada. Escolha outra mesa."
+                    : $"A mesa {table.Number} tem só {status.Livres} {(status.Livres == 1 ? "lugar livre" : "lugares livres")}. Informe menos pessoas ou escolha outra mesa.";
+                throw new BingoException(BingoErrorKind.Conflict, msg);
+            }
         }
 
         public async Task<BingoPublicTabDto> GetTabAsync(Guid tabId, CancellationToken cancellationToken = default)
