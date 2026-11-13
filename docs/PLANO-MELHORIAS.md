@@ -392,6 +392,15 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 - `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
 
+### 2026-11-13 (Admin do Bingo no celular: configurar mesas e cardápio em cards paginados)
+
+- **Mesas:** a caixa de seleção da seção ficou menor e ganhou ao lado o botão **"Configurar Mesas"** (como o "Adicionar" do Cardápio; no desktop fica à direita das abas). O card "Lugares e exclusividade" saiu da página e virou o diálogo **Configurar mesas** (`TableSettingsDialog`, tela cheia no celular): lugares e exclusiva de cada mesa em **cards paginados** com rolagem lateral e indicador "Mesas 1–7 de 30", "Lugares em todas" + "Aplicar a todas" e "Salvar lugares". Sem rolagem de página, mesmo com muitas mesas.
+- **Cardápio e Formas de pagamento (celular):** a lista longa virou cards paginados, como o cardápio da comanda. `CompactRowList` passou a usar o novo `PagedCards` e a altura que sobra na tela (sem rolar a página); busca quando há mais de 6 itens; a nota "já usado: nome travado" virou "nome travado" (uma linha). O desktop continua com a tabela.
+- **Componente genérico `PagedCards`** (`shared/comandaFoto`): cards paginados com altura medida, setas e indicador, usado pelo cardápio da comanda (`MenuPagedCarousel`, que manteve o comportamento), pela Comanda-Foto e pelas listas do Admin.
+- Tela principal de Mesas compactada no celular (QR menor, aviso enxuto).
+- Testes: `PagedCards` (6), `TableSettingsDialog` (7), `CompactRowList` (6). Testes de tela mais confiáveis em máquina carregada: espera assíncrona de 5 s e timeout de 20 s globais (`setupTests.ts`), por causa de falhas intermitentes por carga.
+- Conferido com Playwright no AdminDashboard real (393x700): Cardápio 4 cards de 4 itens, configuração 7 mesas por card, sem rolagem de página.
+
 ### 2026-11-13 (Bingo: controle de mesas: lugares, exclusiva e vagas ao vivo)
 
 - **Dados:** `BingoTables` ganha `Capacity` (padrão 4) e `IsExclusive`; `BingoTabs` ganha `PartySize` (padrão 1). Migration `20261113014956_AddBingoTableSeating` + `apply_migration` idempotente em `scripts/ci/deploy-rolling.sh` (colunas com default: nada a migrar nas linhas existentes). "Copiar de" evento leva a configuração das mesas.

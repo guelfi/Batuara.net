@@ -55,9 +55,11 @@ import {
   PhotoCamera as PhotoCameraIcon,
   Print as PrintIcon,
   Cast as ProjectIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import QRCode from 'qrcode';
 import CompactRowList from '../components/bingo/CompactRowList';
+import TableSettingsDialog from '../components/bingo/TableSettingsDialog';
 import apiService from '../services/api';
 import CurrencyField from '../components/common/CurrencyField';
 import useIsMobile from '../hooks/useIsMobile';
@@ -73,7 +75,6 @@ import {
   BingoReminderResult,
   BingoSummary,
   BingoTab,
-  BingoTableSetting,
   BingoWaiter,
 } from '../types/bingo';
 import { HouseMember } from '../types';
@@ -1142,7 +1143,7 @@ const MenuTab: React.FC<{
           emptyText="Nenhum item no cardápio."
           rows={items.map((item) => ({
             id: String(item.id), order: item.sortOrder, name: item.name, trailing: money(item.unitPrice),
-            note: item.isUsed ? 'já usado: nome travado' : undefined,
+            note: item.isUsed ? 'nome travado' : undefined,
             checked: item.isAvailable, onToggle: (c) => toggle(item, c),
             onEdit: () => setEditing({ ...item }),
             onDelete: () => removeItem(item), deleteDisabled: !!item.isUsed,
@@ -1383,29 +1384,15 @@ const QrBlock: React.FC<{ size: number; dataUrl: string }> = ({ size, dataUrl })
   <Box component="img" src={dataUrl} alt="QR Code do bingo" sx={{ width: size, maxWidth: '100%', height: 'auto' }} />
 );
 
-const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ notify, event }) => {
+const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null; configOpen: boolean; onConfigClose: () => void }> = ({ notify, event, configOpen, onConfigClose }) => {
   const locked = !!event && event.status !== 'Draft';
   const [count, setCount] = useState('');
   const [loading, setLoading] = useState(true);
   const [qr, setQr] = useState('');
   const [projecting, setProjecting] = useState(false);
-  const [settings, setSettings] = useState<BingoTableSetting[]>([]);
-  const [savedSettings, setSavedSettings] = useState<BingoTableSetting[]>([]);
-  const [allSeats, setAllSeats] = useState('4');
-  const [savingSettings, setSavingSettings] = useState(false);
   const isMobile = useIsMobile();
   const btnSx = isMobile ? { minHeight: 40 } : undefined;
-  const settingsDirty = JSON.stringify(settings) !== JSON.stringify(savedSettings);
-  const seatsInvalid = settings.some((s) => !Number.isInteger(s.lugares) || s.lugares < 1 || s.lugares > 50);
-
-  const loadSettings = useCallback(() => {
-    bingoApi.getTableSettings()
-      .then((list) => { setSettings(list); setSavedSettings(list); })
-      .catch((e) => notify(apiError(e, 'Não foi possível carregar os lugares das mesas.'), 'error'));
-  }, [notify]);
-
   useEffect(() => {
-    loadSettings();
     bingoApi.getTableCount()
       .then((n) => setCount(String(n)))
       .catch((e) => notify(apiError(e, 'Não foi possível carregar as mesas.'), 'error'))
@@ -1413,33 +1400,7 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
     QRCode.toDataURL(BINGO_URL, { width: 900, margin: 2, errorCorrectionLevel: 'M' })
       .then(setQr)
       .catch(() => notify('Não foi possível gerar o QR.', 'error'));
-  }, [notify, loadSettings]);
-
-  const patchSetting = (numero: number, patch: Partial<BingoTableSetting>) =>
-    setSettings((l) => l.map((s) => (s.numero === numero ? { ...s, ...patch } : s)));
-
-  const applySeatsToAll = () => {
-    const n = Number(allSeats);
-    if (!Number.isInteger(n) || n < 1 || n > 50) {
-      notify('Informe de 1 a 50 lugares.', 'error');
-      return;
-    }
-    setSettings((l) => l.map((s) => ({ ...s, lugares: n })));
-  };
-
-  const saveSettings = async () => {
-    setSavingSettings(true);
-    try {
-      const list = await bingoApi.updateTableSettings(settings);
-      setSettings(list);
-      setSavedSettings(list);
-      notify('Lugares das mesas salvos.', 'success');
-    } catch (e: any) {
-      notify(apiError(e, 'Não foi possível salvar os lugares das mesas.'), 'error');
-    } finally {
-      setSavingSettings(false);
-    }
-  };
+  }, [notify]);
 
   const save = async () => {
     const q = Number(count);
@@ -1450,7 +1411,6 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
     try {
       await bingoApi.setTableCount(q);
       notify('Mesas atualizadas.', 'success');
-      loadSettings();
     } catch (e: any) {
       notify(apiError(e, 'Não foi possível salvar as mesas.'), 'error');
     }
@@ -1493,62 +1453,19 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null }> = ({ not
             <Typography className="sheet-title" variant="h5" sx={{ fontWeight: 700, display: 'none' }}>
               Aponte a câmera para pedir
             </Typography>
-            {qr && <QrBlock size={150} dataUrl={qr} />}
+            {qr && <QrBlock size={isMobile ? 108 : 150} dataUrl={qr} />}
             <Typography className="sheet-url" variant="h6" sx={{ display: 'none', wordBreak: 'break-all' }}>{BINGO_URL}</Typography>
           </Box>
         </Stack>
         {locked && (
-          <Alert severity="info" sx={{ mt: 2 }} className="bingo-no-print">
+          <Alert severity="info" sx={{ mt: isMobile ? 1 : 2, ...(isMobile ? { py: 0, fontSize: '0.8rem' } : {}) }} className="bingo-no-print">
             Evento em andamento ou encerrado: o número de mesas fica bloqueado para não afetar comandas abertas.
             Para mudar, crie um novo evento.
           </Alert>
         )}
       </Paper>
 
-      <Paper sx={{ p: 2 }} className="bingo-no-print">
-        <Typography variant="h6">Lugares e exclusividade</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-          <b>Exclusiva</b>: um grupo só; outras comandas veem a mesa ocupada. Sem marcar, a mesa é <b>compartilhada</b>: vale quem chegar primeiro, até lotar os lugares.
-          Pode ser ajustado com o evento em andamento.
-        </Typography>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
-          <TextField
-            label="Lugares em todas"
-            type="number"
-            size="small"
-            value={allSeats}
-            onChange={(e) => setAllSeats(e.target.value)}
-            inputProps={{ min: 1, max: 50 }}
-            sx={{ width: 150 }}
-          />
-          <Button variant="outlined" onClick={applySeatsToAll} sx={btnSx}>Aplicar a todas</Button>
-        </Stack>
-        <Box sx={{ maxHeight: 380, overflowY: 'auto', pr: 0.5 }}>
-          {settings.map((s) => (
-            <Stack key={s.numero} direction="row" spacing={1.5} alignItems="center" sx={{ py: 0.5, borderBottom: 1, borderColor: 'divider' }}>
-              <Typography sx={{ width: 70, fontWeight: 700 }}>Mesa {s.numero}</Typography>
-              <TextField
-                size="small"
-                type="number"
-                label="Lugares"
-                value={Number.isNaN(s.lugares) ? '' : s.lugares}
-                onChange={(e) => patchSetting(s.numero, { lugares: e.target.value === '' ? NaN : Number(e.target.value) })}
-                inputProps={{ min: 1, max: 50, 'aria-label': `Lugares da mesa ${s.numero}` }}
-                error={!Number.isInteger(s.lugares) || s.lugares < 1 || s.lugares > 50}
-                sx={{ width: 100 }}
-              />
-              <FormControlLabel
-                control={<Checkbox checked={s.exclusiva} onChange={(e) => patchSetting(s.numero, { exclusiva: e.target.checked })} inputProps={{ 'aria-label': `Mesa ${s.numero} exclusiva` }} />}
-                label="Exclusiva"
-              />
-            </Stack>
-          ))}
-          {settings.length === 0 && <Typography color="text.secondary">Nenhuma mesa neste evento.</Typography>}
-        </Box>
-        <Button variant="contained" sx={{ mt: 1.5, ...(btnSx ?? {}) }} onClick={saveSettings} disabled={!settingsDirty || seatsInvalid || savingSettings}>
-          {savingSettings ? 'Salvando...' : 'Salvar lugares'}
-        </Button>
-      </Paper>
+      <TableSettingsDialog open={configOpen} onClose={onConfigClose} notify={notify} fullScreen={isMobile} />
 
       <Dialog fullScreen open={projecting} onClose={() => setProjecting(false)}>
         <Box sx={{ minHeight: isMobile ? '100dvh' : '100vh', height: isMobile ? '100dvh' : undefined, bgcolor: '#fff', color: '#000', textAlign: 'center', p: 2,
@@ -2605,6 +2522,7 @@ const BingoPage: React.FC = () => {
   const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [addPayOpen, setAddPayOpen] = useState(false);
+  const [configTablesOpen, setConfigTablesOpen] = useState(false);
   const [events, setEvents] = useState<BingoEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [snack, setSnack] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -2679,6 +2597,9 @@ const BingoPage: React.FC = () => {
             {tab === 2 && (
               <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddMenuOpen(true)} sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>Adicionar</Button>
             )}
+            {tab === 3 && (
+              <Button variant="contained" startIcon={<SettingsIcon />} onClick={() => setConfigTablesOpen(true)} sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>Configurar Mesas</Button>
+            )}
             {tab === 5 && (
               <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddPayOpen(true)} sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>Adicionar</Button>
             )}
@@ -2694,6 +2615,9 @@ const BingoPage: React.FC = () => {
           <Box sx={{ flex: 1 }} />
           {tab === 2 && (
             <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddMenuOpen(true)}>Adicionar item</Button>
+          )}
+          {tab === 3 && (
+            <Button variant="contained" startIcon={<SettingsIcon />} onClick={() => setConfigTablesOpen(true)}>Configurar Mesas</Button>
           )}
           {tab === 5 && (
             <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddPayOpen(true)}>Adicionar forma</Button>
@@ -2712,7 +2636,7 @@ const BingoPage: React.FC = () => {
           {tab === 2 && (
             <MenuTab notify={notify} confirm={setConfirmState} addOpen={addMenuOpen} onAddClose={() => setAddMenuOpen(false)} />
           )}
-          {tab === 3 && <TablesTab notify={notify} event={current} />}
+          {tab === 3 && <TablesTab notify={notify} event={current} configOpen={configTablesOpen} onConfigClose={() => setConfigTablesOpen(false)} />}
           {tab === 4 && <WaitersTab notify={notify} confirm={setConfirmState} />}
           {tab === 5 && (
             <PaymentMethodsTab notify={notify} addOpen={addPayOpen} onAddClose={() => setAddPayOpen(false)} />

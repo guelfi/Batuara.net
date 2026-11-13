@@ -58,20 +58,22 @@ interface CarouselControlsProps {
   total: number;
   /** Indicador curto ("1–6/18") e botões pequenos, para linhas apertadas. */
   compact?: boolean;
+  /** O que está sendo paginado (padrão "Itens"; ex.: "Mesas"). */
+  noun?: string;
   onPrev: () => void;
   onNext: () => void;
 }
 
 /** Setas e indicador de posição dos carrosséis. */
-export const CarouselControls: React.FC<CarouselControlsProps> = ({ first, last, total, compact, onPrev, onNext }) => (
+export const CarouselControls: React.FC<CarouselControlsProps> = ({ first, last, total, compact, noun = 'Itens', onPrev, onNext }) => (
   <Stack direction="row" justifyContent="center" alignItems="center" spacing={compact ? 0.5 : 1} sx={{ height: CAROUSEL_HEADER_H, flexShrink: 0 }}>
-    <IconButton aria-label="Itens anteriores" size="small" disabled={first <= 1} onClick={onPrev} sx={ARROW_BTN}>
+    <IconButton aria-label={noun === 'Itens' ? 'Itens anteriores' : `${noun} anteriores`} size="small" disabled={first <= 1} onClick={onPrev} sx={ARROW_BTN}>
       <ChevronLeftIcon />
     </IconButton>
-    <Typography variant="body2" fontWeight={600} aria-live="polite" aria-label={`Itens ${first} a ${last} de ${total}`} noWrap>
-      {compact ? `${first}–${last}/${total}` : `Itens ${first}–${last} de ${total}`}
+    <Typography variant="body2" fontWeight={600} aria-live="polite" aria-label={`${noun} ${first} a ${last} de ${total}`} noWrap>
+      {compact ? `${first}–${last}/${total}` : `${noun} ${first}–${last} de ${total}`}
     </Typography>
-    <IconButton aria-label="Próximos itens" size="small" disabled={last >= total} onClick={onNext} sx={ARROW_BTN}>
+    <IconButton aria-label={noun === 'Itens' ? 'Próximos itens' : `Próximas ${noun.toLowerCase()}`} size="small" disabled={last >= total} onClick={onNext} sx={ARROW_BTN}>
       <ChevronRightIcon />
     </IconButton>
   </Stack>
