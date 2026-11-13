@@ -392,6 +392,13 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 - `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
 
+### 2026-11-13 (Admin no celular: ajustes de Mesas, Formas, Painel e Garçons)
+
+- **Mesas:** campo "Mesas" menor com Salvar/Imprimir/Projetar QR na mesma linha; texto explicativo menor; QR ocupa o espaço livre (`useFillViewport` ganhou o parâmetro `trigger` para remedir após o carregamento).
+- **Formas de pagamento:** aviso em uma linha; linhas sem nota têm 44 px, cabendo 4–5 por cartão.
+- **Painel ao vivo (celular):** "Total vendido" ao lado de "Filtrar comandas"; botões Suspender/Encerrar/Abrir pedidos saíram do painel (ficam na aba Eventos: Suspender/Reabrir). "Fechamento" (Eventos) é o relatório de fechamento; "Pedir fechamento geral" (Painel) é o aviso para os clientes fecharem comandas, funções distintas.
+- **Garçons (celular):** Escalar ao lado do filho; aviso em uma linha; Remover virou só a lixeira ao lado do chip "Conectado".
+
 ### 2026-11-13 (Admin do Bingo no celular: configurar mesas e cardápio em cards paginados)
 
 - **Mesas:** a caixa de seleção da seção ficou menor e ganhou ao lado o botão **"Configurar Mesas"** (como o "Adicionar" do Cardápio; no desktop fica à direita das abas). O card "Lugares e exclusividade" saiu da página e virou o diálogo **Configurar mesas** (`TableSettingsDialog`, tela cheia no celular): lugares e exclusiva de cada mesa em **cards paginados** com rolagem lateral e indicador "Mesas 1–7 de 30", "Lugares em todas" + "Aplicar a todas" e "Salvar lugares". Sem rolagem de página, mesmo com muitas mesas.

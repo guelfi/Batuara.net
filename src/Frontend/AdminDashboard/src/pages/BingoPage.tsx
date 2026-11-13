@@ -60,6 +60,7 @@ import {
 import QRCode from 'qrcode';
 import CompactRowList from '../components/bingo/CompactRowList';
 import TableSettingsDialog from '../components/bingo/TableSettingsDialog';
+import { useFillViewport } from '../_shared/comandaFoto/useFillViewport';
 import apiService from '../services/api';
 import CurrencyField from '../components/common/CurrencyField';
 import useIsMobile from '../hooks/useIsMobile';
@@ -693,11 +694,10 @@ const LivePanel: React.FC<{
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }} justifyContent="space-between" sx={{ flexWrap: { md: 'nowrap' } }}>
           {isMobile ? (
             <Stack spacing={1.5}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}>
                 {[
                   { label: 'Itens pendentes', value: String(pendingCount), color: 'info.main' },
                   { label: 'Itens retirados', value: String(retrievedCount), color: 'secondary.main' },
-                  { label: 'Total vendido', value: money(totalSold), color: 'primary.main' },
                   ...(contestedCount > 0 ? [{ label: 'Em contestação', value: String(contestedCount), color: 'error.main' }] : []),
                   ...(!!panel?.codeDeliveryFailedCount ? [{ label: 'Falha de entrega', value: String(panel.codeDeliveryFailedCount), color: 'error.main' }] : []),
                 ].map((m) => (
@@ -707,22 +707,28 @@ const LivePanel: React.FC<{
                   </Box>
                 ))}
               </Box>
-              <FormControl size="small" fullWidth>
-                <InputLabel id="painel-filtro">Filtrar comandas</InputLabel>
-                <Select labelId="painel-filtro" label="Filtrar comandas" value={filter ?? ''}
-                  onChange={(e) => setFilter((e.target.value || null) as TabFilter | null)}>
-                  <MenuItem value="">Todas</MenuItem>
-                  <MenuItem value="open">{`Em aberto: ${open.length}`}</MenuItem>
-                  <MenuItem value="closing">{`Pediram a conta: ${closing.length}`}</MenuItem>
-                  <MenuItem value="paid">{`Pagas: ${paid.length}`}</MenuItem>
-                  {panel?.phoneVerifiedCount !== undefined && (
-                    <MenuItem value="verified">{`Celular confirmado: ${panel.phoneVerifiedCount}`}</MenuItem>
-                  )}
-                  {panel?.phoneNotVerifiedCount !== undefined && (
-                    <MenuItem value="unverified">{`Não confirmado: ${panel.phoneNotVerifiedCount}`}</MenuItem>
-                  )}
-                </Select>
-              </FormControl>
+              <Stack direction="row" spacing={1} alignItems="stretch">
+                <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, px: 1, py: 0.5, flex: '0 0 38%', minWidth: 0 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }}>Total vendido</Typography>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'primary.main', wordBreak: 'break-word' }}>{money(totalSold)}</Typography>
+                </Box>
+                <FormControl size="small" sx={{ flex: 1, minWidth: 0 }}>
+                  <InputLabel id="painel-filtro">Filtrar comandas</InputLabel>
+                  <Select labelId="painel-filtro" label="Filtrar comandas" value={filter ?? ''}
+                    onChange={(e) => setFilter((e.target.value || null) as TabFilter | null)}>
+                    <MenuItem value="">Todas</MenuItem>
+                    <MenuItem value="open">{`Em aberto: ${open.length}`}</MenuItem>
+                    <MenuItem value="closing">{`Pediram a conta: ${closing.length}`}</MenuItem>
+                    <MenuItem value="paid">{`Pagas: ${paid.length}`}</MenuItem>
+                    {panel?.phoneVerifiedCount !== undefined && (
+                      <MenuItem value="verified">{`Celular confirmado: ${panel.phoneVerifiedCount}`}</MenuItem>
+                    )}
+                    {panel?.phoneNotVerifiedCount !== undefined && (
+                      <MenuItem value="unverified">{`Não confirmado: ${panel.phoneNotVerifiedCount}`}</MenuItem>
+                    )}
+                  </Select>
+                </FormControl>
+              </Stack>
             </Stack>
           ) : (
           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0, flex: '1 1 auto', flexWrap: 'nowrap' }}>
@@ -768,7 +774,7 @@ const LivePanel: React.FC<{
               />
               <Typography variant="body2">Pedir fechamento geral</Typography>
             </Stack>
-            {isOpen ? (
+            {isMobile ? null : isOpen ? (
               <Button
                 color="error"
                 variant="outlined"
@@ -1327,7 +1333,14 @@ const PaymentMethodsTab: React.FC<{ notify: Notify; addOpen: boolean; onAddClose
   if (isMobile) {
     return (
       <Stack spacing={1.5}>
-        <Alert severity="info">As formas ativas aparecem para o garçom escolher ao cobrar.</Alert>
+        {/* uma linha só: fonte menor e sem ícone, com reticências de segurança */}
+        <Alert
+          severity="info"
+          icon={false}
+          sx={{ py: 0, px: 1.25, fontSize: 'clamp(0.62rem, 2.7vw, 0.8rem)', '& .MuiAlert-message': { py: 0.5, width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }}
+        >
+          As formas ativas aparecem para o garçom escolher ao cobrar.
+        </Alert>
         <CompactRowList
           emptyText="Nenhuma forma de pagamento."
           rows={methods.map((m) => ({
@@ -1384,6 +1397,9 @@ const QrBlock: React.FC<{ size: number; dataUrl: string }> = ({ size, dataUrl })
   <Box component="img" src={dataUrl} alt="QR Code do bingo" sx={{ width: size, maxWidth: '100%', height: 'auto' }} />
 );
 
+/** Botões da linha de quantidade de mesas no celular: compactos para caberem ao lado do campo. */
+const TABLE_ROW_BTN = { minWidth: 0, minHeight: 38, px: 1, fontSize: '0.8rem', whiteSpace: 'nowrap', flexShrink: 0 } as const;
+
 const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null; configOpen: boolean; onConfigClose: () => void }> = ({ notify, event, configOpen, onConfigClose }) => {
   const locked = !!event && event.status !== 'Draft';
   const [count, setCount] = useState('');
@@ -1402,6 +1418,21 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null; configOpen
       .catch(() => notify('Não foi possível gerar o QR.', 'error'));
   }, [notify]);
 
+  // celular: o cartão ocupa a altura visível e o QR cresce até o espaço que sobrar
+  const mobileCardRef = useRef<HTMLDivElement>(null);
+  const fitHeight = useFillViewport(mobileCardRef, 380, loading);
+  const [qrBox, setQrBox] = useState<HTMLDivElement | null>(null);
+  const [qrSide, setQrSide] = useState(0);
+  useEffect(() => {
+    if (!qrBox) return undefined;
+    const measure = () => setQrSide(Math.floor(Math.min(qrBox.clientWidth, qrBox.clientHeight)));
+    measure();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(qrBox);
+    return () => observer.disconnect();
+  }, [qrBox]);
+
   const save = async () => {
     const q = Number(count);
     if (!Number.isInteger(q) || q < 1 || q > 500) {
@@ -1419,6 +1450,42 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null; configOpen
   if (loading) return <CircularProgress />;
   return (
     <Stack spacing={2}>
+      {isMobile ? (
+        <Paper ref={mobileCardRef} sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1, overflow: 'hidden', ...(fitHeight ? { height: fitHeight } : {}) }}>
+          {/* quantidade, Salvar, Imprimir e Projetar QR na mesma linha */}
+          <Stack direction="row" spacing={0.75} alignItems="center" className="bingo-no-print" sx={{ flexShrink: 0 }}>
+            <TextField
+              label="Mesas"
+              type="number"
+              size="small"
+              value={count}
+              disabled={locked}
+              onChange={(e) => setCount(e.target.value)}
+              inputProps={{ min: 1, max: 500, 'aria-label': 'Quantidade de mesas' }}
+              sx={{ width: 84, flexShrink: 0 }}
+            />
+            <Button variant="contained" onClick={save} disabled={locked} sx={TABLE_ROW_BTN}>Salvar</Button>
+            <Button variant="contained" color="secondary" onClick={() => window.print()} disabled={!qr} sx={TABLE_ROW_BTN}>Imprimir</Button>
+            <Button variant="outlined" onClick={() => setProjecting(true)} disabled={!qr} sx={TABLE_ROW_BTN}>Projetar QR</Button>
+          </Stack>
+          {locked && (
+            <Typography className="bingo-no-print" variant="caption" color="text.secondary" sx={{ lineHeight: 1.3, flexShrink: 0 }}>
+              Evento em andamento ou encerrado: o número de mesas fica bloqueado para não afetar comandas abertas. Para mudar, crie um novo evento.
+            </Typography>
+          )}
+          <Box
+            ref={setQrBox}
+            className="bingo-print-sheet"
+            sx={{ flex: 1, minHeight: 140, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}
+          >
+            <Typography className="sheet-title" variant="h5" sx={{ fontWeight: 700, display: 'none' }}>
+              Aponte a câmera para pedir
+            </Typography>
+            {qr && qrSide > 0 && <QrBlock size={qrSide} dataUrl={qr} />}
+            <Typography className="sheet-url" variant="h6" sx={{ display: 'none', wordBreak: 'break-all' }}>{BINGO_URL}</Typography>
+          </Box>
+        </Paper>
+      ) : (
       <Paper sx={{ p: 2 }}>
         <Stack
           direction={isMobile ? 'row' : { xs: 'column', sm: 'row' }}
@@ -1464,6 +1531,7 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null; configOpen
           </Alert>
         )}
       </Paper>
+      )}
 
       <TableSettingsDialog open={configOpen} onClose={onConfigClose} notify={notify} fullScreen={isMobile} />
 
@@ -1496,7 +1564,7 @@ const TablesTab: React.FC<{ notify: Notify; event: BingoEvent | null; configOpen
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             border: none !important; background: #fff; color: #000;
           }
-          .bingo-print-sheet img { width: 16cm !important; }
+          .bingo-print-sheet img { width: 16cm !important; height: auto !important; }
           .bingo-print-sheet .sheet-title { display: block !important; font-size: 40pt !important; margin-bottom: 24pt !important; }
           .bingo-print-sheet .sheet-url { display: block !important; font-size: 22pt !important; margin-top: 24pt !important; }
           @page { size: A4 portrait; margin: 1.5cm; }
@@ -1581,7 +1649,7 @@ const WaitersTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void 
   return (
     <Stack spacing={2}>
       <Paper sx={{ p: 2 }}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+        <Stack direction="row" spacing={isMobile ? 1 : 2} alignItems="flex-start">
           <Autocomplete
             fullWidth
             options={options}
@@ -1595,9 +1663,9 @@ const WaitersTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void 
             renderInput={(params) => <TextField {...params} label="Buscar filho ativo" />}
           />
           <Button variant="contained" startIcon={<AddIcon />} disabled={!selected} onClick={add}
-            sx={isMobile ? { minHeight: 44 } : undefined}>Escalar</Button>
+            sx={isMobile ? { minHeight: 40, flexShrink: 0 } : undefined}>Escalar</Button>
         </Stack>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, fontSize: 'clamp(0.6rem, 2.9vw, 0.75rem)', whiteSpace: { xs: 'nowrap', sm: 'normal' } }}>
           O filho precisa ter celular cadastrado para entrar como garçom.
         </Typography>
       </Paper>
@@ -1609,16 +1677,17 @@ const WaitersTab: React.FC<{ notify: Notify; confirm: (s: ConfirmState) => void 
               <CardContent>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
                   <Typography fontWeight={700} sx={{ minWidth: 0, wordBreak: 'break-word' }}>{w.name}</Typography>
-                  <Chip size="small" color={connected(w) ? 'success' : 'default'}
-                    label={connected(w) ? 'Conectado' : 'Não entrou'} />
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Chip size="small" color={connected(w) ? 'success' : 'default'}
+                      label={connected(w) ? 'Conectado' : 'Não entrou'} />
+                    <IconButton color="error" aria-label="Remover garçom" onClick={() => askRemove(w)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </Stack>
                 </Stack>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                   Entregas: {w.deliveries}
                 </Typography>
-                <Button fullWidth color="error" variant="outlined" startIcon={<DeleteIcon />}
-                  sx={{ mt: 1.5, minHeight: 40 }} onClick={() => askRemove(w)}>
-                  Remover
-                </Button>
               </CardContent>
             </Card>
           ))}

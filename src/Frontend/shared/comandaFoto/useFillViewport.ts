@@ -15,8 +15,9 @@ const bottomSpace = (el: HTMLElement): number => {
  * Altura para o elemento ocupar exatamente o que sobra da área visível da tela (do topo dele até o fim),
  * sem criar rolagem na página. Usa a viewport visual (leva em conta as barras do navegador no celular) e
  * desconta o espaçamento inferior dos elementos que o contêm. Recalcula ao girar, redimensionar ou mudar o layout acima.
+ * `trigger`: valor que, ao mudar, força nova medição (ex.: o elemento só aparece depois de um "carregando").
  */
-export function useFillViewport(ref: RefObject<HTMLElement | null>, minHeight = 360): number | undefined {
+export function useFillViewport(ref: RefObject<HTMLElement | null>, minHeight = 360, trigger?: unknown): number | undefined {
   const [height, setHeight] = useState<number>();
 
   const measure = useCallback(() => {
@@ -42,7 +43,7 @@ export function useFillViewport(ref: RefObject<HTMLElement | null>, minHeight = 
       window.visualViewport?.removeEventListener('resize', measure);
       observer?.disconnect();
     };
-  }, [measure, ref]);
+  }, [measure, ref, trigger]);
 
   return height;
 }

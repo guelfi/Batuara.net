@@ -20,7 +20,9 @@ export interface CompactRow {
   onConfirm?: () => void;
 }
 
-const ROW_H = 58;
+const ROW_H_WITH_NOTE = 58;
+// sem nota (ex.: formas de pagamento) a linha precisa de menos altura: cabem mais itens por card
+const ROW_H_PLAIN = 44;
 
 // Lista de linhas compactas para o celular: cartões paginados (como o cardápio da comanda), uma linha por item,
 // ocupando a altura que sobra na tela, sem rolar a página. Busca quando há mais de 6 itens.
@@ -28,7 +30,8 @@ const CompactRowList: React.FC<{ rows: CompactRow[]; emptyText: string }> = ({ r
   const [query, setQuery] = useState('');
   const [menu, setMenu] = useState<{ el: HTMLElement; row: CompactRow } | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
-  const fitHeight = useFillViewport(rootRef, 260);
+  const fitHeight = useFillViewport(rootRef, 260, rows.length === 0);
+  const rowHeight = rows.some((r) => r.note) ? ROW_H_WITH_NOTE : ROW_H_PLAIN;
   const showSearch = rows.length > 6;
   const q = query.trim().toLowerCase();
   const filtered = showSearch && q ? rows.filter((r) => r.name.toLowerCase().includes(q)) : rows;
@@ -44,7 +47,7 @@ const CompactRowList: React.FC<{ rows: CompactRow[]; emptyText: string }> = ({ r
         <PagedCards
           items={filtered}
           getKey={(r) => r.id}
-          rowHeight={ROW_H}
+          rowHeight={rowHeight}
           label="Lista"
           emptyText="Nenhum resultado."
           resetKey={query}
