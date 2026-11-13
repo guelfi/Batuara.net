@@ -392,6 +392,18 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 - `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
 
+### 2026-11-13 (Planejamento: juntar mesas, recepção e lista de espera — transferido para o ComandaFácil)
+
+Decisão do dono: este controle não faz sentido no Batuara e entra no produto **ComandaFácil**. **Nada disto será implementado no Batuara**; o plano segue na exportação (`ComandaFacil/Batuara/documentacao/PLANO-RECEPCAO-LISTA-ESPERA.md`).
+
+- **A. Garçom altera os lugares da mesa** (juntar mesas): "Ajustar lugares" na aba Mesas, máx. 50, nunca abaixo das pessoas sentadas; juntar mesas simples (aumenta a principal e marca as outras como "junta com a mesa N") ou agrupamento formal; registro de quem mudou e quando; vale só para o evento atual.
+- **B. Papel Recepção (anfitriã):** tela com mapa ao vivo e fila; ajusta lugares e junta mesas; não cobra nem lança pedidos.
+- **C. Lista de espera:** anfitriã cadastra nome, nº de pessoas e (opcional) celular; link/QR de espera mostra a posição ao vivo; ao abrir mesa que comporte o grupo o sistema sugere chamar; aviso por WhatsApp ou tela do link; o cliente segue para abrir a comanda com mesa e pessoas já preenchidas.
+- **D. Regras:** ordem de chegada (anfitriã pode pular quem não cabe); estados Aguardando, Chamado, Sentou, Desistiu, Não apareceu; mesa chamada fica reservada por X minutos; fila é do evento e segue a retenção/anonimização das comandas.
+- **Etapas:** 1 ajuste de lugares e juntar mesas; 2 papel Recepção; 3 fila (`BingoWaitlistEntry` + migration); 4 link de espera do cliente (token assinado); 5 WhatsApp e transição para a comanda; 6 testes/docs/deploy.
+- **Riscos:** reduzir lugares com gente sentada; concorrência na vaga (reserva da mesa chamada); custo/template do WhatsApp; privacidade (nome e celular da fila).
+- **Decisões em aberto (do dono):** forma de juntar mesas; papel novo vs. garçom com aba extra (recomendado: papel novo); WhatsApp e/ou link; celular obrigatório; minutos de reserva e destino de quem não aparece; entrada sozinha pelo QR; prioridade manual; por onde começar (recomendado: etapas 1–2).
+
 ### 2026-11-13 (Abrir comanda respeita os lugares da mesa)
 
 - **Problema:** o cliente informou 5 pessoas numa mesa de 4 lugares e a comanda abriu (o servidor só validava 1–20 pessoas).
