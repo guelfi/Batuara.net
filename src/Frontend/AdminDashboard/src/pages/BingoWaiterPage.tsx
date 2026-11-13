@@ -21,13 +21,12 @@ import {
   Typography,
 } from '@mui/material';
 import { CheckCircle as CheckCircleIcon, NotificationsActive as NotificationsActiveIcon } from '@mui/icons-material';
-import QRCode from 'qrcode';
 import { useLocation, useNavigate } from 'react-router-dom';
 import QrScanner from '../components/bingo/QrScanner';
 import bingoApi from '../services/bingoApi';
 import apiService from '../services/api';
 import ComandaFotoCore from '../_shared/comandaFoto/ComandaFotoCore';
-import WaiterTablesStatus from '../components/bingo/WaiterTablesStatus';
+import WaiterMesasTab from '../components/bingo/WaiterMesasTab';
 import bingoWaiterApi, { WaiterContestation } from '../services/bingoWaiterApi';
 import { WaiterOrderGroup, WaiterStatus } from '../types/bingo';
 import { ContestAction, WaiterAccountItem, WaiterBill, WaiterPaymentMethod } from '../types/bingoWaiter';
@@ -732,111 +731,6 @@ const AccountsTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
 
 // ----------------------------------------------------------------------- QR
 
-const QrTab: React.FC<{ mesas: number[] }> = ({ mesas }) => {
-  const [mesa, setMesa] = useState('');
-  const [full, setFull] = useState(false);
-  const [dataUrl, setDataUrl] = useState('');
-  const [qrUrl, setQrUrl] = useState('');
-  const [qrError, setQrError] = useState('');
-
-  useEffect(() => {
-    setQrError('');
-    if (!mesa) {
-      setDataUrl('');
-      setQrUrl('');
-      return undefined;
-    }
-    let cancelled = false;
-    // o servidor devolve o link assinado: o cliente não consegue trocar a mesa
-    bingoApi
-      .getMesaQrUrl(Number(mesa))
-      .then((url) => QRCode.toDataURL(url, { width: 900, margin: 2, errorCorrectionLevel: 'M' }).then((u) => ({ url, u })))
-      .then(({ url, u }) => {
-        if (!cancelled) {
-          setQrUrl(url);
-          setDataUrl(u);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setDataUrl('');
-          setQrUrl('');
-          setQrError('Não foi possível gerar o QR da mesa. Tente novamente.');
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [mesa]);
-
-  return (
-    <Stack spacing={2}>
-      <TextField select fullWidth label="Selecionar mesa" value={mesa} onChange={(e) => setMesa(e.target.value)}>
-        {mesas.map((n) => (
-          <MenuItem key={n} value={String(n)} sx={{ minHeight: 48 }}>
-            Mesa {n}
-          </MenuItem>
-        ))}
-      </TextField>
-
-      <WaiterTablesStatus selected={mesa} onSelect={setMesa} />
-      {qrError && <Alert severity="error">{qrError}</Alert>}
-      {mesa && dataUrl && (
-        <Box sx={{ textAlign: 'center' }}>
-          <Box
-            component="img"
-            src={dataUrl}
-            alt={`QR code da mesa ${mesa}`}
-            onClick={() => setFull(true)}
-            sx={{ width: 'min(88vw, 55vh)', height: 'min(88vw, 55vh)', cursor: 'zoom-in', border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}
-          />
-          <Typography variant="body2" sx={{ mt: 0.5, opacity: 0.7 }}>Toque no QR para ampliar</Typography>
-        </Box>
-      )}
-
-      {full && (
-        <Box
-          role="dialog"
-          aria-label="QR code da mesa"
-          sx={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 1600,
-            bgcolor: '#fff',
-            color: '#000',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            p: 2,
-            textAlign: 'center',
-          }}
-        >
-          <Typography sx={{ fontWeight: 700, fontSize: '1.4rem', mb: 1 }}>Mesa {mesa} - Aponte a câmera</Typography>
-          {dataUrl && (
-            <Box
-              component="img"
-              src={dataUrl}
-              alt={`QR code da mesa ${mesa}`}
-              sx={{ width: 'min(90vw, 70vh)', height: 'min(90vw, 70vh)' }}
-            />
-          )}
-          <Typography sx={{ mt: 1, fontSize: '1.1rem', wordBreak: 'break-all' }}>{qrUrl}</Typography>
-          <Button
-            variant="contained"
-            color="inherit"
-            size="large"
-            onClick={() => setFull(false)}
-            sx={{ mt: 2, minWidth: 220, minHeight: 52, fontWeight: 700, fontSize: '1.05rem', bgcolor: '#212121', color: '#fff', '&:hover': { bgcolor: '#000' } }}
-          >
-            Fechar
-          </Button>
-        </Box>
-      )}
-    </Stack>
-  );
-};
-
 // -------------------------------------------------------------------- foto
 
 /** Comanda por foto (ou digitada) feita pelo garçom: mesmo fluxo da página pública. */
@@ -1113,7 +1007,7 @@ const BingoWaiterPage: React.FC = () => {
       </Tabs>
       {tab === 0 && <OrdersTab groups={groups} contestations={contestations} loadError={ordersError} reload={async () => { await Promise.all([loadOrders(), loadContestations()]); }} />}
       {tab === 1 && <AccountsTab mesas={mesas} />}
-      {tab === 2 && <QrTab mesas={mesas} />}
+      {tab === 2 && <WaiterMesasTab mesas={mesas} />}
       {tab === 3 && <PhotoTab />}
       {tab === 4 && <ExitTab />}
     </Box>

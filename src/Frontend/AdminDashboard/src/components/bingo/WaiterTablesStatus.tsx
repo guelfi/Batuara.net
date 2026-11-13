@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Box, ButtonBase, Button, Chip, Stack, Typography } from '@mui/material';
+import { Box, ButtonBase, Chip, Stack, Typography } from '@mui/material';
 import { alpha, keyframes } from '@mui/material/styles';
 import LockIcon from '@mui/icons-material/Lock';
 import bingoApi from '../../services/bingoApi';
@@ -150,9 +150,6 @@ const WaiterTablesStatus: React.FC<Props> = ({ selected, onSelect }) => {
             {seatsText(current)} ocupados · {current.exclusiva ? 'exclusiva (um grupo só)' : 'compartilhada (vale quem chegar primeiro)'}
           </Typography>
           {current.ocupantes.length > 0 && <Typography variant="body2" sx={{ mt: 0.5 }}>{occupantsText(current)}</Typography>}
-          <Button size="small" sx={{ mt: 0.5, px: 0 }} onClick={() => onSelect('')}>
-            Ver todas as mesas
-          </Button>
         </Box>
       ) : (
         <>

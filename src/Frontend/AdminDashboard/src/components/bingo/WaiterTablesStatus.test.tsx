@@ -96,7 +96,7 @@ describe('WaiterTablesStatus', () => {
     expect(screen.getByTestId('mesa-1').querySelector('svg')).toBeNull();
   });
 
-  it('tocar numa mesa a seleciona; com mesa selecionada mostra os ocupantes e "Ver todas as mesas"', async () => {
+  it('tocar numa mesa a seleciona; com mesa selecionada mostra o card com os ocupantes no lugar da grade', async () => {
     const onSelect = jest.fn();
     const { rerender } = render(<WaiterTablesStatus selected="" onSelect={onSelect} />);
     fireEvent.click(await screen.findByTestId('mesa-3'));
@@ -107,8 +107,8 @@ describe('WaiterTablesStatus', () => {
     expect(detail).toHaveTextContent('Lotada');
     expect(detail).toHaveTextContent('João (2), Ana (2)');
     expect(screen.queryByTestId('mesa-1')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Ver todas as mesas' }));
-    expect(onSelect).toHaveBeenLastCalledWith('');
+    // o botão de voltar às mesas fica embaixo do QR (aba), não dentro do card
+    expect(screen.queryByRole('button', { name: /Voltar|Ver todas/ })).toBeNull();
   });
 
   it('atualiza sozinha e avisa/destaca quando uma mesa fica livre ou abre vaga', async () => {
