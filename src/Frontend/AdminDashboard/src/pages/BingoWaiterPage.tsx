@@ -1068,7 +1068,11 @@ const BingoWaiterPage: React.FC = () => {
           {status.waiterName || 'Garçom'}
         </Typography>
         {status.eventName && (
-          <Typography variant="body2" noWrap sx={{ opacity: 0.8, flexShrink: 0, maxWidth: '50%' }}>
+          <Typography
+            variant="body2"
+            noWrap
+            sx={{ flexShrink: 0, maxWidth: '50%', px: 1.25, py: 0.25, borderRadius: 1, fontWeight: 700, bgcolor: 'primary.main', color: 'primary.contrastText' }}
+          >
             {status.eventName}
           </Typography>
         )}

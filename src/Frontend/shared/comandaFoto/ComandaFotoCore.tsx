@@ -22,10 +22,10 @@ import {
 import { Theme, ThemeProvider, createTheme } from '@mui/material/styles';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import SearchIcon from '@mui/icons-material/Search';
 import PaymentPicker, { PayHint, PayLine, payBody } from './PaymentPicker';
 import MenuPagedCarousel from './MenuPagedCarousel';
-import { QtyControls } from './CarouselParts';
 import ComandaList, { ComandaListEntry } from './ComandaList';
 import { useFillViewport } from './useFillViewport';
 import { ExtraItem, Item, MAX_QTY, MenuItem, aggregateDrafts, applyOcrItems, brl, deriveItems, norm } from './comandaUtils';
@@ -203,6 +203,8 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
   // true = o cardápio mostra a soma dos itens de todas as comandas (só leitura)
   const [viewAll, setViewAll] = useState(false);
+  // com várias comandas, Comanda e Nome ficam recolhidos (aparecem no cartão da lista); true = mostrar para editar
+  const [editFields, setEditFields] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // 0 = não está lendo; 1..3 = tentativa atual da leitura da foto
@@ -310,6 +312,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
   };
   const resetCurrent = () => {
     photoShrunk.current = false;
+    setEditFields(false);
     setActiveSlot(null);
     setPhoto(null);
     setQty({});
@@ -355,6 +358,8 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queue, activeSlot, pristine, comanda, nome, count, total]);
   const showAll = viewAll && entries.length > 1;
+  // Comanda e Nome: sempre com uma comanda só; com várias, só enquanto faltar dado (ou ao tocar na linha da comanda aberta)
+  const showFields = queue.length === 0 || !identified || isDuplicate || editFields;
   const aggregated = useMemo(() => {
     if (!showAll) return [];
     return aggregateDrafts(menu, [...queue, ...(pristine ? [] : [{ qty, extras }])]);
@@ -369,10 +374,30 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
     return q ? orderedMenu.filter((m) => norm(m.name).includes(q)) : orderedMenu;
   }, [orderedMenu, search]);
 
+  // itens fora do cardápio vêm DEPOIS dos do cardápio, como linhas do mesmo carrossel (id "x:<posição>")
+  const extraRows = useMemo(() => {
+    const q = norm(search);
+    return extras.map((e, i) => ({ id: `x:${i}`, name: e.name, unitPrice: e.unitPrice })).filter((r) => !q || norm(r.name).includes(q));
+  }, [extras, search]);
+  const viewRows = useMemo(() => [...filteredMenu, ...extraRows], [filteredMenu, extraRows]);
+  const viewQty = useMemo(() => ({ ...qty, ...Object.fromEntries(extras.map((e, i) => [`x:${i}`, e.quantity])) }), [qty, extras]);
+  const isExtraId = (id: string | number): id is string => typeof id === 'string' && id.startsWith('x:');
+
   const setItemQty = (id: number, delta: number) =>
     setQty((q) => ({ ...q, [id]: Math.max(0, Math.min(MAX_QTY, (q[id] ?? 0) + delta)) }));
   const setExtraQty = (idx: number, delta: number) =>
     setExtras((l) => l.map((x, i) => (i === idx ? { ...x, quantity: Math.max(1, Math.min(MAX_QTY, x.quantity + delta)) } : x)));
+
+  /** − e + das linhas do carrossel: item do cardápio ou fora do cardápio (− na quantidade 1 remove o de fora). */
+  const changeRow = (id: string | number, delta: number) => {
+    if (!isExtraId(id)) {
+      setItemQty(id as number, delta);
+      return;
+    }
+    const idx = Number(id.slice(2));
+    if (delta < 0 && (extras[idx]?.quantity ?? 0) <= 1) setExtras((l) => l.filter((_, i) => i !== idx));
+    else setExtraQty(idx, delta);
+  };
 
   const addExtra = () => {
     const price = Number(extraPrice.replace(',', '.'));
@@ -440,8 +465,13 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
 
   /** Abre, no cardápio, os itens de uma comanda da lista; a que estava aberta volta para a fila. */
   const selectComanda = async (id: string) => {
+    if (id === ACTIVE_ID) {
+      if (viewAll) setViewAll(false);
+      else setEditFields((v) => !v);
+      return;
+    }
     setViewAll(false);
-    if (id === ACTIVE_ID) return;
+    setEditFields(false);
     if (!pristine) {
       if (!identified || isDuplicate) {
         setError('Informe o número e o nome da comanda atual antes de abrir outra.');
@@ -517,7 +547,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
   );
   const closeLabel = queue.length > 0 ? `Fechar ${entries.length} comandas` : noConsumption ? (roomy ? 'Fechar comanda sem lançamentos' : 'Fechar sem lançamentos') : 'Fechar comanda';
   const reading = attempt > 0;
-  const photoLabel = photo ? 'Fotografar Novamente' : queue.length > 0 ? 'Fotografar Outra Comanda' : 'Fotografar Comanda';
+  const photoLabel = photo ? 'Fotografar Novamente' : 'Fotografar Comanda';
 
   return (
     <ThemeProvider theme={isolateHostTheme}>
@@ -570,15 +600,35 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
         }}
       />
 
+      {/* fotografar e incluir outra comanda, lado a lado, no topo da tela */}
+      <Stack direction="row" spacing={1} sx={{ mb: 1, flexShrink: 0 }}>
+        <Button
+          fullWidth
+          variant="contained"
+          disabled={!!busy || reading}
+          onClick={() => fileRef.current?.click()}
+          sx={{ minWidth: 0, px: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.8rem', py: 0.75 }}
+        >
+          📷 - {photoLabel}
+        </Button>
+        <Button
+          fullWidth
+          variant="outlined"
+          onClick={addToQueue}
+          disabled={!canClose || reading || !!readFailure}
+          sx={{ minWidth: 0, px: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.8rem', py: 0.75, fontWeight: 700 }}
+        >
+          + Outra comanda
+        </Button>
+      </Stack>
+
       {queue.length > 0 && !reading && !readFailure && (
         <ComandaList
           entries={entries}
-          total={grandTotal}
           selectedId={ACTIVE_ID}
           viewAll={showAll}
           onSelect={selectComanda}
           onRemove={removeComanda}
-          onToggleAll={() => setViewAll((v) => !v)}
           maxRows={roomy ? 4 : 3}
           disabled={!!busy}
         />
@@ -622,9 +672,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
         </Paper>
       ) : (
         <Paper sx={{ px: 2, pt: 1.25, pb: 0, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-          <Button fullWidth variant="contained" size={roomy ? 'large' : 'medium'} sx={{ py: roomy ? 0.75 : 0.5, mb: 1, flexShrink: 0 }} disabled={!!busy} onClick={() => fileRef.current?.click()}>
-            📷 - {photoLabel}
-          </Button>
+          {showFields && (
           <Stack direction="row" spacing={1} sx={{ mb: 1, flexShrink: 0 }}>
             <TextField size="small" label="Comanda" required value={comanda} onChange={(e) => setComanda(e.target.value)} inputProps={{ inputMode: 'numeric', maxLength: 10 }} sx={{ width: 132, flexShrink: 0 }} />
             <TextField
@@ -647,64 +695,49 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
               }}
             />
           </Stack>
+          )}
 
-          {extras.length > 0 && (
-            <Box sx={{ mb: 1, flexShrink: 0, maxHeight: 84, overflowY: 'auto' }}>
-              <Typography variant="subtitle2" fontWeight={700} color="error" sx={{ lineHeight: 1.5 }}>
-                Fora do cardápio ({extras.length})
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1, flexShrink: 0 }}>
+            {showAll ? (
+              <Typography variant="subtitle2" fontWeight={700} sx={{ flex: 1, minHeight: 40, display: 'flex', alignItems: 'center' }}>
+                Itens de todas as comandas (soma)
               </Typography>
-              {extras.map((e, idx) => (
-                <Stack key={`${e.name}-${idx}`} direction="row" alignItems="center" spacing={1} sx={{ py: 0.25, borderBottom: 1, borderColor: 'divider' }}>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="body2" fontWeight={600} noWrap title={e.name}>
-                      {e.name}
-                    </Typography>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Typography variant="caption" color="error" noWrap>
-                        {brl(e.unitPrice)} × {e.quantity}
-                      </Typography>
-                      <Button size="small" variant="outlined" disabled={!!busy || !e.name.trim() || e.unitPrice <= 0} onClick={() => registerExtra(idx)} sx={{ minWidth: 0, px: 0.75, py: 0, fontSize: 11, lineHeight: 1.6, whiteSpace: 'nowrap' }}>
-                        + Cardápio
-                      </Button>
-                    </Stack>
-                  </Box>
-                  <QtyControls name={e.name} quantity={e.quantity} onChange={(d) => setExtraQty(idx, d)} />
-                  <IconButton size="small" aria-label={`Remover ${e.name}`} color="error" onClick={() => setExtras((l) => l.filter((_, i) => i !== idx))} sx={{ p: 0.25 }}>
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
-                </Stack>
-              ))}
-            </Box>
-          )}
-
-          {showAll ? (
-            <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1, flexShrink: 0, minHeight: 40, display: 'flex', alignItems: 'center' }}>
-              Itens de todas as comandas (soma)
-            </Typography>
-          ) : (
-            <TextField
-              size="small"
-              fullWidth
-              placeholder="Buscar item do cardápio..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              sx={{ mb: 1, flexShrink: 0 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-                endAdornment: search ? (
-                  <InputAdornment position="end">
-                    <IconButton size="small" aria-label="Limpar busca" onClick={() => setSearch('')} sx={{ p: 0.5 }}>
-                      <ClearIcon fontSize="small" />
-                    </IconButton>
-                  </InputAdornment>
-                ) : undefined,
-              }}
-            />
-          )}
+            ) : (
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="Buscar item do cardápio..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: search ? (
+                    <InputAdornment position="end">
+                      <IconButton size="small" aria-label="Limpar busca" onClick={() => setSearch('')} sx={{ p: 0.5 }}>
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : undefined,
+                }}
+              />
+            )}
+            {entries.length > 1 && (
+              <Button
+                size="small"
+                variant={showAll ? 'contained' : 'outlined'}
+                aria-pressed={showAll}
+                aria-label="Ver os itens de todas as comandas"
+                onClick={() => setViewAll((v) => !v)}
+                sx={{ flexShrink: 0, minWidth: 0, px: 1.25, fontWeight: 700 }}
+              >
+                Todas
+              </Button>
+            )}
+          </Stack>
           <Box sx={{ flex: '1 1 0', minHeight: 150, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             {menuLoading ? (
               <Stack alignItems="center" sx={{ py: 3 }}>
@@ -718,6 +751,7 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
                 qty={Object.fromEntries(aggregated.map((r) => [String(r.id), r.quantity]))}
                 onChange={() => undefined}
                 rowHeight={40}
+                compactRows
                 readOnly
                 emptyText="Nenhum item lançado ainda."
                 controlsPosition="bottom"
@@ -727,15 +761,51 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
             ) : (
               <MenuPagedCarousel
                 key="comanda"
-                items={filteredMenu}
-                qty={qty}
-                onChange={setItemQty}
+                items={viewRows}
+                qty={viewQty}
+                onChange={changeRow}
                 rowHeight={40}
+                compactRows
                 maxQty={MAX_QTY}
                 controlsPosition="bottom"
                 footerStart={addExtraButton}
                 highlightSelected
                 testIdPrefix="item-"
+                renderBadge={(m) =>
+                  isExtraId(m.id) ? (
+                    <Box component="span" sx={{ color: 'error.main', fontWeight: 600 }}>
+                      {' '}
+                      (fora do cardápio)
+                    </Box>
+                  ) : null
+                }
+                renderAfter={(m) => {
+                  if (!isExtraId(m.id)) return null;
+                  const idx = Number(m.id.slice(2));
+                  const e = extras[idx];
+                  return (
+                    <Stack direction="row" sx={{ flexShrink: 0 }}>
+                      <IconButton
+                        size="small"
+                        aria-label={`Cadastrar ${m.name} no cardápio`}
+                        title="Cadastrar no cardápio"
+                        disabled={!!busy || !e || !e.name.trim() || e.unitPrice <= 0}
+                        onClick={() => registerExtra(idx)}
+                        sx={{ width: 28, height: 28, minWidth: 0, minHeight: 0, p: 0, color: 'primary.main' }}
+                      >
+                        <PlaylistAddIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        aria-label={`Remover ${m.name}`}
+                        onClick={() => setExtras((l) => l.filter((_, i) => i !== idx))}
+                        sx={{ width: 28, height: 28, minWidth: 0, minHeight: 0, p: 0, color: 'error.main' }}
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </Stack>
+                  );
+                }}
               />
             )}
           </Box>
@@ -748,8 +818,12 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
             ) : (
               <>
                 <Typography variant="subtitle1" fontWeight={800} align="center" sx={{ mb: 0.5, lineHeight: 1.3 }}>
-                  Total da comanda {brl(total)}
-                  {count > 0 && <Box component="span" sx={{ fontWeight: 400, fontSize: '0.8rem', ml: 0.75 }}>· {count} {count === 1 ? 'item' : 'itens'}</Box>}
+                  {entries.length > 1 ? `Total das comandas ${brl(grandTotal)}` : `Total da comanda ${brl(total)}`}
+                  {entries.length > 1 ? (
+                    <Box component="span" sx={{ fontWeight: 400, fontSize: '0.8rem', ml: 0.75 }}>· {entries.length} comandas</Box>
+                  ) : (
+                    count > 0 && <Box component="span" sx={{ fontWeight: 400, fontSize: '0.8rem', ml: 0.75 }}>· {count} {count === 1 ? 'item' : 'itens'}</Box>
+                  )}
                 </Typography>
                 <Stack direction={roomy ? 'column' : 'row'} spacing={1}>
                   <Button
@@ -784,9 +858,6 @@ const ComandaFotoCore: React.FC<ComandaFotoCoreProps> = ({ token, baseUrl, varia
                     Informe o número da comanda e o nome do cliente.
                   </Typography>
                 )}
-                <Button fullWidth variant="text" size="small" sx={{ mt: 0.25, fontWeight: 700 }} onClick={addToQueue} disabled={!canClose}>
-                  + Outra comanda para pagamento
-                </Button>
               </>
             )}
           </Box>

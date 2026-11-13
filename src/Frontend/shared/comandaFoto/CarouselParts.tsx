@@ -3,6 +3,8 @@ import { IconButton, Stack, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
+import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import RemoveIcon from '@mui/icons-material/Remove';
 
 /** Altura da faixa com as setas e o indicador de posição. */
@@ -71,6 +73,30 @@ export const CarouselControls: React.FC<CarouselControlsProps> = ({ first, last,
     </Typography>
     <IconButton aria-label="Próximos itens" size="small" disabled={last >= total} onClick={onNext} sx={ARROW_BTN}>
       <ChevronRightIcon />
+    </IconButton>
+  </Stack>
+);
+
+// − e + só como ícone (sem círculo de botão): ocupam pouco e deixam mais largura para o texto da linha
+const ICON_BTN = { width: 30, height: 30, minWidth: 0, minHeight: 0, p: 0 } as const;
+
+/** − qtd + compacto: ícones pequenos e a quantidade no meio. */
+export const QtyIcons: React.FC<QtyControlsProps> = ({ name, quantity, onChange, max, minusLabel, plusLabel }) => (
+  <Stack direction="row" alignItems="center" sx={{ flexShrink: 0 }}>
+    <IconButton size="small" aria-label={minusLabel ?? `Menos ${name}`} disabled={quantity === 0} onClick={() => onChange(-1)} sx={{ ...ICON_BTN, color: 'text.secondary' }}>
+      <RemoveCircleOutlineIcon sx={{ fontSize: 24 }} />
+    </IconButton>
+    <Typography fontWeight={700} sx={{ minWidth: 20, textAlign: 'center', fontSize: '0.9rem' }} aria-label={`Quantidade de ${name}`}>
+      {quantity}
+    </Typography>
+    <IconButton
+      size="small"
+      aria-label={plusLabel ?? `Mais ${name}`}
+      disabled={max !== undefined && quantity >= max}
+      onClick={() => onChange(1)}
+      sx={{ ...ICON_BTN, color: 'primary.main' }}
+    >
+      <AddCircleIcon sx={{ fontSize: 28 }} />
     </IconButton>
   </Stack>
 );

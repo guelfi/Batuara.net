@@ -392,6 +392,16 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 
 - `PaymentPicker` (cópias Public/Admin) trocado por lista com **caixa de seleção por forma**: vêm marcadas as formas lidas pelo OCR; marcando mais de uma, cada uma ganha seu valor, a última recebe o restante e "Confirmar pagamento" só habilita com a soma exata. Substitui o botão "Dividir pagamento" (que deixou de existir no seletor). Pesquisa de cobrança pelo celular registrada em §6.1.
 
+### 2026-11-12 (Comanda-Foto: topo com botões lado a lado, campos recolhidos, linhas compactas e fora do cardápio no fim)
+
+- **Topo da tela:** "📷 - Fotografar Comanda" e "+ Outra comanda" lado a lado, antes de tudo; a linha "+ Outra comanda…" do rodapé foi removida. A linha de cima da lista de comandas ("Comandas para fechar juntas (n)", total e "Todas") também saiu: o **total das comandas** (soma da conta, com a quantidade de comandas) fica embaixo, junto de Fechar e Descartar, e o botão **"Todas"** passou para perto da busca, no card de itens.
+- **Comanda e Nome:** com uma comanda só continuam visíveis para editar; com várias, ficam recolhidos depois de preenchidos (a informação fica no cartão da lista: número · nome · itens · total). Eles voltam a aparecer enquanto faltar número ou nome, se o número for repetido, ou ao tocar na linha da comanda aberta ("Editar número e nome").
+- **Linhas do cardápio:** "descrição - valor × quantidade = total" (a fórmula completa só com quantidade > 0) e − / + só como ícones pequenos (`QtyIcons`), sem os círculos.
+- **Itens fora do cardápio:** deixaram de ter seção própria e aparecem **depois dos itens do cardápio**, no mesmo carrossel, com "(fora do cardápio)", ícone para cadastrar no cardápio e para remover; "−" na quantidade 1 remove.
+- **Garçom:** nome do evento à direita em destaque (fundo colorido e negrito).
+- Versão única do componente: o garçom e a Comanda-Foto pública recebem tudo igual (o título e o subtítulo continuam só na página pública).
+- Conferido com Playwright (site público 402x680 e 414x800; AdminDashboard real 393x700): sem rolagem de página, sem texto vazando, sem sobreposição.
+
 ### 2026-11-12 (Comanda-Foto: lista das comandas da conta, abrir/editar cada uma e "Todas")
 
 - O painel de cima virou uma **lista vertical de todas as comandas que serão fechadas juntas**, incluindo a que está aberta (número · nome, quantidade de itens, total, lixeira), com o total da conta no título. A lista rola por dentro (3 linhas no modo compacto, 4 nas telas altas) e mantém à vista a linha da comanda aberta (`ComandaList`).

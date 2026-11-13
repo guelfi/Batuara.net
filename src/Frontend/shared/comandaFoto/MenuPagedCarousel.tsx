@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { CarouselControls, CarouselItem, QtyControls } from './CarouselParts';
+import { CarouselControls, CarouselItem, QtyControls, QtyIcons } from './CarouselParts';
 import { brl } from './comandaUtils';
 
 const GAP = 8;
@@ -36,6 +36,10 @@ interface MenuPagedCarouselProps<T extends CarouselItem> {
   readOnly?: boolean;
   /** Texto quando não há itens. */
   emptyText?: string;
+  /** Linha compacta: "descrição - valor × quantidade = total" e − / + só como ícones. */
+  compactRows?: boolean;
+  /** Conteúdo extra depois dos controles de cada linha (ex.: remover um item fora do cardápio). */
+  renderAfter?: (item: T) => React.ReactNode;
 }
 
 /**
@@ -59,6 +63,8 @@ function MenuPagedCarousel<T extends CarouselItem>({
   highlightSelected = false,
   readOnly = false,
   emptyText = 'Nenhum item encontrado.',
+  compactRows = false,
+  renderAfter,
 }: MenuPagedCarouselProps<T>): React.ReactElement {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [trackEl, setTrackEl] = useState<HTMLDivElement | null>(null);
@@ -183,29 +189,51 @@ function MenuPagedCarousel<T extends CarouselItem>({
                     ...(highlightSelected && q > 0 ? { bgcolor: (t) => alpha(t.palette.primary.main, 0.1), mx: -0.5, px: 0.5, borderRadius: 1 } : {}),
                   }}
                 >
-                  <Typography
-                    variant="body2"
-                    fontWeight={600}
-                    title={m.name}
-                    sx={{ flex: 1, minWidth: 0, lineHeight: 1.2, overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-                  >
-                    {m.name}
-                    {renderBadge?.(m)}
-                  </Typography>
-                  <Typography variant="body2" sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
-                    {brl(m.unitPrice)}
-                  </Typography>
+                  {compactRows ? (
+                    <Typography
+                      variant="body2"
+                      title={m.name}
+                      sx={{ flex: 1, minWidth: 0, lineHeight: 1.2, fontSize: '0.8rem', overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                    >
+                      <Box component="span" sx={{ fontWeight: 700 }}>
+                        {m.name}
+                      </Box>
+                      {renderBadge?.(m)}
+                      {` - ${brl(m.unitPrice)}`}
+                      {q > 0 && ` × ${q} = ${brl(m.unitPrice * q)}`}
+                    </Typography>
+                  ) : (
+                    <>
+                      <Typography
+                        variant="body2"
+                        fontWeight={600}
+                        title={m.name}
+                        sx={{ flex: 1, minWidth: 0, lineHeight: 1.2, overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                      >
+                        {m.name}
+                        {renderBadge?.(m)}
+                      </Typography>
+                      <Typography variant="body2" sx={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
+                        {brl(m.unitPrice)}
+                      </Typography>
+                    </>
+                  )}
                   {readOnly ? (
-                    <Typography fontWeight={700} sx={{ minWidth: 56, textAlign: 'right' }} aria-label={`Quantidade de ${m.name}`}>
+                    compactRows ? null : <Typography fontWeight={700} sx={{ minWidth: 56, textAlign: 'right' }} aria-label={`Quantidade de ${m.name}`}>
                       × {q}
                     </Typography>
                   ) : available ? (
-                    <QtyControls name={m.name} quantity={q} max={maxQty} minusLabel={minusLabel?.(m.name)} plusLabel={plusLabel?.(m.name)} onChange={(d) => onChange(m.id, d)} />
+                    compactRows ? (
+                      <QtyIcons name={m.name} quantity={q} max={maxQty} minusLabel={minusLabel?.(m.name)} plusLabel={plusLabel?.(m.name)} onChange={(d) => onChange(m.id, d)} />
+                    ) : (
+                      <QtyControls name={m.name} quantity={q} max={maxQty} minusLabel={minusLabel?.(m.name)} plusLabel={plusLabel?.(m.name)} onChange={(d) => onChange(m.id, d)} />
+                    )
                   ) : (
                     <Typography variant="caption" fontWeight={700} sx={{ width: 78, textAlign: 'right' }}>
                       Esgotado
                     </Typography>
                   )}
+                  {renderAfter?.(m)}
                 </Box>
               );
             })}
