@@ -210,7 +210,7 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 | Campo | Valor |
 |-------|-------|
-| Data | 2026-10-26 (sessão atual) |
+| Data | 2026-11-13 (ver o handoff de 13/11 abaixo; as demais linhas desta tabela são de 26/10) |
 | Branch | `master`, sincronizada com o remoto; último commit: `6607f58` (tutorial publicado em `/tutorial.html`). Código de API em produção: `3f640c7` (PM-040). |
 | Em andamento (`doing`) | PM-025 com fase 5 opcional pendente (item no fim da fila). **Frente nova (sem ID no plano): templates Meta de comunicação com os filhos + tutorial de acesso** (ver bloco abaixo) |
 | Próximo item sugerido | **1)** Fechar as decisões abertas do §6.2-A e implementar PM-046/PM-047 (aviso de site liberado + link do tutorial). **Nada deve ser enviado aos filhos sem aprovação explícita do dono do produto.** **2)** **PM-008 + PM-004** (decidir lembretes de contribuição + E2E recorrente): decisão do dono do produto. |
@@ -271,6 +271,18 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 - **Sessão do Admin:** tokens só em cookies httpOnly (`SameSite=Strict`); o corpo das respostas de login/refresh não traz token (exceto `AuthCookieSettings:ReturnTokensInBody=true`, só em Development).
 - **Data Protection:** chaves no volume Docker `batuara-dataprotection-keys` (`/app/dp-keys`).
 - **Backup:** `~/backups/batuara-orixas-umbanda-pre-unify-20261023.sql` na OCI (pré-`UnifyDescriptionFields`).
+
+### Handoff — 2026-11-13 (Admin do Bingo no celular, regra de lugares da mesa, exportação para o ComandaFácil)
+
+- **Agente/dev:** Claude (Sonnet 5.5) com Marco Guelfi.
+- **Branch:** `master`; último commit `926e0c8`. CI e CD verdes; `b55787c` e `926e0c8` já estão em produção.
+- **Entregue (tudo em produção):** `efad001`/`c24ce1d`/`12b71f2` (Admin no celular: Mesas e cardápio em cards paginados; ajustes em Formas, Painel ao vivo e Garçons; caixa "Evento" do Resumo na mesma linha da seção; botão suspender/encerrar/abrir do Painel removido no celular, mantido em Eventos). `b55787c` (abrir comanda recusa com 409 se a mesa exclusiva já está ocupada, se a mesa está cheia ou se o grupo é maior que os lugares livres; antes o servidor só validava 1–20 pessoas). `926e0c8` (planejamento de recepção e lista de espera, **transferido ao ComandaFácil**, não será feito no Batuara).
+- **Validações:** backend 172/172; AdminDashboard 69/69; PublicWebsite (`src/_shared src/pages/bingo`) 57/57.
+- **Exportação local:** módulo de comandas exportado para `~/Projetos/ComandaFacil/Batuara/` (README, `codigo/` com 216 arquivos, `configuracoes-exemplo/`, `documentacao/`), fora do git do ComandaFácil (`/Batuara/` no `.gitignore`). Sem segredos, fotos nem dados reais; `PLANO-MELHORIAS.md` não foi copiado. PRD e HANDOFF do ComandaFácil **não** foram alterados; só `SUGESTOES-PRD.md` (S12–S14, autorizado). O S12 ainda diz que o carrossel da comanda digital está pendente (no Batuara já foi entregue). Um prompt de análise (somente leitura) foi entregue ao usuário para o agente do ComandaFácil.
+- **Esclarecimento:** "Pedir fechamento geral" é uma chave do evento (`CloseAllRequested`): o cliente vê "Por favor, encerre sua conta." e o garçom lista todas as comandas em aberto; não fecha nem cobra nada. Difere do "Fechamento" de Eventos (relatório).
+- **Não commitado / cuidado:** árvore limpa. Fragilidades conhecidas (documentadas na exportação): rascunho e fila de fotos só em memória; sem guarda contra resposta tardia do OCR; sem trava transacional para número de comanda duplicado e lugares da mesa (a regra de `b55787c` é checagem, não trava); contador de leituras do OCR em memória; segredo único para JWT, token de foto e QR; sem testes HTTP de autorização e concorrência.
+- **Próximo item sugerido:** (1) o dono valida no celular as telas do Admin (Mesas, Formas, Painel, Garçons, Resumo) e a recusa de 5 pessoas numa mesa de 4 lugares; (2) passos manuais no Google Cloud: restringir a chave do Gemini (API Generative Language + IP do servidor), cota diária e alerta de orçamento; (3) checar saldo do Gemini antes de cada evento; (4) opcional, com aprovação: atualizar o S12 em `ComandaFacil/docs/SUGESTOES-PRD.md`.
+- **Bloqueios novos:** nenhum.
 
 ### Handoff — 2026-11-09 (noite: revisão de UI do Admin desktop e Resumo mobile)
 
