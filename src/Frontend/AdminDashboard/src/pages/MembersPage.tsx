@@ -30,7 +30,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { Add as AddIcon, Close as CloseIcon, Edit as EditIcon } from '@mui/icons-material';
-import { DataGrid, GridActionsCellItem, GridColDef } from '@mui/x-data-grid';
+import { DataGrid, GridActionsCellItem, GridCellParams, GridColDef, MuiEvent, useGridApiRef } from '@mui/x-data-grid';
 import apiService from '../services/api';
 import GridPager from '../components/common/GridPager';
 import { ContributionPaymentStatus, HouseMember, HouseMemberContribution, Orixa } from '../types';
@@ -140,6 +140,7 @@ const formatUf = (value: string) => value.replace(/[^a-zA-Z]/g, '').toUpperCase(
 const MembersPage: React.FC = () => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
+  const apiRef = useGridApiRef();
   const [rows, setRows] = useState<HouseMember[]>([]);
   const [orixas, setOrixas] = useState<Orixa[]>([]);
   const [loading, setLoading] = useState(false);
@@ -318,6 +319,25 @@ const MembersPage: React.FC = () => {
       message: error instanceof Error ? error.message : 'Não foi possível atualizar o cadastro.',
       severity: 'error',
     });
+  };
+
+  const handleCellClick = (params: GridCellParams, event: MuiEvent<React.MouseEvent>) => {
+    if (!params.isEditable) {
+      return;
+    }
+
+    event.defaultMuiPrevented = true;
+
+    if (params.colDef.type === 'boolean') {
+      const row = params.row as HouseMember;
+      const toggled = { ...row, isActive: !row.isActive };
+      handleProcessRowUpdate(toggled)
+        .then((updated) => setRows((prev) => prev.map((item) => (item.id === updated.id ? updated : item))))
+        .catch(handleProcessRowUpdateError);
+      return;
+    }
+
+    apiRef.current?.startCellEditMode({ id: params.id, field: params.field });
   };
 
   const columns: GridColDef[] = isXs
@@ -773,6 +793,7 @@ const MembersPage: React.FC = () => {
           onPageChange={(page) => setPaginationModel((prev) => ({ ...prev, page }))}
         />
         <DataGrid
+          apiRef={apiRef}
           autoHeight
           rows={rows}
           columns={columns}
@@ -786,6 +807,7 @@ const MembersPage: React.FC = () => {
           disableRowSelectionOnClick
           processRowUpdate={handleProcessRowUpdate}
           onProcessRowUpdateError={handleProcessRowUpdateError}
+          onCellClick={handleCellClick}
           columnVisibilityModel={
             isXs
               ? undefined
