@@ -250,6 +250,76 @@ const MembersPage: React.FC = () => {
     setDetailsOpen(true);
   };
 
+  const buildUpdatePayload = (row: HouseMember) => ({
+    fullName: (row.fullName ?? '').trim(),
+    birthDate: row.birthDate ? row.birthDate.slice(0, 10) : null,
+    entryDate: row.entryDate ? row.entryDate.slice(0, 10) : null,
+    headOrixaFront: row.headOrixaFront?.trim() || null,
+    headOrixaBack: row.headOrixaBack?.trim() || null,
+    headOrixaRonda: row.headOrixaRonda?.trim() || null,
+    email: (row.email ?? '').trim() || null,
+    mobilePhone: onlyDigits(row.mobilePhone ?? '') || null,
+    zipCode: row.zipCode?.trim() || null,
+    street: row.street?.trim() || null,
+    number: row.number?.trim() || null,
+    complement: row.complement?.trim() || null,
+    district: row.district?.trim() || null,
+    city: row.city?.trim() || null,
+    state: row.state ? formatUf(row.state) || null : null,
+    amaciDate: row.amaciDate ? row.amaciDate.slice(0, 10) : null,
+    yaoDate: row.yaoDate ? row.yaoDate.slice(0, 10) : null,
+    smallParent: row.smallParent?.trim() || null,
+    religiousLeader: row.religiousLeader?.trim() || null,
+    notes: row.notes?.trim() || null,
+    isActive: row.isActive,
+    contributions: (row.contributions ?? []).map((item) => {
+      const status = resolveContributionStatus(item.status);
+      return {
+        id: item.id,
+        referenceMonth: item.referenceMonth.slice(0, 10),
+        dueDate: item.dueDate.slice(0, 10),
+        amount: Number(item.amount),
+        status,
+        paidAt: status === ContributionPaymentStatus.Paid && item.paidAt ? item.paidAt.slice(0, 10) : undefined,
+        notes: item.notes || undefined,
+        isRecurring: item.isRecurring,
+        allowWhatsAppReminder: item.allowWhatsAppReminder,
+      };
+    }),
+  });
+
+  const handleProcessRowUpdate = async (newRow: HouseMember): Promise<HouseMember> => {
+    if (!(newRow.fullName ?? '').trim()) {
+      throw new Error('Nome completo é obrigatório.');
+    }
+
+    const email = (newRow.email ?? '').trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error('Informe um e-mail válido.');
+    }
+
+    const phoneDigits = onlyDigits(newRow.mobilePhone ?? '');
+    if (phoneDigits && phoneDigits.length !== 10 && phoneDigits.length !== 11) {
+      throw new Error('Informe um celular válido (DDD + número).');
+    }
+
+    try {
+      const response = await apiService.updateHouseMember(String(newRow.id), buildUpdatePayload(newRow));
+      setFeedback({ open: true, message: 'Filho da casa atualizado com sucesso.', severity: 'success' });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error?.response?.data?.message || 'Não foi possível atualizar o cadastro.');
+    }
+  };
+
+  const handleProcessRowUpdateError = (error: unknown) => {
+    setFeedback({
+      open: true,
+      message: error instanceof Error ? error.message : 'Não foi possível atualizar o cadastro.',
+      severity: 'error',
+    });
+  };
+
   const columns: GridColDef[] = isXs
     ? [
         {
@@ -265,6 +335,7 @@ const MembersPage: React.FC = () => {
           headerName: 'Nome',
           flex: 0.85,
           minWidth: 80,
+          editable: true,
           renderCell: (params) => (
             <Typography variant="body2" sx={{ whiteSpace: 'normal', lineHeight: 1.25, py: 1 }}>
               {params.row.fullName}
@@ -275,6 +346,7 @@ const MembersPage: React.FC = () => {
           field: 'mobilePhone',
           headerName: 'Celular',
           width: 145,
+          editable: true,
           renderCell: (params) => (
             <Typography variant="body2" sx={{ whiteSpace: 'nowrap', py: 1 }}>
               {params.row.mobilePhone || '—'}
@@ -287,6 +359,7 @@ const MembersPage: React.FC = () => {
           field: 'email',
           headerName: 'E-mail',
           width: 180,
+          editable: true,
           renderCell: (params) => (
             <Typography variant="body2" sx={{ whiteSpace: 'nowrap', py: 1 }}>
               {params.row.email || '—'}
@@ -298,7 +371,9 @@ const MembersPage: React.FC = () => {
         {
           field: 'isActive',
           headerName: 'Status',
+          type: 'boolean',
           width: 110,
+          editable: true,
           renderCell: (params) => (
             <Chip
               label={params.row.isActive ? 'Ativo' : 'Inativo'}
@@ -331,13 +406,15 @@ const MembersPage: React.FC = () => {
             <GridActionsCellItem icon={<EditIcon />} label="Editar" onClick={() => handleOpenDialog(params.row)} />,
           ],
         },
-        { field: 'fullName', headerName: 'Nome', flex: 1.2, minWidth: 240 },
-        { field: 'email', headerName: 'E-mail', flex: 1, minWidth: 200, valueGetter: (_, row) => row.email || '—' },
-        { field: 'mobilePhone', headerName: 'Celular', width: 160 },
+        { field: 'fullName', headerName: 'Nome', flex: 1.2, minWidth: 240, editable: true },
+        { field: 'email', headerName: 'E-mail', flex: 1, minWidth: 200, editable: true, renderCell: (params) => params.row.email || '—' },
+        { field: 'mobilePhone', headerName: 'Celular', width: 160, editable: true },
         {
           field: 'isActive',
           headerName: 'Status',
+          type: 'boolean',
           width: 120,
+          editable: true,
           renderCell: (params) => (
             <Chip
               label={params.row.isActive ? 'Ativo' : 'Inativo'}
@@ -707,6 +784,8 @@ const MembersPage: React.FC = () => {
           pageSizeOptions={[10]}
           hideFooter
           disableRowSelectionOnClick
+          processRowUpdate={handleProcessRowUpdate}
+          onProcessRowUpdateError={handleProcessRowUpdateError}
           columnVisibilityModel={
             isXs
               ? undefined
