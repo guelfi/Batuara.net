@@ -100,13 +100,13 @@ namespace Batuara.Infrastructure.Notifications
             return await SendTemplateAsync(phoneE164, _options.MemberNoticeTemplateName, components, cancellationToken);
         }
 
-        public async Task SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default)
+        public async Task<string> SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default)
         {
             var components = new List<object>
             {
                 new { type = "body", parameters = new[] { TextParam(FirstName(memberName)), TextParam(tutorialUrl.Trim()) } }
             };
-            await SendTemplateAsync(phoneE164, _options.SiteTutorialTemplateName, components, cancellationToken);
+            return await SendTemplateAsync(phoneE164, _options.SiteTutorialTemplateName, components, cancellationToken);
         }
 
         private async Task<string> SendFreeformTextAsync(string phoneE164, string text, CancellationToken cancellationToken)

@@ -13,11 +13,13 @@ namespace Batuara.API.Controllers
     public class HouseMembersController : ControllerBase
     {
         private readonly IHouseMemberService _service;
+        private readonly IMemberBroadcastService _broadcast;
         private readonly ILogger<HouseMembersController> _logger;
 
-        public HouseMembersController(IHouseMemberService service, ILogger<HouseMembersController> logger)
+        public HouseMembersController(IHouseMemberService service, IMemberBroadcastService broadcast, ILogger<HouseMembersController> logger)
         {
             _service = service;
+            _broadcast = broadcast;
             _logger = logger;
         }
 
@@ -140,6 +142,63 @@ namespace Batuara.API.Controllers
             {
                 _logger.LogError(ex, "Error deleting house member {MemberId}", id);
                 return StatusCode(500, new { success = false, message = "An error occurred while deleting the house member" });
+            }
+        }
+
+        [HttpGet("broadcast/{campaign}/previa")]
+        [EnableRateLimiting("authenticated")]
+        public async Task<IActionResult> BroadcastPreview([FromRoute] string campaign, CancellationToken ct)
+        {
+            try
+            {
+                return Ok(new { success = true, data = await _broadcast.PreviewAsync(campaign, ct) });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error previewing broadcast campaign {Campaign}", campaign);
+                return StatusCode(500, new { success = false, message = "An error occurred while previewing the campaign" });
+            }
+        }
+
+        [HttpPost("broadcast/{campaign}/enviar")]
+        [EnableRateLimiting("authenticated")]
+        public async Task<IActionResult> BroadcastSend([FromRoute] string campaign, [FromBody] MemberBroadcastSendRequest request, CancellationToken ct)
+        {
+            try
+            {
+                return Ok(new { success = true, data = await _broadcast.SendAsync(campaign, request?.Confirmar ?? false, request?.MemberIds, ct) });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending broadcast campaign {Campaign}", campaign);
+                return StatusCode(500, new { success = false, message = "An error occurred while sending the campaign" });
+            }
+        }
+
+        [HttpGet("broadcast/{campaign}/entregas")]
+        [EnableRateLimiting("authenticated")]
+        public async Task<IActionResult> BroadcastDeliveries([FromRoute] string campaign, CancellationToken ct)
+        {
+            try
+            {
+                return Ok(new { success = true, data = await _broadcast.GetDeliveriesAsync(campaign, ct) });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error listing deliveries for campaign {Campaign}", campaign);
+                return StatusCode(500, new { success = false, message = "An error occurred while listing the deliveries" });
             }
         }
     }

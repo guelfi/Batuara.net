@@ -27,6 +27,7 @@ namespace Batuara.Infrastructure.Data
         public DbSet<ContactMessage> ContactMessages { get; set; } = null!;
         public DbSet<WhatsAppMessage> WhatsAppMessages { get; set; } = null!;
         public DbSet<AdminDigestState> AdminDigestStates { get; set; } = null!;
+        public DbSet<MemberBroadcastDelivery> MemberBroadcastDeliveries { get; set; } = null!;
         public DbSet<BingoEvent> BingoEvents { get; set; } = null!;
         public DbSet<BingoMenuItem> BingoMenuItems { get; set; } = null!;
         public DbSet<BingoTable> BingoTables { get; set; } = null!;
@@ -56,6 +57,7 @@ namespace Batuara.Infrastructure.Data
             modelBuilder.ApplyConfiguration(new ContactMessageConfiguration());
             modelBuilder.ApplyConfiguration(new WhatsAppMessageConfiguration());
             modelBuilder.ApplyConfiguration(new AdminDigestStateConfiguration());
+            modelBuilder.ApplyConfiguration(new MemberBroadcastDeliveryConfiguration());
             modelBuilder.ApplyConfiguration(new BingoEventConfiguration());
             modelBuilder.ApplyConfiguration(new BingoMenuItemConfiguration());
             modelBuilder.ApplyConfiguration(new BingoTableConfiguration());

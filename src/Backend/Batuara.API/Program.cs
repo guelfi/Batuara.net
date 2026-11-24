@@ -274,6 +274,8 @@ builder.Services.AddSingleton<IAuthCookieService, AuthCookieService>();
 builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
 builder.Services.AddScoped<IGuideService, GuideService>();
 builder.Services.AddScoped<IHouseMemberService, HouseMemberService>();
+builder.Services.Configure<MemberBroadcastOptions>(builder.Configuration.GetSection("MemberBroadcast"));
+builder.Services.AddScoped<IMemberBroadcastService, MemberBroadcastService>();
 builder.Services.AddScoped<IContactMessageService, ContactMessageService>();
 builder.Services.AddScoped<IPendingDigestService, PendingContactDigestService>();
 builder.Services.AddScoped<IEventService, EventService>();

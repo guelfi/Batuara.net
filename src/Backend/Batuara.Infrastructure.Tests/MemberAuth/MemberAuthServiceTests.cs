@@ -29,7 +29,7 @@ namespace Batuara.Infrastructure.Tests.MemberAuth
 
             public Task<string> SendMemberNoticeAsync(string phoneE164, string memberName, string noticeText, CancellationToken cancellationToken = default) => Task.FromResult("fake-notice-id");
 
-            public Task SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default) => Task.CompletedTask;
+            public Task<string> SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default) => Task.FromResult("test-message-id");
 
             public string? LastCode { get; private set; }
             public string? LastPhone { get; private set; }

@@ -13,6 +13,7 @@ import {
   Stack,
   ToggleButton,
   ToggleButtonGroup,
+  Link,
 } from '@mui/material';
 import {
   Visibility,
@@ -405,6 +406,18 @@ const LoginPage: React.FC = () => {
               ? 'Acesso restrito aos administradores e editores.'
               : 'Acesso dos Filhos da Casa por WhatsApp.'}
           </Typography>
+          {mode === 'member' && (
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              <Link
+                href="/tutorial.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                underline="hover"
+              >
+                Primeiro acesso? Veja o tutorial
+              </Link>
+            </Typography>
+          )}
         </Paper>
       </Container>
     </Box>

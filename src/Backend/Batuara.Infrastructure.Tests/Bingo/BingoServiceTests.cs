@@ -76,7 +76,7 @@ namespace Batuara.Infrastructure.Tests.Bingo
             public Task SendAdminNotificationAsync(string phoneE164, int pendingCount, CancellationToken cancellationToken = default) => Task.CompletedTask;
             public Task SendBirthdayGreetingAsync(string phoneE164, string memberName, CancellationToken cancellationToken = default) => Task.CompletedTask;
             public Task SendEventInviteAsync(string phoneE164, string memberName, string eventName, string eventDate, CancellationToken cancellationToken = default) => Task.CompletedTask;
-            public Task SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default) => Task.CompletedTask;
+            public Task<string> SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default) => Task.FromResult("test-message-id");
         }
 
         private class RecordingDispatcher : IBingoCodeDispatcher

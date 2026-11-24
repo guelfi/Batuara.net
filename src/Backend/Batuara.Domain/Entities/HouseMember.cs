@@ -27,6 +27,9 @@ namespace Batuara.Domain.Entities
         public string? SmallParent { get; private set; }
         public string? ReligiousLeader { get; private set; }
         public string? Notes { get; private set; }
+        public bool WhatsAppOptIn { get; private set; }
+        public DateTime? WhatsAppOptInAt { get; private set; }
+        public string? WhatsAppOptInSource { get; private set; }
 
         public IReadOnlyCollection<HouseMemberContribution> Contributions => _contributions.AsReadOnly();
 
@@ -222,6 +225,20 @@ namespace Batuara.Domain.Entities
         public void Deactivate()
         {
             SetInactive();
+        }
+
+        public void RegisterWhatsAppOptIn(DateTime optInAtUtc, string? source)
+        {
+            WhatsAppOptIn = true;
+            WhatsAppOptInAt = DateTime.SpecifyKind(optInAtUtc, DateTimeKind.Utc);
+            WhatsAppOptInSource = NullableString(source);
+            UpdateTimestamp();
+        }
+
+        public void RevokeWhatsAppOptIn()
+        {
+            WhatsAppOptIn = false;
+            UpdateTimestamp();
         }
 
         private HouseMemberContribution FindContribution(int contributionId)

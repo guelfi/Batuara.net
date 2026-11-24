@@ -9,6 +9,6 @@ namespace Batuara.Application.Notifications.Services
         Task SendBirthdayGreetingAsync(string phoneE164, string memberName, CancellationToken cancellationToken = default);
         Task SendEventInviteAsync(string phoneE164, string memberName, string eventName, string eventDate, CancellationToken cancellationToken = default);
         Task<string> SendMemberNoticeAsync(string phoneE164, string memberName, string noticeText, CancellationToken cancellationToken = default);
-        Task SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default);
+        Task<string> SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default);
     }
 }

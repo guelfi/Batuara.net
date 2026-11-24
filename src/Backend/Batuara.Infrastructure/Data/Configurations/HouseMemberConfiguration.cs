@@ -66,6 +66,13 @@ namespace Batuara.Infrastructure.Data.Configurations
             builder.Property(x => x.Notes)
                 .HasMaxLength(2000);
 
+            builder.Property(x => x.WhatsAppOptIn)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            builder.Property(x => x.WhatsAppOptInSource)
+                .HasMaxLength(200);
+
             builder.Property(x => x.CreatedAt)
                 .IsRequired()
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");

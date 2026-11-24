@@ -64,9 +64,9 @@ namespace Batuara.Infrastructure.Notifications
             return await SendTextAsync(phoneE164, $"Casa Batuara: Olá, {FirstName(memberName)}. Aviso da direção: {noticeText.Trim()}", cancellationToken);
         }
 
-        public async Task SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default)
+        public async Task<string> SendSiteTutorialLinkAsync(string phoneE164, string memberName, string tutorialUrl, CancellationToken cancellationToken = default)
         {
-            await SendTextAsync(phoneE164, $"Casa Batuara: Olá, {FirstName(memberName)}! Passo a passo para acessar a sua área no site: {tutorialUrl.Trim()}", cancellationToken);
+            return await SendTextAsync(phoneE164, $"Casa Batuara: Olá, {FirstName(memberName)}! Passo a passo para acessar a sua área no site: {tutorialUrl.Trim()}", cancellationToken);
         }
 
         private static string FirstName(string memberName)

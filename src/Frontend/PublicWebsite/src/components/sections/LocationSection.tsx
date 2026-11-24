@@ -296,6 +296,14 @@ const LocationSection: React.FC = () => {
                       Política de Privacidade
                     </Link>
                     <Link
+                      href="/tutorial.html"
+                      color="inherit"
+                      underline="hover"
+                      sx={{ fontSize: { xs: '0.7rem', md: '0.78rem' }, opacity: 0.9 }}
+                    >
+                      Tutorial de acesso
+                    </Link>
+                    <Link
                       component="button"
                       type="button"
                       color="inherit"
