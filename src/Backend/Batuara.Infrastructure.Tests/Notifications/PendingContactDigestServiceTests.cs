@@ -80,7 +80,7 @@ namespace Batuara.Infrastructure.Tests.Notifications
             await CreateService(db).RunAsync(sender.SendAsync);
 
         [Fact]
-        public async Task SemNovidade_NaoEnvia()
+        public async Task NaoLidaAntiga_RememberEnquantoPendente()
         {
             using var db = CreateContext();
             await SeedLastDigestAsync(db);
@@ -88,9 +88,9 @@ namespace Batuara.Infrastructure.Tests.Notifications
             await db.SaveChangesAsync();
             var sender = new Sender();
 
-            (await RunAsync(db, sender)).Should().BeNull();
+            (await RunAsync(db, sender)).Should().Be(1);
 
-            sender.Counts.Should().BeEmpty();
+            sender.Counts.Should().Equal(1);
         }
 
         [Fact]
@@ -198,7 +198,7 @@ namespace Batuara.Infrastructure.Tests.Notifications
         }
 
         [Fact]
-        public async Task PrimeiroRun_UsaJanelaDe24Horas()
+        public async Task PrimeiroRun_NaoLida_ContaELida_NaoConta()
         {
             using var db = CreateContext();
             db.ContactMessages.Add(NewMessage(DateTime.UtcNow.AddHours(-30), read: true));
