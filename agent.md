@@ -233,15 +233,33 @@ docker compose -p batuara-net-local -f docker-compose.local.yml up -d --build ap
 
 ### 8.4 URLs locais
 
-- PublicWebsite: `http://localhost/batuara-public/`
-- AdminDashboard: `http://localhost/batuara-admin/`
-- Swagger: `http://localhost/batuara-api/swagger`
-- Health: `http://localhost/batuara-api/health`
+> Porta externa do nginx = `${NGINX_PORT_HTTP}` do `.env` (hoje **8081**). Se for 80, a URL não leva porta.
+
+- PublicWebsite: `http://localhost:8081/batuara-public/`
+- AdminDashboard: `http://localhost:8081/batuara-admin/`
+- Swagger: `http://localhost:8081/batuara-api/swagger`
+- Health: `http://localhost:8081/batuara-api/health`
+- API: sempre pelo prefixo `/batuara-api/` (ex.: `/batuara-api/api/public/contact-messages`) — `/api/` direto cai no `location /` e vira 302 para o site público.
 
 ### 8.5 Credencial local de referência
 
 - e-mail: `admin@batuara.org.br`
 - senha: `<USE_LOCAL_CREDENTIAL>`
+
+### 8.6 Atalho só-frontend (sem rebuild de imagem)
+
+Para mudança só no AdminDashboard, compilar na máquina e copiar o build para dentro do container:
+
+```bash
+cd src/Frontend/AdminDashboard
+PUBLIC_URL=/batuara-admin REACT_APP_API_URL=/batuara-api/api INLINE_RUNTIME_CHUNK=false npm run build
+docker cp build/. batuara-net-local-admin-dashboard:/usr/share/nginx/html/
+docker exec batuara-net-local-nginx nginx -s reload
+```
+
+**As três variáveis são obrigatórias** — sem `PUBLIC_URL=/batuara-admin` o `index.html` referencia assets em `/admin/` e a página fica em branco (o nginx local não tem location `/admin/`). PublicWebsite: mesma receita com `PUBLIC_URL=/batuara-public` e container `batuara-net-local-public-website`.
+
+Banco local: schema **`batuara`** — `\dt` no `public` retorna vazio; consultar `batuara."Tabela"` (user `batuara_user`, db `batuara_db`). A API local roda `ASPNETCORE_ENVIRONMENT=Development`, então `MigrateAsync` aplica migrations novas no startup sozinho.
 
 ## 9. Troubleshooting
 
@@ -261,8 +279,17 @@ docker compose -p batuara-net-local -f docker-compose.local.yml up -d --force-re
 
 - executar rebuild com `--build`
 - fazer hard refresh com `Ctrl+Shift+R`
+- para frontend, preferir o atalho da §8.6 (build local + `docker cp` + reload) em vez de rebuildar a imagem inteira
 
-### 9.3 Sintoma: WhatsApp parou de enviar ou `batuara-casa` desconectou
+### 9.3 Sintoma: página do Admin/Public em branco após `docker cp` do build
+
+- build feito sem `PUBLIC_URL` correto → assets referenciados em `/admin/` ou `/`, sem location no nginx → tela branca. Rebuildar com as variáveis da §8.6.
+
+### 9.4 Sintoma: container em estado `Created` (não sobe)
+
+- acontece quando um crash interrompe o `compose up` na recriação. Correção: `docker start <container>` e em seguida recriar o nginx (§9.1).
+
+### 9.5 Sintoma: WhatsApp parou de enviar ou `batuara-casa` desconectou
 
 - Validar `GET /instance/connectionState/batuara-casa` via Evolution API local da OCI.
 - Se estiver `close` ou `401`, abrir túnel SSH para o Manager.
@@ -294,7 +321,11 @@ Se você alterar:
 - validar no navegador quando houver impacto visual
 - atualizar documentação em `docs/` quando a mudança for estrutural
 
-### 10.3 Estado de Handoff Atual — 2026-07-08
+### 10.3 Estado de Handoff Atual
+
+> **O handoff vigente é o §6 de [`docs/PLANO-MELHORIAS.md`](docs/PLANO-MELHORIAS.md)** (última atualização **2026-11-25** — rework do Dashboard: cards 3-por-linha com contagens, log de atividades real `ActivityLog`, Resumo Rápido gira/evento/kardecista, edição inline no grid de filhos; pendente: disparo `site-launch`/`site-tutorial` aguardando Douglas). Espelho para outras ferramentas no ai-memory (`notes/handoff-2026-11-25-*`). O resumo abaixo é o da sessão de 2026-07-08, mantido como histórico.
+
+#### Sessão 2026-07-08 (histórico)
 
 Implementações/deploys concluídos e validados nesta sessão:
 
@@ -348,6 +379,13 @@ Artefatos de QA a manter versionados: `docs/PlanoTestes.md` e a planilha `docs/P
 - `ROADMAP.md` — histórico de fases/PRs
 
 ## 12. Change Log
+
+### 2026.11.25
+
+- §8.4: porta do nginx local via `NGINX_PORT_HTTP` (hoje 8081); rota da API é `/batuara-api/api/...`.
+- §8.6 novo: atalho só-frontend (`PUBLIC_URL` + `docker cp` + reload) e nota do schema `batuara` no banco local.
+- §9.3/9.4 novos: página em branco por `PUBLIC_URL` ausente; container em estado `Created` após crash.
+- §10.3: handoff vigente aponta para `docs/PLANO-MELHORIAS.md` §6 (2026-11-25) + espelho no ai-memory; resumo de 2026-07-08 vira histórico.
 
 ### 2026.07.08
 
