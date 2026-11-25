@@ -210,12 +210,12 @@ Revisão completa realizada em **2026-10-22** após a migração Meta Cloud API.
 
 | Campo | Valor |
 |-------|-------|
-| Data | 2026-11-24 (ver o handoff de 24/11 abaixo) |
-| Branch | `master`, sincronizada com o remoto; último commit em produção: `7db6423` (digest vira lembrete diário, PM-049). `f91ff8a` (PM-046/047, broadcast) também em produção. |
+| Data | 2026-11-25 (ver o handoff de 25/11 abaixo) |
+| Branch | `master`, sincronizada com o remoto; último commit em produção: `1d9b6e6` (fix Resumo Rápido + cards 3-por-linha). Série de dashboards em prod: `e23ec69`, `7162704`, `a8a264b`, `1d9b6e6`; edição inline do grid de filhos `4917136`/`ab7b3f0`/`8dcc456` também em prod. |
 | Em andamento (`doing`) | **PM-046/PM-047 — disparo em massa aguardando autorização do Douglas** (98 restantes do `site-launch` + `site-tutorial` depois; teste allowlist já confirmado recebido pelo dono). PM-025 com fase 5 opcional pendente (fim da fila). |
 | Próximo item sugerido | **1)** Disparo em massa `site-launch` (98) → `site-tutorial` — **aguarda autorização do Douglas** (teste allowlist já confirmado recebido pelo dono). **2)** Douglas responde a planilha de pendências (12 números do grupo sem nome, identidade Viviane, confirmação de 13 inativados) → cruzar e aplicar no banco. **3)** PM-008 + PM-004 (decisão do dono). |
-| Bloqueios ativos | Nenhum técnico. **Pendências de dados:** planilha `pendencias-filhos-batuara` (Drive, ID `1xqSXDYeJrA9aoi_b-rhmqYEdxlEH3JBWFklI99Ai4ZY`) compartilhada só com Douglas (`dmoraes.dias@gmail.com`, editor). Mensagem da Renata Nadur (id 16) segue não lida — com o digest novo, volta a ser lembrada todo dia 19h até a leitura. |
-| Ambiente | Produção em `https://www.batuara.org.br/`; .NET 10; lembretes WhatsApp desligados; Swagger público por decisão. OCI: 2 OCPU / 12 GB / 100 GB, Ubuntu 22.04.5, 38 containers. **Banco: 140 cadastros, 100 ativos, 100% com celular, 100 com opt-in** (prod = local, sincronizados). |
+| Bloqueios ativos | Nenhum técnico. **Pendências de dados:** planilha `pendencias-filhos-batuara` (Drive, ID `1xqSXDYeJrA9aoi_b-rhmqYEdxlEH3JBWFklI99Ai4ZY`) compartilhada só com Douglas (`dmoraes.dias@gmail.com`, editor). Mensagem da Renata Nadur (id 16) segue não lida — o digest agora a relembra todo dia 19h até a leitura. |
+| Ambiente | Produção em `https://www.batuara.org.br/`; .NET 10; lembretes WhatsApp desligados; Swagger público por decisão. OCI: 2 OCPU / 12 GB / 100 GB, Ubuntu 22.04.5, 38 containers. **Banco: 140 cadastros, 100 ativos, 100% com celular, 100 com opt-in** (prod = local, sincronizados). **Stack Docker local** `batuara-net-local-*` no ar (`docker-compose.local.yml`, nginx :8081, admin em `/batuara-admin/`) — loop rápido de validação antes do push; banco local usa schema `batuara` (tabelas `batuara."X"`), user `batuara_user`, db `batuara_db`. |
 | Riscos | Disparo em massa `site-launch` é Marketing (custo por mensagem, ~98 destinatários); idempotência garantida por `MemberBroadcastDeliveries` (índice único parcial em `Status='Sent'`). Logs da API em volume `batuara-api-logs`; chaves do Data Protection sem criptografia em repouso; teste Jest do Admin quebrado (`TextEncoder`); majors pendentes (FluentValidation 12, Swashbuckle 10, FluentAssertions 8). Drive: rclone atinge cota de API com facilidade (aguardar ~60 s); Sheets API não habilitada no projeto — conteúdo da planilha se atualiza via `files.update` de .xlsx (mantém ID/link/permissões). |
 
 #### Frente de 26/out: templates Meta para os filhos + tutorial de acesso
@@ -273,6 +273,25 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 - **Sessão do Admin:** tokens só em cookies httpOnly (`SameSite=Strict`); o corpo das respostas de login/refresh não traz token (exceto `AuthCookieSettings:ReturnTokensInBody=true`, só em Development).
 - **Data Protection:** chaves no volume Docker `batuara-dataprotection-keys` (`/app/dp-keys`).
 - **Backup:** `~/backups/batuara-orixas-umbanda-pre-unify-20261023.sql` na OCI (pré-`UnifyDescriptionFields`).
+
+#### Loop de deploy local (validação antes do push, 25/11)
+
+- **Subir/rebuildar:** `docker compose -p batuara-net-local -f docker-compose.local.yml up -d --build api admindashboard` (env do `.env` da raiz). Admin em `http://localhost:8081/batuara-admin/` (ou IP LAN `:8081`). Rebuild completo ~20 min na 1ª vez; com cache quente vai rápido.
+- **Atalho só-frontend (segundos):** `cd src/Frontend/AdminDashboard && PUBLIC_URL=/batuara-admin REACT_APP_API_URL=/batuara-api/api INLINE_RUNTIME_CHUNK=false npm run build` → `docker cp build/. batuara-net-local-admin-dashboard:/usr/share/nginx/html/` → `docker exec batuara-net-local-nginx nginx -s reload`. **Sem `PUBLIC_URL` a página fica branca** (assets saem em `/admin/` e o nginx não tem esse location). PublicWebsite: mesma receita com `PUBLIC_URL=/batuara-public` e API `/batuara-api/api`.
+- **Gotchas:** (a) o nginx resolve o IP dos containers só na subida — após recriar api/admin, `docker restart batuara-net-local-nginx` ou dá 502; (b) se um container ficar em estado `Created` (crash no meio do `up`), `docker start <nome>`; (c) API local roda com `ASPNETCORE_ENVIRONMENT=Development` → `MigrateAsync` automático no startup; (d) banco local tem **schema `batuara`** — `\dt` no `public` retorna vazio; usar `batuara."Tabela"`; (e) rota da API é `/batuara-api/api/...` (ex.: `/batuara-api/api/public/contact-messages`), não `/api/`.
+
+### Handoff — 2026-11-25 (rework do Dashboard: cards, log de atividades real, edição inline no grid)
+
+- **Agente/dev:** Devin (SWE-2) com Marco Guelfi.
+- **Branch:** `master`. Commits em produção: `e23ec69` (card Filhos com 140 total / 100 ativos · 40 inativos), `7162704` (remove card Atividade, cards apontam para abas da Agenda), `a8a264b` (log de atividades real + Resumo Rápido 3 itens + números centralizados), `1d9b6e6` (fix type do atendimento + `md:4`). Edição inline: `4917136` (inline edit no grid de filhos), `ab7b3f0` (clique único edita; clique no Status alterna), `8dcc456` (fix clique dentro da célula reiniciando edição). CI/CD verdes em todos (último: CI `45554588797`, CD `45555256426`).
+- **Dashboard final:** 3 cards na mesma linha a partir de 900px (`md:4`), números/legendas centralizados. Eventos → `/agenda?aba=eventos`; Atendimentos → `/agenda?aba=atendimentos`; Filhos da Casa → `/members` mostrando `140` com `100 ativos · 40 inativos`. Card "Atividade" removido (apontava errado para `/profile` e duplicava os vizinhos); `currentMonthActivity` removido ponta a ponta.
+- **Atividade Recente = log real:** entidade `ActivityLog` (Domain) + `IActivityLogService`/`ActivityLogService` + endpoint `GET /api/dashboard/activity-logs` + migration `20261125022806_AddActivityLogs` (com `apply_migration` no `deploy-rolling.sh`) + `ClaimsPrincipalExtensions` (nome do ator). Instrumentados: PublicContactMessages ("Visitante"/nome deixou mensagem), ContactMessages (leitura/status/resposta WhatsApp), HouseMembers (create/update/delete/broadcast), MemberSelfService (perfil/contribuição do próprio filho), Events, CalendarAttendances. **Antes o frontend chamava endpoint 404 e caía em fallback sintético** — por isso só listava eventos. Validado E2E local: POST mensagem de contato → linha gravada e exibida.
+- **Resumo Rápido 3 itens:** próxima gira (`type` Umbanda), próximo evento (`getEvents`), próximo atendimento kardecista — janela de 2 meses (mês corrente + seguinte) via `getAttendances`. **Bug pego no teste local:** a API serializa enums com `JsonStringEnumConverter` → `type` chega string ("Umbanda"); comparação com o enum numérico nunca casava → sempre "nenhum agendado". Fix `1d9b6e6`: normaliza `typeof item.type === 'number' ? AttendanceType[item.type] : String(item.type)` e compara com o nome. **Eventos de `CalendarAttendances` tipo Festa/Palestra/Curso NÃO entram como "evento" no resumo** — o "Próximo evento" vem de `getEvents` (EventsPage). Se o Douglas cadastrar festas como CalendarAttendance em vez de Event, não aparecem.
+- **Grid Filhos da Casa edição inline:** clique único edita Nome/E-mail/Celular na linha (Enter confirma, Esc cancela); clique no Status alterna ativo/inativo; lápis abre o CRUD completo para o resto. `processRowUpdate` manda o payload **completo** incluindo `Contributions` (o backend sincroniza a lista — mandar parcial apagaria lançamentos). Validações: nome obrigatório, formato e-mail, celular 10/11 dígitos; e-mail `null` limpa o campo.
+- **Operação/descobertas:** ver bloco "Loop de deploy local" acima — comando de build com `PUBLIC_URL`, gotcha do nginx/502, schema `batuara` no banco local. Build manual do admin leva ~3-4 min (`react-scripts build`); CI ~6 min, CD ~7-8 min.
+- **Não commitado / cuidado:** árvore limpa, tudo pushado e deployado.
+- **Próximo item sugerido:** (1) Douglas autoriza `site-launch` → disparo (98) + `site-tutorial`; (2) planilha de pendências; (3) opcional: tela Admin para broadcast; (4) observar o Atividade Recente acumulando em prod.
+- **Bloqueios novos:** nenhum.
 
 ### Handoff — 2026-11-24 (campanha site liberado em produção, digest vira lembrete diário, cadastro de filhos consolidado)
 
@@ -371,6 +390,14 @@ Sugestão: mensagem 2 no dia seguinte (ou algumas horas depois), para quem não 
 ---
 
 ## 7. Changelog deste plano
+
+### 2026-11-25 (rework do Dashboard + log de atividades real + edição inline no grid)
+
+- **Dashboard de cards (`e23ec69`, `7162704`, `1d9b6e6`):** 3 cards numa linha (`md:4`, números centralizados) — Eventos→aba Eventos, Atendimentos→aba Atendimentos (`?aba=` deep-link já existente na AgendaPage), Filhos da Casa→`/members` com `140` e `100 ativos · 40 inativos` (`inactiveHouseMembers` novo no `DashboardStatsDto`). Card "Atividade" removido (link errado para `/profile`, conteúdo redundante) com `currentMonthActivity` removido ponta a ponta.
+- **Log de atividades real (`a8a264b`):** `ActivityLog` + serviço + `GET /api/dashboard/activity-logs` + migration aplicada em prod. Registra ações no Admin e no site público: mensagem de visitante, leitura/status/resposta de contato, CRUD de filhos, broadcast, edição de perfil/contribuição pelo próprio filho, criação de eventos/atendimentos. O endpoint já era chamado pelo frontend mas **não existia** (404 → fallback sintético).
+- **Resumo Rápido:** 3 linhas (gira Umbanda, evento, atendimento kardecista) com janela de 2 meses. Bug corrigido em `1d9b6e6`: `JsonStringEnumConverter` serializa `type` como string — normalizado para o nome do enum antes de comparar.
+- **Grid de filhos edição inline (`4917136`, `ab7b3f0`, `8dcc456`):** clique único edita Nome/E-mail/Celular (Enter salva, Esc cancela), clique no Status alterna ativo; lápis → CRUD completo. Update envia payload completo com `Contributions` (backend sincroniza a lista).
+- **Loop de deploy local:** stack `batuara-net-local-*` validado como ambiente de teste rápido antes do push; build manual do admin exige `PUBLIC_URL=/batuara-admin REACT_APP_API_URL=/batuara-api/api INLINE_RUNTIME_CHUNK=false` + `docker cp` + reload do nginx (ver §6, bloco "Loop de deploy local").
 
 ### 2026-11-24 (campanha site liberado em produção + digest vira lembrete diário)
 
