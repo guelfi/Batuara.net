@@ -320,8 +320,6 @@ export interface DashboardStats {
   activeHouseMembers: number;
   /** Filhos da Casa com isActive = false */
   inactiveHouseMembers: number;
-  /** Eventos + Atendimentos no mês corrente */
-  currentMonthActivity: number;
   recentActivity: ActivityLog[];
 }
 

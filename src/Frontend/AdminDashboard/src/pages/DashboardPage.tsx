@@ -253,9 +253,9 @@ const DashboardPage: React.FC = () => {
       <Grid container spacing={{ xs: 1.5, sm: 3 }} sx={{ mb: { xs: 2, md: 4 }, justifyContent: 'flex-start', maxWidth: '100%' }}>
         {canAccessAdminModules && (
           <>
-            <Grid size={{ xs: 6, sm: 6, md: 6, lg: 3 }}>
+            <Grid size={{ xs: 6, sm: 6, md: 6, lg: 4 }}>
               <Card sx={{ height: '100%' }}>
-                <CardActionArea {...buildStatCardProps('/events')}>
+                <CardActionArea {...buildStatCardProps('/agenda?aba=eventos')}>
                   <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
                       <EventIcon sx={{ color: 'primary.main', mr: { xs: 0.75, sm: 1 } }} fontSize="small" />
@@ -278,9 +278,9 @@ const DashboardPage: React.FC = () => {
               </Card>
             </Grid>
 
-            <Grid size={{ xs: 6, sm: 6, md: 6, lg: 3 }}>
+            <Grid size={{ xs: 6, sm: 6, md: 6, lg: 4 }}>
               <Card sx={{ height: '100%' }}>
-                <CardActionArea {...buildStatCardProps('/calendar')}>
+                <CardActionArea {...buildStatCardProps('/agenda?aba=atendimentos')}>
                   <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
                       <CalendarMonthIcon sx={{ color: 'secondary.main', mr: { xs: 0.75, sm: 1 } }} fontSize="small" />
@@ -303,13 +303,13 @@ const DashboardPage: React.FC = () => {
               </Card>
             </Grid>
 
-            <Grid size={{ xs: 6, sm: 6, md: 6, lg: 3 }}>
+            <Grid size={{ xs: 6, sm: 6, md: 6, lg: 4 }}>
               <Card sx={{ height: '100%' }}>
                 <CardActionArea {...buildStatCardProps('/members')}>
                   <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
                       <PeopleIcon sx={{ color: 'success.main', mr: { xs: 0.75, sm: 1 } }} fontSize="small" />
-                      <Typography variant={isXs ? 'subtitle1' : 'h6'} color="success.main" sx={{ flexGrow: 1, fontWeight: 600 }}>
+                      <Typography variant={isXs ? 'subtitle1' : 'h6'} color="success.main" sx={{ flexGrow: 1, fontWeight: 600, whiteSpace: 'nowrap' }}>
                         Filhos da Casa
                       </Typography>
                       <ChevronRightIcon fontSize="small" color="action" />
@@ -329,31 +329,6 @@ const DashboardPage: React.FC = () => {
             </Grid>
           </>
         )}
-
-        <Grid size={{ xs: 6, sm: 6, md: 6, lg: 3 }}>
-          <Card sx={{ height: '100%' }}>
-            <CardActionArea {...buildStatCardProps('/profile')}>
-              <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
-                  <TrendingUpIcon sx={{ color: 'info.main', mr: { xs: 0.75, sm: 1 } }} fontSize="small" />
-                  <Typography variant={isXs ? 'subtitle1' : 'h6'} color="info.main" sx={{ flexGrow: 1, fontWeight: 600 }}>
-                    Atividade
-                  </Typography>
-                  <ChevronRightIcon fontSize="small" color="action" />
-                </Box>
-                <Typography
-                  variant={isXs ? 'h4' : 'h3'}
-                  sx={{ fontWeight: 700, mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '1.75rem', sm: '3rem' } }}
-                >
-                  {stats?.currentMonthActivity ?? 0}
-                </Typography>
-                <Typography variant={isXs ? 'caption' : 'body2'} color="text.secondary">
-                  Eventos e atendimentos este mês
-                </Typography>
-              </CardContent>
-            </CardActionArea>
-          </Card>
-        </Grid>
       </Grid>
 
       {/* Atividade recente */}

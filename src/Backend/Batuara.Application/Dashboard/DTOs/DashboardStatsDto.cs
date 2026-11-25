@@ -17,9 +17,6 @@ namespace Batuara.Application.Dashboard.DTOs
         /// <summary>Filhos da Casa com IsActive = false.</summary>
         public int InactiveHouseMembers { get; set; }
 
-        /// <summary>Eventos + Atendimentos com data no mês corrente.</summary>
-        public int CurrentMonthActivity { get; set; }
-
         public List<DashboardActivityDto> RecentActivity { get; set; } = new List<DashboardActivityDto>();
     }
 
