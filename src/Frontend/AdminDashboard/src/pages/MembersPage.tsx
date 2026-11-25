@@ -30,7 +30,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { Add as AddIcon, Close as CloseIcon, Edit as EditIcon } from '@mui/icons-material';
-import { DataGrid, GridActionsCellItem, GridCellParams, GridColDef, MuiEvent, useGridApiRef } from '@mui/x-data-grid';
+import { DataGrid, GridActionsCellItem, GridCellModes, GridCellParams, GridColDef, MuiEvent, useGridApiRef } from '@mui/x-data-grid';
 import apiService from '../services/api';
 import GridPager from '../components/common/GridPager';
 import { ContributionPaymentStatus, HouseMember, HouseMemberContribution, Orixa } from '../types';
@@ -322,7 +322,7 @@ const MembersPage: React.FC = () => {
   };
 
   const handleCellClick = (params: GridCellParams, event: MuiEvent<React.MouseEvent>) => {
-    if (!params.isEditable) {
+    if (!params.isEditable || params.cellMode === GridCellModes.Edit) {
       return;
     }
 
