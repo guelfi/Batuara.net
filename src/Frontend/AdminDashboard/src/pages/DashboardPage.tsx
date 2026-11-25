@@ -27,11 +27,11 @@ import {
 import EventIcon from '@mui/icons-material/Event';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import PeopleIcon from '@mui/icons-material/People';
-import { ChevronRight as ChevronRightIcon, Notifications as NotificationsIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material';
+import { ChevronRight as ChevronRightIcon, Mail as MailIcon, Notifications as NotificationsIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import apiService from '../services/api';
-import { DashboardStats } from '../types';
+import { AttendanceType, DashboardStats } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { isAdmin } from '../utils/roles';
@@ -46,7 +46,8 @@ const DashboardPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [nextEvent, setNextEvent] = useState<{ title: string; when: string } | null>(null);
-  const [nextAttendance, setNextAttendance] = useState<{ title: string; when: string } | null>(null);
+  const [nextGira, setNextGira] = useState<{ title: string; when: string } | null>(null);
+  const [nextKardecismo, setNextKardecismo] = useState<{ title: string; when: string } | null>(null);
   const [activityItems, setActivityItems] = useState<DashboardStats['recentActivity']>([]);
   const [activityError, setActivityError] = useState<string | null>(null);
   const [activityPage, setActivityPage] = useState(1);
@@ -99,7 +100,7 @@ const DashboardPage: React.FC = () => {
         }
 
         try {
-          const candidates: { title: string; when: string; sortKey: string }[] = [];
+          const candidates: { title: string; when: string; sortKey: string; type: AttendanceType }[] = [];
 
           for (let i = 0; i < 2; i += 1) {
             const monthDate = new Date(today.getFullYear(), today.getMonth() + i, 1);
@@ -124,19 +125,24 @@ const DashboardPage: React.FC = () => {
                 title: item.description || 'Atendimento',
                 when,
                 sortKey: `${day}T${(item.startTime || '00:00').slice(0, 5)}`,
+                type: item.type,
               });
             }
           }
 
           candidates.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
-          const first = candidates[0];
-          setNextAttendance(first ? { title: first.title, when: first.when } : null);
+          const gira = candidates.find((c) => c.type === AttendanceType.Umbanda);
+          const kard = candidates.find((c) => c.type === AttendanceType.Kardecismo);
+          setNextGira(gira ? { title: gira.title, when: gira.when } : null);
+          setNextKardecismo(kard ? { title: kard.title, when: kard.when } : null);
         } catch (_) {
-          setNextAttendance(null);
+          setNextGira(null);
+          setNextKardecismo(null);
         }
       } else {
         setNextEvent(null);
-        setNextAttendance(null);
+        setNextGira(null);
+        setNextKardecismo(null);
       }
 
       try {
@@ -167,12 +173,25 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  const ENTITY_TYPE_LABELS: Record<string, string> = {
+    Event: 'Evento',
+    CalendarAttendance: 'Atendimento',
+    ContactMessage: 'Mensagem',
+    HouseMember: 'Filho',
+    MemberBroadcast: 'Campanha',
+  };
+
   const getActivityIcon = (entityType: string) => {
     switch (entityType) {
       case 'Event':
         return <EventIcon fontSize="small" />;
       case 'CalendarAttendance':
         return <CalendarMonthIcon fontSize="small" />;
+      case 'ContactMessage':
+        return <MailIcon fontSize="small" />;
+      case 'HouseMember':
+        return <PeopleIcon fontSize="small" />;
+      case 'MemberBroadcast':
       case 'Orixa':
       case 'UmbandaLine':
       case 'SpiritualContent':
@@ -266,11 +285,11 @@ const DashboardPage: React.FC = () => {
                     </Box>
                     <Typography
                       variant={isXs ? 'h4' : 'h3'}
-                      sx={{ fontWeight: 700, mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '1.75rem', sm: '3rem' } }}
+                      sx={{ fontWeight: 700, mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '1.75rem', sm: '3rem' }, textAlign: 'center' }}
                     >
                       {stats?.eventsUntilEndOfYear ?? 0}
                     </Typography>
-                    <Typography variant={isXs ? 'caption' : 'body2'} color="text.secondary">
+                    <Typography variant={isXs ? 'caption' : 'body2'} color="text.secondary" sx={{ textAlign: 'center' }}>
                       Até o final do ano
                     </Typography>
                   </CardContent>
@@ -291,11 +310,11 @@ const DashboardPage: React.FC = () => {
                     </Box>
                     <Typography
                       variant={isXs ? 'h4' : 'h3'}
-                      sx={{ fontWeight: 700, mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '1.75rem', sm: '3rem' } }}
+                      sx={{ fontWeight: 700, mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '1.75rem', sm: '3rem' }, textAlign: 'center' }}
                     >
                       {stats?.attendancesUntilEndOfYear ?? 0}
                     </Typography>
-                    <Typography variant={isXs ? 'caption' : 'body2'} color="text.secondary">
+                    <Typography variant={isXs ? 'caption' : 'body2'} color="text.secondary" sx={{ textAlign: 'center' }}>
                       Espirituais até o final do ano
                     </Typography>
                   </CardContent>
@@ -316,11 +335,11 @@ const DashboardPage: React.FC = () => {
                     </Box>
                     <Typography
                       variant={isXs ? 'h4' : 'h3'}
-                      sx={{ fontWeight: 700, mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '1.75rem', sm: '3rem' } }}
+                      sx={{ fontWeight: 700, mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '1.75rem', sm: '3rem' }, textAlign: 'center' }}
                     >
                       {(stats?.activeHouseMembers ?? 0) + (stats?.inactiveHouseMembers ?? 0)}
                     </Typography>
-                    <Typography variant={isXs ? 'caption' : 'body2'} color="text.secondary">
+                    <Typography variant={isXs ? 'caption' : 'body2'} color="text.secondary" sx={{ textAlign: 'center' }}>
                       {stats ? `${stats.activeHouseMembers} ativos · ${stats.inactiveHouseMembers} inativos` : 'Cadastrados'}
                     </Typography>
                   </CardContent>
@@ -342,6 +361,18 @@ const DashboardPage: React.FC = () => {
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Box>
                   <Typography variant="body2" color="text.secondary">
+                    Próxima gira
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                    {nextGira?.title || 'Nenhuma gira agendada'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {nextGira?.when || '—'}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
                     Próximo evento
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>
@@ -354,13 +385,13 @@ const DashboardPage: React.FC = () => {
 
                 <Box>
                   <Typography variant="body2" color="text.secondary">
-                    Próximo atendimento
+                    Próximo atendimento kardecista
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                    {nextAttendance?.title || 'Nenhum atendimento agendado'}
+                    {nextKardecismo?.title || 'Nenhum atendimento agendado'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {nextAttendance?.when || '—'}
+                    {nextKardecismo?.when || '—'}
                   </Typography>
                 </Box>
 
@@ -410,7 +441,7 @@ const DashboardPage: React.FC = () => {
                                 {activity.action.toLowerCase()}
                               </Typography>
                               <Chip
-                                label={activity.entityType}
+                                label={ENTITY_TYPE_LABELS[activity.entityType] ?? activity.entityType}
                                 size="small"
                                 variant="outlined"
                                 sx={{ ml: 1 }}
@@ -463,7 +494,7 @@ const DashboardPage: React.FC = () => {
               <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                 {activityDetailsItem.userName} {activityDetailsItem.action.toLowerCase()}
               </Typography>
-              <Chip label={activityDetailsItem.entityType} size="small" variant="outlined" />
+              <Chip label={ENTITY_TYPE_LABELS[activityDetailsItem.entityType] ?? activityDetailsItem.entityType} size="small" variant="outlined" />
               <Typography variant="body2" color="text.secondary">
                 {formatActivityTime(activityDetailsItem.timestamp)}
               </Typography>

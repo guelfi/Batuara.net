@@ -1,3 +1,5 @@
+using Batuara.API.Services;
+using Batuara.Application.Dashboard.Services;
 using Batuara.Application.Events.Models;
 using Batuara.Application.Events.Services;
 using Batuara.Domain.Entities;
@@ -13,9 +15,11 @@ namespace Batuara.API.Controllers
     [Authorize(Roles = "Admin")]
     public class EventsController(
         IEventService eventService,
+        IActivityLogService activityLog,
         ILogger<EventsController> logger) : ControllerBase
     {
         private readonly IEventService _eventService = eventService;
+        private readonly IActivityLogService _activityLog = activityLog;
         private readonly ILogger<EventsController> _logger = logger;
 
         [HttpGet]
@@ -86,6 +90,7 @@ namespace Batuara.API.Controllers
                     return BadRequest(new { success = false, message = errors[0], errors });
                 }
 
+                await _activityLog.LogAsync(User.GetDisplayName(), User.GetUserIdValue(), "criou um evento", "Event", created!.Id.ToString(), request.Title);
                 return CreatedAtAction(nameof(GetById), new { id = created!.Id }, new { success = true, data = created });
             }
             catch (Exception ex)

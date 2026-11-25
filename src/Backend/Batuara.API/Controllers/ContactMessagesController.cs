@@ -1,5 +1,7 @@
+using Batuara.API.Services;
 using Batuara.Application.ContactMessages.Models;
 using Batuara.Application.ContactMessages.Services;
+using Batuara.Application.Dashboard.Services;
 using Batuara.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,11 +16,13 @@ namespace Batuara.API.Controllers
     public class ContactMessagesController : ControllerBase
     {
         private readonly IContactMessageService _service;
+        private readonly IActivityLogService _activityLog;
         private readonly ILogger<ContactMessagesController> _logger;
 
-        public ContactMessagesController(IContactMessageService service, ILogger<ContactMessagesController> logger)
+        public ContactMessagesController(IContactMessageService service, IActivityLogService activityLog, ILogger<ContactMessagesController> logger)
         {
             _service = service;
+            _activityLog = activityLog;
             _logger = logger;
         }
 
@@ -84,6 +88,7 @@ namespace Batuara.API.Controllers
                     return BadRequest(new { success = false, message = errors[0], errors });
                 }
 
+                await _activityLog.LogAsync(User.GetDisplayName(), User.GetUserIdValue(), "alterou o status de uma mensagem de contato", "ContactMessage", id.ToString(), $"{updated!.Name} — {request.Status}");
                 return Ok(new { success = true, data = updated });
             }
             catch (Exception ex)
@@ -122,6 +127,10 @@ namespace Batuara.API.Controllers
                     return BadRequest(new { success = false, message = errors[0], errors });
                 }
 
+                if (request.IsRead)
+                {
+                    await _activityLog.LogAsync(User.GetDisplayName(), User.GetUserIdValue(), "leu uma mensagem de contato", "ContactMessage", id.ToString(), updated!.Name);
+                }
                 return Ok(new { success = true, data = updated });
             }
             catch (Exception ex)
@@ -145,6 +154,7 @@ namespace Batuara.API.Controllers
                     return BadRequest(new { success = false, message = errors[0], errors });
                 }
 
+                await _activityLog.LogAsync(User.GetDisplayName(), User.GetUserIdValue(), "respondeu uma mensagem de contato", "ContactMessage", id.ToString(), $"Resposta para {updated!.Name} via WhatsApp");
                 return Ok(new { success = true, data = updated });
             }
             catch (Exception ex)

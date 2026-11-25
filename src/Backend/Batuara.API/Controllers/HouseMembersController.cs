@@ -1,3 +1,5 @@
+using Batuara.API.Services;
+using Batuara.Application.Dashboard.Services;
 using Batuara.Application.HouseMembers.Models;
 using Batuara.Application.HouseMembers.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -14,12 +16,14 @@ namespace Batuara.API.Controllers
     {
         private readonly IHouseMemberService _service;
         private readonly IMemberBroadcastService _broadcast;
+        private readonly IActivityLogService _activityLog;
         private readonly ILogger<HouseMembersController> _logger;
 
-        public HouseMembersController(IHouseMemberService service, IMemberBroadcastService broadcast, ILogger<HouseMembersController> logger)
+        public HouseMembersController(IHouseMemberService service, IMemberBroadcastService broadcast, IActivityLogService activityLog, ILogger<HouseMembersController> logger)
         {
             _service = service;
             _broadcast = broadcast;
+            _activityLog = activityLog;
             _logger = logger;
         }
 
@@ -84,6 +88,7 @@ namespace Batuara.API.Controllers
                     return BadRequest(new { success = false, message = errors[0], errors });
                 }
 
+                await _activityLog.LogAsync(User.GetDisplayName(), User.GetUserIdValue(), "cadastrou um filho da casa", "HouseMember", created!.Id.ToString(), request.FullName);
                 return CreatedAtAction(nameof(GetById), new { id = created!.Id }, new { success = true, data = created });
             }
             catch (Exception ex)
@@ -115,6 +120,7 @@ namespace Batuara.API.Controllers
                     return BadRequest(new { success = false, message = errors[0], errors });
                 }
 
+                await _activityLog.LogAsync(User.GetDisplayName(), User.GetUserIdValue(), "atualizou o cadastro de um filho da casa", "HouseMember", id.ToString(), updated!.FullName);
                 return Ok(new { success = true, data = updated });
             }
             catch (Exception ex)
@@ -170,7 +176,12 @@ namespace Batuara.API.Controllers
         {
             try
             {
-                return Ok(new { success = true, data = await _broadcast.SendAsync(campaign, request?.Confirmar ?? false, request?.MemberIds, ct) });
+                var result = await _broadcast.SendAsync(campaign, request?.Confirmar ?? false, request?.MemberIds, ct);
+                if (result.Sent > 0)
+                {
+                    await _activityLog.LogAsync(User.GetDisplayName(), User.GetUserIdValue(), "disparou uma campanha de WhatsApp", "MemberBroadcast", campaign, $"{result.Sent} enviada(s) — {campaign}", ct);
+                }
+                return Ok(new { success = true, data = result });
             }
             catch (ArgumentException ex)
             {

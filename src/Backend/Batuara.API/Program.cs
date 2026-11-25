@@ -286,6 +286,7 @@ builder.Services.AddScoped<ICalendarDomainService, CalendarDomainService>();
 builder.Services.AddScoped<IUmbandaLineService, UmbandaLineService>();
 builder.Services.AddScoped<ISpiritualContentService, SpiritualContentService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IMemberAuthService, MemberAuthService>();
 builder.Services.Configure<BingoOptions>(builder.Configuration.GetSection(BingoOptions.SectionName));
 builder.Services.AddSingleton<IBingoCodeDispatcher, BingoCodeDispatcher>();

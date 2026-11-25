@@ -1,5 +1,7 @@
+using Batuara.API.Services;
 using Batuara.Application.Calendar.Models;
 using Batuara.Application.Calendar.Services;
+using Batuara.Application.Dashboard.Services;
 using Batuara.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,9 +15,11 @@ namespace Batuara.API.Controllers
     [Authorize(Roles = "Admin")]
     public class CalendarAttendancesController(
         ICalendarAttendanceService service,
+        IActivityLogService activityLog,
         ILogger<CalendarAttendancesController> logger) : ControllerBase
     {
         private readonly ICalendarAttendanceService _service = service;
+        private readonly IActivityLogService _activityLog = activityLog;
         private readonly ILogger<CalendarAttendancesController> _logger = logger;
 
         [HttpGet]
@@ -96,6 +100,7 @@ namespace Batuara.API.Controllers
                     return BadRequest(new { success = false, message = errors[0], errors });
                 }
 
+                await _activityLog.LogAsync(User.GetDisplayName(), User.GetUserIdValue(), "agendou um atendimento", "CalendarAttendance", created!.Id.ToString(), request.Description ?? request.Type.ToString());
                 return CreatedAtAction(nameof(GetById), new { id = created!.Id }, new { success = true, data = created });
             }
             catch (Exception ex)

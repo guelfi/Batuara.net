@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using Batuara.API.Services;
+using Batuara.Application.Dashboard.Services;
 using Batuara.Application.HouseMembers.Services;
 using Batuara.Application.MemberAuth.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -12,10 +14,12 @@ namespace Batuara.API.Controllers
     public class MemberSelfServiceController : ControllerBase
     {
         private readonly IHouseMemberService _houseMemberService;
+        private readonly IActivityLogService _activityLog;
 
-        public MemberSelfServiceController(IHouseMemberService houseMemberService)
+        public MemberSelfServiceController(IHouseMemberService houseMemberService, IActivityLogService activityLog)
         {
             _houseMemberService = houseMemberService;
+            _activityLog = activityLog;
         }
 
         [HttpGet]
@@ -33,6 +37,7 @@ namespace Batuara.API.Controllers
             var result = await _houseMemberService.UpdateSelfProfileAsync(houseMemberId, request);
             if (result.Member != null)
             {
+                await _activityLog.LogAsync(result.Member.FullName, houseMemberId.ToString(), "atualizou seus dados cadastrais", "HouseMember", houseMemberId.ToString(), null);
                 return Ok(new { success = true, data = result.Member });
             }
 
@@ -46,6 +51,10 @@ namespace Batuara.API.Controllers
         {
             var houseMemberId = GetHouseMemberId();
             var result = await _houseMemberService.AddSelfContributionAsync(houseMemberId, request);
+            if (result.Member != null)
+            {
+                await _activityLog.LogAsync(result.Member.FullName, houseMemberId.ToString(), "registrou uma contribuição", "HouseMember", houseMemberId.ToString(), null);
+            }
             return result.Member == null
                 ? BadRequest(new { success = false, errors = result.Errors })
                 : Ok(new { success = true, data = result.Member });

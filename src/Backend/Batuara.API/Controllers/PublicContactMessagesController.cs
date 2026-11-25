@@ -1,5 +1,6 @@
 using Batuara.Application.ContactMessages.Models;
 using Batuara.Application.ContactMessages.Services;
+using Batuara.Application.Dashboard.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -12,11 +13,13 @@ namespace Batuara.API.Controllers
     public class PublicContactMessagesController : ControllerBase
     {
         private readonly IContactMessageService _service;
+        private readonly IActivityLogService _activityLog;
         private readonly ILogger<PublicContactMessagesController> _logger;
 
-        public PublicContactMessagesController(IContactMessageService service, ILogger<PublicContactMessagesController> logger)
+        public PublicContactMessagesController(IContactMessageService service, IActivityLogService activityLog, ILogger<PublicContactMessagesController> logger)
         {
             _service = service;
+            _activityLog = activityLog;
             _logger = logger;
         }
 
@@ -33,6 +36,7 @@ namespace Batuara.API.Controllers
                     return BadRequest(new { success = false, message = errors[0], errors });
                 }
 
+                await _activityLog.LogAsync(request.Name, null, "deixou uma mensagem de contato", "ContactMessage", created!.Id.ToString(), request.Subject);
                 return Created(string.Empty, new { success = true, data = created });
             }
             catch (Exception ex)
