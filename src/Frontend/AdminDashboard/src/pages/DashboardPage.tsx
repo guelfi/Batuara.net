@@ -318,10 +318,10 @@ const DashboardPage: React.FC = () => {
                       variant={isXs ? 'h4' : 'h3'}
                       sx={{ fontWeight: 700, mb: { xs: 0.5, sm: 1 }, fontSize: { xs: '1.75rem', sm: '3rem' } }}
                     >
-                      {stats?.activeHouseMembers ?? 0}
+                      {(stats?.activeHouseMembers ?? 0) + (stats?.inactiveHouseMembers ?? 0)}
                     </Typography>
                     <Typography variant={isXs ? 'caption' : 'body2'} color="text.secondary">
-                      Cadastrados e ativos
+                      {stats ? `${stats.activeHouseMembers} ativos · ${stats.inactiveHouseMembers} inativos` : 'Cadastrados'}
                     </Typography>
                   </CardContent>
                 </CardActionArea>

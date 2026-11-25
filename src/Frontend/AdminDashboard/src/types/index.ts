@@ -318,6 +318,8 @@ export interface DashboardStats {
   attendancesUntilEndOfYear: number;
   /** Filhos da Casa com isActive = true */
   activeHouseMembers: number;
+  /** Filhos da Casa com isActive = false */
+  inactiveHouseMembers: number;
   /** Eventos + Atendimentos no mês corrente */
   currentMonthActivity: number;
   recentActivity: ActivityLog[];

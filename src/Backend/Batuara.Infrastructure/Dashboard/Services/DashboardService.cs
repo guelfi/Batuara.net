@@ -39,9 +39,11 @@ namespace Batuara.Infrastructure.Dashboard.Services
                     && a.AttendanceDate.Date >= today
                     && a.AttendanceDate.Date <= endOfYear);
 
-            // Filhos da Casa ativos
+            // Filhos da Casa ativos e inativos
             var activeHouseMembers = await _context.HouseMembers
                 .CountAsync(m => m.IsActive);
+            var inactiveHouseMembers = await _context.HouseMembers
+                .CountAsync(m => !m.IsActive);
 
             // Atividade do mês corrente: eventos + atendimentos com data no mês
             var eventsThisMonth = await _context.Events
@@ -97,6 +99,7 @@ namespace Batuara.Infrastructure.Dashboard.Services
                 EventsUntilEndOfYear = eventsUntilEndOfYear,
                 AttendancesUntilEndOfYear = attendancesUntilEndOfYear,
                 ActiveHouseMembers = activeHouseMembers,
+                InactiveHouseMembers = inactiveHouseMembers,
                 CurrentMonthActivity = currentMonthActivity,
                 RecentActivity = recentActivity
             };
