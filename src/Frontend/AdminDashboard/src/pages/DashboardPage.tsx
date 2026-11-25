@@ -100,7 +100,7 @@ const DashboardPage: React.FC = () => {
         }
 
         try {
-          const candidates: { title: string; when: string; sortKey: string; type: AttendanceType }[] = [];
+          const candidates: { title: string; when: string; sortKey: string; type: string }[] = [];
 
           for (let i = 0; i < 2; i += 1) {
             const monthDate = new Date(today.getFullYear(), today.getMonth() + i, 1);
@@ -125,14 +125,14 @@ const DashboardPage: React.FC = () => {
                 title: item.description || 'Atendimento',
                 when,
                 sortKey: `${day}T${(item.startTime || '00:00').slice(0, 5)}`,
-                type: item.type,
+                type: typeof item.type === 'number' ? AttendanceType[item.type] : String(item.type),
               });
             }
           }
 
           candidates.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
-          const gira = candidates.find((c) => c.type === AttendanceType.Umbanda);
-          const kard = candidates.find((c) => c.type === AttendanceType.Kardecismo);
+          const gira = candidates.find((c) => c.type === 'Umbanda');
+          const kard = candidates.find((c) => c.type === 'Kardecismo');
           setNextGira(gira ? { title: gira.title, when: gira.when } : null);
           setNextKardecismo(kard ? { title: kard.title, when: kard.when } : null);
         } catch (_) {
@@ -272,7 +272,7 @@ const DashboardPage: React.FC = () => {
       <Grid container spacing={{ xs: 1.5, sm: 3 }} sx={{ mb: { xs: 2, md: 4 }, justifyContent: 'flex-start', maxWidth: '100%' }}>
         {canAccessAdminModules && (
           <>
-            <Grid size={{ xs: 6, sm: 6, md: 6, lg: 4 }}>
+            <Grid size={{ xs: 6, sm: 6, md: 4, lg: 4 }}>
               <Card sx={{ height: '100%' }}>
                 <CardActionArea {...buildStatCardProps('/agenda?aba=eventos')}>
                   <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
@@ -297,7 +297,7 @@ const DashboardPage: React.FC = () => {
               </Card>
             </Grid>
 
-            <Grid size={{ xs: 6, sm: 6, md: 6, lg: 4 }}>
+            <Grid size={{ xs: 6, sm: 6, md: 4, lg: 4 }}>
               <Card sx={{ height: '100%' }}>
                 <CardActionArea {...buildStatCardProps('/agenda?aba=atendimentos')}>
                   <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
@@ -322,7 +322,7 @@ const DashboardPage: React.FC = () => {
               </Card>
             </Grid>
 
-            <Grid size={{ xs: 6, sm: 6, md: 6, lg: 4 }}>
+            <Grid size={{ xs: 6, sm: 6, md: 4, lg: 4 }}>
               <Card sx={{ height: '100%' }}>
                 <CardActionArea {...buildStatCardProps('/members')}>
                   <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
