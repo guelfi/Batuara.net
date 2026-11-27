@@ -11,6 +11,9 @@ on:
     workflows: ["CI - Build & Validate"]
     types:
       - completed
+    branches:
+      - master
+      - main
 
 # Prevent concurrent deployments
 concurrency:
